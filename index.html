@@ -1,1117 +1,1888 @@
-<!DOCTYPE html> 
- <html lang="en"> 
- <head> 
- 	<meta charset="UTF-8"> 
- 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
- 	<title>John Gresh : Portfolio Web Game</title> 
- 	<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet"> 
- 	<style> 
- 		body { margin: 0; overflow: hidden; background-color: #000; cursor: grab; } 
- 		canvas { display: block; } 
- 		#instructions { 
- 			position: absolute; 
- 			bottom: 20px; 
- 			left: 50%; 
- 			transform: translateX(-50%); 
- 			color: rgba(255, 255, 255, 0.9); 
- 			font-family: 'VT323', monospace; 
- 			font-size: 18px; 
- 			text-shadow: 2px 2px 4px black; 
- 			pointer-events: none; 
- 			text-align: center; 
- 			padding: 10px; 
- 			background: rgba(0, 0, 0, 0.5); 
- 			border-radius: 0; 
- 			z-index: 10; 
- 		} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>John Gresh : Portfolio Web Game</title>
+	<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+	<style>
+		body { margin: 0; overflow: hidden; background-color: #000; cursor: grab; }
+		canvas { display: block; touch-action: none; } /* Added touch-action: none to prevent browser gestures on canvas */
+		#instructions {
+			position: absolute;
+			bottom: 20px;
+			left: 50%;
+			transform: translateX(-50%);
+			color: rgba(255, 255, 255, 0.9);
+			font-family: 'VT323', monospace;
+			font-size: 18px;
+			text-shadow: 2px 2px 4px black;
+			pointer-events: none;
+			text-align: center;
+			padding: 10px;
+			background: rgba(0, 0, 0, 0.5);
+			border-radius: 0;
+			z-index: 10;
+		}
 
- 		.scene-overlay { 
- 			position: fixed; 
- 			top: 0; 
- 			left: 0; 
- 			width: 100%; 
- 			height: 100%; 
- 			background-color: rgba(26, 5, 58, 0.9); 
- 			z-index: 1000; 
- 			display: none; 
- 			justify-content: center; 
- 			align-items: center; 
- 			backdrop-filter: blur(3px); 
- 		} 
+		/* --- COIN COUNTER UI --- */
+		#coin-counter {
+			position: absolute;
+			top: 20px;
+			right: 20px;
+			color: #ffd700;
+			font-family: 'VT323', monospace;
+			font-size: 36px;
+			text-shadow: 3px 3px 0px black;
+			padding: 10px 20px;
+			background: rgba(26, 5, 58, 0.8);
+			border: 4px solid black;
+			z-index: 15;
+			display: block; /* Changed: Now visible initially */
+			box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+			pointer-events: none;
+		}
 
- 		.overlay-container { 
- 			width: 85%; 
- 			max-width: 1100px; 
- 			height: 85vh; 
- 			overflow-y: auto; 
- 			padding: 30px; 
- 			border: 4px solid #000; 
- 			box-shadow: 0 0 50px rgba(255, 125, 92, 0.9); 
- 			background-color: #1a1a2e; 
- 			color: #ffffff; 
- 			font-family: 'VT323', monospace; 
- 			line-height: 1.3; 
- 		} 
+		.scene-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(26, 5, 58, 0.9);
+			z-index: 1000;
+			display: none;
+			justify-content: center;
+			align-items: center;
+			backdrop-filter: blur(3px);
+		}
 
- 		#tshirtsContainer { 
- 			max-width: 650px; 
- 			height: auto; 
- 			max-height: 85vh; 
- 			display: flex; 
- 			flex-direction: column; 
- 			justify-content: center; 
- 			align-items: center; 
- 			text-align: center; 
- 			box-shadow: 0 0 50px rgba(0, 119, 182, 0.9); 
- 		} 
+		.overlay-container {
+			width: 85%;
+			max-width: 1100px;
+			height: 85vh;
+			overflow-y: auto;
+			padding: 30px;
+			border: 4px solid #000;
+			box-shadow: 0 0 50px rgba(255, 125, 92, 0.9);
+			background-color: #1a1a2e;
+			color: #ffffff;
+			font-family: 'VT323', monospace;
+			line-height: 1.3;
+		}
 
- 		.close-btn { 
- 			position: absolute; 
- 			top: 20px; 
- 			right: 20px; 
- 			padding: 10px 20px; 
- 			font-size: 24px; 
- 			font-family: 'VT323', monospace; 
- 			background-color: #e63946; 
- 			color: white; 
- 			border: 3px solid black; 
- 			cursor: pointer; 
- 			border-radius: 0; 
- 			box-shadow: 5px 5px 0px rgba(0,0,0,0.8); 
- 			transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s; 
- 		} 
+		#tshirtsContainer {
+			max-width: 650px;
+			height: auto;
+			max-height: 85vh;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			text-align: center;
+			box-shadow: 0 0 50px rgba(0, 119, 182, 0.9);
+		}
 
- 		.close-btn:hover { 
- 			background-color: #ff5a5f; 
- 		} 
+		.close-btn {
+			position: absolute;
+			top: 20px;
+			right: 20px;
+			padding: 10px 20px;
+			font-size: 24px;
+			font-family: 'VT323', monospace;
+			background-color: #e63946;
+			color: white;
+			border: 3px solid black;
+			cursor: pointer;
+			border-radius: 0;
+			box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+			transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
+		}
 
- 		.close-btn:active { 
- 			transform: translate(3px, 3px); 
- 			box-shadow: 2px 2px 0px rgba(0,0,0,0.8); 
- 		} 
+		.close-btn:hover {
+			background-color: #ff5a5f;
+		}
 
- 		.overlay-container::-webkit-scrollbar { 
- 			width: 14px; 
- 		} 
- 		.overlay-container::-webkit-scrollbar-track { 
- 			background: #2a1a3d; 
- 			border-left: 2px solid black; 
- 		} 
- 		.overlay-container::-webkit-scrollbar-thumb { 
- 			background: #6c6383; 
- 			border: 2px solid black; 
- 			border-radius: 0; 
- 		} 
- 		.overlay-container::-webkit-scrollbar-thumb:hover { 
- 			background: #8a505d; 
- 		} 
+		.close-btn:active {
+			transform: translate(3px, 3px);
+			box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+		}
 
- 		.resume-header { 
- 			text-align: center; 
- 			margin-bottom: 30px; 
- 			border-bottom: 4px dashed #6c6383; 
- 			padding-bottom: 20px; 
- 			width: 100%; 
- 		} 
- 		.resume-header h1 { 
- 			font-size: 48px; 
- 			margin: 0; 
- 			color: #ff7d5c; 
- 			text-shadow: 3px 3px 0px rgba(0,0,0,0.5); 
- 		} 
- 		#tshirtsContainer .resume-header h1 { 
- 			color: #0077b6; 
- 		} 
- 		.resume-header p { 
- 			font-size: 22px; 
- 			margin: 5px 0 0 0; 
- 			color: #d4a3a3; 
- 		} 
- 		.resume-section { 
- 			margin-bottom: 30px; 
- 		} 
- 		.resume-section h2 { 
- 			font-size: 30px; 
- 			color: #2a9d8f; 
- 			border-bottom: 2px solid #2a9d8f; 
- 			padding-bottom: 5px; 
- 			margin-bottom: 15px; 
- 			text-transform: uppercase; 
- 		} 
- 		.job, .education-item { 
- 			margin-bottom: 20px; 
- 			padding-left: 10px; 
- 		} 
- 		.job-title, .degree-title { 
- 			font-size: 26px; 
- 			color: #e63946; 
- 		} 
- 		.company, .school { 
- 			font-size: 22px; 
- 			color: #ffffff; 
- 		} 
- 		.dates { 
- 			font-size: 20px; 
- 			color: #a37c7c; 
- 			display: block; 
- 			margin-bottom: 8px; 
- 		} 
- 		.responsibilities, .skills-list { 
- 			font-size: 21px; 
- 			list-style: none; 
- 			padding: 0; 
- 			margin: 0; 
- 			color: #fdf6e3; 
- 		} 
- 		.responsibilities li, .skills-list li { 
- 			margin-bottom: 6px; 
- 			position: relative; 
- 			padding-left: 20px; 
- 		} 
- 		.responsibilities li:before, .skills-list li:before { 
- 			content: '>'; 
- 			position: absolute; 
- 			left: 0; 
- 			color: #0077b6; 
- 		} 
- 		.resume-layout { 
- 			display: flex; 
- 			flex-wrap: wrap; 
- 			gap: 30px; 
- 		} 
- 		.layout-main { 
- 			flex: 2; 
- 			min-width: 300px; 
- 		} 
- 		.layout-sidebar { 
- 			flex: 1; 
- 			min-width: 250px; 
- 		} 
+		.overlay-container::-webkit-scrollbar {
+			width: 14px;
+		}
+		.overlay-container::-webkit-scrollbar-track {
+			background: #2a1a3d;
+			border-left: 2px solid black;
+		}
+		.overlay-container::-webkit-scrollbar-thumb {
+			background: #6c6383;
+			border: 2px solid black;
+			border-radius: 0;
+		}
+		.overlay-container::-webkit-scrollbar-thumb:hover {
+			background: #8a505d;
+		}
 
- 		.progress-container { 
- 			width: 90%; 
- 			background-color: #2a1a3d; 
- 			border: 4px solid #000; 
- 			margin: 25px 0; 
- 			box-shadow: 5px 5px 0px rgba(0,0,0,0.8); 
- 		} 
+		.resume-header {
+			text-align: center;
+			margin-bottom: 30px;
+			border-bottom: 4px dashed #6c6383;
+			padding-bottom: 20px;
+			width: 100%;
+		}
+		.resume-header h1 {
+			font-size: 48px;
+			margin: 0;
+			color: #ff7d5c;
+			text-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+		}
+		#tshirtsContainer .resume-header h1 {
+			color: #0077b6;
+		}
+		.resume-header p {
+			font-size: 22px;
+			margin: 5px 0 0 0;
+			color: #d4a3a3;
+		}
+		.resume-section {
+			margin-bottom: 30px;
+		}
+		.resume-section h2 {
+			font-size: 30px;
+			color: #2a9d8f;
+			border-bottom: 2px solid #2a9d8f;
+			padding-bottom: 5px;
+			margin-bottom: 15px;
+			text-transform: uppercase;
+		}
+		.job, .education-item {
+			margin-bottom: 20px;
+			padding-left: 10px;
+		}
+		.job-title, .degree-title {
+			font-size: 26px;
+			color: #e63946;
+		}
+		.company, .school {
+			font-size: 22px;
+			color: #ffffff;
+		}
+		.dates {
+			font-size: 20px;
+			color: #a37c7c;
+			display: block;
+			margin-bottom: 8px;
+		}
+		.responsibilities, .skills-list {
+			font-size: 21px;
+			list-style: none;
+			padding: 0;
+			margin: 0;
+			color: #fdf6e3;
+		}
+		.responsibilities li, .skills-list li {
+			margin-bottom: 6px;
+			position: relative;
+			padding-left: 20px;
+		}
+		.responsibilities li:before, .skills-list li:before {
+			content: '>';
+			position: absolute;
+			left: 0;
+			color: #0077b6;
+		}
+		.resume-layout {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 30px;
+		}
+		.layout-main {
+			flex: 2;
+			min-width: 300px;
+		}
+		.layout-sidebar {
+			flex: 1;
+			min-width: 250px;
+		}
 
- 		.progress-bar { 
- 			background-color: #0077b6; 
- 			height: 35px; 
- 			width: 60%; 
- 			background-image: linear-gradient( 
- 				90deg, 
- 				rgba(0,0,0,0.25) 0%, 
- 				rgba(0,0,0,0.25) 5%, 
- 				transparent 5%, 
- 				transparent 100% 
- 			); 
- 			background-size: 20px 100%; 
- 		} 
+		.progress-container {
+			width: 90%;
+			background-color: #2a1a3d;
+			border: 4px solid #000;
+			margin: 25px 0;
+			box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+		}
 
- 		.loading-text { 
- 			font-size: 28px; 
- 			color: #ffffff; 
- 			margin-top: 15px; 
- 		} 
+		.progress-bar {
+			background-color: #0077b6;
+			height: 35px;
+			width: 60%;
+			background-image: linear-gradient(
+				90deg,
+				rgba(0,0,0,0.25) 0%,
+				rgba(0,0,0,0.25) 5%,
+				transparent 5%,
+				transparent 100%
+			);
+			background-size: 20px 100%;
+		}
 
- 		#mobile-controls { 
- 			position: fixed; 
- 			bottom: 30px; 
- 			left: 0; 
- 			width: 100%; 
- 			height: 150px; 
- 			z-index: 20; 
- 			display: none; 
- 			justify-content: space-between; 
- 			align-items: center; 
- 			padding: 0 40px; 
- 			box-sizing: border-box; 
- 			pointer-events: none; 
- 		} 
- 		#dpad { 
- 			position: relative; 
- 			width: 150px; 
- 			height: 150px; 
- 			pointer-events: auto; 
- 		} 
- 		.dpad-btn { 
- 			position: absolute; 
- 			width: 50px; 
- 			height: 50px; 
- 			background: rgba(255, 255, 255, 0.2); 
- 			border: 2px solid rgba(255, 255, 255, 0.5); 
- 			display: flex; 
- 			justify-content: center; 
- 			align-items: center; 
- 			font-family: 'VT323', monospace; 
- 			font-size: 30px; 
- 			color: white; 
- 			user-select: none; 
- 		} 
- 		.dpad-btn:active { 
- 			background: rgba(255, 255, 255, 0.5); 
- 		} 
- 		#dpad-up { top: 0; left: 50px; } 
- 		#dpad-down { bottom: 0; left: 50px; } 
- 		#dpad-left { top: 50px; left: 0; } 
- 		#dpad-right { top: 50px; right: 0; } 
+		.loading-text {
+			font-size: 28px;
+			color: #ffffff;
+			margin-top: 15px;
+		}
 
- 		#action-buttons { 
- 			display: flex; 
- 			gap: 20px; 
- 			pointer-events: auto; 
- 		} 
- 		.action-btn { 
- 			width: 80px; 
- 			height: 80px; 
- 			border-radius: 50%; 
- 			background: rgba(255, 255, 255, 0.2); 
- 			border: 2px solid rgba(255, 255, 255, 0.5); 
- 			color: white; 
- 			font-family: 'VT323', monospace; 
- 			font-size: 22px; 
- 			display: flex; 
- 			justify-content: center; 
- 			align-items: center; 
- 			user-select: none; 
- 		} 
- 		.action-btn:active { 
- 			background: rgba(255, 255, 255, 0.5); 
- 		} 
+ 	 	/* --- IMPROVED MOBILE CONTROLS --- */
+		#mobile-controls {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			width: 100%;
+			height: 200px; /* Ample space */
+			z-index: 20;
+			display: none; /* Hidden by default, shown via JS on mobile */
+			justify-content: space-between;
+			align-items: center;
+			padding: 0 20px;
+			box-sizing: border-box;
+			pointer-events: none; /* Allows clicking through the container */
+		}
 
- 		@media (max-width: 800px) { 
- 			#mobile-controls { 
- 				display: flex; 
- 			} 
- 			#instructions { 
- 				display: none; 
- 			} 
- 			.close-btn { 
- 				padding: 4px 8px; 
- 				font-size: 14px; 
- 				top: 12px; 
- 				right: 12px; 
- 				border: 2px solid black; 
- 				box-shadow: 2px 2px 0px rgba(0,0,0,0.8); 
- 			} 
- 			.close-btn:active { 
- 				transform: translate(1px, 1px); 
- 				box-shadow: 1px 1px 0px rgba(0,0,0,0.8); 
- 			} 
- 		} 
+ 	 	/* Zone for NippleJS Joystick */
+		#joystick-zone {
+			position: relative;
+			width: 150px;
+			height: 150px;
+			pointer-events: auto; /* Captures events for the joystick */
+ 	 	 	 	margin-left: 20px;
+ 	 	 	 	touch-action: none; /* Essential for joystick responsiveness */
+		}
 
- 	</style> 
- </head> 
- <body> 
- 	<div id="instructions">WASD/Arrows: Move | Space: Jump | Drag: Look<br>Click the store signs.</div> 
+ 	 	/* Removed old D-pad styles */
 
- 	<div id="resumeOverlay" class="scene-overlay"> 
- 		<button class="close-btn">[X] BACK</button> 
- 		<div id="resumeContainer" class="overlay-container"> 
- 			<div class="resume-header"> 
- 				<h1>John Gresh</h1> 
- 				<p>(336) 995-4119 | johngresh.usa@gmail.com</p> 
- 			</div> 
- 			<div class="resume-layout"> 
- 				<div class="layout-main"> 
- 					<section class="resume-section"> 
- 						<h2>Experience</h2> 
- 						<div class="job"> 
- 							<div class="job-title">Maintenance Technician</div> 
- 							<div class="company">Toyota Battery Factory</div> 
- 							<span class="dates">July 2024 - November 2024</span> 
- 							<ul class="responsibilities"> 
- 								<li>General Maintenance</li> 
- 								<li>Preventative Maintenance</li> 
- 								<li>Work orders/Cost Center Management</li> 
- 								<li>Performing Job Safety Analysis</li> 
- 							</ul> 
- 						</div> 
- 						<div class="job"> 
- 							<div class="job-title">Assistant Manager</div> 
- 							<div class="company">New Balance</div> 
- 							<span class="dates">October 2021 - Current</span> 
- 							<ul class="responsibilities"> 
- 								<li>Assisting in the general operation of the store</li> 
- 								<li>Opening and closing the store</li> 
- 								<li>Overseeing the customer experience</li> 
- 								<li>Fitting customers for shoes</li> 
- 							</ul> 
- 						</div> 
- 						<div class="job"> 
- 							<div class="job-title">Sales Representative</div> 
- 							<div class="company">GNC</div> 
- 							<span class="dates">March 2019 - July 2019, Charlotte NC</span> 
- 							<ul class="responsibilities"> 
- 								<li>Opening/Closing store</li> 
- 								<li>Inventory checks</li> 
- 								<li>Customer relations</li> 
- 								<li>Register</li> 
- 								<li>Cleaning</li> 
- 							</ul> 
- 						</div> 
- 						 <div class="job"> 
- 							<div class="job-title">Lifeguard</div> 
- 							<div class="company">Forsyth Country Club</div> 
- 							<span class="dates">2016 - 2017 Summer</span> 
- 							<ul class="responsibilities"> 
- 								<li>Lifeguarding</li> 
- 								<li>Checking in guests</li> 
- 								<li>Cleaning pool deck and pool services</li> 
- 								<li>Testing pool chemicals/Adding chemicals</li> 
- 								<li>Strong emphasis on customer relations</li> 
- 							</ul> 
- 						</div> 
- 						<div class="job"> 
- 							<div class="job-title">Bussing tables / working in kitchen</div> 
- 							<div class="company">Vincenzo's Restaurant</div> 
- 							<span class="dates">January 2015 - December 2015, Winston-salem NC</span> 
- 							<ul class="responsibilities"> 
- 								<li>Making bread/Cleaning dishes/Making salads/ Bus Boy</li> 
- 								<li>Cleaning station</li> 
- 								<li>Customer relations</li> 
- 							</ul> 
- 						</div> 
- 					</section> 
- 				</div> 
- 				<div class="layout-sidebar"> 
- 					<section class="resume-section"> 
- 						<h2>Education</h2> 
- 						<div class="education-item"> 
- 							<div class="degree-title">Mechatronics Technician</div> 
- 							<div class="school">Forsyth Tech</div> 
- 							<span class="dates">August 2022 - May 2023, Winston Salem NC</span> 
- 						</div> 
- 						<div class="education-item"> 
- 							<div class="degree-title">Internship</div> 
- 							<div class="school">ThinkPLC</div> 
- 							<span class="dates">August 2022 - May 2023, Winston Salem NC</span> 
- 						</div> 
- 						<div class="education-item"> 
- 							<div class="degree-title">High School Diploma</div> 
- 							<div class="school">Mount Tabor</div> 
- 							<span class="dates">August 2013 - May 2017, Winston Salem NC</span> 
- 						</div> 
- 					</section> 
- 					<section class="resume-section"> 
- 						<h2>Skills</h2> 
- 						<ul class="skills-list"> 
- 							<li>OSHA 10-Hr Certified</li> 
- 							<li>Electrical Safe Work Practices Certified</li> 
- 							<li>Control of Hazardous Energy Certified</li> 
- 							<li>PLC installation / proficient</li> 
- 							<li>PLC programming (RSLogix) / proficient</li> 
- 							<li>Python / proficient</li> 
- 							<li>C++ / beginner</li> 
- 							<li>Matlab / beginner</li> 
- 							<li>Sales experience (GNC, New Balance)</li> 
- 							<li>Cell phone and electronic repair (iPhone/Mac)</li> 
- 						</ul> 
- 					</section> 
- 				</div> 
- 			</div> 
- 			</div> 
- 	</div> 
- 	<div id="projectsOverlay" class="scene-overlay"> 
- 		<button class="close-btn">[X] BACK</button> 
- 		<div id="projectsContainer" class="overlay-container"> 
- 			<div class="resume-header"> 
- 				<h1>Projects</h1> 
- 			</div> 
- 			<section class="resume-section"> 
- 				<h2>Featured Work</h2> 
- 				<ul class="skills-list"> 
- 					<li>This Website</li> 
- 				</ul> 
- 			</section> 
- 		</div> 
- 	</div> 
- 	<div id="tshirtsOverlay" class="scene-overlay"> 
- 		<button class="close-btn">[X] BACK</button> 
- 		<div id="tshirtsContainer" class="overlay-container"> 
- 			<div class="resume-header"> 
- 				<h1>T-Shirt Store (WIP)</h1> 
- 			</div> 
- 			<p class="loading-text">Initializing Storefront...</p> 
- 			<div class="progress-container"> 
- 				<div class="progress-bar"></div> 
- 			</div> 
- 			<p class="loading-text">> later this week</p> 
- 		</div> 
- 	</div> 
+		#action-buttons {
+			display: flex;
+			gap: 20px;
+			pointer-events: auto;
+ 	 	 	 	margin-right: 40px;
+ 	 	 	 	touch-action: none; /* Essential for button responsiveness */
+		}
 
- 	<div id="mobile-controls"> 
- 		<div id="dpad"> 
- 			<div id="dpad-up" class="dpad-btn">▲</div> 
- 			<div id="dpad-down" class="dpad-btn">▼</div> 
- 			<div id="dpad-left" class="dpad-btn">◄</div> 
- 			<div id="dpad-right" class="dpad-btn">►</div> 
- 		</div> 
- 		<div id="action-buttons"> 
- 			<div id="jump-btn" class="action-btn">JUMP</div> 
- 		</div> 
- 	</div> 
+ 	 	/* Improved Jump Button Styling */
+		.action-btn {
+			width: 90px; /* Slightly larger */
+			height: 90px;
+			border-radius: 50%;
+ 	 	 	/* Brighter color */
+			background: rgba(255, 69, 0, 0.5);
+			border: 3px solid rgba(255, 255, 255, 0.7);
+			color: white;
+			font-family: 'VT323', monospace;
+			font-size: 24px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			user-select: none;
+ 	 	 	 	transition: background-color 0.1s, transform 0.1s;
+		}
 
- 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> 
- 	<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script> 
- 	<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script> 
- 	<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script> 
- 	<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script> 
+ 	 	/* Active state for immediate feedback */
+		.action-btn:active, .action-btn.active {
+			background: rgba(255, 69, 0, 0.8);
+ 	 	 	 	transform: scale(0.95);
+		}
 
- 	<script id="pixel-vertex-shader" type="x-shader/x-vertex"> 
- 		varying vec2 vUv; 
- 		void main() { 
- 			vUv = uv; 
- 			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
- 		} 
- 	</script> 
- 	<script id="pixel-fragment-shader" type="x-shader/x-fragment"> 
- 		uniform sampler2D tDiffuse; 
- 		uniform vec2 resolution; 
- 		uniform float pixelSize; 
- 		varying vec2 vUv; 
- 		void main() { 
- 			vec2 dxy = pixelSize / resolution; 
- 			vec2 coord = dxy * floor(vUv / dxy + 0.5); 
- 			gl_FragColor = texture2D(tDiffuse, coord); 
- 		} 
- 	</script> 
- 	<script id="sky-vertex-shader" type="x-shader/x-vertex"> 
- 		varying vec3 vWorldPosition; 
- 		void main() { 
- 			vec4 worldPosition = modelMatrix * vec4(position, 1.0); 
- 			vWorldPosition = worldPosition.xyz; 
- 			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); 
- 		} 
- 	</script> 
- 	<script id="sky-fragment-shader" type="x-shader/x-fragment"> 
- 		uniform vec3 colorZenith; 
- 		uniform vec3 colorHorizonBright; 
- 		uniform vec3 colorHorizonDark; 
- 		uniform vec3 sunDirection; 
- 		varying vec3 vWorldPosition; 
+		@media (max-width: 800px) {
+ 	 	 	/* Display logic primarily handled by JS now */
+			#instructions {
+				display: none;
+			}
+			#coin-counter {
+ 	 	 	 	 	font-size: 20px;
+ 	 	 	 	 	top: 10px;
+ 	 	 	 	 	right: 10px;
+				padding: 4px 8px;
+ 	 	 	 	}
+			.close-btn {
+				padding: 4px 8px;
+				font-size: 14px;
+				top: 12px;
+				right: 12px;
+				border: 2px solid black;
+				box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+			}
+			.close-btn:active {
+				transform: translate(1px, 1px);
+				box-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+			}
+		}
 
- 		void main() { 
- 			vec3 direction = normalize(vWorldPosition); 
- 			float h = max(0.0, direction.y); 
- 			float verticalFade = pow(1.0 - h, 2.5); 
- 			float sunAlignment = dot(direction, sunDirection); 
- 			float horizontalFactor = (sunAlignment + 1.0) * 0.5; 
- 			horizontalFactor = smoothstep(0.3, 0.7, horizontalFactor); 
- 			vec3 baseHorizonColor = mix(colorHorizonDark, colorHorizonBright, horizontalFactor); 
- 			vec3 skyColor = mix(colorZenith, baseHorizonColor, verticalFade); 
- 			float sunHotspot = max(0.0, sunAlignment); 
- 			sunHotspot = pow(sunHotspot, 32.0); 
- 			vec3 hotspotColor = vec3(1.0, 0.9, 0.7); 
- 			skyColor += hotspotColor * sunHotspot * 0.8; 
- 			gl_FragColor = vec4(skyColor, 1.0); 
- 		} 
- 	</script> 
+	</style>
+</head>
+<body>
+	<div id="instructions">WASD/Arrows: Move | Space: Jump | Drag: Look<br>Click the store signs. Find the hidden coins!</div>
 
- 	<script> 
- 		let scene, camera, renderer, composer, pixelPass; 
- 		let cameraRig, cameraPitch; 
- 		let raycaster, mouse; 
- 		const clickableObjects = []; 
- 		const clock = new THREE.Clock(); 
+	<div id="coin-counter">COINS: 0 / 6</div>
 
- 		const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false, ' ': false }; 
- 		let isDragging = false; 
- 		let dragStart = { x: 0, y: 0 }; 
- 		let isSceneActive = true; 
+	<div id="resumeOverlay" class="scene-overlay">
+		<button class="close-btn">[X] BACK</button>
+		<div id="resumeContainer" class="overlay-container">
+			<div class="resume-header">
+				<h1>John Gresh</h1>
+				<p>(336) 995-4119 | johngresh.usa@gmail.com</p>
+			</div>
+			<div class="resume-layout">
+				<div class="layout-main">
+					<section class="resume-section">
+						<h2>Experience</h2>
+						<div class="job">
+							<div class="job-title">Maintenance Technician</div>
+							<div class="company">Toyota Battery Factory</div>
+							<span class="dates">July 2024 - November 2024</span>
+							<ul class="responsibilities">
+								<li>General Maintenance</li>
+								<li>Preventative Maintenance</li>
+								<li>Work orders/Cost Center Management</li>
+								<li>Performing Job Safety Analysis</li>
+							</ul>
+						</div>
+						<div class="job">
+							<div class="job-title">Assistant Manager</div>
+							<div class="company">New Balance</div>
+							<span class="dates">October 2021 - Current</span>
+							<ul class="responsibilities">
+								<li>Assisting in the general operation of the store</li>
+								<li>Opening and closing the store</li>
+								<li>Overseeing the customer experience</li>
+								<li>Fitting customers for shoes</li>
+							</ul>
+						</div>
+						<div class="job">
+							<div class="job-title">Sales Representative</div>
+							<div class="company">GNC</div>
+							<span class="dates">March 2019 - July 2019, Charlotte NC</span>
+							<ul class="responsibilities">
+								<li>Opening/Closing store</li>
+								<li>Inventory checks</li>
+								<li>Customer relations</li>
+								<li>Register</li>
+								<li>Cleaning</li>
+							</ul>
+						</div>
+						 <div class="job">
+							<div class="job-title">Lifeguard</div>
+							<div class="company">Forsyth Country Club</div>
+							<span class="dates">2016 - 2017 Summer</span>
+							<ul class="responsibilities">
+								<li>Lifeguarding</li>
+								<li>Checking in guests</li>
+								<li>Cleaning pool deck and pool services</li>
+								<li>Testing pool chemicals/Adding chemicals</li>
+								<li>Strong emphasis on customer relations</li>
+							</ul>
+						</div>
+						<div class="job">
+							<div class="job-title">Bussing tables / working in kitchen</div>
+							<div class="company">Vincenzo's Restaurant</div>
+							<span class="dates">January 2015 - December 2015, Winston-salem NC</span>
+							<ul class="responsibilities">
+								<li>Making bread/Cleaning dishes/Making salads/ Bus Boy</li>
+								<li>Cleaning station</li>
+								<li>Customer relations</li>
+							</ul>
+						</div>
+					</section>
+				</div>
+				<div class="layout-sidebar">
+					<section class="resume-section">
+						<h2>Education</h2>
+						<div class="education-item">
+							<div class="degree-title">Mechatronics Technician</div>
+							<div class="school">Forsyth Tech</div>
+							<span class="dates">August 2022 - May 2024, Winston Salem NC</span>
+						</div>
+						<div class="education-item">
+							<div class="degree-title">Internship</div>
+							<div class="school">ThinkPLC</div>
+							<span class="dates">August 2022 - May 2023, Winston Salem NC</span>
+						</div>
+						<div class="education-item">
+							<div class="degree-title">High School Diploma</div>
+							<div class="school">Mount Tabor</div>
+							<span class="dates">August 2013 - May 2017, Winston Salem NC</span>
+						</div>
+					</section>
+					<section class="resume-section">
+						<h2>Skills</h2>
+						<ul class="skills-list">
+							<li>OSHA 10-Hr Certified</li>
+							<li>Electrical Safe Work Practices Certified</li>
+							<li>Control of Hazardous Energy Certified</li>
+							<li>PLC installation / proficient</li>
+							<li>PLC programming (RSLogix) / proficient</li>
+							<li>Python / proficient</li>
+							<li>C++ / beginner</li>
+							<li>Matlab / beginner</li>
+							<li>Sales experience (GNC, New Balance)</li>
+							<li>Cell phone and electronic repair (iPhone/Mac)</li>
+						</ul>
+					</section>
+				</div>
+			</div>
+			</div>
+	</div>
+	<div id="projectsOverlay" class="scene-overlay">
+		<button class="close-btn">[X] BACK</button>
+		<div id="projectsContainer" class="overlay-container">
+			<div class="resume-header">
+				<h1>Projects</h1>
+			</div>
+			<section class="resume-section">
+				<h2>Featured Work</h2>
+				<ul class="skills-list">
+					<li>This Website</li>
+				</ul>
+			</section>
+		</div>
+	</div>
+	<div id="tshirtsOverlay" class="scene-overlay">
+		<button class="close-btn">[X] BACK</button>
+		<div id="tshirtsContainer" class="overlay-container">
+			<div class="resume-header">
+				<h1>T-Shirt Store (WIP)</h1>
+			</div>
+			<p class="loading-text">Initializing Storefront...</p>
+			<div class="progress-container">
+				<div class="progress-bar"></div>
+			</div>
+			<p class="loading-text">> later this week</p>
+		</div>
+	</div>
 
- 		const playerHeight = 10; 
- 		let isJumping = false; 
- 		let yVelocity = 0; 
- 		const gravity = -80; 
- 		const jumpForce = 30; 
+ 	<div id="mobile-controls">
+ 	 	<div id="joystick-zone">
+ 	 	 	 	</div>
+		<div id="action-buttons">
+			<div id="jump-btn" class="action-btn">JUMP</div>
+		</div>
+	</div>
 
- 		const colors = { 
- 			skyZenith: 0x1a053a, 
- 			skyHorizonDark: 0x2a1a3d, 
- 			horizonGlow: 0xff7d5c, 
- 			asphalt: 0x1a1a2e, 
- 			asphaltLine: 0x6c6383, 
- 			brick: 0x8a505d, 
- 			grass: 0x182c25, 
- 			stucco: 0xd4a3a3, 
- 			stuccoDark: 0xa37c7c, 
- 			windowGlowBright: 0xfff5c3, 
- 			windowGlowDim: 0x839db5, 
- 			signResume: 0xe63946, 
- 			signTshirts: 0x0077b6, 
- 			signProjects: 0x2a9d8f, 
- 			billboardGlow: 0xffe8a3, 
- 			billboardText: 0xd95763, 
- 			treeDark: 0x1b3028, 
- 			treeTrunk: 0x4a3f35, 
- 			metalDark: 0x1a1a2e, 
- 			poleMetal: 0x4a4f63, 
- 			poleGlow: 0xffe0a3, 
- 		}; 
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+ 	<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
 
- 		const sunDirectionVector = new THREE.Vector3(-1, 0.25, -0.8).normalize(); 
+	<script id="pixel-vertex-shader" type="x-shader/x-vertex">
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+		}
+	</script>
+	<script id="pixel-fragment-shader" type="x-shader/x-fragment">
+		uniform sampler2D tDiffuse;
+		uniform vec2 resolution;
+		uniform float pixelSize;
+		varying vec2 vUv;
+		void main() {
+			vec2 dxy = pixelSize / resolution;
+			vec2 coord = dxy * floor(vUv / dxy + 0.5);
+			gl_FragColor = texture2D(tDiffuse, coord);
+		}
+	</script>
+	<script id="sky-vertex-shader" type="x-shader/x-vertex">
+		varying vec3 vWorldPosition;
+		void main() {
+			vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+			vWorldPosition = worldPosition.xyz;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+		}
+	</script>
+	<script id="sky-fragment-shader" type="x-shader/x-fragment">
+		uniform vec3 colorZenith;
+		uniform vec3 colorHorizonBright;
+		uniform vec3 colorHorizonDark;
+		uniform vec3 sunDirection;
+		varying vec3 vWorldPosition;
 
- 		function init() { 
- 			scene = new THREE.Scene(); 
- 			scene.fog = new THREE.Fog(colors.horizonGlow, 300, 700); 
+		void main() {
+			vec3 direction = normalize(vWorldPosition);
+			float h = max(0.0, direction.y);
+			float verticalFade = pow(1.0 - h, 2.5);
+			float sunAlignment = dot(direction, sunDirection);
+			float horizontalFactor = (sunAlignment + 1.0) * 0.5;
+			horizontalFactor = smoothstep(0.3, 0.7, horizontalFactor);
+			vec3 baseHorizonColor = mix(colorHorizonDark, colorHorizonBright, horizontalFactor);
+			vec3 skyColor = mix(colorZenith, baseHorizonColor, verticalFade);
+			float sunHotspot = max(0.0, sunAlignment);
+			sunHotspot = pow(sunHotspot, 32.0);
+			vec3 hotspotColor = vec3(1.0, 0.9, 0.7);
+			skyColor += hotspotColor * sunHotspot * 0.8;
+			gl_FragColor = vec4(skyColor, 1.0);
+		}
+	</script>
 
- 			camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1500); 
- 			cameraRig = new THREE.Object3D(); 
- 			cameraPitch = new THREE.Object3D(); 
- 			cameraPitch.add(camera); 
- 			cameraRig.add(cameraPitch); 
- 			scene.add(cameraRig); 
+	<script>
+		let scene, camera, renderer, composer, pixelPass;
+		let cameraRig, cameraPitch;
+		let raycaster, mouse;
+		const clickableObjects = [];
+		const clock = new THREE.Clock();
 
- 			cameraRig.position.set(60, playerHeight, 120); 
- 			cameraPitch.rotation.x = -0.12; 
- 			cameraRig.rotation.y = -0.25; 
+		const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false, ' ': false };
+ 	 	let joystickInput = { x: 0, y: 0 }; // Stores normalized joystick input
+		let isDragging = false;
+		let dragStart = { x: 0, y: 0 };
+ 	 	let lookTouchId = null; // To track the specific touch ID used for camera look
+		let isSceneActive = true;
 
- 			renderer = new THREE.WebGLRenderer({ antialias: false }); 
- 			renderer.setSize(window.innerWidth, window.innerHeight); 
- 			renderer.setPixelRatio(window.devicePixelRatio || 1); 
- 			renderer.shadowMap.enabled = true; 
- 			renderer.shadowMap.type = THREE.BasicShadowMap; 
- 			document.body.appendChild(renderer.domElement); 
+		// --- COIN MECHANICS ---
+		const coins = []; // Stores coin data objects { mesh, collected, startY }
+		let coinsCollected = 0;
+		const TOTAL_COINS = 6;
+		let coinGeometry, coinMaterials; // Shared assets (Note: coinMaterials is now plural)
+		// ----------------------
 
- 			setupPostProcessing(); 
- 			setupLighting(); 
+        // --- FIREWORKS (NEW) ---
+        const fireworks = [];
+        // -----------------------
 
- 			createSky(); 
- 			createGround(); 
- 			createBuilding(); 
- 			createBillboard(); 
- 			createParkingLights(); 
- 			createTrees(); 
- 			createStars(); 
+		const playerHeight = 10;
+		let isJumping = false;
+		let yVelocity = 0;
+		const gravity = -80;
+		const jumpForce = 30;
 
- 			raycaster = new THREE.Raycaster(); 
- 			mouse = new THREE.Vector2(); 
- 			setupEventListeners(); 
+ 	 	// --- SCENE CONFIGURATION ---
+ 	 	const ROAD_CONFIG = {
+ 	 	 	 	width: 36,
+ 	 	 	 	length: 1500, // Extended length
+ 	 	 	 	startZ: 260,
+ 	 	 	 	shoulderWidth: 10
+ 	 	};
+ 	 	ROAD_CONFIG.endZ = ROAD_CONFIG.startZ + ROAD_CONFIG.length;
 
- 			animate(); 
- 		} 
+ 	 	const TUNNEL_CONFIG = {
+ 	 	 	 	startZ: 350, // Positioned before the dense background trees
+ 	 	 	 	length: 500,
+ 	 	 	 	width: 50, // Inner width
+ 	 	 	 	height: 35, // Inner height
+ 	 	 	 	wallThickness: 10,
+ 	 	 	 	clearanceWidth: 180 // Increased to prevent tree intrusion
+ 	 	};
+ 	 	TUNNEL_CONFIG.endZ = TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length;
+ 	 	// ---------------------------
 
- 		function showOverlay(overlayId) { 
- 			hideAllOverlays(); 
- 			const overlay = document.getElementById(overlayId); 
- 			if (overlay) { 
- 				isSceneActive = false; 
- 				overlay.style.display = 'flex'; 
- 				renderer.domElement.style.pointerEvents = 'none'; 
- 				document.body.style.cursor = 'default'; 
- 				document.getElementById('instructions').style.display = 'none'; 
- 				document.getElementById('mobile-controls').style.display = 'none'; 
- 			} 
- 		} 
+		const colors = {
+			skyZenith: 0x1a053a,
+			skyHorizonDark: 0x2a1a3d,
+			horizonGlow: 0xff7d5c,
+			asphalt: 0x1a1a2e,
+			asphaltLine: 0x6c6383,
+			brick: 0x8a505d,
+			grass: 0x182c25,
+			stucco: 0xd4a3a3,
+			stuccoDark: 0xa37c7c,
+			windowGlowBright: 0xfff5c3,
+			windowGlowDim: 0x839db5,
+			signResume: 0xe63946,
+			signTshirts: 0x0077b6,
+			signProjects: 0x2a9d8f,
+			billboardGlow: 0xffe8a3,
+			billboardText: 0xd95763,
+			treeDark: 0x1b3028,
+			treeTrunk: 0x4a3f35,
+			metalDark: 0x1a1a2e,
+			poleMetal: 0x4a4f63,
+			poleGlow: 0xffe0a3,
+ 	 	 	// Coin Colors
+ 	 	 	coinGold: 0xffd700,
+ 	 	 	coinDarkGold: 0xc6a100, // Used for texture details
+ 	 	 	 	// New Tunnel Colors
+ 	 	 	 	tunnelConcrete: 0x3a3a4a,
+ 	 	 	 	tunnelFacade: 0x5a5a6a,
+ 	 	 	 	tunnelLight: 0xffa050
+		};
 
- 		function hideAllOverlays() { 
- 			const overlays = document.querySelectorAll('.scene-overlay'); 
- 			let wasActive = false; 
- 			overlays.forEach(overlay => { 
- 				if (overlay.style.display !== 'none') { 
- 					overlay.style.display = 'none'; 
- 					wasActive = true; 
- 				} 
- 			}); 
+		const sunDirectionVector = new THREE.Vector3(-1, 0.25, -0.8).normalize();
 
- 			if (wasActive) { 
- 				isSceneActive = true; 
- 				renderer.domElement.style.pointerEvents = 'auto'; 
- 				document.body.style.cursor = 'grab'; 
- 				 
- 				const isMobile = window.matchMedia("(max-width: 800px)").matches; 
- 				if (!isMobile) { 
- 					document.getElementById('instructions').style.display = 'block'; 
- 				} else { 
- 					document.getElementById('mobile-controls').style.display = 'flex'; 
- 				} 
- 			} 
- 		} 
+ 	 	// Helper function for mobile detection (used for performance tuning and controls)
+ 	 	function isMobileDevice() {
+ 	 	 	 	// Check user agent and screen width
+ 	 	 	 	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800;
+ 	 	}
 
- 		function getPixelSize() { 
- 			const targetVerticalResolution = 450; 
- 			const dpr = window.devicePixelRatio || 1; 
- 			const calculatedSize = (window.innerHeight * dpr) / targetVerticalResolution; 
- 			return Math.max(2, calculatedSize); 
- 		} 
+		function init() {
+			scene = new THREE.Scene();
+ 	 	 	 	// Increased fog distance
+			scene.fog = new THREE.Fog(colors.horizonGlow, 300, 800);
 
- 		function setupPostProcessing() { 
- 			composer = new THREE.EffectComposer(renderer); 
- 			const renderPass = new THREE.RenderPass(scene, camera); 
- 			composer.addPass(renderPass); 
+ 	 	 	 	// Increased far plane
+			camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
+			cameraRig = new THREE.Object3D();
+			cameraPitch = new THREE.Object3D();
+			cameraPitch.add(camera);
+			cameraRig.add(cameraPitch);
+			scene.add(cameraRig);
 
- 			const dpr = window.devicePixelRatio || 1; 
- 			pixelPass = new THREE.ShaderPass({ 
- 				uniforms: { 
- 					tDiffuse: { value: null }, 
- 					resolution: { value: new THREE.Vector2(window.innerWidth * dpr, window.innerHeight * dpr) }, 
- 					pixelSize: { value: getPixelSize() } 
- 				}, 
- 				vertexShader: document.getElementById('pixel-vertex-shader').textContent, 
- 				fragmentShader: document.getElementById('pixel-fragment-shader').textContent 
- 			}); 
- 			pixelPass.renderToScreen = true; 
- 			composer.addPass(pixelPass); 
- 		} 
+			cameraRig.position.set(60, playerHeight, 120);
+			cameraPitch.rotation.x = -0.12;
+			cameraRig.rotation.y = -0.25;
 
- 		function createSky() { 
- 			const uniforms = { 
- 				colorZenith: { value: new THREE.Color(colors.skyZenith) }, 
- 				colorHorizonBright: { value: new THREE.Color(colors.horizonGlow) }, 
- 				colorHorizonDark: { value: new THREE.Color(colors.skyHorizonDark) }, 
- 				sunDirection: { value: sunDirectionVector } 
- 			}; 
- 			const skyMaterial = new THREE.ShaderMaterial({ 
- 				vertexShader: document.getElementById('sky-vertex-shader').textContent, 
- 				fragmentShader: document.getElementById('sky-fragment-shader').textContent, 
- 				uniforms: uniforms, 
- 				side: THREE.BackSide, 
- 				fog: false 
- 			}); 
- 			const skyGeometry = new THREE.SphereGeometry(1200, 32, 16); 
- 			const sky = new THREE.Mesh(skyGeometry, skyMaterial); 
- 			scene.add(sky); 
- 		} 
+			renderer = new THREE.WebGLRenderer({ antialias: false });
+			renderer.setSize(window.innerWidth, window.innerHeight);
 
- 		function setupLighting() { 
- 			const ambientLight = new THREE.AmbientLight(0x604080, 0.35); 
- 			scene.add(ambientLight); 
+ 	 	 	 	// Optimization: Limit Device Pixel Ratio (DPR) on mobile for better performance
+ 	 	 	 	const dpr = window.devicePixelRatio || 1;
+ 	 	 	 	// Limit DPR to 1.5 on mobile, use full DPR on desktop
+ 	 	 	 	const effectiveDPR = isMobileDevice() ? Math.min(1.5, dpr) : dpr;
+			renderer.setPixelRatio(effectiveDPR);
 
- 			const hemisphereLight = new THREE.HemisphereLight(colors.skyZenith, 0x8a5a6d, 0.5); 
- 			scene.add(hemisphereLight); 
+ 	 	 	 	// Optimization: Disable shadows entirely on mobile for significant performance gain
+			renderer.shadowMap.enabled = !isMobileDevice();
+			renderer.shadowMap.type = THREE.BasicShadowMap;
+			document.body.appendChild(renderer.domElement);
 
- 			const sunLight = new THREE.DirectionalLight(0xffa500, 0.4); 
- 			sunLight.position.copy(sunDirectionVector.clone().multiplyScalar(300)); 
- 			sunLight.castShadow = true; 
- 			sunLight.shadow.mapSize.width = 2048; 
- 			sunLight.shadow.mapSize.height = 2048; 
- 			sunLight.shadow.camera.near = 0.5; 
- 			sunLight.shadow.camera.far = 500; 
- 			sunLight.shadow.bias = -0.005; 
- 			const shadowSize = 150; 
- 			sunLight.shadow.camera.left = -shadowSize; 
- 			sunLight.shadow.camera.right = shadowSize; 
- 			sunLight.shadow.camera.top = shadowSize; 
- 			sunLight.shadow.camera.bottom = -shadowSize; 
- 			scene.add(sunLight); 
- 		} 
+			setupPostProcessing();
+			setupLighting();
 
- 		function createTextTexture(text, bgColor, textColor, width=256, height=128, fontSize=50) { 
- 			const canvas = document.createElement('canvas'); 
- 			const context = canvas.getContext('2d'); 
- 			canvas.width = width; 
- 			canvas.height = height; 
- 			context.fillStyle = bgColor; 
- 			context.fillRect(0, 0, canvas.width, canvas.height); 
- 			
- 			context.font = `${fontSize}px 'VT323', Monospace`; 
- 			context.textAlign = 'center'; 
- 			context.textBaseline = 'middle'; 
- 
- 			// Outline
- 			context.strokeStyle = 'black';
- 			context.lineWidth = 4;
- 			context.strokeText(text, canvas.width / 2, canvas.height / 2 + fontSize * 0.05);
- 
- 			// Fill
- 			context.fillStyle = textColor; 
- 			context.fillText(text, canvas.width / 2, canvas.height / 2 + fontSize * 0.05); 
- 
- 			const texture = new THREE.CanvasTexture(canvas); 
- 			texture.minFilter = THREE.NearestFilter; 
- 			texture.magFilter = THREE.NearestFilter; 
- 			return texture; 
- 		} 
+			// Initialize Coin Assets
+			initCoins();
 
- 		function createStripedTexture(color1, color2, stripeWidth=16) { 
- 			const canvas = document.createElement('canvas'); 
- 			const context = canvas.getContext('2d'); 
- 			canvas.width = stripeWidth * 2; 
- 			canvas.height = stripeWidth; 
- 			context.fillStyle = color1; 
- 			context.fillRect(0, 0, canvas.width, canvas.height); 
- 			context.fillStyle = color2; 
- 			context.fillRect(0, 0, stripeWidth, canvas.height); 
- 			const texture = new THREE.CanvasTexture(canvas); 
- 			texture.wrapS = THREE.RepeatWrapping; 
- 			texture.wrapT = THREE.RepeatWrapping; 
- 			texture.minFilter = THREE.NearestFilter; 
- 			texture.magFilter = THREE.NearestFilter; 
- 			return texture; 
- 		} 
+			createSky();
+			createGround();
+			createBuilding();
+			createBillboard();
+			createParkingLights();
+ 	 	 	 	createTunnel(); // Initialize the tunnel
+			createTrees(); // Trees must be created AFTER the tunnel to use its geometry for placement.
+			createStars();
 
- 		function createGrassTexture(width = 32, height = 32) { 
- 			const canvas = document.createElement('canvas'); 
- 			canvas.width = width; 
- 			canvas.height = height; 
- 			const context = canvas.getContext('2d'); 
- 			const imageData = context.createImageData(width, height); 
- 			const data = imageData.data; 
- 			const baseColor = new THREE.Color(colors.grass); 
+			// Place Coins in the World
+			placeCoins();
 
- 			for (let i = 0; i < data.length; i += 4) { 
- 				const noise = Math.random() * 0.15 - 0.075; 
- 				const c = baseColor.clone(); 
- 				c.r += noise; 
- 				c.g += noise; 
- 				c.b += noise; 
- 				 
- 				data[i] = Math.max(0, Math.min(255, c.r * 255)); 
- 				data[i + 1] = Math.max(0, Math.min(255, c.g * 255)); 
- 				data[i + 2] = Math.max(0, Math.min(255, c.b * 255)); 
- 				data[i + 3] = 255; 
- 			} 
- 			context.putImageData(imageData, 0, 0); 
- 			const texture = new THREE.CanvasTexture(canvas); 
- 			texture.wrapS = THREE.RepeatWrapping; 
- 			texture.wrapT = THREE.RepeatWrapping; 
- 			texture.repeat.set(2000 / width, 2000 / height); 
- 			texture.minFilter = THREE.NearestFilter; 
- 			texture.magFilter = THREE.NearestFilter; 
- 			return texture; 
- 		} 
+			// Ensure UI is updated with the total count on load
+			document.getElementById('coin-counter').textContent = `COINS: 0 / ${TOTAL_COINS}`;
 
- 		function createGround() { 
- 			const geometry = new THREE.PlaneGeometry(2000, 2000); 
- 			const grassTexture = createGrassTexture(); 
- 			const material = new THREE.MeshStandardMaterial({ map: grassTexture, roughness: 1.0 }); 
- 			const ground = new THREE.Mesh(geometry, material); 
- 			ground.rotation.x = -Math.PI / 2; 
- 			ground.position.y = 0; 
- 			ground.receiveShadow = true; 
- 			scene.add(ground); 
+			raycaster = new THREE.Raycaster();
+			mouse = new THREE.Vector2();
+			setupEventListeners();
+ 	 	 	 	initJoystick(); // Initialize the NippleJS joystick
 
- 			const asphaltWidth = 450; 
- 			const asphaltLength = 320; 
- 			const asphaltGeometry = new THREE.PlaneGeometry(asphaltWidth, asphaltLength); 
- 			const asphaltMaterial = new THREE.MeshStandardMaterial({ color: colors.asphalt, roughness: 1.0 }); 
- 			const asphalt = new THREE.Mesh(asphaltGeometry, asphaltMaterial); 
- 			asphalt.rotation.x = -Math.PI / 2; 
- 			asphalt.position.y = 0.01; // Place slightly above grass to avoid z-fighting 
- 			asphalt.position.z = asphaltLength / 2 - 60; // Center it on parking area 
- 			asphalt.receiveShadow = true; 
- 			scene.add(asphalt); 
+ 	 	 	 	// Ensure controls are visible if detected as mobile on load
+ 	 	 	 	if (isMobileDevice()) {
+ 	 	 	 	 	 	document.getElementById('mobile-controls').style.display = 'flex';
+ 	 	 	 	}
 
- 			const lineMaterial = new THREE.MeshBasicMaterial({ color: colors.asphaltLine }); 
- 			const lineGeoSlanted = new THREE.PlaneGeometry(1.5, 20); 
- 			const lineGeoStraight = new THREE.PlaneGeometry(1.5, 25); 
- 			const createParkingRow = (startZ, count, startX, spacing, slant=false, offsetX=0) => { 
- 				const geo = slant ? lineGeoSlanted : lineGeoStraight; 
- 				const slantAngle = Math.PI / 5; 
- 				for (let i = 0; i < count; i++) { 
- 					const xPos = startX + i * spacing + offsetX; 
- 					const line = new THREE.Mesh(geo, lineMaterial); 
- 					line.rotation.x = -Math.PI / 2; 
- 					if (slant) { 
- 						line.rotation.z = slantAngle; 
- 					} 
- 					line.position.set(xPos, 0.02, startZ); 
- 					scene.add(line); 
- 				} 
- 			}; 
- 			const numSpotsWide = 25; 
- 			const startXWide = -180; 
- 			const spacing = 15; 
- 			createParkingRow(35, 15, -100, spacing, true); 
- 			createParkingRow(55, 15, -100, spacing, true, -5); 
- 			createParkingRow(100, numSpotsWide, startXWide, spacing, false); 
- 			createParkingRow(130, numSpotsWide, startXWide, spacing, false); 
- 			createParkingRow(190, numSpotsWide, startXWide, spacing, false); 
- 			createParkingRow(220, numSpotsWide, startXWide, spacing, false); 
- 			createRoad(); 
- 		} 
+			animate();
+		}
 
- 		function createRoad() { 
- 			const roadWidth = 36; 
- 			const roadLength = 800; 
- 			const roadStartZ = 260; 
- 			const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x0a0a15, roughness: 0.9, metalness: 0.1 }); 
- 			const roadGeometry = new THREE.PlaneGeometry(roadWidth, roadLength); 
- 			const road = new THREE.Mesh(roadGeometry, roadMaterial); 
- 			road.rotation.x = -Math.PI / 2; 
- 			road.position.set(0, 0.05, roadStartZ + roadLength / 2); 
- 			road.receiveShadow = true; 
- 			scene.add(road); 
- 			const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 }); 
- 			const centerLineGeo = new THREE.PlaneGeometry(1.5, 18); 
- 			const dashSpacing = 25; 
- 			const numDashes = Math.floor(roadLength / dashSpacing); 
- 			for (let i = 0; i < numDashes; i++) { 
- 				const zPos = roadStartZ + (i * dashSpacing) + 10; 
- 				const centerLine = new THREE.Mesh(centerLineGeo, lineMaterial); 
- 				centerLine.rotation.x = -Math.PI / 2; 
- 				centerLine.position.set(0, 0.08, zPos); 
- 				scene.add(centerLine); 
- 			} 
- 			const sideLineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff }); 
- 			const sideLineGeo = new THREE.PlaneGeometry(1.2, roadLength); 
- 			const leftLine = new THREE.Mesh(sideLineGeo, sideLineMaterial); 
- 			leftLine.rotation.x = -Math.PI / 2; 
- 			leftLine.position.set(-roadWidth/2 + 1, 0.08, roadStartZ + roadLength / 2); 
- 			scene.add(leftLine); 
- 			const rightLine = new THREE.Mesh(sideLineGeo, sideLineMaterial); 
- 			rightLine.rotation.x = -Math.PI / 2; 
- 			rightLine.position.set(roadWidth/2 - 1, 0.08, roadStartZ + roadLength / 2); 
- 			scene.add(rightLine); 
- 			const shoulderMaterial = new THREE.MeshStandardMaterial({ color: 0x2a2035, roughness: 1.0 }); 
- 			const shoulderWidth = 10; 
- 			const shoulderGeo = new THREE.PlaneGeometry(shoulderWidth, roadLength); 
- 			const leftShoulder = new THREE.Mesh(shoulderGeo, shoulderMaterial); 
- 			leftShoulder.rotation.x = -Math.PI / 2; 
- 			leftShoulder.position.set(-roadWidth/2 - shoulderWidth/2, 0.02, roadStartZ + roadLength / 2); 
- 			leftShoulder.receiveShadow = true; 
- 			scene.add(leftShoulder); 
- 			const rightShoulder = new THREE.Mesh(shoulderGeo, shoulderMaterial); 
- 			rightShoulder.rotation.x = -Math.PI / 2; 
- 			rightShoulder.position.set(roadWidth/2 + shoulderWidth/2, 0.02, roadStartZ + roadLength / 2); 
- 			rightShoulder.receiveShadow = true; 
- 			scene.add(rightShoulder); 
- 			const roadLightSpacing = 100; 
- 			for (let z = roadStartZ + 50; z < roadStartZ + 400; z += roadLightSpacing) { 
- 				const roadLight = new THREE.PointLight(0xffd4a3, 0.8, 80); 
- 				roadLight.position.set(-roadWidth/2 - 15, 35, z); 
- 				scene.add(roadLight); 
- 				const roadLight2 = new THREE.PointLight(0xffd4a3, 0.8, 80); 
- 				roadLight2.position.set(roadWidth/2 + 15, 35, z); 
- 				scene.add(roadLight2); 
- 			} 
- 		} 
+		function showOverlay(overlayId) {
+			hideAllOverlays();
+			const overlay = document.getElementById(overlayId);
+			if (overlay) {
+				isSceneActive = false;
+				overlay.style.display = 'flex';
+				renderer.domElement.style.pointerEvents = 'none';
+				document.body.style.cursor = 'default';
+				document.getElementById('instructions').style.display = 'none';
+				document.getElementById('mobile-controls').style.display = 'none';
+				document.getElementById('coin-counter').style.display = 'none'; // Hide counter when overlay is open
+			}
+		}
 
- 		function createParkingLights() { 
- 			const poleMat = new THREE.MeshStandardMaterial({ color: colors.poleMetal }); 
- 			const lightMat = new THREE.MeshBasicMaterial({ color: colors.poleGlow }); 
- 			const poleHeight = 40; 
- 			const createParkingLight = (x, z) => { 
- 				const poleGeo = new THREE.CylinderGeometry(0.8, 1.2, poleHeight, 6); 
- 				poleGeo.translate(0, poleHeight / 2, 0); 
- 				const pole = new THREE.Mesh(poleGeo, poleMat); 
- 				pole.position.set(x, 0, z); 
- 				pole.castShadow = true; 
- 				scene.add(pole); 
- 				const fixtureGeo = new THREE.BoxGeometry(8, 2, 6); 
- 				const fixture = new THREE.Mesh(fixtureGeo, poleMat); 
- 				fixture.position.set(x, poleHeight + 1, z); 
- 				fixture.castShadow = true; 
- 				scene.add(fixture); 
- 				const bulbGeo = new THREE.BoxGeometry(6, 0.5, 4); 
- 				const bulb = new THREE.Mesh(bulbGeo, lightMat); 
- 				bulb.position.set(x, poleHeight, z); 
- 				scene.add(bulb); 
- 				const light = new THREE.SpotLight(colors.poleGlow, 2.0, 120, Math.PI/3, 0.5); 
- 				light.position.set(x, poleHeight - 1, z); 
- 				light.target.position.set(x, 0, z); 
- 				light.castShadow = true; 
- 				scene.add(light); 
- 				scene.add(light.target); 
- 			}; 
- 			createParkingLight(-120, 75); 
- 			createParkingLight(0, 75); 
- 			createParkingLight(120, 75); 
- 			createParkingLight(-120, 160); 
- 			createParkingLight(0, 160); 
- 			createParkingLight(120, 160); 
- 			createParkingLight(-60, 250); 
- 			createParkingLight(60, 250); 
- 		} 
+		function hideAllOverlays() {
+			const overlays = document.querySelectorAll('.scene-overlay');
+			let wasActive = false;
+			overlays.forEach(overlay => {
+				if (overlay.style.display !== 'none') {
+					overlay.style.display = 'none';
+					wasActive = true;
+				}
+			});
 
- 		function createBuilding() { 
- 			const buildingHeight = 25; 
- 			const buildingDepth = 30; 
- 			const zPos = 0; 
- 			const centerMaterial = new THREE.MeshStandardMaterial({ color: colors.stucco }); 
- 			const trimMaterial = new THREE.MeshStandardMaterial({ color: colors.stuccoDark }); 
- 			const sideMaterial = new THREE.MeshStandardMaterial({ color: colors.brick }); 
- 			const centerWidth = 35; 
- 			const centerHeight = buildingHeight + 3; 
- 			const centerGeo = new THREE.BoxGeometry(centerWidth, centerHeight, buildingDepth); 
- 			centerGeo.translate(0, centerHeight / 2, 0); 
- 			const centerBlock = new THREE.Mesh(centerGeo, centerMaterial); 
- 			centerBlock.position.set(0, 0, zPos); 
- 			centerBlock.castShadow = true; 
- 			centerBlock.receiveShadow = true; 
- 			scene.add(centerBlock); 
- 			const roofTrimCGeo = new THREE.BoxGeometry(centerWidth + 4, 4, buildingDepth + 2); 
- 			const roofTrimC = new THREE.Mesh(roofTrimCGeo, trimMaterial); 
- 			roofTrimC.position.set(0, buildingHeight + 3, zPos); 
- 			roofTrimC.castShadow = true; 
- 			scene.add(roofTrimC); 
- 			const archGeo = new THREE.BoxGeometry(centerWidth - 10, 6, buildingDepth + 1); 
- 			const arch = new THREE.Mesh(archGeo, centerMaterial); 
- 			arch.position.set(0, buildingHeight + 7, zPos); 
- 			arch.castShadow = true; 
- 			scene.add(arch); 
- 			const sideWidth = 32; 
- 			const sideGeo = new THREE.BoxGeometry(sideWidth, buildingHeight, buildingDepth); 
- 			sideGeo.translate(0, buildingHeight / 2, 0); 
- 			const xPosLeft = -(centerWidth/2 + sideWidth/2); 
- 			const leftBlock = new THREE.Mesh(sideGeo, sideMaterial); 
- 			leftBlock.position.set(xPosLeft, 0, zPos); 
- 			leftBlock.castShadow = true; 
- 			leftBlock.receiveShadow = true; 
- 			scene.add(leftBlock); 
- 			const xPosRight = centerWidth/2 + sideWidth/2; 
- 			const rightBlock = new THREE.Mesh(sideGeo, sideMaterial); 
- 			rightBlock.position.set(xPosRight, 0, zPos); 
- 			rightBlock.castShadow = true; 
- 			rightBlock.receiveShadow = true; 
- 			scene.add(rightBlock); 
- 			const roofTrimSGeo = new THREE.BoxGeometry(sideWidth + 2, 3, buildingDepth + 2); 
- 			const roofTrimL = new THREE.Mesh(roofTrimSGeo, trimMaterial); 
- 			roofTrimL.position.set(xPosLeft, buildingHeight + 0.5, zPos); 
- 			roofTrimL.castShadow = true; 
- 			scene.add(roofTrimL); 
- 			const roofTrimR = new THREE.Mesh(roofTrimSGeo, trimMaterial); 
- 			roofTrimR.position.set(xPosRight, buildingHeight + 0.5, zPos); 
- 			roofTrimR.castShadow = true; 
- 			scene.add(roofTrimR); 
- 			const windowZ = zPos + buildingDepth / 2 + 0.1; 
- 			const windowY = 8; 
- 			 
- 			// T-Shirts Store (Center) 
- 			createWindow(0, windowY, windowZ, 28, 12, colors.windowGlowBright, 1.5); 
- 			addShirt(-10, 8, 16, 0x457b9d); 
- 			addShirt(10, 8, 16, 0xe63946); 
- 			addShirt(0, 7.5, 17, 0x1d3557); 
- 
- 			// Resume Store (Left) 
- 			createWindow(xPosLeft, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2); 
- 			addPaper(xPosLeft - 7, 8, 16); 
- 			addPaper(xPosLeft + 7, 8.5, 16); 
- 			addPaper(xPosLeft, 7, 16); 
+			if (wasActive) {
+				isSceneActive = true;
+				renderer.domElement.style.pointerEvents = 'auto';
+				document.body.style.cursor = 'grab';
 
- 			// Projects Store (Right) 
- 			createWindow(xPosRight, windowY, windowZ, 26, 12, colors.windowGlowDim, 0.8); 
- 			addPaper(xPosRight - 7, 8.5, 16); 
- 			addPaper(xPosRight + 7, 8, 16); 
- 			addPaper(xPosRight + 1, 7.5, 16); 
- 			 
- 			const signZ = windowZ + 0.5; 
- 			createSign("RESUME", colors.signResume, xPosLeft, 20, signZ, 'resume', 50); 
- 			createSign("T-SHIRTS", colors.signTshirts, 0, 21, signZ, 'tshirts', 50); 
- 			createSign("PROJECTS", colors.signProjects, xPosRight, 20, signZ, 'projects', 50); 
- 			const awningY = 15; 
- 			const texResume = createStripedTexture('#991b1b', '#fecaca'); 
- 			createAwning(xPosLeft, awningY, texResume); 
- 			const texProjects = createStripedTexture('#065f46', '#047857'); 
- 			createAwning(xPosRight, awningY, texProjects); 
- 		} 
+ 	 	 	 	 	// Reset interaction states when returning to the scene
+ 	 	 	 	 	isDragging = false;
+ 	 	 	 	 	lookTouchId = null;
 
- 		function createWindow(x, y, z, width, height, color, intensity) { 
- 			const windowMaterial = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.95 }); 
- 			const windowGeo = new THREE.PlaneGeometry(width, height); 
- 			const windowMesh = new THREE.Mesh(windowGeo, windowMaterial); 
- 			windowMesh.position.set(x, y, z); 
- 			scene.add(windowMesh); 
- 			const storeLight = new THREE.PointLight(color, intensity, 50); 
- 			storeLight.position.set(x, y + 5, z - 15); 
- 			storeLight.castShadow = true; 
- 			scene.add(storeLight); 
- 			const sidewalkLight = new THREE.SpotLight(color, intensity * 0.3, 40, Math.PI/3, 0.5); 
- 			sidewalkLight.position.set(x, y-5, z+5); 
- 			sidewalkLight.target.position.set(x, 0, z+25); 
- 			scene.add(sidewalkLight); 
- 			scene.add(sidewalkLight.target); 
- 		} 
+				// Show counter again when returning to the scene (it's always visible now)
+ 	 	 	 	 	document.getElementById('coin-counter').style.display = 'block';
 
- 		function addShirt(x, y, z, color) {
- 			const material = new THREE.MeshStandardMaterial({ color: color });
- 			
- 			const shirtGroup = new THREE.Group();
- 
- 			const bodyGeo = new THREE.BoxGeometry(5, 6, 1);
-			bodyGeo.rotateY(Math.PI); // Rotate the geometry
- 			const body = new THREE.Mesh(bodyGeo, material);
- 			shirtGroup.add(body);
- 
- 			const sleeveGeo = new THREE.BoxGeometry(2.5, 2.5, 1);
-			sleeveGeo.rotateY(Math.PI); // Rotate the geometry
- 			const sleeveL = new THREE.Mesh(sleeveGeo, material);
- 			sleeveL.position.set(-3.5, 1.5, 0);
- 			sleeveL.rotation.z = Math.PI / 6;
- 			shirtGroup.add(sleeveL);
- 
- 			const sleeveR = new THREE.Mesh(sleeveGeo, material);
- 			sleeveR.position.set(3.5, 1.5, 0);
- 			sleeveR.rotation.z = -Math.PI / 6;
- 			shirtGroup.add(sleeveR);
- 
- 			shirtGroup.position.set(x, y, z);
- 
- 			scene.add(shirtGroup);
- 		}
- 
- 		function addPaper(x, y, z) {
- 			const material = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.8 });
- 			const paperGeo = new THREE.BoxGeometry(4, 5.5, 0.2);
+ 	 	 	 	 	// Use the helper function to determine which controls to show
+				if (!isMobileDevice()) {
+					document.getElementById('instructions').style.display = 'block';
+				} else {
+					document.getElementById('mobile-controls').style.display = 'flex';
+				}
+			}
+		}
+
+ 	 	// Optimization: Adjust pixelation based on device capabilities
+		function getPixelSize() {
+ 	 	 	 	// Target a lower vertical resolution on mobile (e.g., 280p) vs desktop (450p)
+			const targetVerticalResolution = isMobileDevice() ? 280 : 450;
+
+ 	 	 	 	// Use the effective DPR from the renderer
+ 	 	 	 	const effectiveDPR = renderer.getPixelRatio();
+
+			const calculatedSize = (window.innerHeight * effectiveDPR) / targetVerticalResolution;
+			return Math.max(2, calculatedSize);
+		}
+
+		function setupPostProcessing() {
+			composer = new THREE.EffectComposer(renderer);
+			const renderPass = new THREE.RenderPass(scene, camera);
+			composer.addPass(renderPass);
+
+ 	 	 	 	// Ensure the resolution matches the renderer's effective DPR
+			const dpr = renderer.getPixelRatio();
+			pixelPass = new THREE.ShaderPass({
+				uniforms: {
+					tDiffuse: { value: null },
+					resolution: { value: new THREE.Vector2(window.innerWidth * dpr, window.innerHeight * dpr) },
+					pixelSize: { value: getPixelSize() }
+				},
+				vertexShader: document.getElementById('pixel-vertex-shader').textContent,
+				fragmentShader: document.getElementById('pixel-fragment-shader').textContent
+			});
+			pixelPass.renderToScreen = true;
+			composer.addPass(pixelPass);
+		}
+
+ 	 	// --- Joystick Initialization ---
+ 	 	let joystickManager = null;
+ 	 	function initJoystick() {
+ 	 	 	 	// Only initialize if on mobile and not already initialized
+ 	 	 	 	if (!isMobileDevice()) {
+ 	 	 	 	 	 	if (joystickManager) {
+ 	 	 	 	 	 	 	 	joystickManager.destroy();
+ 	 	 	 	 	 	 	 	joystickManager = null;
+ 	 	 	 	 	 	}
+ 	 	 	 	 	 	return;
+ 	 	 	 	}
+
+ 	 	 	 	if (joystickManager) return;
+
+ 	 	 	 	const options = {
+ 	 	 	 	 	 	zone: document.getElementById('joystick-zone'),
+ 	 	 	 	 	 	mode: 'static', // Static position in the zone
+ 	 	 	 	 	 	position: { left: '50%', top: '50%' },
+ 	 	 	 	 	 	color: 'rgba(255, 255, 255, 0.5)',
+ 	 	 	 	 	 	size: 120,
+ 	 	 	 	};
+ 	 	 	 	joystickManager = nipplejs.create(options);
+
+ 	 	 	 	joystickManager.on('move', (evt, data) => {
+ 	 	 	 	 	 	const angle = data.angle.radian;
+ 	 	 	 	 	 	const force = Math.min(data.force, 1.0); // Normalize force to max 1.0
+
+ 	 	 	 	 	 	// Convert polar coordinates (angle, force) to Cartesian (X/Y)
+ 	 	 	 	 	 	// X = cos(angle) * force (Strafe)
+ 	 	 	 	 	 	// Y = sin(angle) * force (Forward/Back)
+ 	 	 	 	 	 	joystickInput.x = Math.cos(angle) * force;
+ 	 	 	 	 	 	joystickInput.y = Math.sin(angle) * force;
+ 	 	 	 	});
+
+ 	 	 	 	// Reset input when joystick is released
+ 	 	 	 	joystickManager.on('end', () => {
+ 	 	 	 	 	 	joystickInput.x = 0;
+ 	 	 	 	 	 	joystickInput.y = 0;
+ 	 	 	 	});
+ 	 	}
+
+ 	 	// --- COIN TEXTURE CREATION ---
+ 	 	// Function to create the detailed coin face texture
+ 	 	function createCoinTexture(size = 128) {
+ 	 	 	 	const canvas = document.createElement('canvas');
+ 	 	 	 	canvas.width = size;
+ 	 	 	 	canvas.height = size;
+ 	 	 	 	const context = canvas.getContext('2d');
+
+ 	 	 	 	// Base color (Gold)
+ 	 	 	 	context.fillStyle = new THREE.Color(colors.coinGold).getStyle();
+ 	 	 	 	context.fillRect(0, 0, size, size);
+
+ 	 	 	 	// Draw a darker border/rim
+ 	 	 	 	context.strokeStyle = new THREE.Color(colors.coinDarkGold).getStyle();
+ 	 	 	 	context.lineWidth = size * 0.08; // Line width relative to size
+ 	 	 	 	context.beginPath();
+ 	 	 	 	// Draw the circle slightly inset to ensure the border is fully visible
+ 	 	 	 	context.arc(size / 2, size / 2, size / 2 - context.lineWidth/2, 0, Math.PI * 2, true);
+ 	 	 	 	context.stroke();
+
+ 	 	 	 	// Draw the symbol (e.g., '$') using the loaded font
+ 	 	 	 	context.font = `bold ${size * 0.6}px 'VT323', monospace`;
+ 	 	 	 	context.textAlign = 'center';
+ 	 	 	 	context.textBaseline = 'middle';
+
+ 	 	 	 	// Draw the symbol in the darker gold color
+ 	 	 	 	context.fillStyle = new THREE.Color(colors.coinDarkGold).getStyle();
+ 	 	 	 	// Slight vertical adjustment for VT323 font baseline centering
+ 	 	 	 	context.fillText('$', size / 2, size / 2 + size * 0.05);
+
+ 	 	 	 	const texture = new THREE.CanvasTexture(canvas);
+ 	 	 	 	// Use NearestFilter for pixelated look
+ 	 	 	 	texture.minFilter = THREE.NearestFilter;
+ 	 	 	 	texture.magFilter = THREE.NearestFilter;
+ 	 	 	 	return texture;
+ 	 	}
+
+
+		// --- COIN FUNCTIONS ---
+		function initCoins() {
+			// Optimization: Use fewer segments (polygons) on mobile for better performance
+			const segments = isMobileDevice() ? 8 : 12;
+
+ 	 	 	// CHANGE: Smaller coins (Radius 3 -> 2, Thickness 0.8 -> 0.6)
+			coinGeometry = new THREE.CylinderGeometry(2, 2, 0.6, segments);
+
+ 	 	 	// CHANGE: Added detailed texture and multi-material setup
+
+ 	 	 	// 1. Material for the side/edge of the coin
+			const sideMaterial = new THREE.MeshStandardMaterial({
+				color: colors.coinGold,
+				metalness: 0.8,
+				roughness: 0.5, // Slightly rougher edge
+				emissive: 0x4a2d00
+			});
+
+ 	 	 	// 2. Create the texture for the faces
+ 	 	 	const coinFaceTexture = createCoinTexture(128);
+
+            // FIX: Rotate the texture 90 degrees counter-clockwise so it appears upright
+            // when the cylinder mesh is later rotated (in createCoin) to stand on its edge.
+            coinFaceTexture.rotation = Math.PI / 2;
+            // Ensure the rotation happens around the center of the texture
+            coinFaceTexture.center.set(0.5, 0.5);
+
+
+ 	 	 	// 3. Material for the faces (using the texture)
+ 	 	 	const faceMaterial = new THREE.MeshStandardMaterial({
+ 	 	 	 	 	map: coinFaceTexture,
+				metalness: 0.8,
+				roughness: 0.3, // Shinier face
+				emissive: 0x4a2d00
+			});
+
+ 	 	 	// Combine materials: CylinderGeometry expects materials in order: [Side, TopCap, BottomCap]
+			coinMaterials = [
+ 	 	 	 	 	sideMaterial,
+ 	 	 	 	 	faceMaterial,
+ 	 	 	 	 	faceMaterial
+ 	 	 	];
+		}
+
+		function createCoin(x, y, z) {
+ 	 	 	// Use the array of materials
+			const coin = new THREE.Mesh(coinGeometry, coinMaterials);
+			coin.position.set(x, y, z);
+			// Rotate the cylinder so it stands upright like a coin on its edge
+			coin.rotation.x = Math.PI / 2;
+
+			// Only cast shadows if they are enabled (desktop)
+			if (renderer.shadowMap.enabled) {
+ 	 	 	 	 	 	coin.castShadow = true;
+ 	 	 	 	}
+
+			scene.add(coin);
+			// Store coin data for animation and tracking
+			coins.push({
+				mesh: coin,
+				collected: false,
+				startY: y // Store the initial Y position for the hover animation
+			});
+		}
+
+		function placeCoins() {
+			// Place 6 coins around the map at specific locations
+			const coinHeight = 6.5; // Raised to 6.5 units - good balance between visibility and reachability
+
+			// 1. Near the starting area, encouraging initial exploration
+			createCoin(80, coinHeight, 100);
+
+			// 2. Hidden behind the main building (T-Shirt store center)
+			createCoin(0, coinHeight - 2.5, -18); // Slightly lower behind the building
+
+			// 3. On the far corner of the parking lot
+			createCoin(-180, coinHeight, 200);
+
+			// 4. Just before the tunnel entrance, slightly off the road
+			createCoin(30, coinHeight, TUNNEL_CONFIG.startZ - 20);
+
+			// 5. In the middle of the tunnel
+			createCoin(0, coinHeight, TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length / 2);
+
+			// 6. Near the billboard area to the side of the shopping center
+			createCoin(-45, coinHeight, -35);
+		}
+
+		function updateCoins(delta, time) {
+ 	 	 	// CHANGE: Slowed down rotation speed (2.5 -> 1.5)
+			const rotationSpeed = 1.5;
+			const hoverSpeed = 1.8;
+			const hoverHeight = 0.3; // Further reduced to make coins hover very close to ground
+			const collectionDistance = 8; // Distance threshold for collection
+
+			// Use the cameraRig position as the player's position
+			const playerPosition = cameraRig.position;
+
+			coins.forEach(coinData => {
+				if (!coinData.collected) {
+					const coin = coinData.mesh;
+
+					// --- Animation ---
+					// Rotation: Since the mesh is rotated 90 degrees on X, we rotate its Z-axis to spin it visually around the world Y-axis.
+					coin.rotation.z += rotationSpeed * delta;
+
+					// Hovering: Use a sine wave based on total elapsed time for smooth up/down motion.
+					// Add an offset based on the coin's starting position so they don't all hover in sync
+					const timeOffset = coinData.startY + coin.position.x + coin.position.z;
+					coin.position.y = coinData.startY + Math.sin((time + timeOffset) * hoverSpeed) * hoverHeight;
+
+					// --- Collection Check ---
+					if (playerPosition.distanceTo(coin.position) < collectionDistance) {
+						collectCoin(coinData);
+					}
+				}
+			});
+		}
+
+		function collectCoin(coinData) {
+            // Prevent double collection
+			if (coinData.collected) return;
+
+			coinData.collected = true;
+			// Remove the mesh from the scene immediately
+			scene.remove(coinData.mesh);
+
+			coinsCollected++;
+
+			// Update the UI Counter
+			const counter = document.getElementById('coin-counter');
+			counter.textContent = `COINS: ${coinsCollected} / ${TOTAL_COINS}`;
+
+ 	 	 	// Counter visibility is handled globally now.
+
+			if (coinsCollected === TOTAL_COINS) {
+ 	 	 	 	 	counter.style.color = "#2a9d8f"; // Change color to theme green on completion
+				counter.textContent += " (ALL FOUND!)";
+                // NEW: Trigger the fireworks celebration!
+                startFireworks();
+ 	 	 	 	}
+		}
+
+		// --------------------------
+
+        // --- FIREWORKS IMPLEMENTATION (NEW) ---
+
+        function createFirework(x, y, z, color) {
+            // Use fewer particles on mobile for performance
+            const particleCount = isMobileDevice() ? 80 : 150;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            const baseColor = new THREE.Color(color);
+
+            for (let i = 0; i < particleCount; i++) {
+                const index = i * 3;
+                // Start at the center (0, 0, 0 relative to the group)
+                positions[index] = 0;
+                positions[index + 1] = 0;
+                positions[index + 2] = 0;
+
+                // Random velocity in a sphere (explosion)
+                const speed = Math.random() * 30 + 15; // Speed of explosion
+                const phi = Math.random() * Math.PI * 2;
+                const theta = Math.random() * Math.PI;
+
+                velocities[index] = Math.sin(theta) * Math.cos(phi) * speed;
+                velocities[index + 1] = Math.cos(theta) * speed + 10; // Slight upward bias
+                velocities[index + 2] = Math.sin(theta) * Math.sin(phi) * speed;
+
+                // Color variation
+                const particleColor = baseColor.clone().multiplyScalar(Math.random() * 0.5 + 0.5);
+                colors[index] = particleColor.r;
+                colors[index + 1] = particleColor.g;
+                colors[index + 2] = particleColor.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            // Material for glowing particles
+            const material = new THREE.PointsMaterial({
+                size: isMobileDevice() ? 8 : 12, // Larger size for retro look
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                depthWrite: false,
+                sizeAttenuation: true // Make size depend on distance
+            });
+
+            const particles = new THREE.Points(geometry, material);
+            particles.position.set(x, y, z);
+
+            // Store firework data
+            const life = 2.5;
+            fireworks.push({
+                particles: particles,
+                life: life,
+                maxLife: life
+            });
+
+            scene.add(particles);
+        }
+
+        function startFireworks() {
+            // Launch fireworks around the player's current location
+            const playerPos = cameraRig.position;
+            const fireworkColors = [0xe63946, 0x0077b6, 0x2a9d8f, 0xffd700, 0xff7d5c, 0x9d4edd];
+
+            const count = isMobileDevice() ? 8 : 15;
+
+            for (let i = 0; i < count; i++) {
+                // Random offset from the player
+                const offsetX = (Math.random() - 0.5) * 250;
+                const offsetZ = (Math.random() - 0.5) * 250;
+                // Explosion height
+                const height = Math.random() * 80 + 80;
+                const color = fireworkColors[Math.floor(Math.random() * fireworkColors.length)];
+
+                // Stagger the launches for a better show
+                setTimeout(() => {
+                    createFirework(playerPos.x + offsetX, height, playerPos.z + offsetZ, color);
+                }, i * 350 + Math.random() * 150);
+            }
+        }
+
+        function updateFireworks(delta) {
+            const particleGravity = -40; // Gravity effect on particles
+
+            // Iterate backwards to safely remove finished fireworks
+            for (let i = fireworks.length - 1; i >= 0; i--) {
+                const firework = fireworks[i];
+                firework.life -= delta;
+
+                if (firework.life <= 0) {
+                    // Clean up when life ends
+                    scene.remove(firework.particles);
+                    firework.particles.geometry.dispose();
+                    firework.particles.material.dispose();
+                    fireworks.splice(i, 1);
+                    continue;
+                }
+
+                // Update particle dynamics
+                const positions = firework.particles.geometry.attributes.position.array;
+                const velocities = firework.particles.geometry.attributes.velocity.array;
+                const particleCount = positions.length / 3;
+
+                for (let j = 0; j < particleCount; j++) {
+                    const index = j * 3;
+
+                    // Apply gravity (Y-axis)
+                    velocities[index + 1] += particleGravity * delta;
+
+                    // Apply slight drag/air resistance
+                    const drag = (1 - 0.8 * delta);
+                    velocities[index] *= drag;
+                    velocities[index + 1] *= drag;
+                    velocities[index + 2] *= drag;
+
+
+                    // Update position
+                    positions[index] += velocities[index] * delta;
+                    positions[index + 1] += velocities[index + 1] * delta;
+                    positions[index + 2] += velocities[index + 2] * delta;
+                }
+
+                // Fade out based on remaining life
+                firework.particles.material.opacity = firework.life / firework.maxLife;
+
+                // Notify Three.js that positions updated
+                firework.particles.geometry.attributes.position.needsUpdate = true;
+            }
+        }
+
+        // --- END FIREWORKS IMPLEMENTATION ---
+
+
+		function createSky() {
+			const uniforms = {
+				colorZenith: { value: new THREE.Color(colors.skyZenith) },
+				colorHorizonBright: { value: new THREE.Color(colors.horizonGlow) },
+				colorHorizonDark: { value: new THREE.Color(colors.skyHorizonDark) },
+				sunDirection: { value: sunDirectionVector }
+			};
+			const skyMaterial = new THREE.ShaderMaterial({
+				vertexShader: document.getElementById('sky-vertex-shader').textContent,
+				fragmentShader: document.getElementById('sky-fragment-shader').textContent,
+				uniforms: uniforms,
+				side: THREE.BackSide,
+				fog: false
+			});
+ 	 	 	 	// Increased radius for larger scene
+			const skyGeometry = new THREE.SphereGeometry(1800, 32, 16);
+			const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+			scene.add(sky);
+		}
+
+		function setupLighting() {
+			const ambientLight = new THREE.AmbientLight(0x604080, 0.35);
+			scene.add(ambientLight);
+
+			const hemisphereLight = new THREE.HemisphereLight(colors.skyZenith, 0x8a5a6d, 0.5);
+			scene.add(hemisphereLight);
+
+			const sunLight = new THREE.DirectionalLight(0xffa500, 0.4);
+			sunLight.position.copy(sunDirectionVector.clone().multiplyScalar(300));
+			sunLight.castShadow = true;
+ 	 	 	 	// Shadow settings (only relevant if shadows are enabled - i.e., desktop)
+			sunLight.shadow.mapSize.width = 2048;
+			sunLight.shadow.mapSize.height = 2048;
+			sunLight.shadow.camera.near = 0.5;
+			sunLight.shadow.camera.far = 500;
+			sunLight.shadow.bias = -0.005;
+			const shadowSize = 150;
+			sunLight.shadow.camera.left = -shadowSize;
+			sunLight.shadow.camera.right = shadowSize;
+			sunLight.shadow.camera.top = shadowSize;
+			sunLight.shadow.camera.bottom = -shadowSize;
+			scene.add(sunLight);
+		}
+
+		function createTextTexture(text, bgColor, textColor, width=256, height=128, fontSize=50) {
+			const canvas = document.createElement('canvas');
+			const context = canvas.getContext('2d');
+			canvas.width = width;
+			canvas.height = height;
+			context.fillStyle = bgColor;
+			context.fillRect(0, 0, canvas.width, canvas.height);
+
+			context.font = `${fontSize}px 'VT323', Monospace`;
+			context.textAlign = 'center';
+			context.textBaseline = 'middle';
+
+			// Outline
+			context.strokeStyle = 'black';
+			context.lineWidth = 4;
+			context.strokeText(text, canvas.width / 2, canvas.height / 2 + fontSize * 0.05);
+
+			// Fill
+			context.fillStyle = textColor;
+			context.fillText(text, canvas.width / 2, canvas.height / 2 + fontSize * 0.05);
+
+			const texture = new THREE.CanvasTexture(canvas);
+			texture.minFilter = THREE.NearestFilter;
+			texture.magFilter = THREE.NearestFilter;
+			return texture;
+		}
+
+		function createStripedTexture(color1, color2, stripeWidth=16) {
+			const canvas = document.createElement('canvas');
+			const context = canvas.getContext('2d');
+			canvas.width = stripeWidth * 2;
+			canvas.height = stripeWidth;
+			context.fillStyle = color1;
+			context.fillRect(0, 0, canvas.width, canvas.height);
+			context.fillStyle = color2;
+			context.fillRect(0, 0, stripeWidth, canvas.height);
+			const texture = new THREE.CanvasTexture(canvas);
+			texture.wrapS = THREE.RepeatWrapping;
+			texture.wrapT = THREE.RepeatWrapping;
+			texture.minFilter = THREE.NearestFilter;
+			texture.magFilter = THREE.NearestFilter;
+			return texture;
+		}
+
+		function createTunnelSignTexture(text, width=512, height=64, fontSize=45) {
+			const canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+			const context = canvas.getContext('2d');
+
+			// Draw striped background (horizontal stripes)
+			const stripeHeight = 16; // Height of each stripe
+			const numStripes = Math.ceil(height / stripeHeight);
+			for (let i = 0; i < numStripes; i++) {
+				context.fillStyle = (i % 2 === 0) ? '#000000' : '#f7b538'; // Alternating black and yellow
+				context.fillRect(0, i * stripeHeight, width, stripeHeight);
+			}
+
+			// Draw text
+			context.font = `${fontSize}px 'VT323', Monospace`;
+			context.textAlign = 'center';
+			context.textBaseline = 'middle';
+
+			// Outline for the text
+			context.strokeStyle = 'black';
+			context.lineWidth = 8; // Make it thick to stand out from the black stripe
+			context.strokeText(text, canvas.width / 2, canvas.height / 2);
+
+			// Fill for the text
+			context.fillStyle = 'white';
+			context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+			const texture = new THREE.CanvasTexture(canvas);
+			texture.minFilter = THREE.NearestFilter;
+			texture.magFilter = THREE.NearestFilter;
+			return texture;
+		}
+
+		function createGrassTexture(width = 32, height = 32) {
+			const canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+			const context = canvas.getContext('2d');
+			const imageData = context.createImageData(width, height);
+			const data = imageData.data;
+			const baseColor = new THREE.Color(colors.grass);
+
+			for (let i = 0; i < data.length; i += 4) {
+				const noise = Math.random() * 0.15 - 0.075;
+				const c = baseColor.clone();
+				c.r += noise;
+				c.g += noise;
+				c.b += noise;
+
+				data[i] = Math.max(0, Math.min(255, c.r * 255));
+				data[i + 1] = Math.max(0, Math.min(255, c.g * 255));
+				data[i + 2] = Math.max(0, Math.min(255, c.b * 255));
+				data[i + 3] = 255;
+			}
+			context.putImageData(imageData, 0, 0);
+			const texture = new THREE.CanvasTexture(canvas);
+			texture.wrapS = THREE.RepeatWrapping;
+			texture.wrapT = THREE.RepeatWrapping;
+ 	 	 	 	// Increased repeat count for larger ground plane
+			texture.repeat.set(3000 / width, 3000 / height);
+			texture.minFilter = THREE.NearestFilter;
+			texture.magFilter = THREE.NearestFilter;
+			return texture;
+		}
+
+		function createGround() {
+ 	 	 	 	// Increased ground plane size
+			const geometry = new THREE.PlaneGeometry(3000, 3000);
+			const grassTexture = createGrassTexture();
+			const material = new THREE.MeshStandardMaterial({ map: grassTexture, roughness: 1.0 });
+			const ground = new THREE.Mesh(geometry, material);
+			ground.rotation.x = -Math.PI / 2;
+			ground.position.y = 0;
+			ground.receiveShadow = true;
+			scene.add(ground);
+
+			const asphaltWidth = 450;
+			const asphaltLength = 320;
+			const asphaltGeometry = new THREE.PlaneGeometry(asphaltWidth, asphaltLength);
+			const asphaltMaterial = new THREE.MeshStandardMaterial({ color: colors.asphalt, roughness: 1.0 });
+			const asphalt = new THREE.Mesh(asphaltGeometry, asphaltMaterial);
+			asphalt.rotation.x = -Math.PI / 2;
+			asphalt.position.y = 0.01; // Place slightly above grass to avoid z-fighting
+			asphalt.position.z = asphaltLength / 2 - 60; // Center it on parking area
+			asphalt.receiveShadow = true;
+			scene.add(asphalt);
+
+			const lineMaterial = new THREE.MeshBasicMaterial({ color: colors.asphaltLine });
+			const lineGeoSlanted = new THREE.PlaneGeometry(1.5, 20);
+			const lineGeoStraight = new THREE.PlaneGeometry(1.5, 25);
+			const createParkingRow = (startZ, count, startX, spacing, slant=false, offsetX=0) => {
+				const geo = slant ? lineGeoSlanted : lineGeoStraight;
+				const slantAngle = Math.PI / 5;
+				for (let i = 0; i < count; i++) {
+					const xPos = startX + i * spacing + offsetX;
+					const line = new THREE.Mesh(geo, lineMaterial);
+					line.rotation.x = -Math.PI / 2;
+					if (slant) {
+						line.rotation.z = slantAngle;
+					}
+					line.position.set(xPos, 0.02, startZ);
+					scene.add(line);
+				}
+			};
+			const numSpotsWide = 25;
+			const startXWide = -180;
+			const spacing = 15;
+			createParkingRow(35, 15, -100, spacing, true);
+			createParkingRow(55, 15, -100, spacing, true, -5);
+			createParkingRow(100, numSpotsWide, startXWide, spacing, false);
+			createParkingRow(130, numSpotsWide, startXWide, spacing, false);
+			createParkingRow(190, numSpotsWide, startXWide, spacing, false);
+			createParkingRow(220, numSpotsWide, startXWide, spacing, false);
+			createRoad();
+		}
+
+		function createRoad() {
+ 	 	 	 	const { width: roadWidth, length: roadLength, startZ: roadStartZ, shoulderWidth } = ROAD_CONFIG;
+
+			const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x0a0a15, roughness: 0.9, metalness: 0.1 });
+			const roadGeometry = new THREE.PlaneGeometry(roadWidth, roadLength);
+			const road = new THREE.Mesh(roadGeometry, roadMaterial);
+			road.rotation.x = -Math.PI / 2;
+			road.position.set(0, 0.11, roadStartZ + roadLength / 2);
+			road.receiveShadow = true;
+			scene.add(road);
+
+ 	 	 	 	// Center Lines
+			const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+			const centerLineGeo = new THREE.PlaneGeometry(1.5, 18);
+			const dashSpacing = 25;
+			const numDashes = Math.floor(roadLength / dashSpacing);
+
+			for (let i = 0; i < numDashes; i++) {
+				const zPos = roadStartZ + (i * dashSpacing) + 10;
+
+				const centerLine = new THREE.Mesh(centerLineGeo, lineMaterial);
+				centerLine.rotation.x = -Math.PI / 2;
+				centerLine.position.set(0, 0.12, zPos);
+				scene.add(centerLine);
+			}
+
+ 	 	 	 	// Side Lines (Split before and after the tunnel)
+			const sideLineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+ 	 	 	 	const createSideLinesSegment = (start, end) => {
+ 	 	 	 	 	 	const segmentLength = end - start;
+ 	 	 	 	 	 	if (segmentLength <= 0) return;
+ 	 	 	 	 	 	const sideLineGeo = new THREE.PlaneGeometry(1.2, segmentLength);
+
+ 	 	 	 	 	 	const leftLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
+ 	 	 	 	 	 	leftLine.rotation.x = -Math.PI / 2;
+ 	 	 	 	 	 	leftLine.position.set(-roadWidth/2 + 1, 0.12, start + segmentLength / 2);
+ 	 	 	 	 	 	scene.add(leftLine);
+
+ 	 	 	 	 	 	const rightLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
+ 	 	 	 	 	 	rightLine.rotation.x = -Math.PI / 2;
+ 	 	 	 	 	 	rightLine.position.set(roadWidth/2 - 1, 0.12, start + segmentLength / 2);
+ 	 	 	 	 	 	scene.add(rightLine);
+ 	 	 	 	};
+
+ 	 	 	 	// Create one continuous set of lines for the whole road
+ 	 	 	 	createSideLinesSegment(roadStartZ, ROAD_CONFIG.endZ);
+
+
+ 	 	 	 	// Shoulders - Split into segments
+			const shoulderMaterial = new THREE.MeshStandardMaterial({ color: 0x2a2035, roughness: 1.0 });
+
+ 	 	 	 	const createShoulderSegment = (start, end) => {
+ 	 	 	 	 	 	const segmentLength = end - start;
+ 	 	 	 	 	 	if (segmentLength <= 0) return;
+ 	 	 	 	 	 	const shoulderGeo = new THREE.PlaneGeometry(shoulderWidth, segmentLength);
+
+ 	 	 	 	 	 	const leftShoulder = new THREE.Mesh(shoulderGeo, shoulderMaterial);
+ 	 	 	 	 	 	leftShoulder.rotation.x = -Math.PI / 2;
+ 	 	 	 	 	 	leftShoulder.position.set(-roadWidth/2 - shoulderWidth/2, 0.1, start + segmentLength / 2);
+ 	 	 	 	 	 	leftShoulder.receiveShadow = true;
+ 	 	 	 	 	 	scene.add(leftShoulder);
+
+ 	 	 	 	 	 	const rightShoulder = new THREE.Mesh(shoulderGeo, shoulderMaterial);
+ 	 	 	 	 	 	rightShoulder.rotation.x = -Math.PI / 2;
+ 	 	 	 	 	 	rightShoulder.position.set(roadWidth/2 + shoulderWidth/2, 0.1, start + segmentLength / 2);
+ 	 	 	 	 	 	rightShoulder.receiveShadow = true;
+ 	 	 	 	 	 	scene.add(rightShoulder);
+ 	 	 	 	};
+
+ 	 	 	 	// Shoulder before tunnel
+ 	 	 	 	createShoulderSegment(roadStartZ, TUNNEL_CONFIG.startZ);
+ 	 	 	 	// Shoulder after tunnel
+ 	 	 	 	createShoulderSegment(TUNNEL_CONFIG.endZ, ROAD_CONFIG.endZ);
+
+
+ 	 	 	 	// Road Lights (only before the tunnel)
+			const roadLightSpacing = 100;
+			for (let z = roadStartZ + 50; z < TUNNEL_CONFIG.startZ - 50; z += roadLightSpacing) {
+				const roadLight = new THREE.PointLight(0xffd4a3, 0.8, 80);
+				roadLight.position.set(-roadWidth/2 - 15, 35, z);
+				scene.add(roadLight);
+				const roadLight2 = new THREE.PointLight(0xffd4a3, 0.8, 80);
+				roadLight2.position.set(roadWidth/2 + 15, 35, z);
+				scene.add(roadLight2);
+			}
+		}
+
+ 	 	// --- New Tunnel Function ---
+ 	 	function createTunnel() {
+ 	 	 	 	const { startZ: tunnelStartZ, length: tunnelLength, width: tunnelWidth, height: tunnelHeight, wallThickness } = TUNNEL_CONFIG;
+
+ 	 	 	 	const wallTextureCanvas = document.createElement('canvas');
+ 	 	 	 	wallTextureCanvas.width = 32;
+ 	 	 	 	wallTextureCanvas.height = 128;
+ 	 	 	 	const wallCtx = wallTextureCanvas.getContext('2d');
+ 	 	 	 	wallCtx.fillStyle = '#3a3a4a';
+ 	 	 	 	wallCtx.fillRect(0, 0, wallTextureCanvas.width, wallTextureCanvas.height);
+ 	 	 	 	wallCtx.fillStyle = '#2f2f3f';
+ 	 	 	 	wallCtx.fillRect(0, 62, 32, 4);
+
+ 	 	 	 	const wallTexture = new THREE.CanvasTexture(wallTextureCanvas);
+ 	 	 	 	wallTexture.wrapS = THREE.RepeatWrapping;
+ 	 	 	 	wallTexture.wrapT = THREE.RepeatWrapping;
+ 	 	 	 	wallTexture.repeat.set(tunnelLength / 10, 4);
+
+ 	 	 	 	const tunnelMaterial = new THREE.MeshStandardMaterial({
+ 	 	 	 	 	 	color: colors.tunnelConcrete,
+ 	 	 	 	 	 	roughness: 0.9,
+ 	 	 	 	 	 	side: THREE.DoubleSide, // Render both inside and outside
+ 	 	 	 	 	 	map: wallTexture
+ 	 	 	 	});
+
+ 	 	 	 	// 1. Define the shape for the tunnel structure (Hill-like profile)
+ 	 	 	 	const shape = new THREE.Shape();
+ 	 	 	 	const outerWidth = tunnelWidth + wallThickness * 2; // 70
+ 	 	 	 	const outerHeight = tunnelHeight + wallThickness; // 45
+
+            // NOTE: The geometry parameters defined here are used in createTrees() -> getTunnelY()
+            // If these change, getTunnelY() must be updated.
+            // P0_X = 35, P0_Y = 27 (Start of arch)
+            // P1_Y = 60 (Control point Y)
+            // BASE_X = 105 (Widest part of the base)
+
+ 	 	 	 	// Outer profile - wider base to look like a hill/mountain
+ 	 	 	 	shape.moveTo(-outerWidth * 1.5, 0); // -105, 0
+ 	 	 	 	shape.lineTo(-outerWidth / 2, 0); // -35, 0
+ 	 	 	 	shape.lineTo(-outerWidth / 2, outerHeight * 0.6); // -35, 27
+ 	 	 	 	// Arched top
+ 	 	 	 	shape.quadraticCurveTo(0, outerHeight + 15, outerWidth / 2, outerHeight * 0.6); // Control: 0, 60. End: 35, 27
+ 	 	 	 	shape.lineTo(outerWidth / 2, 0);
+ 	 	 	 	shape.lineTo(outerWidth * 1.5, 0);
+ 	 	 	 	shape.closePath();
+
+
+ 	 	 	 	// 2. Define the inner hole (the passage)
+ 	 	 	 	const hole = new THREE.Shape();
+ 	 	 	 	const sideWallHeight = tunnelHeight * 0.6;
+ 	 	 	 	// Start slightly above ground (0.1) to avoid Z-fighting with the road
+ 	 	 	 	hole.moveTo(-tunnelWidth / 2, 0.1);
+ 	 	 	 	hole.lineTo(-tunnelWidth / 2, sideWallHeight);
+ 	 	 	 	// Inner arch
+ 	 	 	 	hole.quadraticCurveTo(0, tunnelHeight + 5, tunnelWidth / 2, sideWallHeight);
+ 	 	 	 	hole.lineTo(tunnelWidth / 2, 0.1);
+ 	 	 	 	hole.closePath();
+
+ 	 	 	 	shape.holes.push(hole);
+
+ 	 	 	 	// 3. Extrude the shape
+ 	 	 	 	const extrudeSettings = {
+ 	 	 	 	 	 	steps: 1,
+ 	 	 	 	 	 	depth: tunnelLength,
+ 	 	 	 	 	 	bevelEnabled: false
+ 	 	 	 	};
+
+ 	 	 	 	const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+ 	 	 	 	const tunnel = new THREE.Mesh(geometry, tunnelMaterial);
+
+ 	 	 	 	tunnel.position.set(0, 0.01, tunnelStartZ);
+ 	 	 	 	tunnel.castShadow = true;
+ 	 	 	 	tunnel.receiveShadow = true;
+ 	 	 	 	scene.add(tunnel);
+
+ 	 	 	 	// 4. Create the Entrance Facade (A detailed front plate)
+ 	 	 	 	const facadeMaterial = new THREE.MeshStandardMaterial({
+ 	 	 	 	 	 	color: colors.tunnelFacade,
+ 	 	 	 	 	 	roughness: 1.0,
+ 	 	 	 	});
+
+ 	 	 	 	// Structured facade shape (less hill-like, more architectural)
+ 	 	 	 	const facadeShape = new THREE.Shape();
+ 	 	 	 	const facadeWidth = outerWidth + 6;
+ 	 	 	 	const facadeOuterSideWallHeight = outerHeight * 0.6 + 3;
+
+ 	 	 	 	facadeShape.moveTo(-facadeWidth / 2, 0);
+ 	 	 	 	facadeShape.lineTo(-facadeWidth / 2, facadeOuterSideWallHeight);
+ 	 	 	 	facadeShape.quadraticCurveTo(0, outerHeight + 20, facadeWidth / 2, facadeOuterSideWallHeight);
+ 	 	 	 	facadeShape.lineTo(facadeWidth / 2, 0);
+ 	 	 	 	facadeShape.closePath();
+
+ 	 	 	 	// Use the same hole for the passage
+ 	 	 	 	facadeShape.holes.push(hole);
+
+ 	 	 	 	const facadeGeometry = new THREE.ExtrudeGeometry(facadeShape, { steps: 1, depth: 5, bevelEnabled: false });
+ 	 	 	 	const entranceFacade = new THREE.Mesh(facadeGeometry, facadeMaterial);
+ 	 	 	 	entranceFacade.position.set(0, 0.01, tunnelStartZ - 5);
+ 	 	 	 	entranceFacade.castShadow = true;
+ 	 	 	 	scene.add(entranceFacade);
+
+			// Exit Facade
+			const exitFacade = new THREE.Mesh(facadeGeometry, facadeMaterial);
+			exitFacade.position.set(0, 0.01, tunnelStartZ + tunnelLength);
+			exitFacade.castShadow = true;
+			scene.add(exitFacade);
+
+			// Add decorative pillars
+			const detailMaterial = new THREE.MeshStandardMaterial({
+ 	 	 	 	 	 	color: colors.tunnelFacade,
+ 	 	 	 	 	 	roughness: 1.0,
+ 	 	 	 	});
+ 	 	 	 	detailMaterial.color.multiplyScalar(0.7);
+ 	 	 	 	const pillarHeight = facadeOuterSideWallHeight + 1;
+ 	 	 	 	const pillarWidth = 4;
+ 	 	 	 	const pillarDepth = 6;
+ 	 	 	 	const pillarGeo = new THREE.BoxGeometry(pillarWidth, pillarHeight, pillarDepth);
+
+ 	 	 	 	const leftPillar = new THREE.Mesh(pillarGeo, detailMaterial);
+ 	 	 	 	leftPillar.position.set(-facadeWidth / 2 - pillarWidth / 2, pillarHeight / 2 + 0.01, tunnelStartZ - pillarDepth / 2 + 2.5);
+ 	 	 	 	leftPillar.castShadow = true;
+ 	 	 	 	scene.add(leftPillar);
+
+ 	 	 	 	const rightPillar = new THREE.Mesh(pillarGeo, detailMaterial);
+ 	 	 	 	rightPillar.position.set(facadeWidth / 2 + pillarWidth / 2, pillarHeight / 2 + 0.01, tunnelStartZ - pillarDepth / 2 + 2.5);
+ 	 	 	 	rightPillar.castShadow = true;
+ 	 	 	 	scene.add(rightPillar);
+
+			const leftPillarExit = new THREE.Mesh(pillarGeo, detailMaterial);
+			leftPillarExit.position.set(-facadeWidth / 2 - pillarWidth / 2, pillarHeight / 2 + 0.01, tunnelStartZ + tunnelLength + pillarDepth / 2 - 2.5);
+			leftPillarExit.castShadow = true;
+			scene.add(leftPillarExit);
+
+			const rightPillarExit = new THREE.Mesh(pillarGeo, detailMaterial);
+			rightPillarExit.position.set(facadeWidth / 2 + pillarWidth / 2, pillarHeight / 2 + 0.01, tunnelStartZ + tunnelLength + pillarDepth / 2 - 2.5);
+			rightPillarExit.castShadow = true;
+			scene.add(rightPillarExit);
+
+			// Add warning sign above tunnel
+ 	 	 	 	const signHeight = 5; // Made the sign shorter
+ 	 	 	 	const signWidth = tunnelWidth - 10; // Made the sign narrower
+ 	 	 	 	const warningTexture = createTunnelSignTexture("TUNNEL", 512, 128, 150); // Increased font size
+ 	 	 	 	const warningSignGeo = new THREE.BoxGeometry(signWidth, signHeight, 0.5);
+ 	 	 	 	const warningSignMat = new THREE.MeshBasicMaterial({ map: warningTexture });
+ 	 	 	 	const warningSign = new THREE.Mesh(warningSignGeo, warningSignMat);
+ 	 	 	 	const archTopY = tunnelHeight + 5;
+ 	 	 	 	warningSign.position.set(0, archTopY + signHeight / 2 + 1 + 0.01, tunnelStartZ - 4.8);
+ 	 	 	 	scene.add(warningSign);
+
+
+ 	 	 	 	// 5. Blackout the end
+ 	 	 	 	// Add a black plane at the far end to completely obscure the view
+ 	 	 	 	const blackoutGeo = new THREE.ShapeGeometry(hole);
+ 	 	 	 	const blackoutMaterial = new THREE.MeshBasicMaterial({
+ 	 	 	 	 	 	color: 0x000000,
+ 	 	 	 	 	 	side: THREE.DoubleSide,
+ 	 	 	 	 	 	fog: false
+ 	 	 	 	});
+ 	 	 	 	const blackoutPlane = new THREE.Mesh(blackoutGeo, blackoutMaterial);
+ 	 	 	 	blackoutPlane.position.set(0, 0, tunnelStartZ + tunnelLength - 10);
+ 	 	 	 	scene.add(blackoutPlane);
+
+
+ 	 	 	 	// 6. Add Interior Lighting
+ 	 	 	 	const lightIntensity = 1.2; // Slightly reduced intensity as we have more lights
+ 	 	 	 	const lightSpacing = 50;
+ 	 	 	 	// Position lights on the upper sides of the tunnel
+ 	 	 	 	const lightHeight = 22; // Positioned lights correctly inside the arch
+ 	 	 	 	const lightXOffset = tunnelWidth / 2 * 0.9; // Tucked them closer to the wall
+
+ 	 	 	 	const fixtureHousingMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+ 	 	 	 	const fixtureLightMat = new THREE.MeshBasicMaterial({ color: colors.tunnelLight });
+ 	 	 	 	const housingGeo = new THREE.BoxGeometry(1.5, 1.5, 6); // Made fixture smaller
+ 	 	 	 	const lightGeo = new THREE.BoxGeometry(1.0, 1.0, 5); // Made light box smaller
+
+
+ 	 	 	 	for (let z = tunnelStartZ + 30; z < tunnelStartZ + tunnelLength - 30; z += lightSpacing) {
+ 	 	 	 	 	 	// Left side light
+ 	 	 	 	 	 	const leftLight = new THREE.PointLight(colors.tunnelLight, lightIntensity, 60);
+ 	 	 	 	 	 	leftLight.position.set(-lightXOffset, lightHeight, z);
+ 	 	 	 	 	 	scene.add(leftLight);
+
+ 	 	 	 	 	 	const leftFixture = new THREE.Group();
+ 	 	 	 	 	 	const leftHousing = new THREE.Mesh(housingGeo, fixtureHousingMat);
+ 	 	 	 	 	 	const leftLightBox = new THREE.Mesh(lightGeo, fixtureLightMat);
+ 	 	 	 	 	 	leftLightBox.position.y = -0.25;
+ 	 	 	 	 	 	leftFixture.add(leftHousing, leftLightBox);
+ 	 	 	 	 	 	leftFixture.position.set(-lightXOffset, lightHeight, z);
+ 	 	 	 	 	 	scene.add(leftFixture);
+
+
+ 	 	 	 	 	 	// Right side light
+ 	 	 	 	 	 	const rightLight = new THREE.PointLight(colors.tunnelLight, lightIntensity, 60);
+ 	 	 	 	 	 	rightLight.position.set(lightXOffset, lightHeight, z);
+ 	 	 	 	 	 	scene.add(rightLight);
+
+ 	 	 	 	 	 	const rightFixture = new THREE.Group();
+ 	 	 	 	 	 	const rightHousing = new THREE.Mesh(housingGeo, fixtureHousingMat);
+ 	 	 	 	 	 	const rightLightBox = new THREE.Mesh(lightGeo, fixtureLightMat);
+ 	 	 	 	 	 	rightLightBox.position.y = -0.25;
+ 	 	 	 	 	 	rightFixture.add(rightHousing, rightLightBox);
+ 	 	 	 	 	 	rightFixture.position.set(lightXOffset, lightHeight, z);
+ 	 	 	 	 	 	scene.add(rightFixture);
+ 	 	 	 	}
+
+			// Add some bushes around the entrance to fill gaps
+ 	 	 	 	createBush(-85, tunnelStartZ - 20);
+ 	 	 	 	createBush(-70, tunnelStartZ - 45);
+ 	 	 	 	createBush(-95, tunnelStartZ - 55);
+ 	 	 	 	createBush(-105, tunnelStartZ - 30);
+
+
+ 	 	 	 	createBush(85, tunnelStartZ - 20);
+ 	 	 	 	createBush(75, tunnelStartZ - 35);
+ 	 	 	 	createBush(90, tunnelStartZ - 50);
+ 	 	 	 	createBush(105, tunnelStartZ - 30);
+ 	 	}
+
+
+		function createParkingLights() {
+			const poleMat = new THREE.MeshStandardMaterial({ color: colors.poleMetal });
+			const lightMat = new THREE.MeshBasicMaterial({ color: colors.poleGlow });
+			const poleHeight = 40;
+			const createParkingLight = (x, z) => {
+				const poleGeo = new THREE.CylinderGeometry(0.8, 1.2, poleHeight, 6);
+				poleGeo.translate(0, poleHeight / 2, 0);
+				const pole = new THREE.Mesh(poleGeo, poleMat);
+				pole.position.set(x, 0, z);
+				pole.castShadow = true;
+				scene.add(pole);
+				const fixtureGeo = new THREE.BoxGeometry(8, 2, 6);
+				const fixture = new THREE.Mesh(fixtureGeo, poleMat);
+				fixture.position.set(x, poleHeight + 1, z);
+				fixture.castShadow = true;
+				scene.add(fixture);
+				const bulbGeo = new THREE.BoxGeometry(6, 0.5, 4);
+				const bulb = new THREE.Mesh(bulbGeo, lightMat);
+				bulb.position.set(x, poleHeight, z);
+				scene.add(bulb);
+				const light = new THREE.SpotLight(colors.poleGlow, 2.0, 120, Math.PI/3, 0.5);
+				light.position.set(x, poleHeight - 1, z);
+				light.target.position.set(x, 0, z);
+				light.castShadow = true;
+				scene.add(light);
+				scene.add(light.target);
+			};
+			createParkingLight(-120, 75);
+			createParkingLight(0, 75);
+			createParkingLight(120, 75);
+			createParkingLight(-120, 160);
+			createParkingLight(0, 160);
+			createParkingLight(120, 160);
+			createParkingLight(-60, 250);
+			createParkingLight(60, 250);
+		}
+
+		function createBuilding() {
+			const buildingHeight = 25;
+			const buildingDepth = 30;
+			const zPos = 0;
+			const centerMaterial = new THREE.MeshStandardMaterial({ color: colors.stucco });
+			const trimMaterial = new THREE.MeshStandardMaterial({ color: colors.stuccoDark });
+			const sideMaterial = new THREE.MeshStandardMaterial({ color: colors.brick });
+			const centerWidth = 35;
+			const centerHeight = buildingHeight + 3;
+			const centerGeo = new THREE.BoxGeometry(centerWidth, centerHeight, buildingDepth);
+			centerGeo.translate(0, centerHeight / 2, 0);
+			const centerBlock = new THREE.Mesh(centerGeo, centerMaterial);
+			centerBlock.position.set(0, 0, zPos);
+			centerBlock.castShadow = true;
+			centerBlock.receiveShadow = true;
+			scene.add(centerBlock);
+			const roofTrimCGeo = new THREE.BoxGeometry(centerWidth + 4, 4, buildingDepth + 2);
+			const roofTrimC = new THREE.Mesh(roofTrimCGeo, trimMaterial);
+			roofTrimC.position.set(0, buildingHeight + 3, zPos);
+			roofTrimC.castShadow = true;
+			scene.add(roofTrimC);
+			const archGeo = new THREE.BoxGeometry(centerWidth - 10, 6, buildingDepth + 1);
+			const arch = new THREE.Mesh(archGeo, centerMaterial);
+			arch.position.set(0, buildingHeight + 7, zPos);
+			arch.castShadow = true;
+			scene.add(arch);
+			const sideWidth = 32;
+			const sideGeo = new THREE.BoxGeometry(sideWidth, buildingHeight, buildingDepth);
+			sideGeo.translate(0, buildingHeight / 2, 0);
+			const xPosLeft = -(centerWidth/2 + sideWidth/2);
+			const leftBlock = new THREE.Mesh(sideGeo, sideMaterial);
+			leftBlock.position.set(xPosLeft, 0, zPos);
+			leftBlock.castShadow = true;
+			leftBlock.receiveShadow = true;
+			scene.add(leftBlock);
+			const xPosRight = centerWidth/2 + sideWidth/2;
+			const rightBlock = new THREE.Mesh(sideGeo, sideMaterial);
+			rightBlock.position.set(xPosRight, 0, zPos);
+			rightBlock.castShadow = true;
+			rightBlock.receiveShadow = true;
+			scene.add(rightBlock);
+			const roofTrimSGeo = new THREE.BoxGeometry(sideWidth + 2, 3, buildingDepth + 2);
+			const roofTrimL = new THREE.Mesh(roofTrimSGeo, trimMaterial);
+			roofTrimL.position.set(xPosLeft, buildingHeight + 0.5, zPos);
+			roofTrimL.castShadow = true;
+			scene.add(roofTrimL);
+			const roofTrimR = new THREE.Mesh(roofTrimSGeo, trimMaterial);
+			roofTrimR.position.set(xPosRight, buildingHeight + 0.5, zPos);
+			roofTrimR.castShadow = true;
+			scene.add(roofTrimR);
+			const windowZ = zPos + buildingDepth / 2 + 0.1;
+			const windowY = 8;
+
+ 	 	 	 	// FIX: Moved items slightly forward (Z-axis) to prevent clipping on mobile.
+ 	 	 	 	// Original Z was approx 16 and 17. New Z is 17.5 and 18.5.
+ 	 	 	 	const itemZ = 17.5;
+ 	 	 	 	const itemZ2 = 18.5;
+
+			// T-Shirts Store (Center)
+			createWindow(0, windowY, windowZ, 28, 12, colors.windowGlowBright, 1.5);
+			addShirt(-10, 8, itemZ, 0x457b9d);
+			addShirt(10, 8, itemZ, 0xe63946);
+			addShirt(0, 7.5, itemZ2, 0x1d3557);
+
+			// Resume Store (Left)
+			createWindow(xPosLeft, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2);
+			addPaper(xPosLeft - 7, 8, itemZ);
+			addPaper(xPosLeft + 7, 8.5, itemZ);
+			addPaper(xPosLeft, 7, itemZ);
+
+			// Projects Store (Right)
+			createWindow(xPosRight, windowY, windowZ, 26, 12, colors.windowGlowDim, 0.8);
+			addPaper(xPosRight - 7, 8.5, itemZ);
+			addPaper(xPosRight + 7, 8, itemZ);
+			addPaper(xPosRight + 1, 7.5, itemZ);
+
+			const signZ = windowZ + 0.5;
+			createSign("RESUME", colors.signResume, xPosLeft, 20, signZ, 'resume', 50);
+			createSign("T-SHIRTS", colors.signTshirts, 0, 21, signZ, 'tshirts', 50);
+			createSign("PROJECTS", colors.signProjects, xPosRight, 20, signZ, 'projects', 50);
+			const awningY = 15;
+			const texResume = createStripedTexture('#991b1b', '#fecaca');
+			createAwning(xPosLeft, awningY, texResume);
+			const texProjects = createStripedTexture('#065f46', '#047857');
+			createAwning(xPosRight, awningY, texProjects);
+		}
+
+		function createWindow(x, y, z, width, height, color, intensity) {
+			const windowMaterial = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.95 });
+			const windowGeo = new THREE.PlaneGeometry(width, height);
+			const windowMesh = new THREE.Mesh(windowGeo, windowMaterial);
+			windowMesh.position.set(x, y, z);
+			scene.add(windowMesh);
+			const storeLight = new THREE.PointLight(color, intensity, 50);
+			storeLight.position.set(x, y + 5, z - 15);
+			storeLight.castShadow = true;
+			scene.add(storeLight);
+			const sidewalkLight = new THREE.SpotLight(color, intensity * 0.3, 40, Math.PI/3, 0.5);
+			sidewalkLight.position.set(x, y-5, z+5);
+			sidewalkLight.target.position.set(x, 0, z+25);
+			scene.add(sidewalkLight);
+			scene.add(sidewalkLight.target);
+		}
+
+		function addShirt(x, y, z, color) {
+			const material = new THREE.MeshStandardMaterial({
+				color: color,
+				// Improve depth precision and rendering order
+				depthWrite: true,
+				depthTest: true,
+				polygonOffset: true,
+				polygonOffsetFactor: -1,
+				polygonOffsetUnits: -1
+			});
+
+			const shirtGroup = new THREE.Group();
+
+			// Create body with better depth separation
+			const bodyGeo = new THREE.BoxGeometry(5, 6, 2);
+			bodyGeo.rotateY(Math.PI);
+			const body = new THREE.Mesh(bodyGeo, material);
+			body.position.z = 0.3; // Further forward
+			body.renderOrder = 1; // Render after window
+			shirtGroup.add(body);
+
+			// Create sleeves with proper depth
+			const sleeveGeo = new THREE.BoxGeometry(2.5, 2.5, 1.8);
+			sleeveGeo.rotateY(Math.PI);
+			const sleeveL = new THREE.Mesh(sleeveGeo, material);
+			sleeveL.position.set(-3.5, 1.5, 0.2);
+			sleeveL.rotation.z = Math.PI / 6;
+			sleeveL.renderOrder = 1;
+			shirtGroup.add(sleeveL);
+
+			const sleeveR = new THREE.Mesh(sleeveGeo, material);
+			sleeveR.position.set(3.5, 1.5, 0.2);
+			sleeveR.rotation.z = -Math.PI / 6;
+			sleeveR.renderOrder = 1;
+			shirtGroup.add(sleeveR);
+
+			shirtGroup.position.set(x, y, z);
+			shirtGroup.castShadow = true;
+
+			scene.add(shirtGroup);
+		}
+
+		function addPaper(x, y, z) {
+			const material = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.8 });
+			const paperGeo = new THREE.BoxGeometry(4, 5.5, 0.2);
 			paperGeo.rotateY(Math.PI); // Rotate the geometry
- 			const paper = new THREE.Mesh(paperGeo, material);
- 			paper.position.set(x, y, z);
- 			
- 			paper.rotation.z = (Math.random() - 0.5) * 0.3;
- 			paper.rotation.x = Math.PI / 12 + (Math.random() - 0.5) * 0.2;
- 
- 			paper.castShadow = true;
- 			scene.add(paper);
- 		}
+			const paper = new THREE.Mesh(paperGeo, material);
+			paper.position.set(x, y, z);
 
- 		function createAwning(xPos, yPos, texture) { 
- 			texture.repeat.set(6, 1); 
- 			const material = new THREE.MeshStandardMaterial({ map: texture }); 
- 			const geometry = new THREE.BoxGeometry(32, 1.5, 8); 
- 			const awning = new THREE.Mesh(geometry, material); 
- 			awning.position.set(xPos, yPos, 15 + 3); 
- 			awning.rotation.x = Math.PI / 4; 
- 			awning.castShadow = true; 
- 			scene.add(awning); 
- 		} 
+			paper.rotation.z = (Math.random() - 0.5) * 0.3;
+			paper.rotation.x = Math.PI / 12 + (Math.random() - 0.5) * 0.2;
 
- 		function createSign(text, color, xPos, yPos, zPos, id, fontSize = 45) { 
- 			const texture = createTextTexture(text, new THREE.Color(color).getStyle(), '#ffffff', 256, 64, fontSize); 
- 			const material = new THREE.MeshBasicMaterial({ map: texture }); 
- 			const geometry = new THREE.BoxGeometry(26, 5, 1.5); 
- 			const sign = new THREE.Mesh(geometry, material); 
- 			sign.position.set(xPos, yPos, zPos); 
- 			sign.name = id; 
- 			scene.add(sign); 
- 			clickableObjects.push(sign); 
- 		} 
+			paper.castShadow = true;
+			scene.add(paper);
+		}
 
- 		function createBillboard() { 
- 			const poleHeight = 70; 
- 			const totalPoleHeight = poleHeight + 30; 
- 			const boardY = poleHeight + 15; 
- 			const boardZ = -30; 
- 			const rotationAngle = 35 * Math.PI / 180; 
- 			const billboardGroup = new THREE.Group(); 
- 			billboardGroup.position.set(0, 0, boardZ); 
- 			billboardGroup.rotation.y = rotationAngle; 
- 			const poleGeo = new THREE.CylinderGeometry(2.5, 2.5, totalPoleHeight, 8); 
- 			poleGeo.translate(0, totalPoleHeight / 2, 0); 
- 			const poleMat = new THREE.MeshStandardMaterial({ color: colors.metalDark }); 
- 			const pole = new THREE.Mesh(poleGeo, poleMat); 
- 			pole.position.set(0, 0, 0); 
- 			pole.castShadow = true; 
- 			billboardGroup.add(pole); 
- 			const boardWidth = 80; 
- 			const boardHeight = 35; 
- 			const texture = createTextTexture("JOHN GRESH", new THREE.Color(colors.billboardGlow).getStyle(), new THREE.Color(colors.billboardText).getStyle(), 512, 256, 70); 
- 			texture.generateMipmaps = false; 
- 			const boardMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.FrontSide }); 
- 			const boardGeo = new THREE.BoxGeometry(boardWidth, boardHeight, 0.5); 
- 			const board = new THREE.Mesh(boardGeo, boardMat); 
- 			board.position.set(0, boardY, 3); 
- 			board.renderOrder = 1; 
- 			billboardGroup.add(board); 
- 			const structureMat = new THREE.MeshStandardMaterial({ color: colors.metalDark }); 
- 			const structureGeo = new THREE.BoxGeometry(boardWidth + 6, boardHeight + 6, 1); 
- 			const structure = new THREE.Mesh(structureGeo, structureMat); 
- 			structure.position.set(0, boardY, 0); 
- 			structure.castShadow = true; 
- 			structure.renderOrder = 0; 
- 			billboardGroup.add(structure); 
+		function createAwning(xPos, yPos, texture) {
+			texture.repeat.set(6, 1);
+			const material = new THREE.MeshStandardMaterial({ map: texture });
+			const geometry = new THREE.BoxGeometry(32, 1.5, 8);
+			const awning = new THREE.Mesh(geometry, material);
+			awning.position.set(xPos, yPos, 15 + 3);
+			awning.rotation.x = Math.PI / 4;
+			awning.castShadow = true;
+			scene.add(awning);
+		}
+
+		function createSign(text, color, xPos, yPos, zPos, id, fontSize = 45) {
+			const texture = createTextTexture(text, new THREE.Color(color).getStyle(), '#ffffff', 256, 64, fontSize);
+			const material = new THREE.MeshBasicMaterial({ map: texture });
+			const geometry = new THREE.BoxGeometry(26, 5, 1.5);
+			const sign = new THREE.Mesh(geometry, material);
+			sign.position.set(xPos, yPos, zPos);
+			sign.name = id;
+			scene.add(sign);
+			clickableObjects.push(sign);
+		}
+
+		function createBillboard() {
+			const poleHeight = 70;
+			const totalPoleHeight = poleHeight + 30;
+			const boardY = poleHeight + 15;
+			const boardZ = -30;
+			const rotationAngle = 35 * Math.PI / 180;
+			const billboardGroup = new THREE.Group();
+			billboardGroup.position.set(0, 0, boardZ);
+			billboardGroup.rotation.y = rotationAngle;
+			const poleGeo = new THREE.CylinderGeometry(2.5, 2.5, totalPoleHeight, 8);
+			poleGeo.translate(0, totalPoleHeight / 2, 0);
+			const poleMat = new THREE.MeshStandardMaterial({ color: colors.metalDark });
+			const pole = new THREE.Mesh(poleGeo, poleMat);
+			pole.position.set(0, 0, 0);
+			pole.castShadow = true;
+			billboardGroup.add(pole);
+			const boardWidth = 80;
+			const boardHeight = 35;
+			const texture = createTextTexture("JOHN GRESH", new THREE.Color(colors.billboardGlow).getStyle(), new THREE.Color(colors.billboardText).getStyle(), 512, 256, 70);
+			texture.generateMipmaps = false;
+			const boardMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.FrontSide });
+			const boardGeo = new THREE.BoxGeometry(boardWidth, boardHeight, 0.5);
+			const board = new THREE.Mesh(boardGeo, boardMat);
+			board.position.set(0, boardY, 3);
+			board.renderOrder = 1;
+			billboardGroup.add(board);
+			const structureMat = new THREE.MeshStandardMaterial({ color: colors.metalDark });
+			const structureGeo = new THREE.BoxGeometry(boardWidth + 6, boardHeight + 6, 1);
+			const structure = new THREE.Mesh(structureGeo, structureMat);
+			structure.position.set(0, boardY, 0);
+			structure.castShadow = true;
+			structure.renderOrder = 0;
+			billboardGroup.add(structure);
 
 			// Add maintenance ledge (Back)
 			const ledgeWidth = boardWidth + 6;
@@ -1167,378 +1938,535 @@
 			}
 
 
- 			const lightFixtureMat = new THREE.MeshBasicMaterial({color: 0x333333}); 
- 			const lightBulbMat = new THREE.MeshBasicMaterial({color: colors.billboardGlow}); 
- 			for(let i = -1.5; i <= 1.5; i++){ 
- 				const fixtureX = i * 25; 
- 				const fixtureY = boardY + boardHeight/2 + 3; 
- 				const fixtureGroup = new THREE.Group(); 
- 				fixtureGroup.position.set(fixtureX, fixtureY, 5); 
- 				const headGeo = new THREE.BoxGeometry(5, 2, 2); 
- 				const head = new THREE.Mesh(headGeo, lightFixtureMat); 
- 				head.position.set(0, 0, 0); 
- 				fixtureGroup.add(head); 
- 				const bulbGeo = new THREE.BoxGeometry(4, 0.8, 0.8); 
- 				const bulb = new THREE.Mesh(bulbGeo, lightBulbMat); 
- 				bulb.position.set(0, -0.8, 0.5); 
- 				fixtureGroup.add(bulb); 
- 				const armGeo = new THREE.BoxGeometry(1, 4, 1); 
- 				const arm = new THREE.Mesh(armGeo, lightFixtureMat); 
- 				arm.position.set(0, -2, -3); 
- 				fixtureGroup.add(arm); 
- 				billboardGroup.add(fixtureGroup); 
- 				const spotlight = new THREE.SpotLight(0xfff8e1, 2.5, 120, Math.PI/8, 0.5); 
- 				spotlight.position.set(fixtureX, fixtureY, 5); 
- 				spotlight.target = board; 
- 				billboardGroup.add(spotlight); 
- 			} 
- 			scene.add(billboardGroup); 
- 		} 
+			const lightFixtureMat = new THREE.MeshBasicMaterial({color: 0x333333});
+			const lightBulbMat = new THREE.MeshBasicMaterial({color: colors.billboardGlow});
+			for(let i = -1.5; i <= 1.5; i++){
+				const fixtureX = i * 25;
+				const fixtureY = boardY + boardHeight/2 + 3;
+				const fixtureGroup = new THREE.Group();
+				fixtureGroup.position.set(fixtureX, fixtureY, 5);
+				const headGeo = new THREE.BoxGeometry(5, 2, 2);
+				const head = new THREE.Mesh(headGeo, lightFixtureMat);
+				head.position.set(0, 0, 0);
+				fixtureGroup.add(head);
+				const bulbGeo = new THREE.BoxGeometry(4, 0.8, 0.8);
+				const bulb = new THREE.Mesh(bulbGeo, lightBulbMat);
+				bulb.position.set(0, -0.8, 0.5);
+				fixtureGroup.add(bulb);
+				const armGeo = new THREE.BoxGeometry(1, 4, 1);
+				const arm = new THREE.Mesh(armGeo, lightFixtureMat);
+				arm.position.set(0, -2, -3);
+				fixtureGroup.add(arm);
+				billboardGroup.add(fixtureGroup);
+				const spotlight = new THREE.SpotLight(0xfff8e1, 2.5, 120, Math.PI/8, 0.5);
+				spotlight.position.set(fixtureX, fixtureY, 5);
+				spotlight.target = board;
+				billboardGroup.add(spotlight);
+			}
+			scene.add(billboardGroup);
+		}
 
- 		function createTrees() { 
- 			const trunkMaterial = new THREE.MeshStandardMaterial({ color: colors.treeTrunk, roughness: 1.0 }); 
- 			const foliageMaterial = new THREE.MeshStandardMaterial({ color: colors.treeDark, roughness: 1.0 }); 
- 			const distantFoliageMaterial = new THREE.MeshStandardMaterial({ color: colors.treeDark, roughness: 1.0, fog: true }); 
- 			distantFoliageMaterial.color.multiplyScalar(0.5); 
- 			const roadWidth = 24; 
- 			const roadClearance = 25; 
- 			const roadStartZ = 280; 
- 			const roadEndZ = 1080; 
- 			const tunnelZ = roadEndZ - 150; 
- 			const tunnelClearance = 80; 
- 			const isInRoadClearance = (x, z) => { 
- 				if (z >= roadStartZ && z <= roadEndZ) { 
- 					return Math.abs(x) < (roadWidth/2 + roadClearance); 
- 				} 
- 				return false; 
- 			}; 
- 			const isInTunnelClearance = (x, z) => { 
- 				if (z >= tunnelZ - tunnelClearance && z <= tunnelZ + tunnelClearance) { 
- 					return Math.abs(x) < tunnelClearance; 
- 				} 
- 				return false; 
- 			}; 
- 			const createTree = (x, z, scale = 1.0, isDistant = false) => { 
- 				if (!isDistant && (isInRoadClearance(x, z) || isInTunnelClearance(x, z))) { 
- 					return; 
- 				} 
- 				const trunkHeight = (Math.random() * 10 + 15) * scale; 
- 				const trunkRadius = (Math.random() * 1.5 + 1.5) * scale; 
- 				const currentFoliageMaterial = isDistant ? distantFoliageMaterial : foliageMaterial; 
- 				if (!isDistant) { 
- 					const trunkGeo = new THREE.CylinderGeometry(trunkRadius*0.8, trunkRadius, trunkHeight, 6); 
- 					trunkGeo.translate(0, trunkHeight / 2, 0); 
- 					const trunk = new THREE.Mesh(trunkGeo, trunkMaterial); 
- 					trunk.position.set(x, 0, z); 
- 					trunk.castShadow = true; 
- 					scene.add(trunk); 
- 				} 
- 				const foliageLevels = 3; 
- 				let currentY = isDistant ? 0 : trunkHeight * 0.8; 
- 				let baseWidth = (Math.random() * 20 + 25) * scale; 
- 				for (let i = 0; i < foliageLevels; i++) { 
- 					const levelHeight = (Math.random() * 15 + 12) * scale; 
- 					const levelWidth = baseWidth * (1 - i * 0.25); 
- 					const foliageGeo = new THREE.BoxGeometry(levelWidth, levelHeight, levelWidth); 
- 					const foliage = new THREE.Mesh(foliageGeo, currentFoliageMaterial); 
- 					const offsetX = (Math.random() - 0.5) * 6 * scale; 
- 					const offsetZ = (Math.random() - 0.5) * 6 * scale; 
- 					foliage.position.set(x + offsetX, currentY + levelHeight / 2, z + offsetZ); 
- 					foliage.rotation.y = Math.random() * Math.PI; 
- 					if (!isDistant) { 
- 						foliage.castShadow = true; 
- 						foliage.receiveShadow = true; 
- 					} 
- 					scene.add(foliage); 
- 					currentY += levelHeight * 0.7; 
- 				} 
- 			}; 
- 			const boundaryX = 380; 
- 			const boundaryZ = 280; 
- 			const spacing = 45; 
- 			for (let i = -boundaryX; i <= boundaryX; i += spacing) { 
- 				createTree(i + Math.random() * 15, -60 - Math.random() * 15); 
- 				createTree(i + Math.random() * 20, -100 - Math.random() * 30); 
- 				createTree(i + Math.random() * 25, -150 - Math.random() * 50); 
- 			} 
- 			for (let i = -boundaryX; i <= boundaryX; i += spacing) { 
- 				createTree(i + Math.random() * 15, boundaryZ + Math.random() * 15); 
- 				createTree(i + Math.random() * 20, boundaryZ + 40 + Math.random() * 30); 
- 			} 
- 			for (let i = -150; i <= boundaryZ + 40; i += spacing) { 
- 				createTree(-boundaryX + Math.random() * 15, i); 
- 				createTree(-boundaryX - 40 + Math.random() * 20, i); 
- 			} 
- 			for (let i = -150; i <= boundaryZ + 40; i += spacing) { 
- 				createTree(boundaryX + Math.random() * 15, i); 
- 				createTree(boundaryX + 40 + Math.random() * 20, i); 
- 			} 
- 			const roadSideSpacing = 60; 
- 			for (let z = roadStartZ + 50; z < roadEndZ - 100; z += roadSideSpacing) { 
- 				const leftX = -(roadWidth/2 + roadClearance + Math.random() * 15 + 10); 
- 				createTree(leftX, z + Math.random() * 20 - 10); 
- 				const rightX = (roadWidth/2 + roadClearance + Math.random() * 15 + 10); 
- 				createTree(rightX, z + Math.random() * 20 - 10); 
- 			} 
- 			const backgroundDistance = 650; 
- 			const bgSpacing = 12; 
- 			const bgLayers = 4; 
- 			const bgScale = 2.5; 
- 			const angleStep = Math.PI / 180 * bgSpacing; 
- 			for (let angle = 0; angle < Math.PI * 2; angle += angleStep) { 
- 				for (let layer = 0; layer < bgLayers; layer++) { 
- 					const layerOffset = layer * 50; 
- 					const distance = backgroundDistance - layerOffset + (Math.random() - 0.5) * 60; 
- 					const angleNoise = (Math.random() - 0.5) * angleStep * 0.8; 
- 					const currentAngle = angle + angleNoise; 
- 					const x = Math.cos(currentAngle) * distance; 
- 					const z = Math.sin(currentAngle) * distance; 
- 					const scale = bgScale + (Math.random() * 1.0); 
- 					createTree(x, z, scale, true); 
- 				} 
- 			} 
- 		} 
+		function createBush(x, z, scale = 1.0) {
+			const foliageMaterial = new THREE.MeshStandardMaterial({ color: colors.treeDark, roughness: 1.0 });
+			foliageMaterial.color.multiplyScalar(0.85); // Make bushes slightly different from trees
 
- 		function createStars() { 
- 			const geometry = new THREE.BufferGeometry(); 
- 			const vertices = []; 
- 			const distributionRadius = 2000; 
- 			for (let i = 0; i < 300; i++) { 
- 				const x = Math.random() * distributionRadius - distributionRadius/2; 
- 				const y = Math.random() * 200 + 150; 
- 				const z = Math.random() * distributionRadius - distributionRadius/2; 
- 				if (Math.sqrt(x*x + z*z) > 150) { 
- 					 vertices.push(x, y, z); 
- 				} 
- 			} 
- 			geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3)); 
- 			const material = new THREE.PointsMaterial({ color: 0xffffff, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.6, fog: false }); 
- 			const stars = new THREE.Points(geometry, material); 
- 			scene.add(stars); 
- 		} 
+			const bushGroup = new THREE.Group();
+			const numLumps = Math.floor(Math.random() * 3) + 4; // 4 to 6 lumps
 
- 		function setupEventListeners() { 
- 			window.addEventListener('resize', onWindowResize, false); 
- 			document.addEventListener('keydown', onKeyDown, false); 
- 			document.addEventListener('keyup', onKeyUp, false); 
- 			renderer.domElement.addEventListener('mousedown', onDragStart, false); 
- 			document.addEventListener('mousemove', onDragMove, false); 
- 			document.addEventListener('mouseup', onDragEnd, false); 
- 			renderer.domElement.addEventListener('click', onMouseClick, false); 
- 			renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: false}); 
- 			document.addEventListener('touchmove', onTouchMove, {passive: false}); 
- 			document.addEventListener('touchend', onDragEnd, false); 
+			for (let i = 0; i < numLumps; i++) {
+				const lumpSize = (Math.random() * 5 + 5) * scale;
 
- 			document.querySelectorAll('.close-btn').forEach(btn => { 
- 				btn.addEventListener('click', hideAllOverlays, false); 
- 			}); 
- 			document.querySelectorAll('.scene-overlay').forEach(overlay => { 
- 				overlay.addEventListener('click', function(event) { 
- 					if (event.target === this) { 
- 						hideAllOverlays(); 
- 					} 
- 				}, false); 
- 			}); 
- 			 
- 			const dpadUp = document.getElementById('dpad-up'); 
- 			const dpadDown = document.getElementById('dpad-down'); 
- 			const dpadLeft = document.getElementById('dpad-left'); 
- 			const dpadRight = document.getElementById('dpad-right'); 
- 			const jumpBtn = document.getElementById('jump-btn'); 
+				const lumpGeo = new THREE.BoxGeometry(lumpSize, lumpSize, lumpSize);
+				const lump = new THREE.Mesh(lumpGeo, foliageMaterial);
 
- 			dpadUp.addEventListener('touchstart', (e) => { e.preventDefault(); keys.w = true; }); 
- 			dpadUp.addEventListener('touchend', (e) => { e.preventDefault(); keys.w = false; }); 
- 			dpadDown.addEventListener('touchstart', (e) => { e.preventDefault(); keys.s = true; }); 
- 			dpadDown.addEventListener('touchend', (e) => { e.preventDefault(); keys.s = false; }); 
- 			dpadLeft.addEventListener('touchstart', (e) => { e.preventDefault(); keys.a = true; }); 
- 			dpadLeft.addEventListener('touchend', (e) => { e.preventDefault(); keys.a = false; }); 
- 			dpadRight.addEventListener('touchstart', (e) => { e.preventDefault(); keys.d = true; }); 
- 			dpadRight.addEventListener('touchend', (e) => { e.preventDefault(); keys.d = false; }); 
- 			jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[' '] = true; }); 
- 			jumpBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys[' '] = false; }); 
- 		} 
+				const offsetX = (Math.random() - 0.5) * 6 * scale;
+				const offsetY = lumpSize / 2 - 2 * scale; // Sit low on the ground
+				const offsetZ = (Math.random() - 0.5) * 6 * scale;
+				lump.position.set(offsetX, offsetY, offsetZ);
 
- 		function onWindowResize() { 
- 			const width = window.innerWidth; 
- 			const height = window.innerHeight; 
- 			const dpr = window.devicePixelRatio || 1; 
- 			camera.aspect = width / height; 
- 			camera.updateProjectionMatrix(); 
- 			renderer.setSize(width, height); 
- 			composer.setSize(width, height); 
- 			if (pixelPass && pixelPass.uniforms.resolution) { 
- 				pixelPass.uniforms.resolution.value.set(width * dpr, height * dpr); 
- 				pixelPass.uniforms.pixelSize.value = getPixelSize(); 
- 			} 
- 		} 
+				lump.rotation.y = Math.random() * Math.PI;
 
- 		function onKeyDown(event) { 
- 			if (event.key === 'Escape' && !isSceneActive) { 
- 				hideAllOverlays(); 
- 				return; 
- 			} 
- 			if (!isSceneActive) return; 
- 			if (keys.hasOwnProperty(event.key.toLowerCase())) { 
- 				keys[event.key.toLowerCase()] = true; 
- 				event.preventDefault(); 
- 			} 
- 			 if(event.key === ' '){ 
- 				keys[' '] = true; 
- 				event.preventDefault(); 
- 			} 
- 		} 
+				lump.castShadow = true;
+				bushGroup.add(lump);
+			}
 
- 		function onKeyUp(event) { 
- 			 if (keys.hasOwnProperty(event.key.toLowerCase())) { 
- 				keys[event.key.toLowerCase()] = false; 
- 			} 
- 			if(event.key === ' '){ 
- 				keys[' '] = false; 
- 			} 
- 		} 
+			bushGroup.position.set(x, 0, z);
+			scene.add(bushGroup);
+		}
 
- 		function onDragStart(event) { 
- 			if (!isSceneActive) return; 
- 			isDragging = true; 
- 			const clientX = event.clientX !== undefined ? event.clientX : (event.touches ? event.touches[0].clientX : 0); 
- 			const clientY = event.clientY !== undefined ? event.clientY : (event.touches ? event.touches[0].clientY : 0); 
- 			dragStart.x = clientX; 
- 			dragStart.y = clientY; 
- 			document.body.style.cursor = 'grabbing'; 
- 		} 
+		function createTrees() {
+			const trunkMaterial = new THREE.MeshStandardMaterial({ color: colors.treeTrunk, roughness: 1.0 });
+			const foliageMaterial = new THREE.MeshStandardMaterial({ color: colors.treeDark, roughness: 1.0 });
+			const distantFoliageMaterial = new THREE.MeshStandardMaterial({ color: colors.treeDark, roughness: 1.0, fog: true });
+			distantFoliageMaterial.color.multiplyScalar(0.5);
 
- 		function onTouchStart(event) { 
- 			if (event.touches.length === 1) { 
- 				onDragStart(event); 
- 			} 
- 		} 
+ 	 	 	 	// Use centralized configuration
+ 	 	 	 	const { width: roadWidth, length: roadLength, startZ: roadStartZ, endZ: roadEndZ } = ROAD_CONFIG;
+			const roadClearance = 25;
 
- 		function onDragMove(event) { 
- 			if (!isDragging || !isSceneActive) return; 
- 			const clientX = event.clientX !== undefined ? event.clientX : (event.touches ? event.touches[0].clientX : 0); 
- 			const clientY = event.clientY !== undefined ? event.clientY : (event.touches ? event.touches[0].clientY : 0); 
- 			const deltaX = clientX - dragStart.x; 
- 			const deltaY = clientY - dragStart.y; 
- 			const speed = event.touches ? 0.005 : 0.003; 
- 			handleRotation(deltaX, deltaY, speed); 
- 			dragStart.x = clientX; 
- 			dragStart.y = clientY; 
- 		} 
+ 	 	 	 	const { startZ: tunnelStartZ, endZ: tunnelEndZ, clearanceWidth: tunnelClearanceWidth } = TUNNEL_CONFIG;
 
- 		function onTouchMove(event) { 
- 			if (!isDragging || event.touches.length !== 1) return; 
- 			if (isSceneActive) { 
- 				event.preventDefault(); 
- 			} 
- 			onDragMove(event); 
- 		} 
+			const isInRoadClearance = (x, z) => {
+				if (z >= roadStartZ && z <= roadEndZ) {
+					return Math.abs(x) < (roadWidth/2 + roadClearance);
+				}
+				return false;
+			};
 
- 		function onDragEnd() { 
- 			isDragging = false; 
- 			if (isSceneActive) { 
- 				document.body.style.cursor = 'grab'; 
- 			} 
- 		} 
+            // This clearance check is used for ground-level trees (Y=0) to keep the immediate area around the tunnel clear.
+			const isInTunnelClearance = (x, z) => {
+ 	 	 	 	 	// Clear a wider area around the tunnel entrance and exit (50 units buffer)
+ 	 	 	 	 	const entranceZ = tunnelStartZ - 50;
+ 	 	 	 	 	const exitZ = tunnelEndZ + 50;
 
- 		function handleRotation(deltaX, deltaY, speed) { 
- 			cameraRig.rotation.y -= deltaX * speed; 
- 			cameraPitch.rotation.x -= deltaY * speed; 
- 			const maxPitch = Math.PI / 2.5; 
- 			cameraPitch.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, cameraPitch.rotation.x)); 
- 		} 
+				if (z >= entranceZ && z <= exitZ) {
+ 	 	 	 	 	 	// Divide clearanceWidth by 2 because we check absolute distance from center (x=0)
+					return Math.abs(x) < tunnelClearanceWidth / 2;
+				}
+				return false;
+			};
 
- 		function onMouseClick(event) { 
- 			if (!isSceneActive) return; 
- 			const distanceMoved = Math.sqrt( 
- 				Math.pow(event.clientX - dragStart.x, 2) + 
- 				Math.pow(event.clientY - dragStart.y, 2) 
- 			); 
- 			if (distanceMoved > 5) { 
- 				 return; 
- 			} 
- 			event.preventDefault(); 
- 			mouse.x = (event.clientX / window.innerWidth) * 2 - 1; 
- 			mouse.y = -(event.clientY / window.innerHeight) * 2 + 1; 
- 			raycaster.setFromCamera(mouse, camera); 
- 			const intersects = raycaster.intersectObjects(clickableObjects); 
- 			if (intersects.length > 0) { 
- 				const object = intersects[0].object; 
- 				console.log(`Navigating to: ${object.name}`); 
- 				switch(object.name) { 
- 					case 'resume': 
- 						showOverlay('resumeOverlay'); 
- 						break; 
- 					case 'tshirts': 
- 						showOverlay('tshirtsOverlay'); 
- 						break; 
- 					case 'projects': 
- 						showOverlay('projectsOverlay'); 
- 						break; 
- 				} 
- 			} 
- 		} 
+            // UPDATED: createTree now accepts an optional Y coordinate.
+			const createTree = (x, z, scale = 1.0, isDistant = false, y = 0) => {
 
- 		function updatePlayerMovement(delta) { 
- 			const moveSpeed = 35.0; 
- 			const actualSpeed = moveSpeed * delta; 
- 			const forward = new THREE.Vector3(); 
- 			const right = new THREE.Vector3(); 
+                // Check clearances. Only apply clearance checks if Y=0 (ground trees).
+                // Trees placed on the tunnel (Y>0) rely on the dedicated logic below for placement.
+                if (y === 0) {
+ 	 	 	 	 	// Check clearances. Apply tunnel clearance to distant trees as well to avoid blocking the view.
+				    if (isInTunnelClearance(x, z) || (!isDistant && isInRoadClearance(x, z))) {
+					    return;
+				    }
+                }
 
- 			cameraRig.getWorldDirection(forward); 
- 			forward.y = 0; 
- 			forward.normalize(); 
- 			 
- 			right.crossVectors(cameraRig.up, forward).normalize(); 
- 			 
- 			if (keys.w || keys.ArrowUp) { 
- 				cameraRig.position.addScaledVector(forward, -actualSpeed); 
- 			} 
- 			if (keys.s || keys.ArrowDown) { 
- 				cameraRig.position.addScaledVector(forward, actualSpeed); 
- 			} 
- 			if (keys.a || keys.ArrowLeft) { 
- 				cameraRig.position.addScaledVector(right, -actualSpeed); 
- 			} 
- 			if (keys.d || keys.ArrowRight) { 
- 				cameraRig.position.addScaledVector(right, actualSpeed); 
- 			} 
+				const trunkHeight = (Math.random() * 10 + 15) * scale;
+				const trunkRadius = (Math.random() * 1.5 + 1.5) * scale;
+				const currentFoliageMaterial = isDistant ? distantFoliageMaterial : foliageMaterial;
+				if (!isDistant) {
+					const trunkGeo = new THREE.CylinderGeometry(trunkRadius*0.8, trunkRadius, trunkHeight, 6);
+					trunkGeo.translate(0, trunkHeight / 2, 0);
+					const trunk = new THREE.Mesh(trunkGeo, trunkMaterial);
+                    trunk.position.set(x, y, z); // Use provided Y
+					trunk.castShadow = true;
+					scene.add(trunk);
+				}
+				const foliageLevels = 3;
+                let currentY = y + (isDistant ? 0 : trunkHeight * 0.8); // Adjust starting Y
 
- 			if (keys[' '] && !isJumping) { 
- 				isJumping = true; 
- 				yVelocity = jumpForce; 
- 			} 
+				let baseWidth = (Math.random() * 20 + 25) * scale;
+				for (let i = 0; i < foliageLevels; i++) {
+					const levelHeight = (Math.random() * 15 + 12) * scale;
+					const levelWidth = baseWidth * (1 - i * 0.25);
+					const foliageGeo = new THREE.BoxGeometry(levelWidth, levelHeight, levelWidth);
+					const foliage = new THREE.Mesh(foliageGeo, currentFoliageMaterial);
+					const offsetX = (Math.random() - 0.5) * 6 * scale;
+					const offsetZ = (Math.random() - 0.5) * 6 * scale;
+					foliage.position.set(x + offsetX, currentY + levelHeight / 2, z + offsetZ);
+					foliage.rotation.y = Math.random() * Math.PI;
+					if (!isDistant) {
+						foliage.castShadow = true;
+						foliage.receiveShadow = true;
+					}
+					scene.add(foliage);
+					currentY += levelHeight * 0.7;
+				}
+			};
 
- 			if (isJumping) { 
- 				yVelocity += gravity * delta; 
- 				cameraRig.position.y += yVelocity * delta; 
+			const boundaryX = 380;
+			const boundaryZ = 280;
+			const spacing = 45;
 
- 				if (cameraRig.position.y <= playerHeight) { 
- 					cameraRig.position.y = playerHeight; 
- 					isJumping = false; 
- 					yVelocity = 0; 
- 				} 
- 			} 
- 		} 
+ 	 	 	 	// (Existing tree placement logic remains, relying on updated clearance checks)
+			for (let i = -boundaryX; i <= boundaryX; i += spacing) {
+				createTree(i + Math.random() * 15, -60 - Math.random() * 15);
+				createTree(i + Math.random() * 20, -100 - Math.random() * 30);
+				createTree(i + Math.random() * 25, -150 - Math.random() * 50);
+			}
+			for (let i = -boundaryX; i <= boundaryX; i += spacing) {
+				createTree(i + Math.random() * 15, boundaryZ + Math.random() * 15);
+				createTree(i + Math.random() * 20, boundaryZ + 40 + Math.random() * 30);
+			}
+			for (let i = -150; i <= boundaryZ + 40; i += spacing) {
+				createTree(-boundaryX + Math.random() * 15, i);
+				createTree(-boundaryX - 40 + Math.random() * 20, i);
+			}
+			for (let i = -150; i <= boundaryZ + 40; i += spacing) {
+				createTree(boundaryX + Math.random() * 15, i);
+				createTree(boundaryX + 40 + Math.random() * 20, i);
+			}
+
+			// Targeted fix to fill the visual gap on the left side
+			const gapFillCount = 25;
+			for (let i = 0; i < gapFillCount; i++) {
+				const x = -250 + (Math.random() - 0.5) * 120;
+				const z = 150 + (Math.random() - 0.5) * 150;
+				createTree(x, z, 1.0 + Math.random() * 0.2);
+			}
+
+ 	 	 	 	// Roadside trees (now spanning the whole road length, clearance handled in createTree)
+			const roadSideSpacing = 60;
+			for (let z = roadStartZ + 50; z < roadEndZ - 100; z += roadSideSpacing) {
+				const leftX = -(roadWidth/2 + roadClearance + Math.random() * 15 + 10);
+				createTree(leftX, z + Math.random() * 20 - 10);
+				const rightX = (roadWidth/2 + roadClearance + Math.random() * 15 + 10);
+				createTree(rightX, z + Math.random() * 20 - 10);
+			}
+
+ 	 	 	 	// Background trees
+			const backgroundDistance = 750;
+			const bgSpacing = 12;
+			const bgLayers = 4;
+			const bgScale = 2.5;
+			const angleStep = Math.PI / 180 * bgSpacing;
+			for (let angle = 0; angle < Math.PI * 2; angle += angleStep) {
+				for (let layer = 0; layer < bgLayers; layer++) {
+					const layerOffset = layer * 50;
+					const distance = backgroundDistance - layerOffset + (Math.random() - 0.5) * 60;
+					const angleNoise = (Math.random() - 0.5) * angleStep * 0.8;
+					const currentAngle = angle + angleNoise;
+					const x = Math.cos(currentAngle) * distance;
+					const z = Math.sin(currentAngle) * distance;
+					const scale = bgScale + (Math.random() * 1.0);
+					createTree(x, z, scale, true);
+				}
+			}
+
+            // Removed dense tunnel coverage - trees on/around tunnel were visually problematic
+
+		}
+
+		function createStars() {
+			const geometry = new THREE.BufferGeometry();
+			const vertices = [];
+			const distributionRadius = 2500; // Increased radius
+			for (let i = 0; i < 400; i++) {
+				const x = Math.random() * distributionRadius - distributionRadius/2;
+				const y = Math.random() * 200 + 150;
+				const z = Math.random() * distributionRadius - distributionRadius/2;
+				if (Math.sqrt(x*x + z*z) > 150) {
+					 vertices.push(x, y, z);
+				}
+			}
+			geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+			const material = new THREE.PointsMaterial({ color: 0xffffff, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.6, fog: false });
+			const stars = new THREE.Points(geometry, material);
+			scene.add(stars);
+		}
+
+		function setupEventListeners() {
+			window.addEventListener('resize', onWindowResize, false);
+			document.addEventListener('keydown', onKeyDown, false);
+			document.addEventListener('keyup', onKeyUp, false);
+
+ 	 	 	 	// Desktop Events
+			renderer.domElement.addEventListener('mousedown', onDesktopDragStart, false);
+			document.addEventListener('mousemove', onDesktopDragMove, false);
+			document.addEventListener('mouseup', onDesktopDragEnd, false);
+			renderer.domElement.addEventListener('click', onMouseClick, false);
+
+ 	 	 	 	// Mobile Touch Events (For camera look)
+			renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: false});
+			document.addEventListener('touchmove', onTouchMove, {passive: false});
+			document.addEventListener('touchend', onTouchEnd, false);
+ 	 	 	 	document.addEventListener('touchcancel', onTouchEnd, false);
 
 
- 		function animate() { 
- 			requestAnimationFrame(animate); 
- 			const delta = clock.getDelta(); 
- 			 
- 			if (isSceneActive) { 
- 				updatePlayerMovement(delta); 
- 			} 
+			document.querySelectorAll('.close-btn').forEach(btn => {
+				btn.addEventListener('click', hideAllOverlays, false);
+			});
+			document.querySelectorAll('.scene-overlay').forEach(overlay => {
+				overlay.addEventListener('click', function(event) {
+					if (event.target === this) {
+						hideAllOverlays();
+					}
+				}, false);
+			});
 
- 			composer.render(); 
- 		} 
+ 	 	 	 	// Jump Button Listeners (D-pad removed)
+			const jumpBtn = document.getElementById('jump-btn');
 
- 		document.fonts.ready.then(() => { 
- 			init(); 
- 		}).catch((error) => { 
- 			console.error("Error loading fonts:", error); 
- 			init(); 
- 		}); 
- 	</script> 
- </body> 
- </html>
+ 	 	 	 	// Use touchstart/touchend and add visual feedback
+			jumpBtn.addEventListener('touchstart', (e) => {
+ 	 	 	 	 	 	e.preventDefault();
+ 	 	 	 	 	 	e.stopPropagation(); // CRUCIAL: Stop event from bubbling to the canvas (prevents camera look initiation)
+ 	 	 	 	 	 	keys[' '] = true;
+ 	 	 	 	 	 	jumpBtn.classList.add('active'); // Visual feedback
+ 	 	 	 	});
+			jumpBtn.addEventListener('touchend', (e) => {
+ 	 	 	 	 	 	e.preventDefault();
+ 	 	 	 	 	 	e.stopPropagation();
+ 	 	 	 	 	 	keys[' '] = false;
+ 	 	 	 	 	 	jumpBtn.classList.remove('active');
+ 	 	 	 	});
+ 	 	 	 	// Prevent mousedown interference
+ 	 	 	 	jumpBtn.addEventListener('mousedown', (e) => e.preventDefault());
+		}
+
+		function onWindowResize() {
+			const width = window.innerWidth;
+			const height = window.innerHeight;
+
+ 	 	 	 	// Recalculate DPR settings on resize
+ 	 	 	 	const dpr = window.devicePixelRatio || 1;
+ 	 	 	 	const effectiveDPR = isMobileDevice() ? Math.min(1.5, dpr) : dpr;
+			renderer.setPixelRatio(effectiveDPR);
+
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+			renderer.setSize(width, height);
+			composer.setSize(width, height);
+
+ 	 	 	 	// Update post-processing resolution
+ 	 	 	 	const currentDPR = renderer.getPixelRatio();
+			if (pixelPass && pixelPass.uniforms.resolution) {
+				pixelPass.uniforms.resolution.value.set(width * currentDPR, height * currentDPR);
+				pixelPass.uniforms.pixelSize.value = getPixelSize();
+			}
+
+ 	 	 	 	// Handle joystick creation/destruction if viewport changes between mobile/desktop
+ 	 	 	 	initJoystick();
+
+ 	 	 	 	// Handle visibility of controls
+ 	 	 	 	if (isSceneActive) {
+				// Ensure coin counter visibility is maintained
+ 	 	 	 	 	document.getElementById('coin-counter').style.display = 'block';
+
+ 	 	 	 	 	 	if (isMobileDevice()) {
+ 	 	 	 	 	 	 	 	document.getElementById('mobile-controls').style.display = 'flex';
+ 	 	 	 	 	 	 	 	document.getElementById('instructions').style.display = 'none';
+ 	 	 	 	 	 	} else {
+ 	 	 	 	 	 	 	 	document.getElementById('mobile-controls').style.display = 'none';
+ 	 	 	 	 	 	 	 	document.getElementById('instructions').style.display = 'block';
+ 	 	 	 	 	 	}
+ 	 	 	 	}
+		}
+
+		function onKeyDown(event) {
+			if (event.key === 'Escape' && !isSceneActive) {
+				hideAllOverlays();
+				return;
+			}
+			if (!isSceneActive) return;
+			if (keys.hasOwnProperty(event.key.toLowerCase())) {
+				keys[event.key.toLowerCase()] = true;
+				event.preventDefault();
+			}
+			 if(event.key === ' '){
+				keys[' '] = true;
+				event.preventDefault();
+			}
+		}
+
+		function onKeyUp(event) {
+			 if (keys.hasOwnProperty(event.key.toLowerCase())) {
+				keys[event.key.toLowerCase()] = false;
+			}
+			if(event.key === ' '){
+				keys[' '] = false;
+			}
+		}
+
+ 	 	// --- Input Handling (Refactored for Multi-touch) ---
+
+ 	 	// DESKTOP MOUSE HANDLERS
+		function onDesktopDragStart(event) {
+			if (!isSceneActive || isMobileDevice()) return;
+			isDragging = true;
+			dragStart.x = event.clientX;
+			dragStart.y = event.clientY;
+			document.body.style.cursor = 'grabbing';
+		}
+
+		function onDesktopDragMove(event) {
+			if (!isDragging || !isSceneActive || isMobileDevice()) return;
+			const deltaX = event.clientX - dragStart.x;
+			const deltaY = event.clientY - dragStart.y;
+			const speed = 0.003;
+			handleRotation(deltaX, deltaY, speed);
+			dragStart.x = event.clientX;
+			dragStart.y = event.clientY;
+		}
+
+ 	 	function onDesktopDragEnd() {
+ 	 	 	 	if (isMobileDevice()) return;
+			isDragging = false;
+			if (isSceneActive) {
+				document.body.style.cursor = 'grab';
+			}
+		}
+
+ 	 	// MOBILE TOUCH HANDLERS (Camera Look)
+		function onTouchStart(event) {
+ 	 	 	 	if (!isSceneActive || !isMobileDevice()) return;
+
+ 	 	 	 	// If we are already tracking a look touch, ignore new ones.
+ 	 	 	 	if (lookTouchId !== null) return;
+
+ 	 	 	 	// Iterate over the *new* touches in this event (event.changedTouches)
+ 	 	 	 	for (const touch of event.changedTouches) {
+ 	 	 	 	 	 	// Since this listener is on the canvas, and we assume controls stop propagation,
+ 	 	 	 	 	 	// any touch here is considered a look touch.
+ 	 	 	 	 	 	event.preventDefault(); // Prevent scroll/zoom
+
+ 	 	 	 	 	 	isDragging = true;
+ 	 	 	 	 	 	lookTouchId = touch.identifier;
+ 	 	 	 	 	 	dragStart.x = touch.clientX;
+ 	 	 	 	 	 	dragStart.y = touch.clientY;
+ 	 	 	 	 	 	break; // Found our look touch
+ 	 	 	 	}
+		}
+
+		function onTouchMove(event) {
+ 	 	 	 	if (!isDragging || !isSceneActive || !isMobileDevice() || lookTouchId === null) return;
+
+ 	 	 	 	// Find the specific touch we are tracking for looking
+ 	 	 	 	for (const touch of event.touches) {
+ 	 	 	 	 	 	if (touch.identifier === lookTouchId) {
+ 	 	 	 	 	 	 	 	event.preventDefault();
+
+			const deltaX = touch.clientX - dragStart.x;
+			const deltaY = touch.clientY - dragStart.y;
+ 	 	 	 	 	 	 	const speed = 0.006; // Mobile look speed
+			handleRotation(deltaX, deltaY, speed);
+			dragStart.x = touch.clientX;
+			dragStart.y = touch.clientY;
+ 	 	 	 	 	 	 	break;
+ 	 	 	 	 	 	}
+ 	 	 	 	}
+		}
+
+ 	 	function onTouchEnd(event) {
+ 	 	 	 	if (!isMobileDevice() || lookTouchId === null) return;
+
+ 	 	 	 	// Check if the touch ending is the one we are tracking for look
+ 	 	 	 	for (const touch of event.changedTouches) {
+ 	 	 	 	 	 	if (touch.identifier === lookTouchId) {
+ 	 	 	 	 	 	 	 	isDragging = false;
+ 	 	 	 	 	 	 	 	lookTouchId = null;
+ 	 	 	 	 	 	 	 	break;
+ 	 	 	 	 	 	}
+ 	 	 	 	}
+ 	 	}
+
+ 	 	// --------------------------------------------------
+
+		function handleRotation(deltaX, deltaY, speed) {
+			cameraRig.rotation.y -= deltaX * speed;
+			cameraPitch.rotation.x -= deltaY * speed;
+			const maxPitch = Math.PI / 2.5;
+			cameraPitch.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, cameraPitch.rotation.x));
+		}
+
+		function onMouseClick(event) {
+			if (!isSceneActive || isMobileDevice()) return; // Handle clicks only on desktop
+			const distanceMoved = Math.sqrt(
+				Math.pow(event.clientX - dragStart.x, 2) +
+				Math.pow(event.clientY - dragStart.y, 2)
+			);
+			if (distanceMoved > 5) {
+				 return;
+			}
+			event.preventDefault();
+			mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+			mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+			raycaster.setFromCamera(mouse, camera);
+			const intersects = raycaster.intersectObjects(clickableObjects);
+			if (intersects.length > 0) {
+				const object = intersects[0].object;
+				console.log(`Navigating to: ${object.name}`);
+				switch(object.name) {
+					case 'resume':
+						showOverlay('resumeOverlay');
+						break;
+					case 'tshirts':
+						showOverlay('tshirtsOverlay');
+						break;
+					case 'projects':
+						showOverlay('projectsOverlay');
+						break;
+				}
+			}
+		}
+
+		function updatePlayerMovement(delta) {
+			const moveSpeed = 35.0;
+			const actualSpeed = moveSpeed * delta;
+			const forward = new THREE.Vector3();
+			const right = new THREE.Vector3();
+
+			cameraRig.getWorldDirection(forward);
+			forward.y = 0;
+			forward.normalize();
+
+			right.crossVectors(cameraRig.up, forward).normalize();
+
+ 	 	 	 	// --- Keyboard Input ---
+			if (keys.w || keys.ArrowUp) {
+				cameraRig.position.addScaledVector(forward, -actualSpeed);
+			}
+			if (keys.s || keys.ArrowDown) {
+				cameraRig.position.addScaledVector(forward, actualSpeed);
+			}
+			if (keys.a || keys.ArrowLeft) {
+				cameraRig.position.addScaledVector(right, -actualSpeed);
+			}
+			if (keys.d || keys.ArrowRight) {
+				cameraRig.position.addScaledVector(right, actualSpeed);
+			}
+
+ 	 	 	 	// --- Joystick Input (Overrides keyboard if active) ---
+ 	 	 	 	// Check if joystick input is significant (NippleJS handles deadzone, but we check magnitude)
+ 	 	 	 	if (Math.abs(joystickInput.x) > 0.05 || Math.abs(joystickInput.y) > 0.05) {
+ 	 	 	 	 	 	// Forward/Backward (Y-axis). joystickInput.y is positive up (forward).
+ 	 	 	 	 	 	// We scale by the input magnitude for analog speed control.
+ 	 	 	 	 	 	cameraRig.position.addScaledVector(forward, -joystickInput.y * actualSpeed);
+
+ 	 	 	 	 	 	// Strafe Right/Left (X-axis). joystickInput.x is positive right.
+ 	 	 	 	 	 	cameraRig.position.addScaledVector(right, joystickInput.x * actualSpeed);
+ 	 	 	 	}
+
+
+ 	 	 	 	// --- Jump ---
+			if (keys[' '] && !isJumping) {
+				isJumping = true;
+				yVelocity = jumpForce;
+			}
+
+			if (isJumping) {
+				yVelocity += gravity * delta;
+				cameraRig.position.y += yVelocity * delta;
+
+				if (cameraRig.position.y <= playerHeight) {
+					cameraRig.position.y = playerHeight;
+					isJumping = false;
+					yVelocity = 0;
+				}
+			}
+		}
+
+
+		function animate() {
+			requestAnimationFrame(animate);
+			const delta = clock.getDelta();
+			const time = clock.getElapsedTime(); // Get total elapsed time for smooth animations
+
+			if (isSceneActive) {
+				updatePlayerMovement(delta);
+				updateCoins(delta, time); // Update coin animations and collection
+			}
+
+            // NEW: Always update fireworks, even if scene is paused (e.g., overlay open)
+            updateFireworks(delta);
+
+			composer.render();
+		}
+
+		document.fonts.ready.then(() => {
+			init();
+		}).catch((error) => {
+			console.error("Error loading fonts:", error);
+			init();
+		});
+	</script>
+</body>
+</html>
 

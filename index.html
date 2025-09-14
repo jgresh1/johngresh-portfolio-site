@@ -1450,7 +1450,7 @@
                 const centerLine = new THREE.Mesh(centerLineGeo, lineMaterial);
                 centerLine.rotation.x = -Math.PI / 2;
                 // Raised Y-position to prevent z-fighting with the road surface, especially on mobile.
-                centerLine.position.set(0, 0.15, zPos);
+                centerLine.position.set(0, 0.18, zPos);
                 scene.add(centerLine);
             }
 
@@ -1466,13 +1466,13 @@
                 const leftLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
                 leftLine.rotation.x = -Math.PI / 2;
                 // Raised Y-position to prevent z-fighting.
-                leftLine.position.set(-roadWidth/2 + 1, 0.15, start + segmentLength / 2);
+                leftLine.position.set(-roadWidth/2 + 1, 0.18, start + segmentLength / 2);
                 scene.add(leftLine);
 
                 const rightLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
                 rightLine.rotation.x = -Math.PI / 2;
                 // Raised Y-position to prevent z-fighting.
-                rightLine.position.set(roadWidth/2 - 1, 0.15, start + segmentLength / 2);
+                rightLine.position.set(roadWidth/2 - 1, 0.18, start + segmentLength / 2);
                 scene.add(rightLine);
             };
 
@@ -1859,7 +1859,7 @@
             // Original Z was approx 16 and 17. New Z is 17.5 and 18.5.
             const itemZ = 17.5;
             const itemZ2 = 18.5;
-            const paperZ = 18.0; // NEW: Dedicated Z position for papers to prevent z-fighting.
+            const paperZ = 18.5; // NEW: Dedicated Z position for papers to prevent z-fighting.
 
             // T-Shirts Store (Center)
             createWindow(0, windowY, windowZ, 28, 12, colors.windowGlowBright, 1.5);

@@ -1490,13 +1490,13 @@
 
                 const leftShoulder = new THREE.Mesh(shoulderGeo, shoulderMaterial);
                 leftShoulder.rotation.x = -Math.PI / 2;
-                leftShoulder.position.set(-roadWidth/2 - shoulderWidth/2, 0.1, start + segmentLength / 2);
+                leftShoulder.position.set(-roadWidth/2 - shoulderWidth/2, 0.14, start + segmentLength / 2);  // Raised from 0.1 to 0.14
                 leftShoulder.receiveShadow = true;
                 scene.add(leftShoulder);
 
                 const rightShoulder = new THREE.Mesh(shoulderGeo, shoulderMaterial);
                 rightShoulder.rotation.x = -Math.PI / 2;
-                rightShoulder.position.set(roadWidth/2 + shoulderWidth/2, 0.1, start + segmentLength / 2);
+                rightShoulder.position.set(roadWidth/2 + shoulderWidth/2, 0.14, start + segmentLength / 2);  // Raised from 0.1 to 0.14
                 rightShoulder.receiveShadow = true;
                 scene.add(rightShoulder);
             };
@@ -2704,8 +2704,6 @@
     </script>
 </body>
 </html>
-
-
 
 
 

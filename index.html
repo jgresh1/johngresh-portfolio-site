@@ -727,11 +727,28 @@
             mouse = new THREE.Vector2();
 
             setupEventListeners();
-            initJoystick(); // Initialize the NippleJS joystick
-
-            // Ensure controls are visible if detected as mobile on load
+            
+            // Initialize joystick with proper timing for iOS
             if (isMobileDevice()) {
+                // Force layout recalculation on iOS
                 document.getElementById('mobile-controls').style.display = 'flex';
+                
+                // Use requestAnimationFrame to ensure layout is complete
+                requestAnimationFrame(() => {
+                    initJoystick();
+                    
+                    // iOS Safari sometimes needs a second initialization
+                    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                        setTimeout(() => {
+                            if (joystickManager && joystickManager[0]) {
+                                // Force position recalculation
+                                joystickManager[0].trigger('rested');
+                            }
+                        }, 500);
+                    }
+                });
+            } else {
+                initJoystick(); // Desktop initialization
             }
 
             animate();
@@ -2665,4 +2682,5 @@
     </script>
 </body>
 </html>
+
 

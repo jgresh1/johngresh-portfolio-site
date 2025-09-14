@@ -1449,7 +1449,8 @@
                 const zPos = roadStartZ + (i * dashSpacing) + 10;
                 const centerLine = new THREE.Mesh(centerLineGeo, lineMaterial);
                 centerLine.rotation.x = -Math.PI / 2;
-                centerLine.position.set(0, 0.12, zPos);
+                // Raised Y-position to prevent z-fighting with the road surface, especially on mobile.
+                centerLine.position.set(0, 0.15, zPos);
                 scene.add(centerLine);
             }
 
@@ -1464,12 +1465,14 @@
 
                 const leftLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
                 leftLine.rotation.x = -Math.PI / 2;
-                leftLine.position.set(-roadWidth/2 + 1, 0.12, start + segmentLength / 2);
+                // Raised Y-position to prevent z-fighting.
+                leftLine.position.set(-roadWidth/2 + 1, 0.15, start + segmentLength / 2);
                 scene.add(leftLine);
 
                 const rightLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
                 rightLine.rotation.x = -Math.PI / 2;
-                rightLine.position.set(roadWidth/2 - 1, 0.12, start + segmentLength / 2);
+                // Raised Y-position to prevent z-fighting.
+                rightLine.position.set(roadWidth/2 - 1, 0.15, start + segmentLength / 2);
                 scene.add(rightLine);
             };
 
@@ -1856,6 +1859,7 @@
             // Original Z was approx 16 and 17. New Z is 17.5 and 18.5.
             const itemZ = 17.5;
             const itemZ2 = 18.5;
+            const paperZ = 18.0; // NEW: Dedicated Z position for papers to prevent z-fighting.
 
             // T-Shirts Store (Center)
             createWindow(0, windowY, windowZ, 28, 12, colors.windowGlowBright, 1.5);
@@ -1865,15 +1869,15 @@
 
             // Resume Store (Left)
             createWindow(xPosLeft, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2);
-            addPaper(xPosLeft - 7, 8, itemZ);
-            addPaper(xPosLeft + 7, 8.5, itemZ);
-            addPaper(xPosLeft, 7, itemZ);
+            addPaper(xPosLeft - 7, 8, paperZ);
+            addPaper(xPosLeft + 7, 8.5, paperZ);
+            addPaper(xPosLeft, 7, paperZ);
 
             // Projects Store (Right)
             createWindow(xPosRight, windowY, windowZ, 26, 12, colors.windowGlowDim, 0.8);
-            addPaper(xPosRight - 7, 8.5, itemZ);
-            addPaper(xPosRight + 7, 8, itemZ);
-            addPaper(xPosRight + 1, 7.5, itemZ);
+            addPaper(xPosRight - 7, 8.5, paperZ);
+            addPaper(xPosRight + 7, 8, paperZ);
+            addPaper(xPosRight + 1, 7.5, paperZ);
 
             const signZ = windowZ + 0.5;
             createSign("RESUME", colors.signResume, xPosLeft, 20, signZ, 'resume', 50);
@@ -2704,7 +2708,3 @@
     </script>
 </body>
 </html>
-
-
-
-

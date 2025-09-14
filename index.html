@@ -11,6 +11,8 @@
             overflow: hidden;
             background-color: #000;
             cursor: grab;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            overscroll-behavior: none; /* Prevent pull-to-refresh */
         }
 
         canvas {
@@ -834,21 +836,9 @@
                 position: { left: '50%', top: '50%' },
                 color: 'rgba(255, 255, 255, 0.5)',
                 size: 120,
-                threshold: 0.1, // Lower threshold for more responsive input
-                fadeTime: 150,
-                multitouch: false, // Disable multitouch to prevent conflicts
-                maxNumberOfNipples: 1, // Only one joystick
-                dataOnly: false,
-                lockX: false,
-                lockY: false
             };
 
             joystickManager = nipplejs.create(options);
-
-            // Add debugging and improved event handling
-            joystickManager.on('start', (evt, data) => {
-                console.log('Joystick start:', data);
-            });
 
             joystickManager.on('move', (evt, data) => {
                 const angle = data.angle.radian;
@@ -859,31 +849,13 @@
                 // Y = sin(angle) * force (Forward/Back)
                 joystickInput.x = Math.cos(angle) * force;
                 joystickInput.y = Math.sin(angle) * force;
-
-                // Debug log for troubleshooting
-                console.log('Joystick move:', { angle: angle * 180 / Math.PI, force, x: joystickInput.x, y: joystickInput.y });
             });
 
             // Reset input when joystick is released
-            joystickManager.on('end', (evt, data) => {
+            joystickManager.on('end', () => {
                 joystickInput.x = 0;
                 joystickInput.y = 0;
-                console.log('Joystick end');
             });
-
-            // Prevent joystick events from bubbling to canvas
-            const joystickZone = document.getElementById('joystick-zone');
-            joystickZone.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-            }, { passive: false });
-            
-            joystickZone.addEventListener('touchmove', (e) => {
-                e.stopPropagation();
-            }, { passive: false });
-            
-            joystickZone.addEventListener('touchend', (e) => {
-                e.stopPropagation();
-            }, { passive: false });
         }
 
         // --- COIN TEXTURE CREATION ---
@@ -2518,35 +2490,15 @@
             // If we are already tracking a look touch, ignore new ones.
             if (lookTouchId !== null) return;
 
-            // Check if any touch is within the joystick zone - if so, don't use it for camera look
-            const joystickZone = document.getElementById('joystick-zone');
-            const joystickRect = joystickZone.getBoundingClientRect();
-
             // Iterate over the *new* touches in this event (event.changedTouches)
             for (const touch of event.changedTouches) {
-                const touchX = touch.clientX;
-                const touchY = touch.clientY;
-
-                // Skip this touch if it's within the joystick zone
-                if (touchX >= joystickRect.left && touchX <= joystickRect.right &&
-                    touchY >= joystickRect.top && touchY <= joystickRect.bottom) {
-                    continue;
-                }
-
-                // Skip this touch if it's within the action buttons area
-                const actionButtons = document.getElementById('action-buttons');
-                const actionRect = actionButtons.getBoundingClientRect();
-                if (touchX >= actionRect.left && touchX <= actionRect.right &&
-                    touchY >= actionRect.top && touchY <= actionRect.bottom) {
-                    continue;
-                }
-
-                // This touch is available for camera look
+                // Since this listener is on the canvas, and we assume controls stop propagation,
+                // any touch here is considered a look touch.
                 event.preventDefault(); // Prevent scroll/zoom
                 isDragging = true;
                 lookTouchId = touch.identifier;
-                dragStart.x = touchX;
-                dragStart.y = touchY;
+                dragStart.x = touch.clientX;
+                dragStart.y = touch.clientY;
                 break; // Found our look touch
             }
         }
@@ -2713,3 +2665,4 @@
     </script>
 </body>
 </html>
+

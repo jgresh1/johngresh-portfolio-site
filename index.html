@@ -1674,7 +1674,14 @@
 
             // 5. Blackout the end
             // Add a black plane at the far end to completely obscure the view
-            const blackoutGeo = new THREE.ShapeGeometry(hole);
+            const blackoutHole = new THREE.Shape();
+            blackoutHole.moveTo(-tunnelWidth / 2, 0.5);
+            blackoutHole.lineTo(-tunnelWidth / 2, sideWallHeight);
+            blackoutHole.quadraticCurveTo(0, tunnelHeight + 5, tunnelWidth / 2, sideWallHeight);
+            blackoutHole.lineTo(tunnelWidth / 2, 0.5);
+            blackoutHole.closePath();
+            
+            const blackoutGeo = new THREE.ShapeGeometry(blackoutHole);
             const blackoutMaterial = new THREE.MeshBasicMaterial({
                 color: 0x000000,
                 side: THREE.DoubleSide,
@@ -2682,5 +2689,6 @@
     </script>
 </body>
 </html>
+
 
 

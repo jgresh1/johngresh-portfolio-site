@@ -782,15 +782,14 @@
  	 	 	 	joystickManager = nipplejs.create(options);
 
  	 	 	 	joystickManager.on('move', (evt, data) => {
- 	 	 	 	 	 	const angle = data.angle.radian;
- 	 	 	 	 	 	const force = Math.min(data.force, 1.0); // Normalize force to max 1.0
+    // Use the library's pre-computed vector for better accuracy (x positive = right, y positive = up on joystick)
+    joystickInput.x = data.vector.x;
+    joystickInput.y = -data.vector.y;  // Invert Y to match keyboard forward/backward feel
 
- 	 	 	 	 	 	// Convert polar coordinates (angle, force) to Cartesian (X/Y)
- 	 	 	 	 	 	// X = cos(angle) * force (Strafe)
- 	 	 	 	 	 	// Y = sin(angle) * force (Forward/Back)
- 	 	 	 	 	 	joystickInput.x = Math.cos(angle) * force;
- 	 	 	 	 	 	joystickInput.y = Math.sin(angle) * force;
- 	 	 	 	});
+    // Optional: Clamp to [-1, 1] if needed for edge cases
+    joystickInput.x = Math.max(-1, Math.min(1, joystickInput.x));
+    joystickInput.y = Math.max(-1, Math.min(1, joystickInput.y));
+  });
 
  	 	 	 	// Reset input when joystick is released
  	 	 	 	joystickManager.on('end', () => {
@@ -2469,4 +2468,5 @@
 	</script>
 </body>
 </html>
+
 

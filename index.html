@@ -2190,6 +2190,21 @@
                 return false;
             };
 
+            // Check if position is on parking lot asphalt
+            const isOnParkingLot = (x, z) => {
+                // Parking lot dimensions (from createGround function)
+                const asphaltWidth = 450;
+                const asphaltLength = 320;
+                const asphaltCenterZ = asphaltLength / 2 - 60;
+                
+                if (Math.abs(x) < asphaltWidth / 2 && 
+                    z > (asphaltCenterZ - asphaltLength / 2) && 
+                    z < (asphaltCenterZ + asphaltLength / 2)) {
+                    return true;
+                }
+                return false;
+            };
+
             // This clearance check is used for ground-level trees (Y=0) to keep the immediate area around the tunnel clear.
             const isInTunnelClearance = (x, z) => {
                 // Clear a wider area around the tunnel entrance and exit (50 units buffer)
@@ -2208,8 +2223,8 @@
                 // Check clearances. Only apply clearance checks if Y=0 (ground trees).
                 // Trees placed on the tunnel (Y>0) rely on the dedicated logic below for placement.
                 if (y === 0) {
-                    // Check clearances. Apply tunnel clearance to distant trees as well to avoid blocking the view.
-                    if (isInTunnelClearance(x, z) || (!isDistant && isInRoadClearance(x, z))) {
+                    // Check clearances including parking lot
+                    if (isInTunnelClearance(x, z) || isOnParkingLot(x, z) || (!isDistant && isInRoadClearance(x, z))) {
                         return;
                     }
                 }
@@ -2292,10 +2307,10 @@
             // Roadside trees (now spanning the whole road length, clearance handled in createTree)
             const roadSideSpacing = 60;
             for (let z = roadStartZ + 50; z < roadEndZ - 100; z += roadSideSpacing) {
-                const leftX = -(roadWidth/2 + roadClearance + Math.random() * 15 + 10);
+                const leftX = -(roadWidth/2 + roadClearance + Math.random() * 15 + 20);
                 createTree(leftX, z + Math.random() * 20 - 10);
 
-                const rightX = (roadWidth/2 + roadClearance + Math.random() * 15 + 10);
+                const rightX = (roadWidth/2 + roadClearance + Math.random() * 15 + 20);
                 createTree(rightX, z + Math.random() * 20 - 10);
             }
 
@@ -2689,6 +2704,7 @@
     </script>
 </body>
 </html>
+
 
 
 

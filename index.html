@@ -1449,8 +1449,7 @@
                 const zPos = roadStartZ + (i * dashSpacing) + 10;
                 const centerLine = new THREE.Mesh(centerLineGeo, lineMaterial);
                 centerLine.rotation.x = -Math.PI / 2;
-                // Raised Y-position to prevent z-fighting with the road surface, especially on mobile.
-                centerLine.position.set(0, 0.18, zPos);
+                centerLine.position.set(0, 0.12, zPos);
                 scene.add(centerLine);
             }
 
@@ -1465,14 +1464,12 @@
 
                 const leftLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
                 leftLine.rotation.x = -Math.PI / 2;
-                // Raised Y-position to prevent z-fighting.
-                leftLine.position.set(-roadWidth/2 + 1, 0.18, start + segmentLength / 2);
+                leftLine.position.set(-roadWidth/2 + 1, 0.12, start + segmentLength / 2);
                 scene.add(leftLine);
 
                 const rightLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
                 rightLine.rotation.x = -Math.PI / 2;
-                // Raised Y-position to prevent z-fighting.
-                rightLine.position.set(roadWidth/2 - 1, 0.18, start + segmentLength / 2);
+                rightLine.position.set(roadWidth/2 - 1, 0.12, start + segmentLength / 2);
                 scene.add(rightLine);
             };
 
@@ -1859,7 +1856,6 @@
             // Original Z was approx 16 and 17. New Z is 17.5 and 18.5.
             const itemZ = 17.5;
             const itemZ2 = 18.5;
-            const paperZ = 18.5; // NEW: Dedicated Z position for papers to prevent z-fighting.
 
             // T-Shirts Store (Center)
             createWindow(0, windowY, windowZ, 28, 12, colors.windowGlowBright, 1.5);
@@ -1869,15 +1865,15 @@
 
             // Resume Store (Left)
             createWindow(xPosLeft, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2);
-            addPaper(xPosLeft - 7, 8, paperZ);
-            addPaper(xPosLeft + 7, 8.5, paperZ);
-            addPaper(xPosLeft, 7, paperZ);
+            addPaper(xPosLeft - 7, 8, itemZ);
+            addPaper(xPosLeft + 7, 8.5, itemZ);
+            addPaper(xPosLeft, 7, itemZ);
 
             // Projects Store (Right)
             createWindow(xPosRight, windowY, windowZ, 26, 12, colors.windowGlowDim, 0.8);
-            addPaper(xPosRight - 7, 8.5, paperZ);
-            addPaper(xPosRight + 7, 8, paperZ);
-            addPaper(xPosRight + 1, 7.5, paperZ);
+            addPaper(xPosRight - 7, 8.5, itemZ);
+            addPaper(xPosRight + 7, 8, itemZ);
+            addPaper(xPosRight + 1, 7.5, itemZ);
 
             const signZ = windowZ + 0.5;
             createSign("RESUME", colors.signResume, xPosLeft, 20, signZ, 'resume', 50);
@@ -2530,6 +2526,14 @@
         function onTouchStart(event) {
             if (!isSceneActive || !isMobileDevice()) return;
 
+            // Store touch start for tap detection
+            if (event.changedTouches.length > 0) {
+                const touch = event.changedTouches[0];
+                dragStart.tapX = touch.clientX;
+                dragStart.tapY = touch.clientY;
+                dragStart.tapTime = Date.now();
+            }
+
             // If we are already tracking a look touch, ignore new ones.
             if (lookTouchId !== null) return;
 
@@ -2567,7 +2571,45 @@
         }
 
         function onTouchEnd(event) {
-            if (!isMobileDevice() || lookTouchId === null) return;
+            if (!isMobileDevice()) return;
+
+            // Check for tap on store signs
+            if (event.changedTouches.length > 0 && isSceneActive) {
+                const touch = event.changedTouches[0];
+                const tapDuration = Date.now() - (dragStart.tapTime || 0);
+                const tapDistance = Math.sqrt(
+                    Math.pow(touch.clientX - (dragStart.tapX || 0), 2) + 
+                    Math.pow(touch.clientY - (dragStart.tapY || 0), 2)
+                );
+
+                // If it's a quick tap (not a drag)
+                if (tapDuration < 300 && tapDistance < 10) {
+                    // Convert touch coordinates to normalized device coordinates
+                    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+                    // Cast ray to check for sign intersections
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObjects(clickableObjects);
+
+                    if (intersects.length > 0) {
+                        const object = intersects[0].object;
+                        console.log(`Mobile tap - Navigating to: ${object.name}`);
+
+                        switch(object.name) {
+                            case 'resume':
+                                showOverlay('resumeOverlay');
+                                break;
+                            case 'tshirts':
+                                showOverlay('tshirtsOverlay');
+                                break;
+                            case 'projects':
+                                showOverlay('projectsOverlay');
+                                break;
+                        }
+                    }
+                }
+            }
 
             // Check if the touch ending is the one we are tracking for look
             for (const touch of event.changedTouches) {

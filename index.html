@@ -345,7 +345,7 @@
                 font-size: 20px; /* Larger font */
                 border: 3px solid black; /* Thicker border */
                 box-shadow: 3px 3px 0px rgba(0,0,0,0.8);
-                z-index: 1002; /* Highest z-index to ensure visibility */
+                z-index: 9999; /* Maximum z-index */
                 background-color: #ff0000; /* Brighter red for visibility */
             }
 
@@ -356,6 +356,25 @@
             
             .overlay-container {
                 margin-top: 60px; /* Add top margin to prevent content from going under the button */
+            }
+        }
+
+        /* Specific iPad handling */
+        @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+            .close-btn {
+                position: fixed !important;
+                z-index: 99999 !important; /* Even higher for iPad */
+                top: 15px !important;
+                right: 15px !important;
+                padding: 12px 24px !important;
+                font-size: 26px !important;
+                background-color: #ff0000 !important;
+                border: 4px solid black !important;
+            }
+            
+            .overlay-container {
+                margin-top: 80px !important; /* More clearance on iPad */
+                max-height: calc(85vh - 80px) !important; /* Adjust height to account for margin */
             }
         }
     </style>
@@ -2433,7 +2452,14 @@
 
             // Recalculate DPR settings on resize
             const dpr = window.devicePixelRatio || 1;
-            const effectiveDPR = isMobileDevice() ? Math.min(1.5, dpr) : dpr;
+            let effectiveDPR;
+            if (isIPad()) {
+                effectiveDPR = 1.0; // Lowest DPR for iPad
+            } else if (isMobileDevice()) {
+                effectiveDPR = Math.min(1.5, dpr);
+            } else {
+                effectiveDPR = dpr;
+            }
             renderer.setPixelRatio(effectiveDPR);
 
             camera.aspect = width / height;
@@ -2639,10 +2665,16 @@
         }
 
         function onMouseClick(event) {
-            if (!isSceneActive || isMobileDevice()) return; // Handle clicks only on desktop
+            if (!isSceneActive) return; // Only check if scene is active, not device type
+
+            // Skip click handling if we're on a touch device
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                return; // This is a touch device, handle via touch events instead
+            }
 
             const distanceMoved = Math.sqrt(
-                Math.pow(event.clientX - dragStart.x, 2) + Math.pow(event.clientY - dragStart.y, 2)
+                Math.pow(event.clientX - (dragStart.x || 0), 2) + 
+                Math.pow(event.clientY - (dragStart.y || 0), 2)
             );
 
             if (distanceMoved > 5) {

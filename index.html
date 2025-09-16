@@ -696,12 +696,18 @@
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800;
         }
 
+        // Helper function specifically for iPad detection (useful for specific optimizations)
+        function isIPad() {
+             return /iPad/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
         function init() {
             scene = new THREE.Scene();
             // Increased fog distance
             scene.fog = new THREE.Fog(colors.horizonGlow, 300, 800); // Increased far plane
 
-            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
+            // FIX: Reduced camera far plane (2000 -> 1800). This can slightly improve depth buffer precision, helping reduce Z-fighting on mobile.
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1800);
 
             cameraRig = new THREE.Object3D();
             cameraPitch = new THREE.Object3D();
@@ -718,8 +724,17 @@
 
             // Optimization: Limit Device Pixel Ratio (DPR) on mobile for better performance
             const dpr = window.devicePixelRatio || 1;
-            // Limit DPR to 1.5 on mobile, use full DPR on desktop
-            const effectiveDPR = isMobileDevice() ? Math.min(1.5, dpr) : dpr;
+            
+            // Optimization: Handle DPR based on device type
+            let effectiveDPR;
+            if (isIPad()) {
+                effectiveDPR = 1.0; // Lower DPR for iPad for performance
+            } else if (isMobileDevice()) {
+                effectiveDPR = Math.min(1.5, dpr);
+            } else {
+                effectiveDPR = dpr; // Full DPR on desktop
+            }
+            
             renderer.setPixelRatio(effectiveDPR);
 
             // Optimization: Disable shadows entirely on mobile for significant performance gain
@@ -828,8 +843,16 @@
 
         // Optimization: Adjust pixelation based on device capabilities
         function getPixelSize() {
-            // Target a lower vertical resolution on mobile (e.g., 280p) vs desktop (450p)
-            const targetVerticalResolution = isMobileDevice() ? 280 : 450;
+            // Target a lower vertical resolution on mobile vs desktop
+            let targetVerticalResolution;
+            if (isIPad()) {
+                targetVerticalResolution = 240; // Lower resolution for iPad
+            } else if (isMobileDevice()) {
+                targetVerticalResolution = 280;
+            } else {
+                targetVerticalResolution = 450;
+            }
+            
             // Use the effective DPR from the renderer
             const effectiveDPR = renderer.getPixelRatio();
             const calculatedSize = (window.innerHeight * effectiveDPR) / targetVerticalResolution;
@@ -1235,8 +1258,8 @@
                 fog: false
             });
 
-            // Increased radius for larger scene
-            const skyGeometry = new THREE.SphereGeometry(1800, 32, 16);
+            // Use the camera's far plane for the sky radius
+            const skyGeometry = new THREE.SphereGeometry(1750, 32, 16);
             const sky = new THREE.Mesh(skyGeometry, skyMaterial);
             scene.add(sky);
         }
@@ -1466,7 +1489,14 @@
             scene.add(road);
 
             // Center Lines
-            const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+            // FIX: Added polygonOffset to prevent Z-fighting, especially on mobile inside the tunnel.
+            const lineMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffd700,
+                polygonOffset: true,
+                polygonOffsetFactor: -1, // Negative factor pulls the material forward in depth calculation
+                polygonOffsetUnits: -1
+            });
+            
             const centerLineGeo = new THREE.PlaneGeometry(1.5, 18);
             const dashSpacing = 25;
             const numDashes = Math.floor(roadLength / dashSpacing);
@@ -1479,8 +1509,14 @@
                 scene.add(centerLine);
             }
 
-            // Side Lines (Split before and after the tunnel)
-            const sideLineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            // Side Lines
+            // FIX: Added polygonOffset here as well.
+            const sideLineMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff,
+                polygonOffset: true,
+                polygonOffsetFactor: -1, 
+                polygonOffsetUnits: -1
+            });
 
             const createSideLinesSegment = (start, end) => {
                 const segmentLength = end - start;
@@ -2789,3 +2825,4 @@
     </script>
 </body>
 </html>
+

@@ -1940,7 +1940,7 @@
             
             // Calculate positions based on center and side widths
             const xPosLeft = -(centerWidth/2 + sideWidth/2); // -33.5
-            const xPosRight = centerWidth/2 + sideWidth/2;    // 33.5
+            const xPosRight = centerWidth/2 + sideWidth/2;   // 33.5
             // NEW: Position for the new shop (next to Projects)
             const xPosFarRight = xPosRight + sideWidth; // 65.5
 
@@ -2017,22 +2017,13 @@
             // NEW Ask John Store (Far Right)
             createWindow(xPosFarRight, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2);
             
-            // MODIFIED: Replaced papers with thought bubbles
-            // Define some colors for the bubbles (using existing theme colors)
-            const bubbleColor1 = colors.coinGold;      // Gold/Yellow
-            const bubbleColor2 = colors.signTshirts;   // Blue
-            const bubbleColor3 = colors.signResume;    // Red
-            const bubbleColor4 = colors.signProjects;  // Teal
-
-            // Add bubbles of various sizes, colors, and rotations
-            // Large bubble (Center back)
-            addBubble(xPosFarRight + 2, 8.5, itemZ, 10, 6, bubbleColor1, -0.2);
-            // Medium bubble (Left front)
-            addBubble(xPosFarRight - 8, 7, itemZ2, 7, 4.5, bubbleColor2, 0.1);
-            // Small bubble (Right front)
-            addBubble(xPosFarRight + 9, 10, itemZ2, 5, 3.5, bubbleColor3);
-             // Medium bubble (Upper center)
-            addBubble(xPosFarRight - 3, 11, itemZ, 6, 4, bubbleColor4, 0.3);
+            // Replaced papers with thought bubbles
+            // Bubble 1 (Large, center-right, yellowish: 0xffe066)
+            addThoughtBubble(xPosFarRight + 5, 8.5, itemZ, 8, 5.5, 0xffe066, 'bottom-right');
+            // Bubble 2 (Medium, center-left, tealish: 0x48bfe3)
+            addThoughtBubble(xPosFarRight - 6, 7.5, itemZ2, 6, 4, 0x48bfe3, 'bottom-left');
+            // Bubble 3 (Small, top-center, pinkish: 0xfb6f92)
+            addThoughtBubble(xPosFarRight - 1, 11.5, itemZ, 4.5, 3, 0xfb6f92, 'top-left');
             
             // End NEW
 
@@ -2143,52 +2134,109 @@
             scene.add(paper);
         }
 
-        // NEW FUNCTION: Adds an oval thought/message bubble
-        function addBubble(x, y, z, width, height, color, rotation = 0) {
-            // Material for the bubble
+        // NEW: Function to create thought bubbles
+        function addThoughtBubble(x, y, z, width, height, color, pointerSide = 'bottom-left') {
             const material = new THREE.MeshStandardMaterial({
                 color: color,
-                roughness: 0.5,
-                metalness: 0.1,
-                // Ensure it renders correctly behind the window glass
+                roughness: 0.6,
+                side: THREE.DoubleSide, // Render both sides
+                 // Improve depth precision and rendering order (important for overlapping objects)
                 depthWrite: true,
                 depthTest: true,
                 polygonOffset: true,
                 polygonOffsetFactor: -1,
-                polygonOffsetUnits: -1,
-                side: THREE.DoubleSide // Render both sides in case it rotates
+                polygonOffsetUnits: -1
             });
 
+            const shape = new THREE.Shape();
+
+            // 1. Create the oval (ellipse)
             const radiusX = width / 2;
             const radiusY = height / 2;
 
-            // Create an oval shape using Shape.absellipse
-            const shape = new THREE.Shape();
-            // x, y (center), xRadius, yRadius, startAngle, endAngle, clockwise
-            shape.absellipse(0, 0, radiusX, radiusY, 0, Math.PI * 2, false);
+            // Draw the ellipse centered at (0,0)
+            shape.absellipse(0, 0, radiusX, radiusY, 0, Math.PI * 2, false, 0);
 
-            // Use ExtrudeGeometry for a slight thickness and bevel, keeping it low-poly
+            // Define extrusion settings
             const extrudeSettings = {
                 steps: 1,
-                depth: 0.5, // Slight thickness
+                depth: 0.5, // Thickness of the bubble
                 bevelEnabled: true,
-                bevelThickness: 0.2,
-                bevelSize: 0.2,
-                bevelSegments: 1 // Keep segments low
+                bevelThickness: 0.1,
+                bevelSize: 0.1,
+                bevelSegments: 3
             };
 
+            // 2. Create the main bubble mesh
             const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-            // Rotate geometry so it faces the front when placed (like shirts/papers)
+            // Rotate the geometry so it faces the front (towards positive Z) when added
+            // Since the window faces positive Z, and we want the bubble visible from the front, 
+            // we rotate it 180 degrees around Y, similar to the papers and shirts.
             geometry.rotateY(Math.PI);
 
             const bubble = new THREE.Mesh(geometry, material);
-            bubble.position.set(x, y, z);
-            bubble.rotation.z = rotation; // Apply optional rotation
+            bubble.renderOrder = 1; // Ensure it renders correctly relative to the window
 
-            bubble.castShadow = true;
-            bubble.renderOrder = 1; // Ensure it renders after the window
-            scene.add(bubble);
+            // 3. Create the pointer (triangle) separately
+            const pointerShape = new THREE.Shape();
+            const pointerSize = Math.min(width, height) * 0.3; // Size relative to the bubble
+
+            let p1x, p1y, p2x, p2y, p3x, p3y;
+
+            // Determine pointer location based on pointerSide
+            // We approximate the edge positions using the radii.
+            switch (pointerSide) {
+                case 'top-left':
+                    // Base near top edge, left side
+                    p1x = -radiusX * 0.3; p1y = radiusY * 0.95;
+                    p2x = p1x - pointerSize * 0.5; p2y = p1y + pointerSize; // The tip (outward)
+                    p3x = p1x + pointerSize * 0.3; p3y = radiusY * 0.95;
+                    break;
+                case 'top-right':
+                    // Base near top edge, right side
+                    p1x = radiusX * 0.3; p1y = radiusY * 0.95;
+                    p2x = p1x + pointerSize * 0.5; p2y = p1y + pointerSize; // The tip (outward)
+                    p3x = p1x - pointerSize * 0.3; p3y = radiusY * 0.95;
+                    break;
+                case 'bottom-right':
+                     // Base near bottom edge, right side
+                    p1x = radiusX * 0.4; p1y = -radiusY * 0.95;
+                    p2x = p1x + pointerSize * 0.6; p2y = p1y - pointerSize; // The tip (outward)
+                    p3x = p1x - pointerSize * 0.2; p3y = -radiusY * 0.95;
+                    break;
+                case 'bottom-left':
+                default:
+                     // Base near bottom edge, left side
+                    p1x = -radiusX * 0.4; p1y = -radiusY * 0.95;
+                    p2x = p1x - pointerSize * 0.6; p2y = p1y - pointerSize; // The tip (outward)
+                    p3x = p1x + pointerSize * 0.2; p3y = -radiusY * 0.95;
+                    break;
+            }
+
+            pointerShape.moveTo(p1x, p1y);
+            pointerShape.lineTo(p2x, p2y);
+            pointerShape.lineTo(p3x, p3y);
+            pointerShape.closePath();
+
+            const pointerGeometry = new THREE.ExtrudeGeometry(pointerShape, extrudeSettings);
+            pointerGeometry.rotateY(Math.PI);
+
+            const pointerMesh = new THREE.Mesh(pointerGeometry, material);
+            pointerMesh.renderOrder = 1;
+
+            // 4. Group and position
+            const group = new THREE.Group();
+            group.add(bubble);
+            group.add(pointerMesh);
+
+            // Adjust the Z position slightly to account for the extrusion depth and rotation
+            // When rotated 180 degrees, the extruded object extends towards negative Z. 
+            // We position it at the desired Z plus half the depth so the front face aligns correctly.
+            group.position.set(x, y, z + extrudeSettings.depth/2); 
+            group.castShadow = true;
+            scene.add(group);
         }
+
 
         function createAwning(xPos, yPos, texture) {
             texture.repeat.set(6, 1);

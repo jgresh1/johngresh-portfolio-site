@@ -2016,10 +2016,24 @@
 
             // NEW Ask John Store (Far Right)
             createWindow(xPosFarRight, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2);
-            // Adding some papers as placeholders
-            addPaper(xPosFarRight - 7, 8, itemZ);
-            addPaper(xPosFarRight + 7, 8.5, itemZ);
-            addPaper(xPosFarRight, 7.5, itemZ2);
+            
+            // MODIFIED: Replaced papers with thought bubbles
+            // Define some colors for the bubbles (using existing theme colors)
+            const bubbleColor1 = colors.coinGold;      // Gold/Yellow
+            const bubbleColor2 = colors.signTshirts;   // Blue
+            const bubbleColor3 = colors.signResume;    // Red
+            const bubbleColor4 = colors.signProjects;  // Teal
+
+            // Add bubbles of various sizes, colors, and rotations
+            // Large bubble (Center back)
+            addBubble(xPosFarRight + 2, 8.5, itemZ, 10, 6, bubbleColor1, -0.2);
+            // Medium bubble (Left front)
+            addBubble(xPosFarRight - 8, 7, itemZ2, 7, 4.5, bubbleColor2, 0.1);
+            // Small bubble (Right front)
+            addBubble(xPosFarRight + 9, 10, itemZ2, 5, 3.5, bubbleColor3);
+             // Medium bubble (Upper center)
+            addBubble(xPosFarRight - 3, 11, itemZ, 6, 4, bubbleColor4, 0.3);
+            
             // End NEW
 
             // --- Signs ---
@@ -2127,6 +2141,53 @@
             paper.rotation.x = Math.PI / 12 + (Math.random() - 0.5) * 0.2;
             paper.castShadow = true;
             scene.add(paper);
+        }
+
+        // NEW FUNCTION: Adds an oval thought/message bubble
+        function addBubble(x, y, z, width, height, color, rotation = 0) {
+            // Material for the bubble
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.5,
+                metalness: 0.1,
+                // Ensure it renders correctly behind the window glass
+                depthWrite: true,
+                depthTest: true,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1,
+                side: THREE.DoubleSide // Render both sides in case it rotates
+            });
+
+            const radiusX = width / 2;
+            const radiusY = height / 2;
+
+            // Create an oval shape using Shape.absellipse
+            const shape = new THREE.Shape();
+            // x, y (center), xRadius, yRadius, startAngle, endAngle, clockwise
+            shape.absellipse(0, 0, radiusX, radiusY, 0, Math.PI * 2, false);
+
+            // Use ExtrudeGeometry for a slight thickness and bevel, keeping it low-poly
+            const extrudeSettings = {
+                steps: 1,
+                depth: 0.5, // Slight thickness
+                bevelEnabled: true,
+                bevelThickness: 0.2,
+                bevelSize: 0.2,
+                bevelSegments: 1 // Keep segments low
+            };
+
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            // Rotate geometry so it faces the front when placed (like shirts/papers)
+            geometry.rotateY(Math.PI);
+
+            const bubble = new THREE.Mesh(geometry, material);
+            bubble.position.set(x, y, z);
+            bubble.rotation.z = rotation; // Apply optional rotation
+
+            bubble.castShadow = true;
+            bubble.renderOrder = 1; // Ensure it renders after the window
+            scene.add(bubble);
         }
 
         function createAwning(xPos, yPos, texture) {

@@ -12,9 +12,13 @@ canvas { display: block; touch-action: none; }
 #coin-counter { position: absolute; top: 20px; right: 20px; color: #ffd700; font-family: 'VT323', monospace; font-size: 36px; text-shadow: 3px 3px 0px black; padding: 10px 20px; background: rgba(26, 5, 58, 0.8); border: 4px solid black; z-index: 15; display: block; box-shadow: 5px 5px 0px rgba(0,0,0,0.8); pointer-events: none; }
 .scene-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(26, 5, 58, 0.9); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
 .overlay-container { width: 85%; max-width: 1100px; height: 85vh; overflow-y: auto; padding: 30px; border: 4px solid #000; box-shadow: 0 0 50px rgba(255, 125, 92, 0.9); background-color: #1a1a2e; color: #ffffff; font-family: 'VT323', monospace; line-height: 1.3; }
-#tshirtsContainer, #askJohnContainer { max-width: 650px; height: auto; max-height: 85vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+/* Added #miniGamesContainer to the selector list */
+#tshirtsContainer, #askJohnContainer, #miniGamesContainer { max-width: 650px; height: auto; max-height: 85vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
 #tshirtsContainer { box-shadow: 0 0 50px rgba(0, 119, 182, 0.9); }
 #askJohnContainer { box-shadow: 0 0 50px rgba(255, 167, 0, 0.9); }
+/* New Mini Games Styles (Dark Purple Theme) */
+#miniGamesContainer { box-shadow: 0 0 50px rgba(106, 13, 173, 0.9); }
+
 .close-btn { position: absolute; top: 20px; right: 20px; padding: 10px 20px; font-size: 24px; font-family: 'VT323', monospace; background-color: #e63946; color: white; border: 3px solid black; cursor: pointer; border-radius: 0; box-shadow: 5px 5px 0px rgba(0,0,0,0.8); transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s; }
 .close-btn:hover { background-color: #ff5a5f; }
 .close-btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0px rgba(0,0,0,0.8); }
@@ -26,6 +30,9 @@ canvas { display: block; touch-action: none; }
 .resume-header h1 { font-size: 48px; margin: 0; color: #ff7d5c; text-shadow: 3px 3px 0px rgba(0,0,0,0.5); }
 #tshirtsContainer .resume-header h1 { color: #0077b6; }
 #askJohnContainer .resume-header h1 { color: #ffa700; }
+/* New Mini Games Header Color */
+#miniGamesContainer .resume-header h1 { color: #9d4edd; }
+
 .resume-header p { font-size: 22px; margin: 5px 0 0 0; color: #d4a3a3; }
 .resume-section { margin-bottom: 30px; }
 .resume-section h2 { font-size: 30px; color: #2a9d8f; border-bottom: 2px solid #2a9d8f; padding-bottom: 5px; margin-bottom: 15px; text-transform: uppercase; }
@@ -42,6 +49,9 @@ canvas { display: block; touch-action: none; }
 .progress-container { width: 90%; background-color: #2a1a3d; border: 4px solid #000; margin: 25px 0; box-shadow: 5px 5px 0px rgba(0,0,0,0.8); }
 .progress-bar { background-color: #0077b6; height: 35px; width: 60%; background-image: linear-gradient(90deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.25) 5%, transparent 5%, transparent 100%); background-size: 20px 100%; }
 #askJohnContainer .progress-bar { background-color: #ffa700; width: 50%; }
+/* New Mini Games Progress Bar */
+#miniGamesContainer .progress-bar { background-color: #6a0dad; width: 30%; }
+
 .loading-text { font-size: 28px; color: #ffffff; margin-top: 15px; }
 #mobile-controls { position: fixed; bottom: 0; left: 0; width: 100%; height: 200px; z-index: 20; display: none; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; pointer-events: none; }
 #joystick-zone { position: relative; width: 150px; height: 150px; pointer-events: auto; margin-left: 20px; touch-action: none; }
@@ -211,6 +221,21 @@ canvas { display: block; touch-action: none; }
 <p class="loading-text">> Coming Soon</p>
 </div>
 </div>
+
+<div id="miniGamesOverlay" class="scene-overlay">
+    <button class="close-btn">[X] BACK</button>
+    <div id="miniGamesContainer" class="overlay-container">
+        <div class="resume-header">
+            <h1>Mini Games (WIP)</h1>
+        </div>
+        <p class="loading-text">Loading Arcade...</p>
+        <div class="progress-container">
+            <div class="progress-bar"></div>
+        </div>
+        <p class="loading-text">> Coming Soon</p>
+    </div>
+</div>
+
 <div id="mobile-controls">
 <div id="joystick-zone"></div>
 <div id="action-buttons">
@@ -278,6 +303,7 @@ const colors = {
     skyZenith: 0x1a053a, skyHorizonDark: 0x2a1a3d, horizonGlow: 0xff7d5c, asphalt: 0x1a1a2e, asphaltLine: 0x6c6383,
     brick: 0x8a505d, grass: 0x182c25, stucco: 0xd4a3a3, stuccoDark: 0xa37c7c, windowGlowBright: 0xfff5c3,
     windowGlowDim: 0x839db5, signResume: 0xe63946, signTshirts: 0x0077b6, signProjects: 0x2a9d8f, signAskJohn: 0xffa700,
+    signMiniGames: 0x6a0dad, // Dark Purple
     billboardGlow: 0xffe8a3, billboardText: 0xd95763, treeDark: 0x1b3028, treeTrunk: 0x4a3f35, metalDark: 0x1a1a2e,
     poleMetal: 0x4a4f63, poleGlow: 0xffe0a3, coinGold: 0xffd700, coinDarkGold: 0xc6a100, tunnelConcrete: 0x3a3a4a,
     tunnelFacade: 0x5a5a6a, tunnelLight: 0xffa050
@@ -300,9 +326,10 @@ function init() {
     cameraPitch.add(camera);
     cameraRig.add(cameraPitch);
     scene.add(cameraRig);
-    cameraRig.position.set(80, playerHeight, 120);
+    // Adjusted starting position slightly to better view the extended mall
+    cameraRig.position.set(100, playerHeight, 130);
     cameraPitch.rotation.x = -0.12;
-    cameraRig.rotation.y = -0.45;
+    cameraRig.rotation.y = -0.50;
     renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
     const dpr = window.devicePixelRatio || 1;
@@ -467,6 +494,33 @@ function createCoinTexture(size = 128) {
     return texture;
 }
 
+// Helper function for creating button label textures
+function createTextTextureSync(text, color, fontSize = 24, bgColor = null) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    // Set canvas size (small for buttons)
+    canvas.width = 64;
+    canvas.height = 64;
+
+    if (bgColor) {
+        context.fillStyle = bgColor;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    context.font = `${fontSize}px 'VT323', monospace`;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillStyle = color;
+    // Adjust vertical position slightly for VT323 font baseline
+    context.fillText(text, canvas.width / 2, canvas.height / 2 + fontSize * 0.1);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.NearestFilter;
+    texture.magFilter = THREE.NearestFilter;
+    return texture;
+}
+
+
 function initCoins() {
     const segments = isMobileDevice() ? 8 : 12;
     coinGeometry = new THREE.CylinderGeometry(2, 2, 0.6, segments);
@@ -532,6 +586,7 @@ function collectCoin(coinData) {
     }
 }
 
+// ... (Fireworks functions: createFirework, startFireworks, updateFireworks remain the same) ...
 function createFirework(x, y, z, color) {
     const particleCount = isMobileDevice() ? 80 : 150;
     const geometry = new THREE.BufferGeometry();
@@ -769,6 +824,7 @@ function createGround() {
     createRoad();
 }
 
+// ... (createRoad, createTunnel, createParkingLights remain the same) ...
 function createRoad() {
     const { width: roadWidth, length: roadLength, startZ: roadStartZ, shoulderWidth } = ROAD_CONFIG;
     const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x0a0a15, roughness: 0.9, metalness: 0.1 });
@@ -1000,6 +1056,85 @@ function createParkingLights() {
     createParkingLight(-80, 250); createParkingLight(80, 250);
 }
 
+// New function to add controller elements on the ground
+function addControllerElements(centerX, y, z) {
+    const group = new THREE.Group();
+    // Positioning the group on the ground in front of the store
+    group.position.set(centerX, y, z);
+
+    // D-Pad (Left side)
+    const dPadMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.6 });
+    const dPadThickness = 0.5;
+    const dPadSize = 5;
+    const dPadArmWidth = 2;
+
+    // Horizontal part
+    const hGeo = new THREE.BoxGeometry(dPadSize, dPadThickness, dPadArmWidth);
+    const hPart = new THREE.Mesh(hGeo, dPadMaterial);
+    hPart.castShadow = true;
+    hPart.receiveShadow = true;
+
+    // Vertical part
+    const vGeo = new THREE.BoxGeometry(dPadArmWidth, dPadThickness, dPadSize);
+    const vPart = new THREE.Mesh(vGeo, dPadMaterial);
+    vPart.castShadow = true;
+    vPart.receiveShadow = true;
+
+    const dPadGroup = new THREE.Group();
+    dPadGroup.add(hPart);
+    dPadGroup.add(vPart);
+    dPadGroup.position.x = -8; // Position to the left
+    dPadGroup.rotation.x = -Math.PI / 2; // Lay flat on the ground
+    group.add(dPadGroup);
+
+
+    // Buttons (Right side, diamond shape)
+    const buttonGroup = new THREE.Group();
+    buttonGroup.position.x = 8; // Position to the right
+
+    const buttonRadius = 1.2;
+    const buttonHeight = 0.6;
+    const buttonSpacing = 3.5;
+
+    const createButton = (x, z, color, label) => {
+        const geometry = new THREE.CylinderGeometry(buttonRadius, buttonRadius, buttonHeight, 16);
+        // Create texture for the label on the top face
+        const faceTexture = createTextTextureSync(label, '#ffffff', 30);
+        // Materials array for Cylinder: [side, top, bottom]
+        const faceMaterial = new THREE.MeshStandardMaterial({ color: color, map: faceTexture, roughness: 0.3 });
+        const sideMaterial = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3 });
+
+        const button = new THREE.Mesh(geometry, [sideMaterial, faceMaterial, sideMaterial]);
+        // Position the button (Y is up)
+        button.position.set(x, buttonHeight / 2, z);
+        button.castShadow = true;
+        button.receiveShadow = true;
+        buttonGroup.add(button);
+    };
+
+    // Layout requested: A (bottom), B (left), Y (top), X (right).
+
+    // When looking at the store from the parking lot:
+    // Bottom (Further away) = Positive Z
+    // Top (Closer) = Negative Z
+    // Left = Negative X
+    // Right = Positive X
+
+    // A (Bottom) - Green
+    createButton(0, buttonSpacing, 0x2ecc71, 'A');
+    // B (Left) - Red
+    createButton(-buttonSpacing, 0, 0xe74c3c, 'B');
+    // Y (Top) - Yellow
+    createButton(0, -buttonSpacing, 0xf1c40f, 'Y');
+    // X (Right) - Blue (Correcting user typo: X for the left button)
+    createButton(buttonSpacing, 0, 0x3498db, 'X');
+
+    group.add(buttonGroup);
+
+    scene.add(group);
+}
+
+
 function createBuilding() {
     const buildingHeight = 25;
     const buildingDepth = 30;
@@ -1029,9 +1164,13 @@ function createBuilding() {
     const sideWidth = 32;
     const sideGeo = new THREE.BoxGeometry(sideWidth, buildingHeight, buildingDepth);
     sideGeo.translate(0, buildingHeight / 2, 0);
+
+    // Calculate positions for 5 shops
     const xPosLeft = -(centerWidth/2 + sideWidth/2);
     const xPosRight = centerWidth/2 + sideWidth/2;
     const xPosFarRight = xPosRight + sideWidth;
+    const xPosExtraFarRight = xPosFarRight + sideWidth; // New position for Mini Games
+
     const leftBlock = new THREE.Mesh(sideGeo, sideMaterial);
     leftBlock.position.set(xPosLeft, 0, zPos);
     leftBlock.castShadow = true;
@@ -1047,6 +1186,15 @@ function createBuilding() {
     farRightBlock.castShadow = true;
     farRightBlock.receiveShadow = true;
     scene.add(farRightBlock);
+
+    // New Block (Mini Games)
+    const extraFarRightBlock = new THREE.Mesh(sideGeo, sideMaterial);
+    extraFarRightBlock.position.set(xPosExtraFarRight, 0, zPos);
+    extraFarRightBlock.castShadow = true;
+    extraFarRightBlock.receiveShadow = true;
+    scene.add(extraFarRightBlock);
+
+
     const roofTrimSGeo = new THREE.BoxGeometry(sideWidth + 2, 3, buildingDepth + 2);
     const roofTrimL = new THREE.Mesh(roofTrimSGeo, trimMaterial);
     roofTrimL.position.set(xPosLeft, buildingHeight + 0.5, zPos);
@@ -1060,31 +1208,57 @@ function createBuilding() {
     roofTrimFR.position.set(xPosFarRight, buildingHeight + 0.5, zPos);
     roofTrimFR.castShadow = true;
     scene.add(roofTrimFR);
+
+    // New Roof Trim (Mini Games)
+    const roofTrimEFR = new THREE.Mesh(roofTrimSGeo, trimMaterial);
+    roofTrimEFR.position.set(xPosExtraFarRight, buildingHeight + 0.5, zPos);
+    roofTrimEFR.castShadow = true;
+    scene.add(roofTrimEFR);
+
+
     const windowZ = zPos + buildingDepth / 2 + 0.1;
     const windowY = 8;
     const itemZ = 19;
     const itemZ2 = 20.5;
+
+    // T-Shirts
     createWindow(0, windowY, windowZ, 28, 12, colors.windowGlowBright, 1.5);
     addShirt(-10, 8, itemZ, 0x457b9d);
     addShirt(10, 8, itemZ, 0xe63946);
     addShirt(0, 7.5, itemZ2, 0x1d3557);
+
+    // Resume
     createWindow(xPosLeft, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2);
     addPaper(xPosLeft - 7, 8, itemZ);
     addPaper(xPosLeft + 7, 8.5, itemZ);
     addPaper(xPosLeft, 7, itemZ);
+
+    // Projects
     createWindow(xPosRight, windowY, windowZ, 26, 12, colors.windowGlowDim, 0.8);
     addPaper(xPosRight - 7, 8.5, itemZ);
     addPaper(xPosRight + 7, 8, itemZ);
     addPaper(xPosRight + 1, 7.5, itemZ);
+
+    // Ask John
     createWindow(xPosFarRight, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2);
     addThoughtBubble(xPosFarRight + 5, 8.5, itemZ, 8, 5.5, 0xffe066, 'bottom-right');
     addThoughtBubble(xPosFarRight - 6, 7.5, itemZ2, 6, 4, 0x48bfe3, 'bottom-left');
     addThoughtBubble(xPosFarRight - 1, 11.5, itemZ, 4.5, 3, 0xfb6f92, 'top-left');
+
+    // Mini Games Window and Exterior
+    createWindow(xPosExtraFarRight, windowY, windowZ, 26, 12, colors.windowGlowDim, 1.0);
+    // Add controller elements on the ground in front (Y=0.05, Z=25)
+    addControllerElements(xPosExtraFarRight, 0.05, 25);
+
+
     const signZ = windowZ + 0.5;
     createSign("RESUME", colors.signResume, xPosLeft, 20, signZ, 'resume', 50);
     createSign("T-SHIRTS", colors.signTshirts, 0, 21, signZ, 'tshirts', 50);
     createSign("PROJECTS", colors.signProjects, xPosRight, 20, signZ, 'projects', 50);
     createSign("ASK JOHN", colors.signAskJohn, xPosFarRight, 20, signZ, 'askjohn', 50);
+    // New Sign (Mini Games)
+    createSign("MINI GAMES", colors.signMiniGames, xPosExtraFarRight, 20, signZ, 'minigames', 45);
+
     const awningY = 15;
     const texResume = createStripedTexture('#991b1b', '#fecaca');
     createAwning(xPosLeft, awningY, texResume);
@@ -1092,8 +1266,12 @@ function createBuilding() {
     createAwning(xPosRight, awningY, texProjects);
     const texAskJohn = createStripedTexture('#ffA700', '#333333');
     createAwning(xPosFarRight, awningY, texAskJohn);
+    // New Awning (Mini Games) - Dark Purple and a slightly darker variant
+    const texMiniGames = createStripedTexture('#6a0dad', '#4b0082');
+    createAwning(xPosExtraFarRight, awningY, texMiniGames);
 }
 
+// ... (createWindow, addShirt, addPaper, addThoughtBubble, createAwning, createSign functions remain the same) ...
 function createWindow(x, y, z, width, height, color, intensity) {
     const windowMaterial = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.95 });
     const windowGeo = new THREE.PlaneGeometry(width, height);
@@ -1231,6 +1409,7 @@ function createSign(text, color, xPos, yPos, zPos, id, fontSize = 45) {
     clickableObjects.push(sign);
 }
 
+// ... (createBillboard, createBush, createTrees, createStars remain the same) ...
 function createBillboard() {
     const poleHeight = 70;
     const totalPoleHeight = poleHeight + 30;
@@ -1371,6 +1550,7 @@ function createTrees() {
         return false;
     };
     const isOnParkingLot = (x, z) => {
+        // Keep asphaltWidth check consistent with createGround
         const asphaltWidth = 550;
         const asphaltLength = 320;
         const asphaltCenterZ = asphaltLength / 2 - 60;
@@ -1532,6 +1712,7 @@ function setupEventListeners() {
     jumpBtn.addEventListener('mousedown', (e) => e.preventDefault());
 }
 
+// ... (onWindowResize, onKeyDown, onKeyUp, onDesktopDragStart, onDesktopDragMove, onDesktopDragEnd, onTouchStart, onTouchMove remain the same) ...
 function onWindowResize() {
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -1671,6 +1852,7 @@ function onTouchEnd(event) {
                     case 'tshirts': showOverlay('tshirtsOverlay'); break;
                     case 'projects': showOverlay('projectsOverlay'); break;
                     case 'askjohn': showOverlay('askJohnOverlay'); break;
+                    case 'minigames': showOverlay('miniGamesOverlay'); break; // Added case
                 }
             }
         }
@@ -1716,6 +1898,7 @@ function onMouseClick(event) {
             case 'tshirts': showOverlay('tshirtsOverlay'); break;
             case 'projects': showOverlay('projectsOverlay'); break;
             case 'askjohn': showOverlay('askJohnOverlay'); break;
+            case 'minigames': showOverlay('miniGamesOverlay'); break; // Added case
         }
     }
 }

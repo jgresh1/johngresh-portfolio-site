@@ -1056,82 +1056,68 @@ function createParkingLights() {
     createParkingLight(-80, 250); createParkingLight(80, 250);
 }
 
-// New function to add controller elements on the ground
+// New function to add controller elements vertically on the storefront
 function addControllerElements(centerX, y, z) {
-    const group = new THREE.Group();
-    // Positioning the group on the ground in front of the store
-    group.position.set(centerX, y, z);
-
-    // D-Pad (Left side)
+    // D-Pad (Left side) - now vertical like a wall decoration
     const dPadMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.6 });
     const dPadThickness = 0.5;
-    const dPadSize = 5;
-    const dPadArmWidth = 2;
+    const dPadSize = 4;
+    const dPadArmWidth = 1.5;
 
-    // Horizontal part
-    const hGeo = new THREE.BoxGeometry(dPadSize, dPadThickness, dPadArmWidth);
+    // Horizontal part of D-pad
+    const hGeo = new THREE.BoxGeometry(dPadSize, dPadArmWidth, dPadThickness);
     const hPart = new THREE.Mesh(hGeo, dPadMaterial);
     hPart.castShadow = true;
-    hPart.receiveShadow = true;
 
-    // Vertical part
-    const vGeo = new THREE.BoxGeometry(dPadArmWidth, dPadThickness, dPadSize);
+    // Vertical part of D-pad
+    const vGeo = new THREE.BoxGeometry(dPadArmWidth, dPadSize, dPadThickness);
     const vPart = new THREE.Mesh(vGeo, dPadMaterial);
     vPart.castShadow = true;
-    vPart.receiveShadow = true;
 
     const dPadGroup = new THREE.Group();
     dPadGroup.add(hPart);
     dPadGroup.add(vPart);
-    dPadGroup.position.x = -8; // Position to the left
-    dPadGroup.rotation.x = -Math.PI / 2; // Lay flat on the ground
-    group.add(dPadGroup);
+    dPadGroup.position.set(centerX - 7, 8, z); // Left side, at window height
+    scene.add(dPadGroup);
 
-
-    // Buttons (Right side, diamond shape)
+    // Buttons (Right side, diamond shape) - now vertical
     const buttonGroup = new THREE.Group();
-    buttonGroup.position.x = 8; // Position to the right
+    
+    const buttonRadius = 1.0;
+    const buttonThickness = 0.4;
+    const buttonSpacing = 2.5;
 
-    const buttonRadius = 1.2;
-    const buttonHeight = 0.6;
-    const buttonSpacing = 3.5;
-
-    const createButton = (x, z, color, label) => {
-        const geometry = new THREE.CylinderGeometry(buttonRadius, buttonRadius, buttonHeight, 16);
-        // Create texture for the label on the top face
+    const createButton = (x, y, color, label, textureRotation = 0) => {
+        const geometry = new THREE.CylinderGeometry(buttonRadius, buttonRadius, buttonThickness, 16);
+        geometry.rotateX(Math.PI / 2); // Rotate to face forward instead of sideways
+        
+        // Create texture for the label
         const faceTexture = createTextTextureSync(label, '#ffffff', 30);
+        faceTexture.rotation = textureRotation; // Apply individual rotation to texture
+        faceTexture.center.set(0.5, 0.5); // Set rotation center
+        
         // Materials array for Cylinder: [side, top, bottom]
         const faceMaterial = new THREE.MeshStandardMaterial({ color: color, map: faceTexture, roughness: 0.3 });
         const sideMaterial = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3 });
 
         const button = new THREE.Mesh(geometry, [sideMaterial, faceMaterial, sideMaterial]);
-        // Position the button (Y is up)
-        button.position.set(x, buttonHeight / 2, z);
+        button.position.set(x, y, 0);
         button.castShadow = true;
-        button.receiveShadow = true;
         buttonGroup.add(button);
     };
 
-    // Layout requested: A (bottom), B (left), Y (top), X (right).
+    // Diamond layout for buttons with individual rotations
+    // A (Bottom) - Green - rotate 180 degrees
+    createButton(0, -buttonSpacing, 0x2ecc71, 'A', Math.PI);
+    // B (Left) - Red - rotate 90 degrees clockwise
+    createButton(-buttonSpacing, 0, 0xe74c3c, 'B', Math.PI / 2);
+    // Y (Top) - Yellow - no rotation needed
+    createButton(0, buttonSpacing, 0xf1c40f, 'Y', 0);
+    // X (Right) - Blue - rotate 90 degrees counter-clockwise
+    createButton(buttonSpacing, 0, 0x3498db, 'X', -Math.PI / 2);
 
-    // When looking at the store from the parking lot:
-    // Bottom (Further away) = Positive Z
-    // Top (Closer) = Negative Z
-    // Left = Negative X
-    // Right = Positive X
-
-    // A (Bottom) - Green
-    createButton(0, buttonSpacing, 0x2ecc71, 'A');
-    // B (Left) - Red
-    createButton(-buttonSpacing, 0, 0xe74c3c, 'B');
-    // Y (Top) - Yellow
-    createButton(0, -buttonSpacing, 0xf1c40f, 'Y');
-    // X (Right) - Blue (Correcting user typo: X for the left button)
-    createButton(buttonSpacing, 0, 0x3498db, 'X');
-
-    group.add(buttonGroup);
-
-    scene.add(group);
+    buttonGroup.position.set(centerX + 7, 8, z); // Right side, at window height
+    scene.add(buttonGroup);
 }
 
 
@@ -1247,8 +1233,8 @@ function createBuilding() {
 
     // Mini Games Window and Exterior
     createWindow(xPosExtraFarRight, windowY, windowZ, 26, 12, colors.windowGlowDim, 1.0);
-    // Add controller elements on the ground in front (Y=0.05, Z=25)
-    addControllerElements(xPosExtraFarRight, 0.05, 25);
+    // Add controller elements vertically like other storefront decorations
+    addControllerElements(xPosExtraFarRight, windowY, itemZ);
 
 
     const signZ = windowZ + 0.5;

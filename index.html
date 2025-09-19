@@ -36,7 +36,6 @@ canvas { display: block; touch-action: none; }
 .company, .school { font-size: 22px; color: #ffffff; }
 .dates { font-size: 20px; color: #a37c7c; display: block; margin-bottom: 8px; }
 .responsibilities, .skills-list { font-size: 21px; list-style: none; padding: 0; margin: 0; color: #fdf6e3; }
-.responsibilities li, .skills-list li { margin-bottom: 6px; position: relative; padding-left: 20px; }
 .responsibilities li:before, .skills-list li:before { content: '>'; position: absolute; left: 0; color: #0077b6; }
 .resume-layout { display: flex; flex-wrap: wrap; gap: 30px; }
 .layout-main { flex: 2; min-width: 300px; }
@@ -325,6 +324,8 @@ this.ctx = this.canvas.getContext('2d');
 this.isRunning = false;
 this.animationFrameId = null;
 this.isServing = false;
+// New property to hold the setTimeout ID
+this.serveTimeoutId = null;
 this.width = 640;
 this.height = 400;
 this.canvas.width = this.width;
@@ -417,13 +418,18 @@ let pointerY = (clientY - rect.top) * scaleY;
 this.player.y = pointerY - this.player.h / 2;
 }
 resetBall(scorer) {
+// Clear any existing timeout before setting a new one
+if (this.serveTimeoutId) {
+clearTimeout(this.serveTimeoutId);
+this.serveTimeoutId = null;
+}
 this.ball.x = this.width / 2 - this.ball.w / 2;
 this.ball.y = this.height / 2 - this.ball.h / 2;
 this.ball.dx = 0;
 this.ball.dy = 0;
 this.isServing = true;
 const serveDelay = 1500;
-setTimeout(() => {
+this.serveTimeoutId = setTimeout(() => {
 if (!this.isRunning) return;
 const initialServeSpeed = isMobileDevice() ? 4 : 3;
 let direction = (Math.random() > 0.5 ? 1 : -1);
@@ -431,6 +437,8 @@ if (scorer === 'ai') direction = -1;
 if (scorer === 'player') direction = 1;
 this.ball.dx = initialServeSpeed * direction;
 this.ball.dy = initialServeSpeed * (Math.random() * 1.4 - 0.7);
+this.isServing = false;
+this.serveTimeoutId = null;
 }, serveDelay);
 }
 resetGame() {
@@ -439,20 +447,26 @@ this.ai.score = 0;
 this.round = 1;
 this.adjustDifficulty();
 this.updateScoreDisplay();
+// Ensure ball state is reset properly
+this.resetBall(null);
 }
 start() {
 if (this.isRunning) return;
 this.isRunning = true;
 this.resizeCanvas();
-if (this.ball.dx === 0 && this.ball.dy === 0 && !this.isServing) {
-this.resetBall(null);
-}
+// Always reset the game state completely when starting
+this.resetGame();
 this.loop();
 }
 stop() {
 this.isRunning = false;
 if (this.animationFrameId) {
 cancelAnimationFrame(this.animationFrameId);
+}
+// Clear the serve timeout when the game stops
+if (this.serveTimeoutId) {
+clearTimeout(this.serveTimeoutId);
+this.serveTimeoutId = null;
 }
 }
 resizeCanvas() {
@@ -623,8 +637,10 @@ this.animationFrameId = requestAnimationFrame(() => this.loop());
 let pongGame = null;
 function init() {
 scene = new THREE.Scene();
-scene.fog = new THREE.Fog(colors.horizonGlow, 300, 800);
-camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1800);
+// Updated fog to match the camera's new far plane.
+scene.fog = new THREE.Fog(colors.horizonGlow, 600, 5000);
+// Updated camera far plane to prevent seeing the edge of the scene.
+camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 5000);
 cameraRig = new THREE.Object3D();
 cameraPitch = new THREE.Object3D();
 cameraPitch.add(camera);
@@ -1754,7 +1770,7 @@ return Math.abs(x) < (roadWidth/2 + roadClearance);
 return false;
 };
 const isOnParkingLot = (x, z) => {
-const asphaltWidth = 550;
+const asphaltWidth = 500;
 const asphaltLength = 320;
 const asphaltCenterZ = asphaltLength / 2 - 60;
 if (Math.abs(x) < asphaltWidth / 2 && z > (asphaltCenterZ - asphaltLength / 2) && z < (asphaltCenterZ + asphaltLength / 2)) {
@@ -1861,7 +1877,8 @@ createTree(x, z, scale, true);
 function createStars() {
 const geometry = new THREE.BufferGeometry();
 const vertices = [];
-const distributionRadius = 2500;
+// Updated distribution radius to prevent stars from being clipped by the camera's far plane.
+const distributionRadius = 4900;
 for (let i = 0; i < 400; i++) {
 const x = Math.random() * distributionRadius - distributionRadius/2;
 const y = Math.random() * 200 + 150;

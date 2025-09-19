@@ -292,6 +292,7 @@ let coinsCollected = 0;
 const TOTAL_COINS = 6;
 let coinGeometry, coinMaterials;
 const fireworks = [];
+let fireworkTimer = null;
 const playerHeight = 10;
 let isJumping = false;
 let yVelocity = 0;
@@ -899,7 +900,7 @@ counter.textContent += " (ALL FOUND!)";
 startFireworks();
 }
 }
-function createFirework(x, y, z, color) {
+function createFirework(x, y, z, color, life = 8.0) {
 const particleCount = isMobileDevice() ? 80 : 150;
 const geometry = new THREE.BufferGeometry();
 const positions = new Float32Array(particleCount * 3);
@@ -927,23 +928,29 @@ transparent: true, depthWrite: false, sizeAttenuation: true
 });
 const particles = new THREE.Points(geometry, material);
 particles.position.set(x, y, z);
-const life = 3.0;
 fireworks.push({ particles: particles, life: life, maxLife: life });
 scene.add(particles);
 }
 function startFireworks() {
-const playerPos = cameraRig.position;
+const FIREWORK_DURATION = 20000; // 20 seconds
+const FIREWORK_INTERVAL = 500; // Create new firework every 0.5 seconds
+const FIREWORK_Z_POSITION = -100;
+const FIREWORK_X_RANGE = 200;
+const FIREWORK_HEIGHT_RANGE = 60;
 const fireworkColors = [0xe63946, 0x0077b6, 0x2a9d8f, 0xffd700, 0xff7d5c, 0x9d4edd];
-const count = isMobileDevice() ? 8 : 15;
-for (let i = 0; i < count; i++) {
-const offsetX = (Math.random() - 0.5) * 250;
-const offsetZ = (Math.random() - 0.5) * 250;
-const height = Math.random() * 80 + 80;
-const color = fireworkColors[Math.floor(Math.random() * fireworkColors.length)];
-setTimeout(() => {
-createFirework(playerPos.x + offsetX, height, playerPos.z + offsetZ, color);
-}, i * 350 + Math.random() * 150);
+let startTime = Date.now();
+fireworkTimer = setInterval(() => {
+if (Date.now() - startTime >= FIREWORK_DURATION) {
+clearInterval(fireworkTimer);
+fireworkTimer = null;
+return;
 }
+const x = (Math.random() - 0.5) * FIREWORK_X_RANGE;
+const y = Math.random() * FIREWORK_HEIGHT_RANGE + 80;
+const z = FIREWORK_Z_POSITION + (Math.random() - 0.5) * 50;
+const color = fireworkColors[Math.floor(Math.random() * fireworkColors.length)];
+createFirework(x, y, z, color);
+}, FIREWORK_INTERVAL);
 }
 function updateFireworks(delta) {
 const particleGravity = -40;

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
 <title>John Gresh : Portfolio Web Game</title>
 <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
@@ -1907,7 +1907,7 @@ composer.render();
 // --- ADDITION: CHAT INTERFACE JAVASCRIPT ---
 
 // !!! IMPORTANT: Verify this URL matches your Cloudflare Worker URL !!!
-// Based on your screenshot (johngresh.workers.dev), this is the likely URL for the worker named 'server-backend-4'.
+// Based on the context provided (johngresh.workers.dev), this is the likely URL.
 const WORKER_URL = "https://server-backend-4.johngresh.workers.dev/chat";
 
 let chatHistory = [];
@@ -1955,7 +1955,9 @@ async function handleSendMessage() {
         });
 
         if (!response.ok) {
-            throw new Error(`Server responded with status: ${response.status}. Check Worker URL.`);
+            // This catches HTTP status errors (like 404 or 500)
+            // It is thrown manually because fetch only rejects on network failure
+            throw new Error(`Server responded with status: ${response.status}.`);
         }
 
         const data = await response.json();
@@ -1971,12 +1973,29 @@ async function handleSendMessage() {
             }
 
         } else {
-            throw new Error(data.error || "An unknown error occurred.");
+            throw new Error(data.error || "An unknown error occurred in the response data.");
         }
 
     } catch (error) {
+        // --- ENHANCED ERROR HANDLING ---
+        // This catches network errors (like "Failed to fetch"/CORS) AND errors thrown manually above
         console.error("Error communicating with backend:", error);
-        addMessageToChat(`Error: ${error.message}. Please ensure the backend is running and configured correctly.`, 'bot');
+
+        let errorMessage = `Error: ${error.message}`;
+
+        // 'Failed to fetch' is thrown as a TypeError. This is the most common indicator 
+        // of a CORS issue or the backend being completely offline.
+        if (error instanceof TypeError) {
+            errorMessage += ". This is typically a network error or a CORS issue. Ensure the backend at ('" + WORKER_URL + "') is running and configured to allow requests from this website's origin.";
+        } else if (error.message.includes("Server responded")) {
+             errorMessage += " Please check the server logs and the WORKER_URL.";
+        }
+        else {
+            errorMessage += ". Please ensure the backend is running and configured correctly.";
+        }
+        
+        addMessageToChat(errorMessage, 'bot');
+        
         // If an error occurs, remove the last user message from history so they can retry
         chatHistory.pop();
     } finally {

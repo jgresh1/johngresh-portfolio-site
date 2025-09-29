@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>John Gresh : Portfolio Web Game</title>
 <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
@@ -271,7 +271,7 @@ canvas { display: block; touch-action: none; }
         <div id="chat-container">
             <div id="chat-window">
                 <div id="chat-messages">
-                    </div>
+                </div>
             </div>
             <div id="chat-input-area">
                 <input type="text" id="chat-input" placeholder="Type your question...">
@@ -1764,8 +1764,8 @@ function onTouchStart(event) {
     if (document.getElementById('askJohnOverlay').style.display !== 'none') {
         const chatInputArea = document.getElementById('chat-input-area');
         if (chatInputArea.contains(event.target)) {
-             // Allow default behavior for input fields (like focusing, selecting text)
-             return; 
+            // Allow default behavior for input fields (like focusing, selecting text)
+            return; 
         }
     }
     
@@ -1906,9 +1906,8 @@ composer.render();
 
 // --- ADDITION: CHAT INTERFACE JAVASCRIPT ---
 
-// !!! IMPORTANT: Verify this URL matches your Cloudflare Worker URL !!!
-// Based on the context provided (johngresh.workers.dev), this is the likely URL.
-const WORKER_URL = "https://server-backend-4.johngresh.workers.dev/chat";
+// Cloudflare Worker URL
+const WORKER_URL = "https://serverbackend.johngresh-usa.workers.dev/chat";
 
 let chatHistory = [];
 let isChatInitialized = false;
@@ -1967,7 +1966,7 @@ async function handleSendMessage() {
             addMessageToChat(data.response, 'bot');
             chatHistory.push({ role: "assistant", content: data.response });
 
-             // Keep history manageable (e.g., last 10 messages)
+            // Keep history manageable (e.g., last 10 messages)
             if (chatHistory.length > 10) {
                 chatHistory = chatHistory.slice(-10);
             }
@@ -1988,7 +1987,7 @@ async function handleSendMessage() {
         if (error instanceof TypeError) {
             errorMessage += ". This is typically a network error or a CORS issue. Ensure the backend at ('" + WORKER_URL + "') is running and configured to allow requests from this website's origin.";
         } else if (error.message.includes("Server responded")) {
-             errorMessage += " Please check the server logs and the WORKER_URL.";
+            errorMessage += " Please check the server logs and the WORKER_URL.";
         }
         else {
             errorMessage += ". Please ensure the backend is running and configured correctly.";

@@ -21,16 +21,16 @@ canvas { display: block; touch-action: none; }
 
 /* Modified #askJohnContainer for the chat interface */
 #askJohnContainer {
-    max-width: 800px;
-    /* Ensure it uses the full height of the overlay-container */
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    text-align: left;
-    box-shadow: 0 0 50px rgba(255, 167, 0, 0.9);
-    overflow-y: hidden; /* Prevent double scrollbars, let chat window handle it */
+    max-width: 800px;
+    /* Ensure it uses the full height of the overlay-container */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    box-shadow: 0 0 50px rgba(255, 167, 0, 0.9);
+    overflow-y: hidden; /* Prevent double scrollbars, let chat window handle it */
 }
 
 #tshirtsContainer { box-shadow: 0 0 50px rgba(0, 119, 182, 0.9); }
@@ -71,27 +71,27 @@ canvas { display: block; touch-action: none; }
 
 /* --- CHAT INTERFACE STYLES --- */
 #chat-container {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    flex-grow: 1;
-    overflow: hidden;
-    /* FIX: Crucial for nested flexbox on Safari/iOS to allow shrinking */
-    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex-grow: 1;
+    overflow: hidden;
+    /* FIX: Crucial for nested flexbox on Safari/iOS to allow shrinking */
+    min-height: 0;
 }
 
 #chat-window {
-    flex-grow: 1;
-    background-color: #2a1a3d;
-    border: 4px solid #000;
-    padding: 15px;
-    overflow-y: auto;
-    margin-bottom: 15px;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-    display: flex;
-    flex-direction: column;
-    /* FIX: Crucial for nested flexbox on Safari/iOS to allow shrinking */
-    min-height: 0;
+    flex-grow: 1;
+    background-color: #2a1a3d;
+    border: 4px solid #000;
+    padding: 15px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    /* FIX: Crucial for nested flexbox on Safari/iOS to allow shrinking */
+    min-height: 0;
 }
 
 /* Custom scrollbar for the chat window specifically */
@@ -101,88 +101,89 @@ canvas { display: block; touch-action: none; }
 #chat-window::-webkit-scrollbar-thumb:hover { background: #ffc107; }
 
 #chat-messages {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .message {
-    padding: 10px 15px;
-    border: 3px solid #000;
-    max-width: 80%;
-    word-wrap: break-word;
-    font-size: 20px;
-    line-height: 1.4;
+    padding: 10px 15px;
+    border: 3px solid #000;
+    max-width: 80%;
+    word-wrap: break-word;
+    font-size: 20px;
+    line-height: 1.4;
 }
 
 .user-message {
-    align-self: flex-end;
-    background-color: #0077b6;
-    color: white;
-    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+    align-self: flex-end;
+    background-color: #0077b6;
+    color: white;
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
 }
 
 .bot-message {
-    align-self: flex-start;
-    background-color: #e63946;
-    color: white;
-    box-shadow: -5px 5px 0px rgba(0,0,0,0.8);
+    align-self: flex-start;
+    background-color: #e63946;
+    color: white;
+    box-shadow: -5px 5px 0px rgba(0,0,0,0.8);
 }
 
 #chat-input-area {
-    display: flex;
-    gap: 10px;
+    display: flex;
+    gap: 10px;
 }
 
 #chat-input {
-    flex-grow: 1;
-    padding: 10px 15px;
-    font-family: 'VT323', monospace;
-    font-size: 22px;
-    background-color: #1a1a2e;
-    color: #ffffff;
-    border: 4px solid #000;
-    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+    flex-grow: 1;
+    padding: 10px 15px;
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    background-color: #1a1a2e;
+    color: #ffffff;
+    border: 4px solid #000;
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
 }
 
 #chat-input:focus {
-    outline: none;
-    border-color: #ffa700;
+    outline: none;
+    border-color: #ffa700;
 }
 
 #send-btn {
-    padding: 10px 20px;
-    font-family: 'VT323', monospace;
-    font-size: 22px;
-    background-color: #ffa700;
-    color: black;
-    border: 4px solid #000;
-    cursor: pointer;
-    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
-    transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
+    padding: 10px 20px;
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    background-color: #ffa700;
+    color: black;
+    border: 4px solid #000;
+    cursor: pointer;
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+    transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
 }
 
 #send-btn:hover {
-    background-color: #ffc107;
+    background-color: #ffc107;
 }
 
 #send-btn:active {
-    transform: translate(3px, 3px);
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+    transform: translate(3px, 3px);
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
 }
 
 #send-btn:disabled {
-    background-color: #6c6383;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+    background-color: #6c6383;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
 }
 /* --- END CHAT INTERFACE STYLES --- */
 
 #mobile-controls { position: fixed; bottom: 0; left: 0; width: 100%; height: 200px; z-index: 20; display: none; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; pointer-events: none; }
+/* FIX: Ensure touch-action: none; is applied to prevent browser interference */
 #joystick-zone { position: relative; width: 150px; height: 150px; pointer-events: auto; margin-left: 20px; touch-action: none; }
 #action-buttons { display: flex; gap: 20px; pointer-events: auto; margin-right: 40px; touch-action: none; }
-.action-btn { width: 90px; height: 90px; border-radius: 50%; background: rgba(255, 69, 0, 0.5); border: 3px solid rgba(255, 255, 255, 0.7); color: white; font-family: 'VT323', monospace; font-size: 24px; display: flex; justify-content: center; align-items: center; user-select: none; transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s; }
+.action-btn { width: 90px; height: 90px; border-radius: 50%; background: rgba(255, 69, 0, 0.5); border: 3px solid rgba(255, 255, 255, 0.7); color: white; font-family: 'VT323', monospace; font-size: 24px; display: flex; justify-content: center; align-items: center; user-select: none; transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s; touch-action: none; }
 .action-btn:active, .action-btn.active { background: rgba(255, 69, 0, 0.8); transform: scale(0.95); }
 #pong-canvas { background-color: #000; border: 4px solid #9d4edd; display: block; margin: 0 auto 20px auto; cursor: ns-resize; touch-action: none; }
 #pong-score { font-size: 36px; color: #fff; text-align: center; margin-bottom: 15px; }
@@ -191,38 +192,38 @@ canvas { display: block; touch-action: none; }
 
 /* --- START FIXES: Mobile/iPad Layout Constraints --- */
 @media (max-width: 800px) {
-    #instructions { display: none; }
-    #coin-counter { font-size: 20px; top: 10px; right: 10px; padding: 4px 8px; }
-    .close-btn { top: 10px; right: 10px; padding: 8px 16px; font-size: 20px; border: 3px solid black; box-shadow: 3px 3px 0px rgba(0,0,0,0.8); }
-    .close-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px rgba(0,0,0,0.8); }
+    #instructions { display: none; }
+    #coin-counter { font-size: 20px; top: 10px; right: 10px; padding: 4px 8px; }
+    .close-btn { top: 10px; right: 10px; padding: 8px 16px; font-size: 20px; border: 3px solid black; box-shadow: 3px 3px 0px rgba(0,0,0,0.8); }
+    .close-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px rgba(0,0,0,0.8); }
 
-    /* FIX: Keep the stylized height, but constrain the maximum height */
-    .overlay-container {
-        width: 95%;
-        padding: 15px;
-        /* Aim for the stylized height */
-        height: 85vh;
-        /* Constrain height to the viewport minus space for the button (top) and a buffer (bottom). Approx 60px total needed. */
-        max-height: calc(100vh - 60px);
-    }
-   
-    .resume-header h1 { font-size: 36px; }
-    #pong-score { font-size: 28px; }
-    #pong-round-message { font-size: 24px; padding: 15px 25px; white-space: normal; }
-    /* Mobile adjustments for chat input */
-    #chat-input, #send-btn { font-size: 18px; padding: 8px 12px; }
+    /* FIX: Keep the stylized height, but constrain the maximum height */
+    .overlay-container {
+        width: 95%;
+        padding: 15px;
+        /* Aim for the stylized height */
+        height: 85vh;
+        /* Constrain height to the viewport minus space for the button (top) and a buffer (bottom). Approx 60px total needed. */
+        max-height: calc(100vh - 60px);
+    }
+   
+    .resume-header h1 { font-size: 36px; }
+    #pong-score { font-size: 28px; }
+    #pong-round-message { font-size: 24px; padding: 15px 25px; white-space: normal; }
+    /* Mobile adjustments for chat input */
+    #chat-input, #send-btn { font-size: 18px; padding: 8px 12px; }
 }
 
 /* FIX: iPad Specific Adjustments */
 @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
-    .close-btn { position: fixed !important; z-index: 1001 !important; top: 15px !important; right: 15px !important; padding: 12px 24px !important; font-size: 26px !important; background-color: #e63946 !important; border: 4px solid black !important; }
-   
-    .overlay-container {
-         /* Aim for the stylized height */
-        height: 85vh !important;
-        /* Constrain height for iPad. Approx 90px total needed. */
-        max-height: calc(100vh - 90px) !important;
-    }
+    .close-btn { position: fixed !important; z-index: 1001 !important; top: 15px !important; right: 15px !important; padding: 12px 24px !important; font-size: 26px !important; background-color: #e63946 !important; border: 4px solid black !important; }
+   
+    .overlay-container {
+         /* Aim for the stylized height */
+        height: 85vh !important;
+        /* Constrain height for iPad. Approx 90px total needed. */
+        max-height: calc(100vh - 90px) !important;
+    }
 }
 /* --- END FIXES --- */
 
@@ -291,24 +292,24 @@ canvas { display: block; touch-action: none; }
 </div>
 
 <div id="askJohnOverlay" class="scene-overlay">
-    <button class="close-btn">[X] BACK</button>
-    <div id="askJohnContainer" class="overlay-container">
-        <div class="resume-header">
-            <h1>Ask John (AI)</h1>
-            <p>Chat with an AI trained on John's professional background.</p>
-        </div>
+    <button class="close-btn">[X] BACK</button>
+    <div id="askJohnContainer" class="overlay-container">
+        <div class="resume-header">
+            <h1>Ask John (AI)</h1>
+            <p>Chat with an AI trained on John's professional background.</p>
+        </div>
 
-        <div id="chat-container">
-            <div id="chat-window">
-                <div id="chat-messages">
-                </div>
-            </div>
-            <div id="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Type your question...">
-                <button id="send-btn">SEND</button>
-            </div>
-        </div>
-    </div>
+        <div id="chat-container">
+            <div id="chat-window">
+                <div id="chat-messages">
+                </div>
+            </div>
+            <div id="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type your question...">
+                <button id="send-btn">SEND</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="miniGamesOverlay" class="scene-overlay">
@@ -416,15 +417,15 @@ this.ball.speed = this.baseBallSpeed + this.round * 0.3;
 }
 setupEventListeners() {
 document.addEventListener('keydown', (e) => {
-    // MODIFICATION: Prevent pong keys from firing if the chat input is focused
-    if (document.activeElement.id === 'chat-input') return;
+    // MODIFICATION: Prevent pong keys from firing if the chat input is focused
+    if (document.activeElement.id === 'chat-input') return;
 
-    if (this.isRunning) {
-        if (e.key === 'ArrowUp') { this.pongKeys.ArrowUp = true; e.preventDefault(); }
-        if (e.key === 'ArrowDown') { this.pongKeys.ArrowDown = true; e.preventDefault(); }
-        if (e.key === 'w' || e.key === 'W') { this.pongKeys.W = true; e.preventDefault(); }
-        if (e.key === 's' || e.key === 'S') { this.pongKeys.S = true; e.preventDefault(); }
-    }
+    if (this.isRunning) {
+        if (e.key === 'ArrowUp') { this.pongKeys.ArrowUp = true; e.preventDefault(); }
+        if (e.key === 'ArrowDown') { this.pongKeys.ArrowDown = true; e.preventDefault(); }
+        if (e.key === 'w' || e.key === 'W') { this.pongKeys.W = true; e.preventDefault(); }
+        if (e.key === 's' || e.key === 'S') { this.pongKeys.S = true; e.preventDefault(); }
+    }
 });
 document.addEventListener('keyup', (e) => {
 if (e.key === 'ArrowUp') this.pongKeys.ArrowUp = false;
@@ -485,38 +486,38 @@ if (this.serveTimeoutId) { clearTimeout(this.serveTimeoutId); this.serveTimeoutI
 
 /* FIX: Updated resizeCanvas for robustness */
 resizeCanvas() {
-    const container = document.getElementById('miniGamesContainer');
-    if (!container) return;
+    const container = document.getElementById('miniGamesContainer');
+    if (!container) return;
 
-    /* Use offsetWidth/Height as they are more reliable immediately after display change */
-    const containerWidth = container.offsetWidth;
-    const containerHeight = container.offsetHeight;
+    /* Use offsetWidth/Height as they are more reliable immediately after display change */
+    const containerWidth = container.offsetWidth;
+    const containerHeight = container.offsetHeight;
 
-    const gameAspectRatio = this.width / this.height;
-    const headerHeight = container.querySelector('.resume-header')?.offsetHeight || 0;
-    const scoreHeight = document.getElementById('pong-score')?.offsetHeight || 0;
-    const instructionsHeight = document.getElementById('pong-instructions')?.offsetHeight || 0;
-   
-    /* Reduced vertical buffer slightly, accounts for padding/margins */
-    const verticalBuffer = 40;
-   
-    const availableHeight = containerHeight - (headerHeight + scoreHeight + instructionsHeight + verticalBuffer);
-    /* Adjust width based on container padding (assuming box-sizing: border-box) */
-    const availableWidth = containerWidth - 40;
+    const gameAspectRatio = this.width / this.height;
+    const headerHeight = container.querySelector('.resume-header')?.offsetHeight || 0;
+    const scoreHeight = document.getElementById('pong-score')?.offsetHeight || 0;
+    const instructionsHeight = document.getElementById('pong-instructions')?.offsetHeight || 0;
+   
+    /* Reduced vertical buffer slightly, accounts for padding/margins */
+    const verticalBuffer = 40;
+   
+    const availableHeight = containerHeight - (headerHeight + scoreHeight + instructionsHeight + verticalBuffer);
+    /* Adjust width based on container padding (assuming box-sizing: border-box) */
+    const availableWidth = containerWidth - 40;
 
-    let displayWidth = availableWidth;
-    let displayHeight = displayWidth / gameAspectRatio;
+    let displayWidth = availableWidth;
+    let displayHeight = displayWidth / gameAspectRatio;
 
-    if (displayHeight > availableHeight) {
-        displayHeight = availableHeight;
-        displayWidth = displayHeight * gameAspectRatio;
-    }
+    if (displayHeight > availableHeight) {
+        displayHeight = availableHeight;
+        displayWidth = displayHeight * gameAspectRatio;
+    }
 
-    /* Ensure dimensions are positive before applying */
-    if (displayWidth > 0 && displayHeight > 0) {
-        this.canvas.style.width = `${displayWidth}px`;
-        this.canvas.style.height = `${displayHeight}px`;
-    }
+    /* Ensure dimensions are positive before applying */
+    if (displayWidth > 0 && displayHeight > 0) {
+        this.canvas.style.width = `${displayWidth}px`;
+        this.canvas.style.height = `${displayHeight}px`;
+    }
 }
 
 updateScoreDisplay() {
@@ -694,22 +695,22 @@ document.getElementById('mobile-controls').style.display = 'none';
 document.getElementById('coin-counter').style.display = 'none';
 
 if (overlayId === 'miniGamesOverlay') {
-    if (!pongGame) { pongGame = new PongGame('pong-canvas'); }
-    pongGame.resetGame();
-    /* FIX: Increase timeout slightly to allow DOM layout to update before resizing canvas */
-    setTimeout(() => { pongGame.start(); }, 100);
+    if (!pongGame) { pongGame = new PongGame('pong-canvas'); }
+    pongGame.resetGame();
+    /* FIX: Increase timeout slightly to allow DOM layout to update before resizing canvas */
+    setTimeout(() => { pongGame.start(); }, 100);
 }
 
 // ADDITION: Focus the chat input when Ask John overlay is opened
 if (overlayId === 'askJohnOverlay') {
-    // Ensure chat is initialized (in case init() somehow failed or was slow)
-    initChat();
-    setTimeout(() => {
-        document.getElementById('chat-input').focus();
-        // Ensure scroll to bottom on open
-        const chatWindow = document.getElementById('chat-window');
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-    }, 100);
+    // Ensure chat is initialized (in case init() somehow failed or was slow)
+    initChat();
+    setTimeout(() => {
+        document.getElementById('chat-input').focus();
+        // Ensure scroll to bottom on open
+        const chatWindow = document.getElementById('chat-window');
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }, 100);
 }
 }
 }
@@ -1727,6 +1728,7 @@ if (event.target === this) { hideAllOverlays(); }
 }, false);
 });
 const jumpBtn = document.getElementById('jump-btn');
+// Ensure stopPropagation is used here to help isolate button events, although we also check in onTouchStart.
 jumpBtn.addEventListener('touchstart', (e) => {
 e.preventDefault(); e.stopPropagation(); keys[' '] = true; jumpBtn.classList.add('active');
 });
@@ -1769,18 +1771,18 @@ document.getElementById('instructions').style.display = 'block';
 }
 
 function onKeyDown(event) {
-    // MODIFICATION: Prevent key actions if the chat input is focused
-    if (document.activeElement.id === 'chat-input') return;
+    // MODIFICATION: Prevent key actions if the chat input is focused
+    if (document.activeElement.id === 'chat-input') return;
 
-    if (event.key === 'Escape' && !isSceneActive) { hideAllOverlays(); return; }
-    if (pongGame && pongGame.isRunning) { return; }
-    if (!isSceneActive) return;
+    if (event.key === 'Escape' && !isSceneActive) { hideAllOverlays(); return; }
+    if (pongGame && pongGame.isRunning) { return; }
+    if (!isSceneActive) return;
 
-    if (keys.hasOwnProperty(event.key.toLowerCase())) {
-        keys[event.key.toLowerCase()] = true;
-        event.preventDefault();
-    }
-    if(event.key === ' '){ keys[' '] = true; event.preventDefault(); }
+    if (keys.hasOwnProperty(event.key.toLowerCase())) {
+        keys[event.key.toLowerCase()] = true;
+        event.preventDefault();
+    }
+    if(event.key === ' '){ keys[' '] = true; event.preventDefault(); }
 }
 
 function onKeyUp(event) {
@@ -1807,94 +1809,132 @@ isDragging = false;
 if (isSceneActive) { document.body.style.cursor = 'grab'; }
 }
 
-/* FIX: Simplified onTouchStart. Rely on isSceneActive to manage interactions. */
+/* FIX: Prevent camera movement when interacting with mobile controls (Joystick/Buttons). */
 function onTouchStart(event) {
     // If an overlay is open (!isSceneActive) OR if not mobile, return immediately.
     // This allows default behavior like scrolling/focusing inputs in overlays.
     if (!isSceneActive || !isMobileDevice()) return;
 
+    // Get references to the control zones
+    const joystickZone = document.getElementById('joystick-zone');
+    const actionButtons = document.getElementById('action-buttons');
+
     // --- Game world interaction logic below ---
-    
-    // Record tap location for click detection on touch end
+
+    // Record tap location for click detection on touch end (for clicking signs)
+    // We check if the first new touch is NOT a control touch before recording it as a potential tap.
     if (event.changedTouches.length > 0) {
         const touch = event.changedTouches[0];
-        dragStart.tapX = touch.clientX; dragStart.tapY = touch.clientY;
-        dragStart.tapTime = Date.now();
+        // We use touch.target to find the element associated with the specific touch
+        const target = touch.target;
+
+        // Check if the touch target is within the joystick or action button areas
+        if (!(joystickZone && joystickZone.contains(target)) && !(actionButtons && actionButtons.contains(target))) {
+            dragStart.tapX = touch.clientX;
+            dragStart.tapY = touch.clientY;
+            dragStart.tapTime = Date.now();
+        }
     }
 
-    // If already looking, ignore new touches for looking
+    // If already looking (panning the camera), ignore new touches for looking
     if (lookTouchId !== null) return;
-    
+
+    // Iterate through new touches to find one suitable for camera panning
     for (const touch of event.changedTouches) {
-        // Prevent default browser behavior (like page scrolling) only when interacting with the canvas
-        if (event.target.tagName.toLowerCase() === 'canvas') {
-             event.preventDefault();
+        const target = touch.target;
+
+        // NEW FIX: Check if this touch is on the controls. If so, skip it.
+        // This prevents the joystick/buttons from initiating camera panning.
+        if ((joystickZone && joystickZone.contains(target)) || (actionButtons && actionButtons.contains(target))) {
+            continue;
         }
+
+        // This touch is not on the controls, so it's suitable for panning.
+
+        // Prevent default browser behavior (like page scrolling) when starting to pan.
+        // We only prevent default if we are initiating a pan, otherwise NippleJS handles its own prevention.
+        event.preventDefault();
+
+        // Initiate camera panning
         isDragging = true;
         lookTouchId = touch.identifier;
-        dragStart.x = touch.clientX; dragStart.y = touch.clientY;
-        break;
+        dragStart.x = touch.clientX;
+        dragStart.y = touch.clientY;
+        break; // Found the look touch, stop searching
     }
 }
 
 /* FIX: Simplified onTouchMove. */
 function onTouchMove(event) {
-    // If overlay is open or not mobile, allow default (e.g., scrolling the chat)
-    if (!isSceneActive || !isMobileDevice()) return;
+    // If overlay is open or not mobile, allow default (e.g., scrolling the chat)
+    if (!isSceneActive || !isMobileDevice()) return;
 
-    // Handle scene camera movement
-    if (isDragging && lookTouchId !== null) {
-        for (const touch of event.touches) {
-            if (touch.identifier === lookTouchId) {
-                // Prevent default browser behavior during camera movement
-                event.preventDefault();
+    // Handle scene camera movement
+    // This only runs if onTouchStart successfully identified a camera drag (lookTouchId is set)
+    if (isDragging && lookTouchId !== null) {
+        for (const touch of event.touches) {
+            if (touch.identifier === lookTouchId) {
+                // Prevent default browser behavior during camera movement
+                event.preventDefault();
 
-                const deltaX = touch.clientX - dragStart.x;
-                const deltaY = touch.clientY - dragStart.y;
-                const speed = 0.006;
-                handleRotation(deltaX, deltaY, speed);
-                dragStart.x = touch.clientX; dragStart.y = touch.clientY;
-                break;
+                const deltaX = touch.clientX - dragStart.x;
+                const deltaY = touch.clientY - dragStart.y;
+                const speed = 0.006;
+                handleRotation(deltaX, deltaY, speed);
+                dragStart.x = touch.clientX; dragStart.y = touch.clientY;
+                break;
+            }
+        }
+    }
+}
+
+/* FIX: Updated onTouchEnd to correctly handle tap detection and release look touch. */
+function onTouchEnd(event) {
+    if (!isMobileDevice()) return;
+
+    // Handle Tap Detection for signs
+    if (event.changedTouches.length > 0 && isSceneActive) {
+        const touch = event.changedTouches[0];
+        const tapDuration = Date.now() - (dragStart.tapTime || 0);
+        const tapDistance = Math.sqrt(
+            Math.pow(touch.clientX - (dragStart.tapX || 0), 2) +
+            Math.pow(touch.clientY - (dragStart.tapY || 0), 2)
+        );
+
+        // Check if it qualifies as a tap. We rely on onTouchStart only setting tapTime if it wasn't a control touch.
+        if (tapDuration < 300 && tapDistance < 10) {
+             // Check if the target is the canvas or if the lookTouchId matches (indicating a brief pan that ended quickly)
+             // This ensures taps on the canvas area trigger interactions.
+            if (event.target.tagName.toLowerCase() === 'canvas' || touch.identifier === lookTouchId) {
+                mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(clickableObjects);
+                if (intersects.length > 0) {
+                    const object = intersects[0].object;
+                    console.log(`Mobile tap - Navigating to: ${object.name}`);
+                    switch(object.name) {
+                        case 'resume': showOverlay('resumeOverlay'); break;
+                        case 'tshirts': showOverlay('tshirtsOverlay'); break;
+                        case 'projects': showOverlay('projectsOverlay'); break;
+                        case 'askjohn': showOverlay('askJohnOverlay'); break;
+                        case 'minigames': showOverlay('miniGamesOverlay'); break;
+                    }
+                }
             }
+        }
+    }
+
+    // Release the look touch if it ended
+    for (const touch of event.changedTouches) {
+        if (touch.identifier === lookTouchId) {
+            isDragging = false;
+            lookTouchId = null;
+            break;
         }
     }
 }
 
-function onTouchEnd(event) {
-if (!isMobileDevice()) return;
-if (event.changedTouches.length > 0 && isSceneActive) {
-const touch = event.changedTouches[0];
-const tapDuration = Date.now() - (dragStart.tapTime || 0);
-const tapDistance = Math.sqrt(
-Math.pow(touch.clientX - (dragStart.tapX || 0), 2) +
-Math.pow(touch.clientY - (dragStart.tapY || 0), 2)
-);
-
-// Check if the touch end is near the canvas and not an input element
-if (tapDuration < 300 && tapDistance < 10 && event.target.tagName.toLowerCase() === 'canvas') {
-mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-raycaster.setFromCamera(mouse, camera);
-const intersects = raycaster.intersectObjects(clickableObjects);
-if (intersects.length > 0) {
-const object = intersects[0].object;
-console.log(`Mobile tap - Navigating to: ${object.name}`);
-switch(object.name) {
-case 'resume': showOverlay('resumeOverlay'); break;
-case 'tshirts': showOverlay('tshirtsOverlay'); break;
-case 'projects': showOverlay('projectsOverlay'); break;
-case 'askjohn': showOverlay('askJohnOverlay'); break;
-case 'minigames': showOverlay('miniGamesOverlay'); break;
-}
-}
-}
-}
-for (const touch of event.changedTouches) {
-if (touch.identifier === lookTouchId) {
-isDragging = false; lookTouchId = null; break;
-}
-}
-}
 function handleRotation(deltaX, deltaY, speed) {
 cameraRig.rotation.y -= deltaX * speed;
 cameraPitch.rotation.x -= deltaY * speed;
@@ -1972,137 +2012,137 @@ let chatHistory = [];
 let isChatInitialized = false;
 
 function initChat() {
-    if (isChatInitialized) return;
-    isChatInitialized = true;
+    if (isChatInitialized) return;
+    isChatInitialized = true;
 
-    const sendBtn = document.getElementById('send-btn');
-    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatInput = document.getElementById('chat-input');
 
-    sendBtn.addEventListener('click', handleSendMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            handleSendMessage();
-        }
-    });
+    sendBtn.addEventListener('click', handleSendMessage);
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleSendMessage();
+        }
+    });
 
-    // Add initial bot message
-    addMessageToChat("Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.", 'bot');
+    // Add initial bot message
+    addMessageToChat("Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.", 'bot');
 }
 
 // *** UPDATED FUNCTION WITH IMPROVED ERROR HANDLING ***
 async function handleSendMessage() {
-    const chatInput = document.getElementById('chat-input');
-    const message = chatInput.value.trim();
+    const chatInput = document.getElementById('chat-input');
+    const message = chatInput.value.trim();
 
-    if (message === '') return;
+    if (message === '') return;
 
-    // Add user message to UI and history
-    addMessageToChat(message, 'user');
-    chatHistory.push({ role: "user", content: message });
-    chatInput.value = '';
+    // Add user message to UI and history
+    addMessageToChat(message, 'user');
+    chatHistory.push({ role: "user", content: message });
+    chatInput.value = '';
 
-    // Disable input while waiting for response
-    toggleInput(false);
+    // Disable input while waiting for response
+    toggleInput(false);
 
-    try {
-        const response = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ history: chatHistory }),
-        });
+    try {
+        const response = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ history: chatHistory }),
+        });
 
-        if (!response.ok) {
-            // This catches HTTP status errors (like 500).
-            let errorDetails = "No details provided by server.";
-            try {
-                // Attempt to parse the JSON response which should contain the specific error from the backend
-                const errorData = await response.json();
-                if (errorData.error) {
-                    // This will contain the specific error from the worker (e.g., "OpenAI API request failed...")
-                    errorDetails = errorData.error;
-                }
-            } catch (e) {
-                // If the response body is not valid JSON (e.g., a network error page), use the status text
-                errorDetails = response.statusText;
-            }
-            // Throw an error including the specific details
-            throw new Error(`Server Error (Status ${response.status}): ${errorDetails}`);
-        }
+        if (!response.ok) {
+            // This catches HTTP status errors (like 500).
+            let errorDetails = "No details provided by server.";
+            try {
+                // Attempt to parse the JSON response which should contain the specific error from the backend
+                const errorData = await response.json();
+                if (errorData.error) {
+                    // This will contain the specific error from the worker (e.g., "OpenAI API request failed...")
+                    errorDetails = errorData.error;
+                }
+            } catch (e) {
+                // If the response body is not valid JSON (e.g., a network error page), use the status text
+                errorDetails = response.statusText;
+            }
+            // Throw an error including the specific details
+            throw new Error(`Server Error (Status ${response.status}): ${errorDetails}`);
+        }
 
-        const data = await response.json();
+        const data = await response.json();
 
-        if (data.success && data.response) {
-            // Add bot response to UI and history
-            addMessageToChat(data.response, 'bot');
-            chatHistory.push({ role: "assistant", content: data.response });
+        if (data.success && data.response) {
+            // Add bot response to UI and history
+            addMessageToChat(data.response, 'bot');
+            chatHistory.push({ role: "assistant", content: data.response });
 
-            // Keep history manageable (e.g., last 10 messages)
-            if (chatHistory.length > 10) {
-                chatHistory = chatHistory.slice(-10);
-            }
+            // Keep history manageable (e.g., last 10 messages)
+            if (chatHistory.length > 10) {
+                chatHistory = chatHistory.slice(-10);
+            }
 
-        } else {
-            throw new Error(data.error || "An unknown error occurred in the response data.");
-        }
+        } else {
+            throw new Error(data.error || "An unknown error occurred in the response data.");
+        }
 
-    } catch (error) {
-        // --- ENHANCED ERROR HANDLING ---
-        console.error("Error communicating with backend:", error);
+    } catch (error) {
+        // --- ENHANCED ERROR HANDLING ---
+        console.error("Error communicating with backend:", error);
 
-        let errorMessage = `Error: ${error.message}`;
+        let errorMessage = `Error: ${error.message}`;
 
-        // 'Failed to fetch' is thrown as a TypeError (CORS or network failure).
-        if (error instanceof TypeError) {
-            errorMessage = "Network Error or CORS issue. Ensure the backend (" + WORKER_URL + ") is running and accessible.";
-        }
-        
-        addMessageToChat(errorMessage, 'bot');
-        
-        // If an error occurs, remove the last user message from history so they can retry
-        chatHistory.pop();
-    } finally {
-        // Re-enable input
-        toggleInput(true);
-    }
+        // 'Failed to fetch' is thrown as a TypeError (CORS or network failure).
+        if (error instanceof TypeError) {
+            errorMessage = "Network Error or CORS issue. Ensure the backend (" + WORKER_URL + ") is running and accessible.";
+        }
+        
+        addMessageToChat(errorMessage, 'bot');
+        
+        // If an error occurs, remove the last user message from history so they can retry
+        chatHistory.pop();
+    } finally {
+        // Re-enable input
+        toggleInput(true);
+    }
 }
 
 function addMessageToChat(message, sender) {
-    const chatMessages = document.getElementById('chat-messages');
-    const chatWindow = document.getElementById('chat-window');
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatWindow = document.getElementById('chat-window');
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message');
 
-    if (sender === 'user') {
-        messageElement.classList.add('user-message');
-    } else {
-        messageElement.classList.add('bot-message');
-    }
+    if (sender === 'user') {
+        messageElement.classList.add('user-message');
+    } else {
+        messageElement.classList.add('bot-message');
+    }
 
-    // Basic sanitization of the message content
-    messageElement.textContent = message;
-    chatMessages.appendChild(messageElement);
+    // Basic sanitization of the message content
+    messageElement.textContent = message;
+    chatMessages.appendChild(messageElement);
 
-    // Scroll to the bottom of the chat window
-    // Use behavior: 'smooth' for a nicer effect
-    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+    // Scroll to the bottom of the chat window
+    // Use behavior: 'smooth' for a nicer effect
+    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
 }
 
 function toggleInput(enabled) {
-    const chatInput = document.getElementById('chat-input');
-    const sendBtn = document.getElementById('send-btn');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
 
-    chatInput.disabled = !enabled;
-    sendBtn.disabled = !enabled;
+    chatInput.disabled = !enabled;
+    sendBtn.disabled = !enabled;
 
-    if (enabled) {
-        chatInput.focus();
-        chatInput.placeholder = "Type your question...";
-    } else {
-        // Add a visual indication that the bot is thinking
-        chatInput.placeholder = "Thinking...";
-    }
+    if (enabled) {
+        chatInput.focus();
+        chatInput.placeholder = "Type your question...";
+    } else {
+        // Add a visual indication that the bot is thinking
+        chatInput.placeholder = "Thinking...";
+    }
 }
 
 // --- END CHAT INTERFACE JAVASCRIPT ---

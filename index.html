@@ -11,30 +11,127 @@ canvas { display: block; touch-action: none; }
 #instructions { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.9); font-family: 'VT323', monospace; font-size: 18px; text-shadow: 2px 2px 4px black; pointer-events: none; text-align: center; padding: 10px; background: rgba(0, 0, 0, 0.5); border-radius: 0; z-index: 10; }
 #coin-counter { position: absolute; top: 20px; right: 20px; color: #ffd700; font-family: 'VT323', monospace; font-size: 36px; text-shadow: 3px 3px 0px black; padding: 10px 20px; background: rgba(26, 5, 58, 0.8); border: 4px solid black; z-index: 15; display: block; box-shadow: 5px 5px 0px rgba(0,0,0,0.8); pointer-events: none; }
 
-/* --- NEW STYLES FOR JOHN ONLY TOGGLE --- */
+/* --- NEW STYLES FOR JOHN ONLY TOGGLE & PASSWORD MODAL --- */
 #john-only-toggle {
     position: absolute;
-    top: 10px; /* Adjust slightly from the very top edge */
-    left: 15px; /* Adjust slightly from the very left edge */
+    top: 15px;
+    left: 15px;
     font-family: 'VT323', monospace;
-    font-size: 14px; /* Very small font size */
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 18px; /* Slightly larger for better integration */
+    color: #ffa700; /* Matching the theme color */
     display: flex;
     align-items: center;
-    z-index: 1; /* Ensure it's above the header background */
+    z-index: 1;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+    cursor: pointer;
+    user-select: none; /* Prevent text selection on click */
 }
 
-#john-only-toggle input[type="checkbox"] {
-    margin-right: 5px;
-    /* Styling a very small checkbox */
-    width: 12px;
-    height: 12px;
-    cursor: pointer;
+/* Custom Checkbox Styling */
+#premium-model-checkbox {
+    display: none; /* Hide the default checkbox */
 }
 
-#john-only-toggle label {
-    cursor: pointer;
+.custom-checkbox {
+    width: 18px;
+    height: 18px;
+    background-color: #2a1a3d;
+    border: 3px solid #000;
+    margin-right: 8px;
+    display: inline-block;
+    position: relative;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
 }
+
+#premium-model-checkbox:checked + .custom-checkbox {
+    background-color: #e63946; /* Color when checked */
+}
+
+#premium-model-checkbox:checked + .custom-checkbox::after {
+    content: 'X';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 16px;
+}
+
+#password-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 1005; /* Above other overlays */
+}
+
+.modal-content {
+    background-color: #1a1a2e;
+    padding: 30px;
+    border: 4px solid #000;
+    box-shadow: 0 0 50px rgba(255, 167, 0, 0.9);
+    font-family: 'VT323', monospace;
+    color: white;
+    text-align: center;
+    width: 80%;
+    max-width: 400px;
+}
+
+.modal-content p {
+    font-size: 22px;
+    margin-bottom: 20px;
+}
+
+#password-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    background-color: #2a1a3d;
+    color: white;
+    border: 3px solid #000;
+    box-sizing: border-box;
+}
+
+#password-error {
+    color: #e63946;
+    font-size: 18px;
+    margin-bottom: 15px;
+    display: none;
+}
+
+.modal-btn {
+    padding: 10px 20px;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    border: 3px solid #000;
+    cursor: pointer;
+    margin: 0 10px;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.8);
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.modal-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+}
+
+#submit-password-btn {
+    background-color: #2a9d8f;
+    color: white;
+}
+
+#cancel-password-btn {
+    background-color: #6c6383;
+    color: white;
+}
+
 /* --- END NEW STYLES --- */
 
 
@@ -228,9 +325,9 @@ canvas { display: block; touch-action: none; }
 
     /* Adjust the toggle on very small screens */
     #john-only-toggle {
-        font-size: 12px;
-        top: 5px;
-        left: 5px;
+        font-size: 16px;
+        top: 10px;
+        left: 10px;
     }
 
     /* FIX: Keep the stylized height, but constrain the maximum height */
@@ -268,6 +365,17 @@ canvas { display: block; touch-action: none; }
 <body>
 <div id="instructions">WASD/Arrows: Move | Space: Jump | Drag: Look<br>Click the store signs. Find the hidden coins!</div>
 <div id="coin-counter">COINS: 0 / 6</div>
+
+<div id="password-modal">
+    <div class="modal-content">
+        <p>Enter Password for Access:</p>
+        <input type="password" id="password-input" placeholder="> ********">
+        <div id="password-error">ACCESS DENIED</div>
+        <button id="submit-password-btn" class="modal-btn">SUBMIT</button>
+        <button id="cancel-password-btn" class="modal-btn">CANCEL</button>
+    </div>
+</div>
+
 <div id="resumeOverlay" class="scene-overlay">
 <button class="close-btn">[X] BACK</button>
 <div id="resumeContainer" class="overlay-container">
@@ -333,6 +441,7 @@ canvas { display: block; touch-action: none; }
         <div class="resume-header">
             <div id="john-only-toggle">
                 <input type="checkbox" id="premium-model-checkbox">
+                <span class="custom-checkbox"></span>
                 <label for="premium-model-checkbox">John Gresh Only</label>
             </div>
             <h1>Ask John (AI)</h1>
@@ -457,8 +566,8 @@ this.ball.speed = this.baseBallSpeed + this.round * 0.3;
 }
 setupEventListeners() {
 document.addEventListener('keydown', (e) => {
-    // MODIFICATION: Prevent pong keys from firing if the chat input is focused
-    if (document.activeElement.id === 'chat-input') return;
+    // MODIFICATION: Prevent pong keys from firing if the chat input or password input is focused
+    if (document.activeElement.id === 'chat-input' || document.activeElement.id === 'password-input') return;
 
     if (this.isRunning) {
         if (e.key === 'ArrowUp') { this.pongKeys.ArrowUp = true; e.preventDefault(); }
@@ -703,8 +812,9 @@ raycaster = new THREE.Raycaster();
 mouse = new THREE.Vector2();
 setupEventListeners();
 
-// Initialize Chat Interface
+// Initialize Chat Interface and Password Modal
 initChat();
+initPasswordModal();
 
 if (isMobileDevice()) {
 document.getElementById('mobile-controls').style.display = 'flex';
@@ -758,6 +868,9 @@ if (overlayId === 'askJohnOverlay') {
 function hideAllOverlays() {
 if (pongGame && pongGame.isRunning) { pongGame.stop(); }
 document.getElementById('pong-round-message').style.display = 'none';
+// Ensure password modal is hidden too
+document.getElementById('password-modal').style.display = 'none';
+
 const overlays = document.querySelectorAll('.scene-overlay');
 let wasActive = false;
 overlays.forEach(overlay => {
@@ -1764,6 +1877,10 @@ btn.addEventListener('click', hideAllOverlays, false);
 });
 document.querySelectorAll('.scene-overlay').forEach(overlay => {
 overlay.addEventListener('click', function(event) {
+// Ensure click doesn't propagate if the password modal is open
+if (document.getElementById('password-modal').style.display === 'flex') {
+    return;
+}
 if (event.target === this) { hideAllOverlays(); }
 }, false);
 });
@@ -1811,8 +1928,15 @@ document.getElementById('instructions').style.display = 'block';
 }
 
 function onKeyDown(event) {
-    // MODIFICATION: Prevent key actions if the chat input is focused
-    if (document.activeElement.id === 'chat-input') return;
+    // MODIFICATION: Prevent key actions if the chat input or password input is focused
+    if (document.activeElement.id === 'chat-input' || document.activeElement.id === 'password-input') return;
+
+    // MODIFICATION: Allow Escape to close the password modal specifically
+    if (event.key === 'Escape' && document.getElementById('password-modal').style.display === 'flex') {
+        document.getElementById('password-modal').style.display = 'none';
+        document.getElementById('chat-input').focus(); // Return focus to chat
+        return;
+    }
 
     if (event.key === 'Escape' && !isSceneActive) { hideAllOverlays(); return; }
     if (pongGame && pongGame.isRunning) { return; }
@@ -1853,7 +1977,8 @@ if (isSceneActive) { document.body.style.cursor = 'grab'; }
 function onTouchStart(event) {
     // If an overlay is open (!isSceneActive) OR if not mobile, return immediately.
     // This allows default behavior like scrolling/focusing inputs in overlays.
-    if (!isSceneActive || !isMobileDevice()) return;
+    // Added check for password modal visibility - allow touch interaction if password modal is open
+    if ((!isSceneActive && document.getElementById('password-modal').style.display !== 'flex') || !isMobileDevice()) return;
 
     // Get references to the control zones
     const joystickZone = document.getElementById('joystick-zone');
@@ -1893,7 +2018,11 @@ function onTouchStart(event) {
 
         // Prevent default browser behavior (like page scrolling) when starting to pan.
         // We only prevent default if we are initiating a pan, otherwise NippleJS handles its own prevention.
-        event.preventDefault();
+        // Only prevent default if the scene is active (not when overlays are up)
+        if (isSceneActive) {
+             event.preventDefault();
+        }
+       
 
         // Initiate camera panning
         isDragging = true;
@@ -1906,16 +2035,18 @@ function onTouchStart(event) {
 
 /* FIX: Simplified onTouchMove. */
 function onTouchMove(event) {
-    // If overlay is open or not mobile, allow default (e.g., scrolling the chat)
-    if (!isSceneActive || !isMobileDevice()) return;
+    // If overlay is open (and it's not the password modal) or not mobile, allow default (e.g., scrolling the chat)
+    if ((!isSceneActive && document.getElementById('password-modal').style.display !== 'flex') || !isMobileDevice()) return;
 
     // Handle scene camera movement
     // This only runs if onTouchStart successfully identified a camera drag (lookTouchId is set)
     if (isDragging && lookTouchId !== null) {
         for (const touch of event.touches) {
             if (touch.identifier === lookTouchId) {
-                // Prevent default browser behavior during camera movement
-                event.preventDefault();
+                // Prevent default browser behavior during camera movement (only if scene is active)
+                if (isSceneActive) {
+                    event.preventDefault();
+                }
 
                 const deltaX = touch.clientX - dragStart.x;
                 const deltaY = touch.clientY - dragStart.y;
@@ -2043,6 +2174,89 @@ composer.render();
 }
 }
 
+// --- ADDITION: PASSWORD MODAL LOGIC ---
+
+const ACCESS_CODE = "ROSEBUD"; // The required password
+let isPremiumAccessGranted = false;
+
+function initPasswordModal() {
+    const toggle = document.getElementById('john-only-toggle');
+    const checkbox = document.getElementById('premium-model-checkbox');
+    const modal = document.getElementById('password-modal');
+    const submitBtn = document.getElementById('submit-password-btn');
+    const cancelBtn = document.getElementById('cancel-password-btn');
+    const passwordInput = document.getElementById('password-input');
+    const errorMsg = document.getElementById('password-error');
+
+    // Intercept click on the visual toggle area
+    toggle.addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent default checkbox behavior
+
+        // If access is already granted, just toggle the checkbox
+        if (isPremiumAccessGranted) {
+            checkbox.checked = !checkbox.checked;
+            return;
+        }
+
+        // If the checkbox is already checked (shouldn't happen if access isn't granted, but safe check)
+        if (checkbox.checked) {
+            checkbox.checked = false;
+        } else {
+            // Show the modal to request password
+            showPasswordModal();
+        }
+    });
+
+    // Modal button handlers
+    cancelBtn.addEventListener('click', hidePasswordModal);
+    submitBtn.addEventListener('click', verifyPassword);
+
+    // Handle Enter key in password input
+    passwordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            verifyPassword();
+        }
+    });
+
+    function showPasswordModal() {
+        modal.style.display = 'flex';
+        passwordInput.value = '';
+        errorMsg.style.display = 'none';
+        passwordInput.focus();
+    }
+
+    function hidePasswordModal() {
+        modal.style.display = 'none';
+        // Ensure focus returns to the chat input if the modal is closed
+        document.getElementById('chat-input').focus();
+    }
+
+    function verifyPassword() {
+        const enteredPassword = passwordInput.value.trim().toUpperCase();
+
+        if (enteredPassword === ACCESS_CODE) {
+            isPremiumAccessGranted = true;
+            checkbox.checked = true;
+            hidePasswordModal();
+        } else {
+            errorMsg.style.display = 'block';
+            passwordInput.value = '';
+            passwordInput.focus();
+            // Optional: Shake effect on error
+            document.querySelector('.modal-content').animate([
+                { transform: 'translateX(0px)' },
+                { transform: 'translateX(-10px)' },
+                { transform: 'translateX(10px)' },
+                { transform: 'translateX(0px)' }
+            ], {
+                duration: 300,
+                iterations: 1
+            });
+        }
+    }
+}
+
+
 // --- ADDITION: CHAT INTERFACE JAVASCRIPT ---
 
 // Cloudflare Worker URL
@@ -2077,7 +2291,8 @@ async function handleSendMessage() {
 
     // Check the state of the new checkbox
     const premiumCheckbox = document.getElementById('premium-model-checkbox');
-    const usePremiumModel = premiumCheckbox ? premiumCheckbox.checked : false;
+    // Only use premium if the checkbox is checked AND access was previously granted
+    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
 
     if (message === '') return;
 
@@ -2181,19 +2396,25 @@ function addMessageToChat(message, sender) {
 function toggleInput(enabled) {
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
-    // Also disable the checkbox during loading
-    const premiumCheckbox = document.getElementById('premium-model-checkbox');
+    // Also disable the toggle area during loading
+    const toggleArea = document.getElementById('john-only-toggle');
 
 
     chatInput.disabled = !enabled;
     sendBtn.disabled = !enabled;
-    if (premiumCheckbox) {
-        premiumCheckbox.disabled = !enabled;
+    
+    // Disable pointer events on the visual toggle area
+    if (toggleArea) {
+        toggleArea.style.pointerEvents = enabled ? 'auto' : 'none';
+        toggleArea.style.opacity = enabled ? '1' : '0.5';
     }
 
 
     if (enabled) {
-        chatInput.focus();
+        // Don't refocus if the password modal is open
+        if (document.getElementById('password-modal').style.display !== 'flex') {
+            chatInput.focus();
+        }
         chatInput.placeholder = "Type your question...";
     } else {
         // Add a visual indication that the bot is thinking

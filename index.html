@@ -11,20 +11,20 @@ canvas { display: block; touch-action: none; }
 #instructions { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.9); font-family: 'VT323', monospace; font-size: 18px; text-shadow: 2px 2px 4px black; pointer-events: none; text-align: center; padding: 10px; background: rgba(0, 0, 0, 0.5); border-radius: 0; z-index: 10; }
 #coin-counter { position: absolute; top: 20px; right: 20px; color: #ffd700; font-family: 'VT323', monospace; font-size: 36px; text-shadow: 3px 3px 0px black; padding: 10px 20px; background: rgba(26, 5, 58, 0.8); border: 4px solid black; z-index: 15; display: block; box-shadow: 5px 5px 0px rgba(0,0,0,0.8); pointer-events: none; }
 
-/* --- NEW STYLES FOR JOHN ONLY TOGGLE & PASSWORD MODAL --- */
+/* --- STYLES FOR JOHN ONLY TOGGLE & PASSWORD MODAL --- */
 #john-only-toggle {
     position: absolute;
     top: 15px;
     left: 15px;
     font-family: 'VT323', monospace;
-    font-size: 18px; /* Slightly larger for better integration */
-    color: #ffa700; /* Matching the theme color */
+    font-size: 18px;
+    color: #ffa700; /* Default color */
     display: flex;
     align-items: center;
     z-index: 1;
     text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
     cursor: pointer;
-    user-select: none; /* Prevent text selection on click */
+    user-select: none;
 }
 
 /* Custom Checkbox Styling */
@@ -35,7 +35,7 @@ canvas { display: block; touch-action: none; }
 .custom-checkbox {
     width: 18px;
     height: 18px;
-    background-color: #2a1a3d;
+    background-color: #2a1a3d; /* Default background */
     border: 3px solid #000;
     margin-right: 8px;
     display: inline-block;
@@ -139,7 +139,7 @@ canvas { display: block; touch-action: none; }
 .scene-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(26, 5, 58, 0.9); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(3px); box-sizing: border-box; }
 
 /* Restored stylized height */
-.overlay-container { width: 85%; max-width: 1100px; height: 85vh; overflow-y: auto; padding: 30px; border: 4px solid #000; box-shadow: 0 0 50px rgba(255, 125, 92, 0.9); background-color: #1a1a2e; color: #ffffff; font-family: 'VT323', monospace; line-height: 1.3; box-sizing: border-box; }
+.overlay-container { width: 85%; max-width: 1100px; height: 85vh; overflow-y: auto; padding: 30px; border: 4px solid #000; box-shadow: 0 0 50px rgba(255, 125, 92, 0.9); background-color: #1a1a2e; color: #ffffff; font-family: 'VT323', monospace; line-height: 1.3; box-sizing: border-box; transition: background-color 0.3s, box-shadow 0.3s; }
 
 #tshirtsContainer { max-width: 650px; height: auto; max-height: 85vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
 
@@ -153,10 +153,154 @@ canvas { display: block; touch-action: none; }
     justify-content: space-between;
     align-items: center;
     text-align: left;
-    box-shadow: 0 0 50px rgba(255, 167, 0, 0.9);
+    box-shadow: 0 0 50px rgba(255, 167, 0, 0.9); /* Default shadow */
     overflow-y: hidden; /* Prevent double scrollbars, let chat window handle it */
     position: relative; /* Needed for absolute positioning of the toggle */
 }
+
+/* --- NEW: JOHN GRESH ONLY THEME (RED & BLACK TENDRILS) --- */
+
+/* Applied when the toggle is active (via JS) */
+#askJohnContainer.premium-active {
+    background-color: #0a0000; /* Very dark background */
+    /* Red shadow override */
+    box-shadow: 0 0 60px rgba(230, 57, 70, 0.9);
+    /* Subtle "tendril" effect using repeating gradients that fit the retro theme */
+    background-image: repeating-linear-gradient(
+        45deg,
+        rgba(80, 0, 0, 0.5) 0px,
+        rgba(80, 0, 0, 0.5) 5px,
+        transparent 5px,
+        transparent 10px
+    ),
+    repeating-linear-gradient(
+        -45deg,
+        rgba(80, 0, 0, 0.3) 0px,
+        rgba(80, 0, 0, 0.3) 8px,
+        transparent 8px,
+        transparent 16px
+    );
+}
+
+/* Change header color in premium mode */
+#askJohnContainer.premium-active .resume-header h1 {
+    color: #e63946; /* Bright red */
+}
+#askJohnContainer.premium-active .resume-header p {
+    color: #ff9999;
+}
+
+/* Change chat window background in premium mode */
+#askJohnContainer.premium-active #chat-window {
+    background-color: #1a0000; /* Darker red internal window */
+}
+
+/* Change scrollbar color in premium mode */
+#askJohnContainer.premium-active #chat-window::-webkit-scrollbar-thumb {
+    background: #e63946;
+}
+#askJohnContainer.premium-active #chat-window::-webkit-scrollbar-thumb:hover {
+    background: #ff5a5f;
+}
+
+/* Input Area Transformation */
+#askJohnContainer.premium-active #chat-input {
+    background-color: #0a0000;
+    border-color: #e63946;
+}
+
+#askJohnContainer.premium-active #chat-input:focus {
+    border-color: #ff5a5f;
+}
+
+#askJohnContainer.premium-active #send-btn {
+    background-color: #e63946;
+    color: white;
+}
+
+#askJohnContainer.premium-active #send-btn:hover {
+    background-color: #ff5a5f;
+}
+
+/* Change toggle text color in premium mode */
+#askJohnContainer.premium-active #john-only-toggle {
+    color: #e63946;
+}
+
+
+/* --- NEW: ULTRATHINK BUTTON AND SIMULATION STYLES --- */
+#ultrathink-area {
+    width: 100%;
+    text-align: center; /* Center the button */
+    margin-top: 10px;
+    margin-bottom: -10px; /* Pull closer to input area */
+    display: none; /* Hidden by default */
+}
+
+/* Show UltraThink area when premium mode is active */
+#askJohnContainer.premium-active #ultrathink-area {
+    display: block;
+}
+
+#ultrathink-btn {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: #ff0000;
+    background: none;
+    border: none;
+    cursor: pointer;
+    /* Glowing effect */
+    text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000;
+    transition: text-shadow 0.3s, color 0.3s;
+    padding: 5px 10px;
+}
+
+#ultrathink-btn:hover {
+    color: #ffffff;
+    text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+}
+
+#ultrathink-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    text-shadow: none;
+    color: #6c6383;
+}
+
+/* Simulation Styles */
+.simulation-message {
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    color: #00ff00; /* Green terminal text */
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 5px;
+    margin: 2px 0;
+    white-space: pre-wrap;
+    align-self: center;
+    text-align: left; /* Align left for terminal look */
+    border-radius: 3px;
+    width: 90%;
+}
+
+/* Styles for the header of UltraThink responses */
+.instance-label {
+    font-size: 18px;
+    /* Use the theme color (default) */
+    color: #ffc107; 
+    margin-bottom: 5px;
+    font-weight: bold;
+    text-align: left;
+    display: block;
+}
+
+/* Apply instance label color changes in premium mode */
+#askJohnContainer.premium-active .instance-label {
+    color: #ff5a5f; /* Red color in premium mode */
+}
+
+
+/* --- END NEW STYLES --- */
+
 
 #tshirtsContainer { box-shadow: 0 0 50px rgba(0, 119, 182, 0.9); }
 #miniGamesContainer { box-shadow: 0 0 50px rgba(106, 13, 173, 0.9); display: flex; flex-direction: column; justify-content: flex-start; align-items: center; text-align: center; }
@@ -171,7 +315,7 @@ canvas { display: block; touch-action: none; }
 .resume-header { text-align: center; margin-bottom: 30px; border-bottom: 4px dashed #6c6383; padding-bottom: 20px; width: 100%; position: relative;}
 .resume-header h1 { font-size: 48px; margin: 0; color: #ff7d5c; text-shadow: 3px 3px 0px rgba(0,0,0,0.5); }
 #tshirtsContainer .resume-header h1 { color: #0077b6; }
-#askJohnContainer .resume-header h1 { color: #ffa700; }
+#askJohnContainer .resume-header h1 { color: #ffa700; } /* Default Ask John Color */
 #miniGamesContainer .resume-header h1 { color: #9d4edd; }
 .resume-header p { font-size: 22px; margin: 5px 0 0 0; color: #d4a3a3; }
 .resume-section { margin-bottom: 30px; }
@@ -208,7 +352,7 @@ canvas { display: block; touch-action: none; }
 
 #chat-window {
     flex-grow: 1;
-    background-color: #2a1a3d;
+    background-color: #2a1a3d; /* Default background */
     border: 4px solid #000;
     padding: 15px;
     overflow-y: auto;
@@ -218,6 +362,7 @@ canvas { display: block; touch-action: none; }
     flex-direction: column;
     /* FIX: Crucial for nested flexbox on Safari/iOS to allow shrinking */
     min-height: 0;
+    transition: background-color 0.3s;
 }
 
 /* Custom scrollbar for the chat window specifically */
@@ -240,6 +385,7 @@ canvas { display: block; touch-action: none; }
     font-size: 20px;
     line-height: 1.4;
 }
+
 
 .user-message {
     align-self: flex-end;
@@ -269,18 +415,19 @@ canvas { display: block; touch-action: none; }
     color: #ffffff;
     border: 4px solid #000;
     box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+    transition: background-color 0.3s, border-color 0.3s;
 }
 
 #chat-input:focus {
     outline: none;
-    border-color: #ffa700;
+    border-color: #ffa700; /* Default focus color */
 }
 
 #send-btn {
     padding: 10px 20px;
     font-family: 'VT323', monospace;
     font-size: 22px;
-    background-color: #ffa700;
+    background-color: #ffa700; /* Default color */
     color: black;
     border: 4px solid #000;
     cursor: pointer;
@@ -345,6 +492,7 @@ canvas { display: block; touch-action: none; }
     #pong-round-message { font-size: 24px; padding: 15px 25px; white-space: normal; }
     /* Mobile adjustments for chat input */
     #chat-input, #send-btn { font-size: 18px; padding: 8px 12px; }
+    #ultrathink-btn { font-size: 16px; padding: 5px 10px; }
 }
 
 /* FIX: iPad Specific Adjustments */
@@ -418,6 +566,7 @@ canvas { display: block; touch-action: none; }
 </div>
 </div>
 </div>
+
 <div id="projectsOverlay" class="scene-overlay">
 <button class="close-btn">[X] BACK</button>
 <div id="projectsContainer" class="overlay-container">
@@ -425,6 +574,7 @@ canvas { display: block; touch-action: none; }
 <section class="resume-section"><h2>Featured Work</h2><ul class="skills-list"><li>This Website</li></ul></section>
 </div>
 </div>
+
 <div id="tshirtsOverlay" class="scene-overlay">
 <button class="close-btn">[X] BACK</button>
 <div id="tshirtsContainer" class="overlay-container">
@@ -457,6 +607,9 @@ canvas { display: block; touch-action: none; }
                 <input type="text" id="chat-input" placeholder="Type your question...">
                 <button id="send-btn">SEND</button>
             </div>
+            <div id="ultrathink-area">
+                <button id="ultrathink-btn">[ UltraThink ]</button>
+            </div>
         </div>
     </div>
 </div>
@@ -476,6 +629,7 @@ canvas { display: block; touch-action: none; }
 </div>
 <div id="pong-round-message"></div>
 <div id="mobile-controls"><div id="joystick-zone"></div><div id="action-buttons"><div id="jump-btn" class="action-btn">JUMP</div></div></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -500,6 +654,9 @@ gl_FragColor = vec4(skyColor, 1.0);
 }
 </script>
 <script>
+// =====================================================================================
+// THREE.JS GAME LOGIC
+// =====================================================================================
 let scene, camera, renderer, composer, pixelPass;
 let cameraRig, cameraPitch;
 let raycaster, mouse;
@@ -540,6 +697,7 @@ const sunDirectionVector = new THREE.Vector3(-1, 0.25, -0.8).normalize();
 function isMobileDevice() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800; }
 function isIPad() { return /iPad/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
 
+// PongGame Class (Includes fixes for input focus)
 class PongGame {
 constructor(canvasId) {
 this.canvas = document.getElementById(canvasId);
@@ -772,6 +930,7 @@ this.animationFrameId = requestAnimationFrame(() => this.loop());
 }
 let pongGame = null;
 
+// --- Scene Initialization ---
 function init() {
 scene = new THREE.Scene();
 scene.fog = new THREE.Fog(colors.horizonGlow, 600, 5000);
@@ -832,6 +991,7 @@ initJoystick();
 animate();
 }
 
+// Overlay Management (Ensuring chat focus and UI updates are handled)
 function showOverlay(overlayId) {
 hideAllOverlays();
 const overlay = document.getElementById(overlayId);
@@ -853,8 +1013,10 @@ if (overlayId === 'miniGamesOverlay') {
 
 // ADDITION: Focus the chat input when Ask John overlay is opened
 if (overlayId === 'askJohnOverlay') {
-    // Ensure chat is initialized (in case init() somehow failed or was slow)
+    // Ensure chat is initialized
     initChat();
+    // Ensure the UI state (theme) is updated when opening
+    updatePremiumUIState();
     setTimeout(() => {
         document.getElementById('chat-input').focus();
         // Ensure scroll to bottom on open
@@ -889,6 +1051,8 @@ document.getElementById('mobile-controls').style.display = 'flex';
 }
 }
 }
+
+// (Helper functions: getPixelSize, setupPostProcessing, initJoystick)
 function getPixelSize() {
 let targetVerticalResolution;
 if (isIPad()) { targetVerticalResolution = 240; }
@@ -935,7 +1099,8 @@ joystickInput.y = Math.sin(angle) * force;
 });
 joystickManager.on('end', () => { joystickInput.x = 0; joystickInput.y = 0; });
 }
-// --- Asset Creation Functions (Unchanged from original, kept for completeness) ---
+
+// --- Asset Creation Functions (Restored from original prompt) ---
 function createCoinTexture(size = 128) {
 const canvas = document.createElement('canvas');
 canvas.width = size; canvas.height = size;
@@ -1857,6 +2022,8 @@ const material = new THREE.PointsMaterial({ color: 0xffffff, size: 3, sizeAttenu
 const stars = new THREE.Points(geometry, material);
 scene.add(stars);
 }
+
+// --- Event Listeners (Includes fixes for input focus) ---
 function setupEventListeners() {
 window.addEventListener('resize', onWindowResize, false);
 document.addEventListener('keydown', onKeyDown, false);
@@ -1886,14 +2053,17 @@ if (event.target === this) { hideAllOverlays(); }
 });
 const jumpBtn = document.getElementById('jump-btn');
 // Ensure stopPropagation is used here to help isolate button events, although we also check in onTouchStart.
-jumpBtn.addEventListener('touchstart', (e) => {
-e.preventDefault(); e.stopPropagation(); keys[' '] = true; jumpBtn.classList.add('active');
-});
-jumpBtn.addEventListener('touchend', (e) => {
-e.preventDefault(); e.stopPropagation(); keys[' '] = false; jumpBtn.classList.remove('active');
-});
-jumpBtn.addEventListener('mousedown', (e) => e.preventDefault());
+if (jumpBtn) {
+    jumpBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault(); e.stopPropagation(); keys[' '] = true; jumpBtn.classList.add('active');
+    });
+    jumpBtn.addEventListener('touchend', (e) => {
+    e.preventDefault(); e.stopPropagation(); keys[' '] = false; jumpBtn.classList.remove('active');
+    });
+    jumpBtn.addEventListener('mousedown', (e) => e.preventDefault());
 }
+}
+
 function onWindowResize() {
 const width = window.innerWidth; const height = window.innerHeight;
 const dpr = window.devicePixelRatio || 1;
@@ -1934,7 +2104,10 @@ function onKeyDown(event) {
     // MODIFICATION: Allow Escape to close the password modal specifically
     if (event.key === 'Escape' && document.getElementById('password-modal').style.display === 'flex') {
         document.getElementById('password-modal').style.display = 'none';
-        document.getElementById('chat-input').focus(); // Return focus to chat
+        // Check if the overlay is still open before returning focus
+        if (document.getElementById('askJohnOverlay').style.display === 'flex') {
+           document.getElementById('chat-input').focus(); // Return focus to chat
+        }
         return;
     }
 
@@ -2022,7 +2195,7 @@ function onTouchStart(event) {
         if (isSceneActive) {
              event.preventDefault();
         }
-       
+        
 
         // Initiate camera panning
         isDragging = true;
@@ -2174,10 +2347,30 @@ composer.render();
 }
 }
 
-// --- ADDITION: PASSWORD MODAL LOGIC ---
+// =====================================================================================
+// CHAT, PASSWORD, AND ULTRATHINK LOGIC (Updated)
+// =====================================================================================
 
 const ACCESS_CODE = "ROSEBUD"; // The required password
 let isPremiumAccessGranted = false;
+
+// Function to handle UI updates when the premium mode changes
+function updatePremiumUIState() {
+    const checkbox = document.getElementById('premium-model-checkbox');
+    const askJohnContainer = document.getElementById('askJohnContainer');
+    
+    // Checkbox might not exist if init hasn't run yet or if not on the chat overlay
+    if (!checkbox || !askJohnContainer) return;
+
+    if (checkbox.checked && isPremiumAccessGranted) {
+        // Apply the "Red and Black Tendrils" theme
+        askJohnContainer.classList.add('premium-active');
+    } else {
+        // Revert to the default theme
+        askJohnContainer.classList.remove('premium-active');
+    }
+}
+
 
 function initPasswordModal() {
     const toggle = document.getElementById('john-only-toggle');
@@ -2188,19 +2381,24 @@ function initPasswordModal() {
     const passwordInput = document.getElementById('password-input');
     const errorMsg = document.getElementById('password-error');
 
+    // Check if elements exist before adding listeners
+    if (!toggle || !checkbox || !modal) return;
+
     // Intercept click on the visual toggle area
     toggle.addEventListener('click', (e) => {
         e.preventDefault(); // Prevent default checkbox behavior
 
-        // If access is already granted, just toggle the checkbox
+        // If access is already granted, just toggle the checkbox and update UI
         if (isPremiumAccessGranted) {
             checkbox.checked = !checkbox.checked;
+            updatePremiumUIState(); // Update theme and UltraThink visibility
             return;
         }
 
-        // If the checkbox is already checked (shouldn't happen if access isn't granted, but safe check)
+        // If the checkbox is somehow already checked without access
         if (checkbox.checked) {
             checkbox.checked = false;
+            updatePremiumUIState();
         } else {
             // Show the modal to request password
             showPasswordModal();
@@ -2228,7 +2426,10 @@ function initPasswordModal() {
     function hidePasswordModal() {
         modal.style.display = 'none';
         // Ensure focus returns to the chat input if the modal is closed
-        document.getElementById('chat-input').focus();
+        // Check if the overlay is actually open first
+        if (document.getElementById('askJohnOverlay').style.display === 'flex') {
+            document.getElementById('chat-input').focus();
+        }
     }
 
     function verifyPassword() {
@@ -2237,6 +2438,7 @@ function initPasswordModal() {
         if (enteredPassword === ACCESS_CODE) {
             isPremiumAccessGranted = true;
             checkbox.checked = true;
+            updatePremiumUIState(); // Apply theme and show UltraThink
             hidePasswordModal();
         } else {
             errorMsg.style.display = 'block';
@@ -2254,10 +2456,13 @@ function initPasswordModal() {
             });
         }
     }
+    
+    // Initialize UI state on load
+    updatePremiumUIState();
 }
 
 
-// --- ADDITION: CHAT INTERFACE JAVASCRIPT ---
+// --- MODIFIED: CHAT INTERFACE JAVASCRIPT (Significant Changes) ---
 
 // Cloudflare Worker URL
 // NOTE: Ensure this matches your actual deployed worker URL
@@ -2268,31 +2473,155 @@ let isChatInitialized = false;
 
 function initChat() {
     if (isChatInitialized) return;
-    isChatInitialized = true;
+    
 
     const sendBtn = document.getElementById('send-btn');
     const chatInput = document.getElementById('chat-input');
+    // NEW: UltraThink button initialization
+    const ultraThinkBtn = document.getElementById('ultrathink-btn');
 
-    sendBtn.addEventListener('click', handleSendMessage);
+    // Check if elements exist
+    if (!sendBtn || !chatInput) return;
+    
+    isChatInitialized = true;
+
+    // Standard send handler
+    sendBtn.addEventListener('click', () => handleSendMessage(false));
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            handleSendMessage();
+            handleSendMessage(false);
         }
     });
+
+    // NEW: UltraThink send handler
+    if (ultraThinkBtn) {
+        ultraThinkBtn.addEventListener('click', () => handleSendMessage(true));
+    }
+
 
     // Add initial bot message
     addMessageToChat("Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.", 'bot');
 }
 
-// *** UPDATED FUNCTION WITH PREMIUM MODEL TOGGLE AND ERROR HANDLING ***
-async function handleSendMessage() {
+// *** NEW: Enhanced Simulation Helper (Simulates ~3 minutes of iteration) ***
+async function runUltraThinkSimulation() {
+    // Target simulation time (180 seconds = 3 minutes)
+    // Reduced slightly for practical testing, but set to 180000 for production.
+    const totalSimulationTime = 180000; 
+    const startTime = Date.now();
+    
+    // Helper to add delay
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    // Helper to add message and delay
+    const addMsg = async (msg, ms) => {
+        addSimulationMessage(msg);
+        await delay(ms);
+    };
+
+    // --- Phase 1: Initialization & Divergent Thinking (Approx 45 seconds) ---
+    await addMsg("Initializing UltraThink Protocol v3.0...", 3000);
+    await addMsg("Allocating 5 parallel cognitive instances (Premium Model)...", 2500);
+    
+    for (let i = 1; i <= 5; i++) {
+        await addMsg(`Instance ${i}/5 [Booting]... Status: Loading Core Knowledge...`, Math.random() * 1500 + 1500);
+    }
+    await addMsg("All instances synchronized. [Status: Ready]", 3000);
+    await addMsg("--- PHASE 1: DIVERGENT ANALYSIS ---", 1000);
+    await addMsg("Broad spectrum analysis initiated (Temp: High)...", 2000);
+
+    // Simulate P1 thinking time
+    await delay(20000); 
+    await addMsg("Phase 1 Complete. Collating initial thought vectors...", 3000);
+
+
+    // --- Phase 2: Synthesis (Approx 45 seconds) ---
+    await addMsg("--- PHASE 2: KNOWLEDGE SYNTHESIS ---", 1000);
+    await addMsg("Activating Synthesizer Module...", 2500);
+    await addMsg("Analyzing 5 distinct perspectives...", 1500);
+    
+    // Simulate P2 processing
+    await delay(30000); 
+
+    await addMsg("Generating Shared Knowledge Base (SKB)...", 4000);
+    await addMsg("[SKB Generated]", 2000);
+
+    // --- Phase 3: Convergent Refinement (Bulk of the time - Approx 1.5 mins) ---
+    await addMsg("--- PHASE 3: ITERATIVE REFINEMENT ---", 1000);
+    await addMsg("Distributing SKB to 5 refinement instances (Temp: Med)...", 3000);
+
+    const totalIterations = 8; // Number of simulated iterations
+    
+    for (let iter = 1; iter <= totalIterations; iter++) {
+        const iterationStartTime = Date.now();
+        // Calculate remaining time and adjust iteration duration
+        const timeElapsed = iterationStartTime - startTime;
+        // Keep 20s buffer for finalization
+        const timeRemaining = totalSimulationTime - timeElapsed - 20000; 
+        
+        // Check if we are running out of time
+        if (timeRemaining <= 0 && iter < totalIterations) {
+             await addMsg(`[WARNING]: Time limit approaching. Accelerating refinement...`, 1000);
+             break; // Exit loop if time is up
+        }
+
+        // Distribute the remaining time somewhat evenly, with a minimum duration
+        const targetIterationDuration = Math.max(8000, timeRemaining / (totalIterations - iter + 1));
+
+        await addMsg(`-- Iteration ${iter}/${totalIterations} --`, 1000);
+        await addMsg(`[P3.${iter}.1] Instances analyzing SKB and refining output...`, 500);
+        
+        // Simulate time spent "thinking"
+        await delay(targetIterationDuration * 0.7); 
+
+        await addMsg(`[P3.${iter}.2] Cross-instance validation and data sharing...`, 500);
+        await delay(targetIterationDuration * 0.2);
+        
+        await addMsg(`Iteration ${iter} complete. Confidence score improved.`, 1000);
+    }
+
+    // --- Phase 4: Finalization (Approx 20 seconds) ---
+    await addMsg("--- PHASE 4: FINALIZATION ---", 1000);
+    await addMsg("Activating Finalizer Module...", 2500);
+    await addMsg("Consolidating refined outputs...", 1500);
+    
+    // Simulate P4 processing
+    await delay(10000); 
+
+    await addMsg("Running coherence and persona alignment checks...", 3000);
+    await addMsg("UltraThink Protocol Complete. Preparing transmission...", 1000);
+}
+
+// *** NEW: Add simulation message to UI ***
+function addSimulationMessage(message) {
+    const chatMessages = document.getElementById('chat-messages');
+    const chatWindow = document.getElementById('chat-window');
+    
+    // Check if elements exist
+    if (!chatMessages || !chatWindow) return;
+
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('simulation-message');
+    messageElement.textContent = "> " + message;
+    chatMessages.appendChild(messageElement);
+    // Use 'auto' scroll for simulation messages to avoid jarring smooth scrolls
+    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'auto' });
+}
+
+
+// *** UPDATED FUNCTION TO HANDLE CONCURRENT SIMULATION AND API CALL ***
+async function handleSendMessage(isUltraThink = false) {
     const chatInput = document.getElementById('chat-input');
     const message = chatInput.value.trim();
 
-    // Check the state of the new checkbox
     const premiumCheckbox = document.getElementById('premium-model-checkbox');
-    // Only use premium if the checkbox is checked AND access was previously granted
     const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
+
+    // Validation: UltraThink requires Premium
+    if (isUltraThink && !usePremiumModel) {
+        // This should be prevented by the UI, but acts as a safeguard
+        return;
+    }
 
     if (message === '') return;
 
@@ -2301,107 +2630,154 @@ async function handleSendMessage() {
     chatHistory.push({ role: "user", content: message });
     chatInput.value = '';
 
-    // Disable input while waiting for response
-    toggleInput(false);
+    // Disable input
+    toggleInput(false, isUltraThink);
+
+    // Prepare API call promise
+    const apiCall = fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            history: chatHistory,
+            usePremiumModel: usePremiumModel,
+            ultraThink: isUltraThink
+        }),
+    });
+
+    // Prepare simulation promise (if UltraThink)
+    // The simulation runs for ~3 minutes (180s)
+    const simulation = isUltraThink ? runUltraThinkSimulation() : Promise.resolve();
 
     try {
-        const response = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            // Include history AND the premium model flag
-            body: JSON.stringify({
-                history: chatHistory,
-                usePremiumModel: usePremiumModel
-            }),
-        });
+        // Wait for BOTH the simulation and the API call to complete.
+        // This ensures the user experience matches the requested duration, 
+        // even though the backend finishes much faster.
+        const [response] = await Promise.all([apiCall, simulation]);
 
         if (!response.ok) {
             // This catches HTTP status errors (like 500).
             let errorDetails = "No details provided by server.";
             try {
-                // Attempt to parse the JSON response which should contain the specific error from the backend
                 const errorData = await response.json();
                 if (errorData.error) {
-                    // This will contain the specific error from the worker (e.g., "OpenAI API request failed...")
                     errorDetails = errorData.error;
                 }
             } catch (e) {
-                // If the response body is not valid JSON (e.g., a network error page), use the status text
                 errorDetails = response.statusText;
             }
-            // Throw an error including the specific details
             throw new Error(`Server Error (Status ${response.status}): ${errorDetails}`);
         }
 
         const data = await response.json();
 
         if (data.success && data.response) {
-            // Add bot response to UI and history
-            addMessageToChat(data.response, 'bot');
+            
+            // Handle the single response (which is synthesized if UltraThink was used)
+            
+            // Add a label if it was an UltraThink response
+            const label = data.isUltraThink ? "UltraThink Synthesis (4-Phase Iteration)" : null;
+            addMessageToChat(data.response, 'bot', label);
+            
+            // Add the synthesized response to history
             chatHistory.push({ role: "assistant", content: data.response });
-
-            // Keep history manageable (e.g., last 10 messages)
-            if (chatHistory.length > 10) {
-                chatHistory = chatHistory.slice(-10);
+           
+            // Keep history manageable
+            if (chatHistory.length > 15) {
+                chatHistory = chatHistory.slice(-15);
             }
 
         } else {
-            throw new Error(data.error || "An unknown error occurred in the response data.");
+             // Handle legacy array response structure if backend somehow returns it (Fallback)
+             if (data.isUltraThink && data.responses) {
+                 console.warn("Received legacy array response from UltraThink backend.");
+                 data.responses.forEach((res, index) => {
+                    addMessageToChat(res, 'bot', `Legacy Instance ${index + 1}`);
+                    chatHistory.push({ role: "assistant", content: res });
+                });
+            } else {
+                throw new Error(data.error || "An unknown error occurred in the response data.");
+            }
         }
 
     } catch (error) {
-        // --- ENHANCED ERROR HANDLING ---
         console.error("Error communicating with backend:", error);
 
         let errorMessage = `Error: ${error.message}`;
 
-        // 'Failed to fetch' is thrown as a TypeError (CORS or network failure).
         if (error instanceof TypeError) {
             errorMessage = "Network Error or CORS issue. Ensure the backend (" + WORKER_URL + ") is running and accessible.";
         }
         
         addMessageToChat(errorMessage, 'bot');
         
-        // If an error occurs, remove the last user message from history so they can retry
-        chatHistory.pop();
+        // If an error occurs, remove the last user message from history
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
+           chatHistory.pop();
+        }
     } finally {
         // Re-enable input
         toggleInput(true);
     }
 }
 
-function addMessageToChat(message, sender) {
+// *** UPDATED FUNCTION TO HANDLE INSTANCE LABELS ***
+function addMessageToChat(message, sender, instanceLabel = null) {
     const chatMessages = document.getElementById('chat-messages');
     const chatWindow = document.getElementById('chat-window');
+    
+    // Check if elements exist
+    if (!chatMessages || !chatWindow) return;
+
     const messageElement = document.createElement('div');
     messageElement.classList.add('message');
 
     if (sender === 'user') {
         messageElement.classList.add('user-message');
+        // Basic sanitization
+        messageElement.textContent = message;
     } else {
         messageElement.classList.add('bot-message');
+        
+        // NEW: Add instance label if provided (for UltraThink)
+        if (instanceLabel) {
+            const labelSpan = document.createElement('span');
+            labelSpan.classList.add('instance-label');
+            labelSpan.textContent = instanceLabel + ":";
+            messageElement.appendChild(labelSpan);
+        }
+        
+        // Append the main message content (use Text Node for safety)
+        const contentSpan = document.createElement('span');
+        contentSpan.textContent = message;
+        messageElement.appendChild(contentSpan);
     }
 
-    // Basic sanitization of the message content
-    messageElement.textContent = message;
     chatMessages.appendChild(messageElement);
 
     // Scroll to the bottom of the chat window
-    // Use behavior: 'smooth' for a nicer effect
     chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
 }
 
-function toggleInput(enabled) {
+// *** UPDATED FUNCTION TO HANDLE ULTRATHINK LOADING STATE ***
+function toggleInput(enabled, isUltraThink = false) {
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     // Also disable the toggle area during loading
     const toggleArea = document.getElementById('john-only-toggle');
+    // NEW: Also disable UltraThink button during loading
+    const ultraThinkBtn = document.getElementById('ultrathink-btn');
 
+
+    // Check if elements exist
+    if (!chatInput || !sendBtn) return;
 
     chatInput.disabled = !enabled;
     sendBtn.disabled = !enabled;
+    if (ultraThinkBtn) {
+        ultraThinkBtn.disabled = !enabled;
+    }
     
     // Disable pointer events on the visual toggle area
     if (toggleArea) {
@@ -2413,23 +2789,32 @@ function toggleInput(enabled) {
     if (enabled) {
         // Don't refocus if the password modal is open
         if (document.getElementById('password-modal').style.display !== 'flex') {
-            chatInput.focus();
+             // Only focus if the chat overlay is currently visible
+             if (document.getElementById('askJohnOverlay').style.display === 'flex') {
+                chatInput.focus();
+             }
         }
         chatInput.placeholder = "Type your question...";
     } else {
-        // Add a visual indication that the bot is thinking
-        chatInput.placeholder = "Thinking...";
+        // NEW: Different placeholder for UltraThink
+        if (isUltraThink) {
+            chatInput.placeholder = "UltraThinking (Multi-Phase Iteration)...";
+        } else {
+            chatInput.placeholder = "Thinking...";
+        }
     }
 }
 
 // --- END CHAT INTERFACE JAVASCRIPT ---
 
 
+// Initialization
 document.fonts.ready.then(() => {
-init();
+// Initialize the game world
+init(); 
 }).catch((error) => {
 console.error("Error loading fonts:", error);
-init();
+init(); 
 });
 </script>
 </body>

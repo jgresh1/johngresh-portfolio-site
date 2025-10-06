@@ -10,8 +10,16 @@ canvas{display:block;touch-action:none;}
 #john-only-toggle{position:absolute;top:15px;left:15px;font-size:18px;color:#ffa700;display:flex;align-items:center;z-index:1;text-shadow:2px 2px 0px rgba(0,0,0,0.5);cursor:pointer;user-select:none;}
 #premium-model-checkbox{display:none;}
 .custom-checkbox{width:18px;height:18px;background-color:#2a1a3d;border:3px solid #000;margin-right:8px;display:inline-block;position:relative;box-shadow:2px 2px 0px rgba(0,0,0,0.8);}
-#premium-model-checkbox:checked + .custom-checkbox{background-color:#e63946;}
-#premium-model-checkbox:checked + .custom-checkbox::after{content:'X';position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);color:white;font-size:16px;}
+/* Shared styles for the Think checkbox */
+#think-mode-checkbox{display:none;}
+#think-toggle-area .custom-checkbox {margin-right: 5px; background-color: #1a1a2e;}
+
+#premium-model-checkbox:checked + .custom-checkbox,
+#think-mode-checkbox:checked + .custom-checkbox {background-color:#e63946;}
+
+#premium-model-checkbox:checked + .custom-checkbox::after,
+#think-mode-checkbox:checked + .custom-checkbox::after {content:'X';position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);color:white;font-size:16px;}
+
 #password-modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.8);display:none;justify-content:center;align-items:center;z-index:1005;}
 .modal-content{background-color:#1a1a2e;padding:30px;border:4px solid #000;box-shadow:0 0 50px rgba(255, 167, 0, 0.9);color:white;text-align:center;width:80%;max-width:400px;}
 .modal-content p{font-size:22px;margin-bottom:20px;}
@@ -36,16 +44,34 @@ canvas{display:block;touch-action:none;}
 #askJohnContainer.premium-active #send-btn{background-color:#e63946;color:white;}
 #askJohnContainer.premium-active #send-btn:hover{background-color:#ff5a5f;}
 #askJohnContainer.premium-active #john-only-toggle{color:#e63946;}
-#ultrathink-area{width:100%;text-align:center;margin-top:10px;margin-bottom:-10px;display:none;}
-#askJohnContainer.premium-active #ultrathink-area{display:block;}
-#ultrathink-btn{font-family:'VT323', monospace;font-size:18px;color:#f00;background:0;border:none;cursor:pointer;text-shadow:0 0 5px #f00, 0 0 10px #f00;transition:text-shadow 0.3s, color 0.3s;padding:5px 10px;}
-#ultrathink-btn:hover{color:#fff;text-shadow:0 0 10px #f00, 0 0 20px #f00;}
-#ultrathink-btn:disabled{cursor:not-allowed;opacity:0.5;text-shadow:none;color:#6c6383;}
+
+/* New styles for Think Toggle Area */
+#think-toggle-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: -5px;
+    font-size: 18px;
+    color: #00ff00; /* Default SuperThink Color */
+    cursor: pointer;
+    user-select: none;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+/* Premium (UltraThink) colors override */
+#askJohnContainer.premium-active #think-toggle-area {
+    color: #ff0000;
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+}
+
 .simulation-message{font-size:16px;color:#0f0;background-color:rgba(0, 0, 0, 0.7);padding:5px;margin:2px 0;white-space:pre-wrap;align-self:center;text-align:left;border-radius:3px;width:90%;}
 .instance-label{font-size:18px;color:#ffc107;margin-bottom:5px;font-weight:bold;text-align:left;display:block;}
 #askJohnContainer.premium-active .instance-label{color:#ff5a5f;}
 #miniGamesContainer{box-shadow:0 0 50px rgba(106, 13, 173, 0.9);display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;}
-.close-btn{position:fixed;top:20px;right:20px;padding:10px 20px;font-size:24px;background-color:#e63946;color:white;border:3px solid black;cursor:pointer;border-radius:0;box-shadow:5px 5px 0px rgba(0,0,0,0.8);transition:background-color 0.1s, transform 0.1s, box-shadow 0.1s;z-index:1001;}
+.close-btn{position:fixed;top:20px;right:20px;padding:10px 20px;font-size:24px;font-family:'VT323', monospace;background-color:#e63946;color:white;border:3px solid black;cursor:pointer;border-radius:0;box-shadow:5px 5px 0px rgba(0,0,0,0.8);transition:background-color 0.1s, transform 0.1s, box-shadow 0.1s;z-index:1001;}
 .close-btn:hover{background-color:#ff5a5f;}
 .close-btn:active{transform:translate(3px, 3px);box-shadow:2px 2px 0px rgba(0,0,0,0.8);}
 .overlay-container::-webkit-scrollbar{width:14px;}
@@ -102,15 +128,20 @@ canvas{display:block;touch-action:none;}
 @media (max-width: 800px){
 #instructions{display:none;}
 #coin-counter{font-size:20px;top:10px;right:10px;padding:4px 8px;}
-.close-btn{top:10px;right:10px;padding:8px 16px;font-size:20px;border:3px solid black;box-shadow:3px 3px 0px rgba(0,0,0,0.8);}
+/* Reduced mobile button size */
+.close-btn{top:5px;right:5px;padding:5px 10px;font-size:16px;border:2px solid black;box-shadow:2px 2px 0px rgba(0,0,0,0.8);}
 .close-btn:active{transform:translate(1px, 1px);box-shadow:1px 1px 0px rgba(0,0,0,0.8);}
-#john-only-toggle{font-size:16px;top:10px;left:10px;}
-.overlay-container{width:95%;padding:15px;height:85vh;max-height:calc(100vh - 60px);}
+/* Adjusted mobile toggle layout */
+#john-only-toggle{font-size:14px;top:10px;left:10px;flex-direction: row;align-items: flex-start;}
+#john-only-toggle label {line-height: 1.1;}
+
+#think-toggle-area {font-size: 16px; margin-bottom: -8px;}
+
+.overlay-container{width:95%;padding:15px;height:85vh;max-height:calc(100vh - 50px);}
 .resume-header h1{font-size:36px;}
 #pong-score{font-size:28px;}
 #pong-round-message{font-size:24px;padding:15px 25px;white-space:normal;}
 #chat-input, #send-btn{font-size:18px;padding:8px 12px;}
-#ultrathink-btn{font-size:16px;padding:5px 10px;}
 }
 @media only screen and (min-device-width: 768px) and (max-device-width: 1024px){
 .close-btn{position:fixed!important;z-index:1001!important;top:15px!important;right:15px!important;padding:12px 24px!important;font-size:26px!important;background-color:#e63946!important;border:4px solid black!important;}
@@ -124,7 +155,14 @@ canvas{display:block;touch-action:none;}
 <div id="resumeOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="resumeContainer" class="overlay-container"><div class="resume-header"><h1>John Gresh</h1><p>(336) 995-4119 | johngresh.usa@gmail.com</p></div><div class="resume-layout"><div class="layout-main"><section class="resume-section"><h2>Experience</h2><div class="job"><div class="job-title">Maintenance Technician</div><div class="company">Toyota Battery Factory</div><span class="dates">July 2024 - November 2024</span><ul class="responsibilities"><li>General Maintenance</li><li>Preventative Maintenance</li><li>Work orders/Cost Center Management</li><li>Performing Job Safety Analysis</li></ul></div><div class="job"><div class="job-title">Assistant Manager</div><div class="company">New Balance</div><span class="dates">October 2021 - Current</span><ul class="responsibilities"><li>Assisting in the general operation of the store</li><li>Opening and closing the store</li><li>Overseeing the customer experience</li><li>Fitting customers for shoes</li></ul></div><div class="job"><div class="job-title">Sales Representative</div><div class="company">GNC</div><span class="dates">March 2019 - July 2019, Charlotte NC</span><ul class="responsibilities"><li>Opening/Closing store</li><li>Inventory checks</li><li>Customer relations</li><li>Register</li><li>Cleaning</li></ul></div><div class="job"><div class="job-title">Lifeguard</div><div class="company">Forsyth Country Club</div><span class="dates">2016 - 2017 Summer</span><ul class="responsibilities"><li>Lifeguarding</li><li>Checking in guests</li><li>Cleaning pool deck and pool services</li><li>Testing pool chemicals/Adding chemicals</li><li>Strong emphasis on customer relations</li></ul></div><div class="job"><div class="job-title">Bussing tables / working in kitchen</div><div class="company">Vincenzo's Restaurant</div><span class="dates">January 2015 - December 2015, Winston-salem NC</span><ul class="responsibilities"><li>Making bread/Cleaning dishes/Making salads/ Bus Boy</li><li>Cleaning station</li><li>Customer relations</li></ul></div></section></div><div class="layout-sidebar"><section class="resume-section"><h2>Education</h2><div class="education-item"><div class="degree-title">Mechatronics Technician</div><div class="school">Forsyth Tech</div><span class="dates">August 2022 - May 2024, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">Internship</div><div class="school">ThinkPLC</div><span class="dates">August 2022 - May 2023, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">High School Diploma</div><div class="school">Mount Tabor</div><span class="dates">August 2013 - May 2017, Winston Salem NC</span></div></section><section class="resume-section"><h2>Skills</h2><ul class="skills-list"><li>OSHA 10-Hr Certified</li><li>Electrical Safe Work Practices Certified</li><li>Control of Hazardous Energy Certified</li><li>PLC installation / proficient</li><li>PLC programming (RSLogix) / proficient</li><li>Python / proficient</li><li>C++ / beginner</li><li>Matlab / beginner</li><li>Sales experience (GNC, New Balance)</li><li>Cell phone and electronic repair (iPhone/Mac)</li></ul></section></div></div></div></div>
 <div id="projectsOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="projectsContainer" class="overlay-container"><div class="resume-header"><h1>Projects</h1></div><section class="resume-section"><h2>Featured Work</h2><ul class="skills-list"><li>This Website</li></ul></section></div></div>
 <div id="tshirtsOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="tshirtsContainer" class="overlay-container"><div class="resume-header"><h1>T-Shirt Store (WIP)</h1></div><p class="loading-text">Initializing Storefront...</p><div class="progress-container"><div class="progress-bar"></div></div><p class="loading-text">> later this week</p></div></div>
-<div id="askJohnOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="askJohnContainer" class="overlay-container"><div class="resume-header"><div id="john-only-toggle"><input type="checkbox" id="premium-model-checkbox"><span class="custom-checkbox"></span><label for="premium-model-checkbox">John Gresh Only</label></div><h1>Ask John (AI)</h1><p>Chat with an AI trained on John's professional background.</p></div><div id="chat-container"><div id="chat-window"><div id="chat-messages"></div></div><div id="chat-input-area"><input type="text" id="chat-input" placeholder="Type your question..."><button id="send-btn">SEND</button></div><div id="ultrathink-area"><button id="ultrathink-btn">[ UltraThink ]</button></div></div></div></div>
+<div id="askJohnOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="askJohnContainer" class="overlay-container"><div class="resume-header"><div id="john-only-toggle"><input type="checkbox" id="premium-model-checkbox"><span class="custom-checkbox"></span><label for="premium-model-checkbox">John<br>Only</label></div><h1>Ask John (AI)</h1><p>Chat with an AI trained on John's professional background.</p></div><div id="chat-container"><div id="chat-window"><div id="chat-messages"></div></div>
+<div id="think-toggle-area">
+    <input type="checkbox" id="think-mode-checkbox">
+    <span class="custom-checkbox"></span>
+    <label for="think-mode-checkbox" id="think-mode-label">SuperThink</label>
+</div>
+<div id="chat-input-area"><input type="text" id="chat-input" placeholder="Type your question..."><button id="send-btn">SEND</button></div>
+</div></div></div>
 <div id="miniGamesOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="miniGamesContainer" class="overlay-container"><div class="resume-header"><h1>Pong AI</h1></div><div id="pong-score">Player: <span id="player-score">0</span> | AI: <span id="ai-score">0</span> | Round: <span id="pong-round">1</span></div><canvas id="pong-canvas"></canvas><div id="pong-instructions"><p>First to 5 wins the round. The AI adapts each round!</p><p>Desktop: Use Mouse or W/S/Up/Down Arrows.</p><p>Mobile: Drag your paddle.</p></div></div></div>
 <div id="pong-round-message"></div><div id="mobile-controls"><div id="joystick-zone"></div><div id="action-buttons"><div id="jump-btn" class="action-btn">JUMP</div></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1203,13 +1241,21 @@ if (isSceneActive || fireworks.length > 0) composer.render();
 const ACCESS_CODE = "ROSEBUD";
 let isPremiumAccessGranted = !1;
 
+// Updated function to handle UI state and Think Mode labels
 function updatePremiumUIState() {
 const checkbox = document.getElementById('premium-model-checkbox');
 const askJohnContainer = document.getElementById('askJohnContainer');
-if (!checkbox || !askJohnContainer) return;
-if (checkbox.checked && isPremiumAccessGranted) askJohnContainer.classList.add('premium-active');
-else askJohnContainer.classList.remove('premium-active');
-}
+const thinkModeLabel = document.getElementById('think-mode-label');
+
+if (!checkbox || !askJohnContainer || !thinkModeLabel) return;
+
+if (checkbox.checked && isPremiumAccessGranted) {
+    askJohnContainer.classList.add('premium-active');
+    thinkModeLabel.textContent = "UltraThink"; // Premium mode uses UltraThink
+} else {
+    askJohnContainer.classList.remove('premium-active');
+    thinkModeLabel.textContent = "SuperThink"; // Public mode uses SuperThink
+}}
 
 function initPasswordModal() {
 const toggle = document.getElementById('john-only-toggle'), checkbox = document.getElementById('premium-model-checkbox');
@@ -1255,12 +1301,13 @@ let chatHistory = [], isChatInitialized = !1;
 function initChat() {
 if (isChatInitialized) return;
 const sendBtn = document.getElementById('send-btn'), chatInput = document.getElementById('chat-input');
-const ultraThinkBtn = document.getElementById('ultrathink-btn');
+// Removed UltraThink button initialization as it's now a checkbox area
 if (!sendBtn || !chatInput) return;
 isChatInitialized = !0;
-sendBtn.addEventListener('click', () => handleSendMessage(!1));
-chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSendMessage(!1); });
-if (ultraThinkBtn) ultraThinkBtn.addEventListener('click', () => handleSendMessage(!0));
+// Updated handlers to check the checkbox state on send
+sendBtn.addEventListener('click', () => handleSendMessage());
+chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSendMessage(); });
+
 addMessageToChat("Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.", 'bot');
 }
 
@@ -1269,9 +1316,15 @@ const totalSimulationTime = 180000, startTime = Date.now();
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const addMsg = async (msg, ms) => { addSimulationMessage(msg); await delay(ms); };
 
-await addMsg("Initializing UltraThink Protocol v3.0...", 3000);
-await addMsg("Allocating 5 parallel cognitive instances (Premium Model)...", 2500);
-for (let i=1; i<=5; i++) await addMsg(`Instance ${i}/5 [Booting]... Status: Loading Core Knowledge...`, Math.random()*1500 + 1500);
+// Determine if we are running UltraThink (Premium) or SuperThink (Public) for the simulation messages
+const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
+const thinkName = isPremium ? "UltraThink" : "SuperThink";
+const instances = isPremium ? 5 : 3; // Fewer instances for SuperThink
+const iterations = isPremium ? 8 : 5; // Fewer iterations for SuperThink
+
+await addMsg(`Initializing ${thinkName} Protocol...`, 3000);
+await addMsg(`Allocating ${instances} parallel cognitive instances (${isPremium ? "Premium" : "Standard"} Model)...`, 2500);
+for (let i=1; i<=instances; i++) await addMsg(`Instance ${i}/${instances} [Booting]... Status: Loading Core Knowledge...`, Math.random()*1500 + 1500);
 await addMsg("All instances synchronized. [Status: Ready]", 3000);
 await addMsg("--- PHASE 1: DIVERGENT ANALYSIS ---", 1000);
 await addMsg("Broad spectrum analysis initiated (Temp: High)...", 2000);
@@ -1280,23 +1333,23 @@ await addMsg("Phase 1 Complete. Collating initial thought vectors...", 3000);
 
 await addMsg("--- PHASE 2: KNOWLEDGE SYNTHESIS ---", 1000);
 await addMsg("Activating Synthesizer Module...", 2500);
-await addMsg("Analyzing 5 distinct perspectives...", 1500);
+await addMsg(`Analyzing ${instances} distinct perspectives...`, 1500);
 await delay(30000);
 await addMsg("Generating Shared Knowledge Base (SKB)...", 4000);
 await addMsg("[SKB Generated]", 2000);
 
 await addMsg("--- PHASE 3: ITERATIVE REFINEMENT ---", 1000);
-await addMsg("Distributing SKB to 5 refinement instances (Temp: Med)...", 3000);
-const totalIterations = 8;
-for (let iter=1; iter<=totalIterations; iter++) {
+await addMsg(`Distributing SKB to ${instances} refinement instances (Temp: Med)...`, 3000);
+
+for (let iter=1; iter<=iterations; iter++) {
 const iterationStartTime = Date.now();
 const timeElapsed = iterationStartTime - startTime;
 const timeRemaining = totalSimulationTime - timeElapsed - 20000;
-if (timeRemaining <= 0 && iter < totalIterations) {
+if (timeRemaining <= 0 && iter < iterations) {
 await addMsg(`[WARNING]: Time limit approaching. Accelerating refinement...`, 1000); break;
 }
-const targetIterationDuration = Math.max(8000, timeRemaining / (totalIterations - iter + 1));
-await addMsg(`-- Iteration ${iter}/${totalIterations} --`, 1000);
+const targetIterationDuration = Math.max(8000, timeRemaining / (iterations - iter + 1));
+await addMsg(`-- Iteration ${iter}/${iterations} --`, 1000);
 await addMsg(`[P3.${iter}.1] Instances analyzing SKB and refining output...`, 500);
 await delay(targetIterationDuration * 0.7);
 await addMsg(`[P3.${iter}.2] Cross-instance validation and data sharing...`, 500);
@@ -1309,7 +1362,7 @@ await addMsg("Activating Finalizer Module...", 2500);
 await addMsg("Consolidating refined outputs...", 1500);
 await delay(10000);
 await addMsg("Running coherence and persona alignment checks...", 3000);
-await addMsg("UltraThink Protocol Complete. Preparing transmission...", 1000);
+await addMsg(`${thinkName} Protocol Complete. Preparing transmission...`, 1000);
 }
 
 function addSimulationMessage(message) {
@@ -1321,23 +1374,34 @@ chatMessages.appendChild(messageElement);
 chatWindow.scrollTo({top: chatWindow.scrollHeight, behavior: 'auto'});
 }
 
-async function handleSendMessage(isUltraThink = !1) {
+// Updated handleSendMessage to use the checkbox state
+async function handleSendMessage() {
 const chatInput = document.getElementById('chat-input');
 const message = chatInput.value.trim();
 const premiumCheckbox = document.getElementById('premium-model-checkbox');
+const thinkCheckbox = document.getElementById('think-mode-checkbox'); // Get the Think checkbox
+
 const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
-if (isUltraThink && !usePremiumModel) return;
+// Determine if Think mode is active based on the checkbox
+const isUltraThink = (thinkCheckbox && thinkCheckbox.checked);
+
 if (message === '') return;
 
 addMessageToChat(message, 'user');
 chatHistory.push({role: "user", content: message});
 chatInput.value = '';
+
+// Uncheck the Think checkbox after sending
+if (thinkCheckbox) thinkCheckbox.checked = false;
+
 toggleInput(!1, isUltraThink);
 
 const apiCall = fetch(WORKER_URL, {
 method: 'POST', headers: {'Content-Type': 'application/json'},
+// Send both flags to the backend
 body: JSON.stringify({history: chatHistory, usePremiumModel: usePremiumModel, ultraThink: isUltraThink}),
 });
+// Run simulation if Think mode was checked
 const simulation = isUltraThink ? runUltraThinkSimulation() : Promise.resolve();
 
 try {
@@ -1352,10 +1416,14 @@ throw new Error(`Server Error (Status ${response.status}): ${errorDetails}`);
 }
 const data = await response.json();
 if (data.success && data.response) {
-const label = data.isUltraThink ? "UltraThink Synthesis (4-Phase Iteration)" : null;
-addMessageToChat(data.response, 'bot', label);
-chatHistory.push({role: "assistant", content: data.response});
-if (chatHistory.length > 15) chatHistory = chatHistory.slice(-15);
+    // Update label based on the actual mode used (determined by backend confirmation and UI state)
+    const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
+    const thinkName = isPremium ? "UltraThink" : "SuperThink";
+    const label = data.isUltraThink ? `${thinkName} Synthesis (4-Phase Iteration)` : null;
+
+    addMessageToChat(data.response, 'bot', label);
+    chatHistory.push({role: "assistant", content: data.response});
+    if (chatHistory.length > 15) chatHistory = chatHistory.slice(-15);
 } else {
 if (data.isUltraThink && data.responses) {
 data.responses.forEach((res, index) => {
@@ -1391,19 +1459,30 @@ chatWindow.scrollTo({top: chatWindow.scrollHeight, behavior: 'smooth'});
 
 function toggleInput(enabled, isUltraThink = !1) {
 const chatInput = document.getElementById('chat-input'), sendBtn = document.getElementById('send-btn');
-const toggleArea = document.getElementById('john-only-toggle'), ultraThinkBtn = document.getElementById('ultrathink-btn');
+const toggleArea = document.getElementById('john-only-toggle');
+// Also disable the Think toggle area
+const thinkToggleArea = document.getElementById('think-toggle-area');
+
 if (!chatInput || !sendBtn) return;
 chatInput.disabled = !enabled; sendBtn.disabled = !enabled;
-if (ultraThinkBtn) ultraThinkBtn.disabled = !enabled;
+
+// Disable pointer events on visual toggle areas
 if (toggleArea) { toggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; toggleArea.style.opacity = enabled ? '1' : '0.5'; }
+if (thinkToggleArea) { thinkToggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; thinkToggleArea.style.opacity = enabled ? '1' : '0.5'; }
+
+
 if (enabled) {
 if (document.getElementById('password-modal').style.display !== 'flex') {
 if (document.getElementById('askJohnOverlay').style.display === 'flex') chatInput.focus();
 }
 chatInput.placeholder = "Type your question...";
 } else {
-if (isUltraThink) chatInput.placeholder = "UltraThinking (Multi-Phase Iteration)...";
-else chatInput.placeholder = "Thinking...";
+    // Update placeholder based on the active Think mode label
+    const thinkModeLabel = document.getElementById('think-mode-label');
+    const thinkName = (thinkModeLabel && thinkModeLabel.textContent) || "Thinking";
+
+    if (isUltraThink) chatInput.placeholder = `${thinkName} (Multi-Phase Iteration)...`;
+    else chatInput.placeholder = "Thinking...";
 }}
 
 document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });

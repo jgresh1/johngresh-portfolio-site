@@ -57,20 +57,21 @@ canvas{display:block;touch-action:none;}
     margin-top: 5px;
     margin-bottom: 10px;
     font-size: 18px;
-    color: #00ff00; /* Default SuperThink Color */
+    /* UPDATED: Changed default SuperThink Color to Blue */
+    color: #00aaff;
     cursor: pointer;
     user-select: none;
-    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
     transition: color 0.3s, text-shadow 0.3s;
 }
 
-/* Premium (UltraThink) colors override */
+/* Premium (UltraThink) colors override (Stays Red) */
 #askJohnContainer.premium-active #think-toggle-area {
     color: #ff0000;
     text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
 }
 
-/* NEW: Thinking Box Styles */
+/* Thinking Box Styles */
 #thinking-box {
     display: none; /* Hidden by default */
     width: 100%;
@@ -84,14 +85,14 @@ canvas{display:block;touch-action:none;}
     overflow: hidden;
     text-overflow: ellipsis; /* Handle long messages */
 
-    /* Default (SuperThink) colors - Terminal style */
-    background-color: #004d00; /* Dark green background */
-    color: #00ff00; /* Bright green text */
-    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    /* UPDATED: Default (SuperThink) colors - Blue style */
+    background-color: #001a33; /* Dark blue background */
+    color: #00aaff; /* Bright blue text */
+    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
     box-shadow: 0px 5px 0px rgba(0,0,0,0.8);
 }
 
-/* Premium (UltraThink) override for thinking box */
+/* Premium (UltraThink) override for thinking box (Stays Red) */
 #askJohnContainer.premium-active #thinking-box {
     background-color: #4d0000; /* Dark red background */
     color: #ff0000; /* Bright red text */
@@ -222,6 +223,7 @@ float sunHotspot=max(0.0,sunAlignment);sunHotspot=pow(sunHotspot,32.0);
 skyColor+=vec3(1.0,0.9,0.7)*sunHotspot*0.8;gl_FragColor=vec4(skyColor,1.0);
 }</script>
 <script>
+// --- 3D Scene Setup and Variables ---
 let scene, camera, renderer, composer, pixelPass, cameraRig, cameraPitch, raycaster, mouse;
 const clickableObjects = [], clock = new THREE.Clock(), keys = {ArrowUp:!1, ArrowDown:!1, ArrowLeft:!1, ArrowRight:!1, w:!1, a:!1, s:!1, d:!1, ' ':!1};
 let joystickInput = {x:0, y:0}, isDragging = !1, dragStart = {x:0, y:0}, lookTouchId = null, isSceneActive = !0;
@@ -1404,7 +1406,7 @@ async function runUltraThinkSimulation() {
     let totalSimulationTime, instances, iterations, phase1Duration, phase2Duration, iterationBaseTime;
 
     if (isPremium) {
-        // UltraThink (Long duration)
+        // UltraThink (Long duration for maximum quality)
         totalSimulationTime = 180000; // 3 minutes
         instances = 5;
         iterations = 8;
@@ -1412,7 +1414,7 @@ async function runUltraThinkSimulation() {
         phase2Duration = 30000;
         iterationBaseTime = 8000;
     } else {
-        // SuperThink (Optimized/Short duration)
+        // SuperThink (Optimized/Short duration for broader topics)
         totalSimulationTime = 45000; // 45 seconds
         instances = 3;
         iterations = 3;
@@ -1502,9 +1504,9 @@ async function handleSendMessage() {
     const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
     const isUltraThink = (thinkCheckbox && thinkCheckbox.checked);
 
-    // NEW: Determine Persona
+    // Determine Persona
     // If premium model is used (JohnOnly checked and access granted), use coding assistant.
-    // Otherwise, use the general assistant (which is now broader than just portfolio).
+    // Otherwise, use the general assistant (broader scope).
     const persona = usePremiumModel ? "coding_assistant" : "general_assistant";
 
 
@@ -1551,7 +1553,10 @@ async function handleSendMessage() {
 
             addMessageToChat(data.response, 'bot', label);
             chatHistory.push({role: "assistant", content: data.response});
-            if (chatHistory.length > 15) chatHistory = chatHistory.slice(-15);
+
+            // Increased history limit to ensure backend receives sufficient context for long interactions.
+            if (chatHistory.length > 50) chatHistory = chatHistory.slice(-50);
+
         } else {
             // Handle potential legacy formats or errors
             if (data.isUltraThink && data.responses) {

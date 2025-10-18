@@ -424,6 +424,7 @@ function isIPad() { return /iPad/i.test(navigator.userAgent) || (navigator.platf
 
 // PongGame Class (No changes required)
 class PongGame {
+// ... [PongGame class implementation remains identical] ...
 constructor(canvasId) {
 this.canvas = document.getElementById(canvasId); this.ctx = this.canvas.getContext('2d');
 this.isRunning = !1; this.animationFrameId = null; this.isServing = !1; this.serveTimeoutId = null;
@@ -671,7 +672,8 @@ if (!pongGame) pongGame = new PongGame('pong-canvas');
 pongGame.resetGame(); setTimeout(() => { pongGame.start(); }, 100);
 }
 if (overlayId === 'askJohnOverlay') {
-initChat(); updatePremiumUIState();
+initChat();
+updatePremiumUIState(); // This now calls displayInitialGreeting if visible
 setTimeout(() => { document.getElementById('chat-input').focus();
 const chatWindow = document.getElementById('chat-window'); chatWindow.scrollTop = chatWindow.scrollHeight;
 }, 100);
@@ -703,6 +705,7 @@ else document.getElementById('mobile-controls').style.display = 'flex';
 }}
 
 // 3D Utility Functions
+// ... [getPixelSize, setupPostProcessing, initJoystick remain the same] ...
 function getPixelSize() {
 let targetVerticalResolution;
 if (isIPad()) targetVerticalResolution = 240; else if (isMobileDevice()) targetVerticalResolution = 280; else targetVerticalResolution = 450;
@@ -733,8 +736,9 @@ joystickInput.x = Math.cos(angle)*force; joystickInput.y = Math.sin(angle)*force
 joystickManager.on('end', () => { joystickInput.x = 0; joystickInput.y = 0; });
 }
 
+
 // 3D Asset Creation Functions
-// [All 3D asset functions remain unchanged, included for completeness]
+// ... [All 3D asset creation functions (createCoinTexture, createTextTextureSync, initCoins, placeCoins, updateCoins, collectCoin, createFirework, startFireworks, updateFireworks, createSky, setupLighting, createTextTexture, createStripedTexture, createTunnelSignTexture, createGrassTexture, createGround, createRoad, createTunnel, createParkingLights, addControllerElements, createBuilding, createWindow, addShirt, addPaper, addThoughtBubble, createAwning, createSign, createBillboard, createBush, createTrees, createStars) remain identical] ...
 function createCoinTexture(size=128) {
 const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
 const context = canvas.getContext('2d');
@@ -1628,7 +1632,6 @@ if (isSceneActive || fireworks.length > 0) composer.render();
 }
 
 // --- UI and Chat Logic ---
-// [Chat logic remains unchanged]
 
 const ACCESS_CODE = "ROSEBUD";
 let isPremiumAccessGranted = !1;
@@ -1656,7 +1659,49 @@ function updatePremiumUIState() {
         title.textContent = "Ask John (AI)"; // Default title
         subtitle.textContent = "Chat with an AI trained on John's professional background.";
     }
+
+    // NEW: Update the greeting if the overlay is currently visible
+    if (document.getElementById('askJohnOverlay').style.display === 'flex') {
+        displayInitialGreeting();
+    }
 }
+
+// NEW: Function to display or update the initial greeting message
+function displayInitialGreeting() {
+    const chatMessages = document.getElementById('chat-messages');
+    if (!chatMessages) return;
+
+    // Check if the only message present is the initial greeting (identified by a specific class)
+    const existingGreeting = chatMessages.querySelector('.initial-greeting');
+
+    const premiumCheckbox = document.getElementById('premium-model-checkbox');
+    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
+
+    let greetingMessage = "";
+
+    if (usePremiumModel) {
+        // Greeting for John (Premium/Coding Assistant)
+        greetingMessage = "Welcome back, John. The expert coding assistant is active. Memory and accuracy parameters are maximized for complex tasks. How can I assist you today?";
+    } else {
+        // Greeting for Public (General Assistant)
+        greetingMessage = "Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.";
+    }
+
+    if (existingGreeting) {
+        // If a greeting exists (user toggled the switch), update its content
+        // We need to find the content span within the message element structure
+            const contentSpan = existingGreeting.querySelector('span:not(.instance-label)');
+            if (contentSpan) {
+                contentSpan.textContent = greetingMessage;
+            }
+    } else if (chatHistory.length === 0) {
+        // If no greeting exists AND history is empty (initial load), add a new one
+        // Pass true for isInitialGreeting
+        addMessageToChat(greetingMessage, 'bot', null, true);
+    }
+    // If history is not empty and no existing greeting, we do nothing (chat is in progress)
+}
+
 
 function initPasswordModal() {
 const toggle = document.getElementById('john-only-toggle'), checkbox = document.getElementById('premium-model-checkbox');
@@ -1740,11 +1785,13 @@ if (thinkToggleArea && thinkCheckbox) {
 sendBtn.addEventListener('click', () => handleSendMessage());
 chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSendMessage(); });
 
-addMessageToChat("Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.", 'bot');
+// The initial greeting is now handled by displayInitialGreeting called via showOverlay/updatePremiumUIState
+// addMessageToChat("Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.", 'bot');
 }
 
 // UPDATED: Now uses the thinking box and optimizes SuperThink duration
 async function runUltraThinkSimulation() {
+    // ... [Simulation logic remains identical] ...
     // Determine if we are running UltraThink (Premium) or SuperThink (Public)
     const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
     const thinkName = isPremium ? "UltraThink" : "SuperThink";
@@ -1861,6 +1908,12 @@ async function handleSendMessage() {
 
     if (message === '') return;
 
+    // Remove the initial greeting before adding the user's first message
+    const existingGreeting = document.getElementById('chat-messages').querySelector('.initial-greeting');
+    if (existingGreeting) {
+        existingGreeting.remove();
+    }
+
     addMessageToChat(message, 'user');
     chatHistory.push({role: "user", content: message});
     chatInput.value = '';
@@ -1926,10 +1979,18 @@ async function handleSendMessage() {
     }
 }
 
-function addMessageToChat(message, sender, instanceLabel = null) {
+// Updated to accept isInitialGreeting flag
+function addMessageToChat(message, sender, instanceLabel = null, isInitialGreeting = false) {
 const chatMessages = document.getElementById('chat-messages'), chatWindow = document.getElementById('chat-window');
 if (!chatMessages || !chatWindow) return;
-const messageElement = document.createElement('div'); messageElement.classList.add('message');
+const messageElement = document.createElement('div');
+messageElement.classList.add('message');
+
+// NEW: Add specific class for the initial greeting
+if (isInitialGreeting) {
+    messageElement.classList.add('initial-greeting');
+}
+
 if (sender === 'user') {
 messageElement.classList.add('user-message'); messageElement.textContent = message;
 } else {
@@ -1947,6 +2008,7 @@ chatWindow.scrollTo({top: chatWindow.scrollHeight, behavior: 'smooth'});
 
 // UPDATED: Controls visibility of the thinking box
 function toggleInput(enabled, isUltraThink = !1) {
+    // ... [toggleInput logic remains identical] ...
     const chatInput = document.getElementById('chat-input'), sendBtn = document.getElementById('send-btn');
     const toggleArea = document.getElementById('john-only-toggle');
     const thinkToggleArea = document.getElementById('think-toggle-area');

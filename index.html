@@ -1,10 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>John Gresh : Portfolio Web Game</title><link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>John Gresh : Portfolio Web Game</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
 body{margin:0;overflow:hidden;background-color:#000;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;}
 canvas{display:block;touch-action:none;}
+
+/* --- New Menu Button Styles --- */
+#menu-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 60px;
+    height: 55px;
+    background-color: #2a9d8f; /* Retro green */
+    border: 4px solid black;
+    z-index: 2000; /* Highest priority */
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+    transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
+    padding: 0;
+}
+
+#menu-btn:hover {
+    background-color: #36c9b4;
+}
+
+#menu-btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+}
+
+.menu-bar {
+    width: 70%;
+    height: 6px;
+    background-color: white;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+/* Active state (X shape) */
+#menu-btn.active .menu-bar:nth-child(1) {
+    transform: translateY(14px) rotate(45deg);
+}
+#menu-btn.active .menu-bar:nth-child(2) {
+    opacity: 0;
+}
+#menu-btn.active .menu-bar:nth-child(3) {
+    transform: translateY(-14px) rotate(-45deg);
+}
+
+
+/* --- New Menu Drawer Styles --- */
+#menu-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 100%;
+    background-color: #1a1a2e; /* Matching theme dark blue */
+    border-right: 4px solid black;
+    z-index: 1999; /* Below button, above everything else */
+    transform: translateX(-105%);
+    transition: transform 0.3s ease-in-out;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.7);
+    overflow-y: auto;
+}
+
+#menu-drawer.open {
+    transform: translateX(0);
+}
+
+.drawer-header {
+    background-color: #2a1a3d;
+    padding: 30px 20px;
+    border-bottom: 4px dashed #6c6383;
+    text-align: center;
+}
+
+.drawer-header h2 {
+    margin: 0;
+    font-size: 36px;
+    color: #ff7d5c; /* Theme orange/red */
+    text-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+}
+
+.drawer-nav {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.drawer-nav li {
+    margin: 0;
+}
+
+.drawer-nav a {
+    display: block;
+    padding: 15px 25px;
+    color: white;
+    text-decoration: none;
+    font-size: 26px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.drawer-nav a:hover {
+    background-color: #6c6383;
+    color: #ffd700; /* Theme gold */
+}
+/* --- End New Menu Styles --- */
+
+
 #instructions{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255, 255, 255, 0.9);font-size:18px;text-shadow:2px 2px 4px black;pointer-events:none;text-align:center;padding:10px;background:rgba(0, 0, 0, 0.5);z-index:10;}
 #coin-counter{position:absolute;top:20px;right:20px;color:#ffd700;font-size:36px;text-shadow:3px 3px 0px black;padding:10px 20px;background:rgba(26, 5, 58, 0.8);border:4px solid black;z-index:15;display:block;box-shadow:5px 5px 0px rgba(0,0,0,0.8);pointer-events:none;}
 #john-only-toggle{position:absolute;top:15px;left:15px;font-size:18px;color:#ffa700;display:flex;align-items:center;z-index:1;text-shadow:2px 2px 0px rgba(0,0,0,0.5);cursor:pointer;user-select:none;}
@@ -24,7 +138,8 @@ canvas{display:block;touch-action:none;}
 #premium-model-checkbox:checked + .custom-checkbox::after,
 #think-mode-checkbox:checked + .custom-checkbox::after {content:'X';position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);color:white;font-size:16px;}
 
-#password-modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.8);display:none;justify-content:center;align-items:center;z-index:1005;}
+/* Increased z-index for password modal to be above the menu */
+#password-modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.8);display:none;justify-content:center;align-items:center;z-index:2005;}
 .modal-content{background-color:#1a1a2e;padding:30px;border:4px solid #000;box-shadow:0 0 50px rgba(255, 167, 0, 0.9);color:white;text-align:center;width:80%;max-width:400px;}
 .modal-content p{font-size:22px;margin-bottom:20px;}
 #password-input{width:100%;padding:10px;margin-bottom:20px;font-family:'VT323', monospace;font-size:20px;background-color:#2a1a3d;color:white;border:3px solid #000;box-sizing:border-box;}
@@ -163,8 +278,35 @@ canvas{display:block;touch-action:none;}
 #pong-score{font-size:36px;color:#fff;text-align:center;margin-bottom:15px;}
 #pong-instructions{text-align:center;font-size:20px;margin-top:5px;color:#d4a3a3;padding-bottom:20px;}
 #pong-round-message{position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);font-size:36px;color:#ff7d5c;background-color:rgba(26, 5, 58, 0.95);padding:20px 40px;border:3px solid #ff7d5c;display:none;z-index:1002;text-align:center;white-space:nowrap;box-shadow:0 0 30px rgba(255, 125, 92, 0.7);}
+
 @media (max-width: 800px){
 #instructions{display:none;}
+
+/* Mobile Menu Button Adjustments */
+#menu-btn {
+    top: 10px;
+    left: 10px;
+    width: 45px;
+    height: 40px;
+    border-width: 3px;
+    gap: 6px;
+}
+.menu-bar {
+    height: 4px;
+}
+/* Mobile Active state (X shape) adjustments */
+#menu-btn.active .menu-bar:nth-child(1) {
+    transform: translateY(10px) rotate(45deg);
+}
+#menu-btn.active .menu-bar:nth-child(3) {
+    transform: translateY(-10px) rotate(-45deg);
+}
+
+#menu-drawer {
+    width: 250px; /* Slightly narrower on mobile */
+}
+
+
 #coin-counter{font-size:20px;top:10px;right:10px;padding:4px 8px;}
 /* Reduced mobile button size */
 .close-btn{top:5px;right:5px;padding:5px 10px;font-size:16px;border:2px solid black;box-shadow:2px 2px 0px rgba(0,0,0,0.8);}
@@ -189,6 +331,27 @@ canvas{display:block;touch-action:none;}
 </style>
 </head>
 <body>
+
+<button id="menu-btn" aria-label="Open Navigation Menu">
+  <div class="menu-bar"></div>
+  <div class="menu-bar"></div>
+  <div class="menu-bar"></div>
+</button>
+
+<div id="menu-drawer">
+  <div class="drawer-header">
+    <h2>NAVIGATION</h2>
+  </div>
+  <ul class="drawer-nav">
+    <li><a href="#" data-overlay="resumeOverlay">> RESUME</a></li>
+    <li><a href="#" data-overlay="projectsOverlay">> PROJECTS</a></li>
+    <li><a href="#" data-overlay="tshirtsOverlay">> T-SHIRTS</a></li>
+    <li><a href="#" data-overlay="askJohnOverlay">> ASK JOHN (AI)</a></li>
+    <li><a href="#" data-overlay="miniGamesOverlay">> MINI GAMES</a></li>
+  </ul>
+</div>
+
+
 <div id="instructions">WASD/Arrows: Move | Space: Jump | Drag: Look<br>Click the store signs. Find the hidden coins!</div><div id="coin-counter">COINS: 0 / 6</div>
 <div id="password-modal"><div class="modal-content"><p>Enter Password for Access:</p><input type="password" id="password-input" placeholder="> ********"><div id="password-error">ACCESS DENIED</div><button id="submit-password-btn" class="modal-btn">SUBMIT</button><button id="cancel-password-btn" class="modal-btn">CANCEL</button></div></div>
 <div id="resumeOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="resumeContainer" class="overlay-container"><div class="resume-header"><h1>John Gresh</h1><p>(336) 995-4119 | johngresh.usa@gmail.com</p></div><div class="resume-layout"><div class="layout-main"><section class="resume-section"><h2>Experience</h2><div class="job"><div class="job-title">Maintenance Technician</div><div class="company">Toyota Battery Factory</div><span class="dates">July 2024 - November 2024</span><ul class="responsibilities"><li>General Maintenance</li><li>Preventative Maintenance</li><li>Work orders/Cost Center Management</li><li>Performing Job Safety Analysis</li></ul></div><div class="job"><div class="job-title">Assistant Manager</div><div class="company">New Balance</div><span class="dates">October 2021 - Current</span><ul class="responsibilities"><li>Assisting in the general operation of the store</li><li>Opening and closing the store</li><li>Overseeing the customer experience</li><li>Fitting customers for shoes</li></ul></div><div class="job"><div class="job-title">Sales Representative</div><div class="company">GNC</div><span class="dates">March 2019 - July 2019, Charlotte NC</span><ul class="responsibilities"><li>Opening/Closing store</li><li>Inventory checks</li><li>Customer relations</li><li>Register</li><li>Cleaning</li></ul></div><div class="job"><div class="job-title">Lifeguard</div><div class="company">Forsyth Country Club</div><span class="dates">2016 - 2017 Summer</span><ul class="responsibilities"><li>Lifeguarding</li><li>Checking in guests</li><li>Cleaning pool deck and pool services</li><li>Testing pool chemicals/Adding chemicals</li><li>Strong emphasis on customer relations</li></ul></div><div class="job"><div class="job-title">Bussing tables / working in kitchen</div><div class="company">Vincenzo's Restaurant</div><span class="dates">January 2015 - December 2015, Winston-salem NC</span><ul class="responsibilities"><li>Making bread/Cleaning dishes/Making salads/ Bus Boy</li><li>Cleaning station</li><li>Customer relations</li></ul></div></section></div><div class="layout-sidebar"><section class="resume-section"><h2>Education</h2><div class="education-item"><div class="degree-title">Mechatronics Technician</div><div class="school">Forsyth Tech</div><span class="dates">August 2022 - May 2024, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">Internship</div><div class="school">ThinkPLC</div><span class="dates">August 2022 - May 2023, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">High School Diploma</div><div class="school">Mount Tabor</div><span class="dates">August 2013 - May 2017, Winston Salem NC</span></div></section><section class="resume-section"><h2>Skills</h2><ul class="skills-list"><li>OSHA 10-Hr Certified</li><li>Electrical Safe Work Practices Certified</li><li>Control of Hazardous Energy Certified</li><li>PLC installation / proficient</li><li>PLC programming (RSLogix) / proficient</li><li>Python / proficient</li><li>C++ / beginner</li><li>Matlab / beginner</li><li>Sales experience (GNC, New Balance)</li><li>Cell phone and electronic repair (iPhone/Mac)</li></ul></section></div></div></div></div>
@@ -238,6 +401,9 @@ skyColor+=vec3(1.0,0.9,0.7)*sunHotspot*0.8;gl_FragColor=vec4(skyColor,1.0);
 let scene, camera, renderer, composer, pixelPass, cameraRig, cameraPitch, raycaster, mouse;
 const clickableObjects = [], clock = new THREE.Clock(), keys = {ArrowUp:!1, ArrowDown:!1, ArrowLeft:!1, ArrowRight:!1, w:!1, a:!1, s:!1, d:!1, ' ':!1};
 let joystickInput = {x:0, y:0}, isDragging = !1, dragStart = {x:0, y:0}, lookTouchId = null, isSceneActive = !0;
+// New state variable for the menu
+let isMenuOpen = !1;
+
 const coins = []; let coinsCollected = 0; const TOTAL_COINS = 6;
 let coinGeometry, coinMaterials; const fireworks = []; let fireworkTimer = null;
 const playerHeight = 10; let isJumping = !1, yVelocity = 0; const gravity = -80, jumpForce = 30;
@@ -407,7 +573,7 @@ document.body.appendChild(renderer.domElement);
 setupPostProcessing(); setupLighting(); initCoins(); createSky(); createGround(); createBuilding(); createBillboard(); createParkingLights(); createTunnel(); createTrees(); createStars(); placeCoins();
 document.getElementById('coin-counter').textContent = `COINS: 0 / ${TOTAL_COINS}`;
 raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
-setupEventListeners(); initChat(); initPasswordModal();
+setupEventListeners(); initChat(); initPasswordModal(); initMenu(); // Initialize the new menu
 if (isMobileDevice()) {
 document.getElementById('mobile-controls').style.display = 'flex';
 requestAnimationFrame(() => { initJoystick();
@@ -417,13 +583,88 @@ if (/iPad|iPhone|iPod/.test(navigator.userAgent)) { setTimeout(() => { if (joyst
 animate();
 }
 
+// --- New Menu Initialization and Toggle Logic ---
+function initMenu() {
+    const menuBtn = document.getElementById('menu-btn');
+    const menuDrawer = document.getElementById('menu-drawer');
+    const navLinks = document.querySelectorAll('.drawer-nav a');
+
+    if (!menuBtn || !menuDrawer) return;
+
+    // Toggle drawer visibility
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent the document click listener from firing immediately
+        toggleMenu();
+    });
+
+    // Handle navigation links
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const overlayId = link.getAttribute('data-overlay');
+            if (overlayId) {
+                // Close menu first, then show overlay
+                toggleMenu();
+                setTimeout(() => showOverlay(overlayId), 100);
+            }
+        });
+    });
+
+    // Close drawer when clicking outside (if open)
+    const closeHandler = (e) => {
+        if (isMenuOpen && !menuDrawer.contains(e.target) && e.target !== menuBtn && !menuBtn.contains(e.target)) {
+            toggleMenu();
+        }
+    };
+    document.addEventListener('click', closeHandler);
+    // Use passive listener for touchstart to avoid performance issues, but ensure it closes the menu
+    document.addEventListener('touchstart', closeHandler, {passive: true});
+}
+
+function toggleMenu() {
+    const menuBtn = document.getElementById('menu-btn');
+    const menuDrawer = document.getElementById('menu-drawer');
+    isMenuOpen = !isMenuOpen;
+
+    menuDrawer.classList.toggle('open', isMenuOpen);
+    menuBtn.classList.toggle('active', isMenuOpen);
+
+    // Handle interaction blocking
+    if (isMenuOpen) {
+        // If the scene is active, pause interactions
+        if (isSceneActive) {
+            renderer.domElement.style.pointerEvents = 'none';
+            document.body.style.cursor = 'default';
+        }
+    } else {
+        // If the scene is active (no overlay open), restore interactions
+        if (isSceneActive) {
+            renderer.domElement.style.pointerEvents = 'auto';
+            document.body.style.cursor = 'grab';
+        }
+    }
+}
+
+
 function showOverlay(overlayId) {
+// Ensure menu is closed if overlay is opened (e.g. by clicking a 3D sign)
+if (isMenuOpen) {
+    toggleMenu();
+}
+
 hideAllOverlays(); const overlay = document.getElementById(overlayId);
 if (overlay) {
 isSceneActive = !1; overlay.style.display = 'flex'; renderer.domElement.style.pointerEvents = 'none'; document.body.style.cursor = 'default';
 document.getElementById('instructions').style.display = 'none';
 document.getElementById('mobile-controls').style.display = 'none';
 document.getElementById('coin-counter').style.display = 'none';
+
+// Hide the menu button when an overlay is active
+if (document.getElementById('menu-btn')) {
+    document.getElementById('menu-btn').style.display = 'none';
+}
+
+
 if (overlayId === 'miniGamesOverlay') {
 if (!pongGame) pongGame = new PongGame('pong-canvas');
 pongGame.resetGame(); setTimeout(() => { pongGame.start(); }, 100);
@@ -439,11 +680,23 @@ function hideAllOverlays() {
 if (pongGame && pongGame.isRunning) pongGame.stop();
 document.getElementById('pong-round-message').style.display = 'none';
 document.getElementById('password-modal').style.display = 'none';
+
+// Ensure menu state is reset if open (should be handled by toggleMenu, but safety check)
+if (isMenuOpen) {
+    toggleMenu();
+}
+
 const overlays = document.querySelectorAll('.scene-overlay'); let wasActive = !1;
 overlays.forEach(overlay => { if (overlay.style.display !== 'none') { overlay.style.display = 'none'; wasActive = !0; }});
 if (wasActive) {
 isSceneActive = !0; renderer.domElement.style.pointerEvents = 'auto'; document.body.style.cursor = 'grab';
 isDragging = !1; lookTouchId = null; document.getElementById('coin-counter').style.display = 'block';
+
+// Show the menu button again when returning to the scene
+if (document.getElementById('menu-btn')) {
+    document.getElementById('menu-btn').style.display = 'flex';
+}
+
 if (!isMobileDevice()) document.getElementById('instructions').style.display = 'block';
 else document.getElementById('mobile-controls').style.display = 'flex';
 }}
@@ -480,6 +733,7 @@ joystickManager.on('end', () => { joystickInput.x = 0; joystickInput.y = 0; });
 }
 
 // 3D Asset Creation Functions
+// [All 3D asset functions remain unchanged, included for completeness]
 function createCoinTexture(size=128) {
 const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
 const context = canvas.getContext('2d');
@@ -618,6 +872,7 @@ sunLight.shadow.camera.left = -shadowSize; sunLight.shadow.camera.right = shadow
 sunLight.shadow.camera.top = shadowSize; sunLight.shadow.camera.bottom = -shadowSize;
 scene.add(sunLight);
 }
+// [createGround, createRoad, createTunnel, createParkingLights, createBuilding, etc. - ALL REMAIN UNCHANGED]
 function createTextTexture(text, bgColor, textColor, width=256, height=128, fontSize=50) {
 const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
 canvas.width = width; canvas.height = height;
@@ -742,6 +997,7 @@ roadLight.position.set(-roadWidth/2 - 15, 35, z); scene.add(roadLight);
 const roadLight2 = new THREE.PointLight(0xffd4a3, 0.8, 80);
 roadLight2.position.set(roadWidth/2 + 15, 35, z); scene.add(roadLight2);
 }}
+// ... [Remaining create... functions]
 function createTunnel() {
 const {startZ:tunnelStartZ, length:tunnelLength, width:tunnelWidth, height:tunnelHeight, wallThickness} = TUNNEL_CONFIG;
 const wallTextureCanvas = document.createElement('canvas'); wallTextureCanvas.width = 32; wallTextureCanvas.height = 128;
@@ -812,6 +1068,8 @@ rightFixture.add(rightHousing, rightLightBox); rightFixture.position.set(lightXO
 createBush(-85, tunnelStartZ-20); createBush(-70, tunnelStartZ-45); createBush(-95, tunnelStartZ-55); createBush(-105, tunnelStartZ-30);
 createBush(85, tunnelStartZ-20); createBush(75, tunnelStartZ-35); createBush(90, tunnelStartZ-50); createBush(105, tunnelStartZ-30);
 }
+// ... [Remaining create... functions]
+
 function createParkingLights() {
 const poleMat = new THREE.MeshStandardMaterial({color:colors.poleMetal});
 const lightMat = new THREE.MeshBasicMaterial({color:colors.poleGlow}); const poleHeight = 40;
@@ -903,6 +1161,7 @@ createAwning(xPosRight, awningY, createStripedTexture('#065f46', '#047857'));
 createAwning(xPosFarRight, awningY, createStripedTexture('#ffA700', '#333333'));
 createAwning(xPosExtraFarRight, awningY, createStripedTexture('#6a0dad', '#4b0082'));
 }
+// ... [Remaining create... and add... functions]
 function createWindow(x, y, z, width, height, color, intensity) {
 const windowMaterial = new THREE.MeshBasicMaterial({color:color, transparent:!0, opacity:0.95});
 const windowGeo = new THREE.PlaneGeometry(width, height);
@@ -967,6 +1226,8 @@ const sign = new THREE.Mesh(geometry, material);
 sign.position.set(xPos, yPos, zPos); sign.name = id;
 scene.add(sign); clickableObjects.push(sign);
 }
+// ... [Remaining create... functions]
+
 function createBillboard() {
 const poleHeight=70, totalPoleHeight=poleHeight+30, boardY=poleHeight+15, boardZ=-30, rotationAngle=35*Math.PI/180;
 const billboardGroup = new THREE.Group(); billboardGroup.position.set(0, 0, boardZ); billboardGroup.rotation.y = rotationAngle;
@@ -1032,6 +1293,8 @@ lump.position.set(offsetX, offsetY, offsetZ); lump.rotation.y = Math.random()*Ma
 }
 bushGroup.position.set(x, 0, z); scene.add(bushGroup);
 }
+// ... [createTrees, createStars]
+
 function createTrees() {
 const trunkMaterial = new THREE.MeshStandardMaterial({color:colors.treeTrunk, roughness:1.0});
 const foliageMaterial = new THREE.MeshStandardMaterial({color:colors.treeDark, roughness:1.0});
@@ -1114,10 +1377,11 @@ function setupEventListeners() {
 window.addEventListener('resize', onWindowResize, !1);
 document.addEventListener('keydown', onKeyDown, !1);
 document.addEventListener('keyup', onKeyUp, !1);
-renderer.domElement.addEventListener('mousedown', onDesktopDragStart, !1);
+// Attach listeners to document instead of renderer.domElement to handle interactions globally (like menu)
+document.addEventListener('mousedown', onDesktopDragStart, !1);
 document.addEventListener('mousemove', onDesktopDragMove, !1);
 document.addEventListener('mouseup', onDesktopDragEnd, !1);
-renderer.domElement.addEventListener('click', onMouseClick, !1);
+document.addEventListener('click', onMouseClick, !1);
 document.addEventListener('touchstart', onTouchStart, {passive:!1});
 document.addEventListener('touchmove', onTouchMove, {passive:!1});
 document.addEventListener('touchend', onTouchEnd, !1);
@@ -1149,8 +1413,15 @@ pixelPass.uniforms.pixelSize.value = getPixelSize();
 }
 if (pongGame && !isSceneActive && document.getElementById('miniGamesOverlay').style.display !== 'none') setTimeout(() => pongGame.resizeCanvas(), 100);
 initJoystick();
+
+// Ensure UI visibility is correct on resize
 if (isSceneActive) {
 document.getElementById('coin-counter').style.display = 'block';
+// Ensure menu button is visible if scene is active
+if (document.getElementById('menu-btn')) {
+    document.getElementById('menu-btn').style.display = 'flex';
+}
+
 if (isMobileDevice()) {
 document.getElementById('mobile-controls').style.display = 'flex';
 document.getElementById('instructions').style.display = 'none';
@@ -1161,14 +1432,29 @@ document.getElementById('instructions').style.display = 'block';
 
 function onKeyDown(event) {
 if (document.activeElement.id === 'chat-input' || document.activeElement.id === 'password-input') return;
-if (event.key === 'Escape' && document.getElementById('password-modal').style.display === 'flex') {
-document.getElementById('password-modal').style.display = 'none';
-if (document.getElementById('askJohnOverlay').style.display === 'flex') document.getElementById('chat-input').focus();
-return;
+
+// Handle Escape key interactions
+if (event.key === 'Escape') {
+    if (isMenuOpen) {
+        toggleMenu();
+        return;
+    }
+    if (document.getElementById('password-modal').style.display === 'flex') {
+        document.getElementById('password-modal').style.display = 'none';
+        if (document.getElementById('askJohnOverlay').style.display === 'flex') document.getElementById('chat-input').focus();
+        return;
+    }
+    if (!isSceneActive) {
+        hideAllOverlays();
+        return;
+    }
 }
-if (event.key === 'Escape' && !isSceneActive) { hideAllOverlays(); return; }
+
 if (pongGame && pongGame.isRunning) return;
 if (!isSceneActive) return;
+// Prevent movement if menu is open
+if (isMenuOpen) return;
+
 if (keys.hasOwnProperty(event.key.toLowerCase())) { keys[event.key.toLowerCase()] = !0; event.preventDefault(); }
 if(event.key === ' '){ keys[' '] = !0; event.preventDefault(); }
 }
@@ -1176,11 +1462,21 @@ function onKeyUp(event) {
 if (keys.hasOwnProperty(event.key.toLowerCase())) keys[event.key.toLowerCase()] = !1;
 if(event.key === ' ') keys[' '] = !1;
 }
+
+// Updated input handlers to respect menu state
 function onDesktopDragStart(event) {
+if (isMenuOpen) return; // Prevent drag if menu is open
 if (!isSceneActive || isMobileDevice()) return;
+// Ensure the interaction is not on a UI element like the menu button
+if (event.target.closest('#menu-btn') || event.target.closest('#menu-drawer')) return;
+
+// Only start drag if on the canvas
+if (event.target !== renderer.domElement) return;
+
 isDragging = !0; dragStart.x = event.clientX; dragStart.y = event.clientY; document.body.style.cursor = 'grabbing';
 }
 function onDesktopDragMove(event) {
+// Movement logic relies on handleRotation which checks isMenuOpen
 if (!isDragging || !isSceneActive || isMobileDevice()) return;
 const deltaX = event.clientX - dragStart.x, deltaY = event.clientY - dragStart.y;
 handleRotation(deltaX, deltaY, 0.003);
@@ -1188,12 +1484,20 @@ dragStart.x = event.clientX; dragStart.y = event.clientY;
 }
 function onDesktopDragEnd() {
 if (isMobileDevice()) return;
-isDragging = !1; if (isSceneActive) document.body.style.cursor = 'grab';
+isDragging = !1;
+// Restore cursor only if scene is active and menu is closed
+if (isSceneActive && !isMenuOpen) document.body.style.cursor = 'grab';
 }
 
 function onTouchStart(event) {
+if (isMenuOpen) return; // Prevent touch look if menu is open
+
 if ((!isSceneActive && document.getElementById('password-modal').style.display !== 'flex') || !isMobileDevice()) return;
 const joystickZone = document.getElementById('joystick-zone'), actionButtons = document.getElementById('action-buttons');
+
+// Prevent interactions if touching the menu elements
+if (event.target.closest('#menu-btn') || event.target.closest('#menu-drawer')) return;
+
 if (event.changedTouches.length > 0) {
 const touch = event.changedTouches[0], target = touch.target;
 if (!(joystickZone && joystickZone.contains(target)) && !(actionButtons && actionButtons.contains(target))) {
@@ -1203,18 +1507,26 @@ if (lookTouchId !== null) return;
 for (const touch of event.changedTouches) {
 const target = touch.target;
 if ((joystickZone && joystickZone.contains(target)) || (actionButtons && actionButtons.contains(target))) continue;
-if (isSceneActive) event.preventDefault();
+
+// Only prevent default if initiating a scene drag on the canvas
+if (isSceneActive && event.target === renderer.domElement) {
+     event.preventDefault();
+}
+
 isDragging = !0; lookTouchId = touch.identifier;
 dragStart.x = touch.clientX; dragStart.y = touch.clientY;
 break;
 }}
 
 function onTouchMove(event) {
+// Movement logic relies on handleRotation which checks isMenuOpen
 if ((!isSceneActive && document.getElementById('password-modal').style.display !== 'flex') || !isMobileDevice()) return;
 if (isDragging && lookTouchId !== null) {
 for (const touch of event.touches) {
 if (touch.identifier === lookTouchId) {
+// Prevent default during an active scene drag
 if (isSceneActive) event.preventDefault();
+
 const deltaX = touch.clientX - dragStart.x, deltaY = touch.clientY - dragStart.y;
 handleRotation(deltaX, deltaY, 0.006);
 dragStart.x = touch.clientX; dragStart.y = touch.clientY;
@@ -1223,12 +1535,14 @@ break;
 
 function onTouchEnd(event) {
 if (!isMobileDevice()) return;
-if (event.changedTouches.length > 0 && isSceneActive) {
+// Check if scene is active and menu is closed before processing scene clicks
+if (event.changedTouches.length > 0 && isSceneActive && !isMenuOpen) {
 const touch = event.changedTouches[0];
 const tapDuration = Date.now() - (dragStart.tapTime || 0);
 const tapDistance = Math.sqrt(Math.pow(touch.clientX - (dragStart.tapX || 0), 2) + Math.pow(touch.clientY - (dragStart.tapY || 0), 2));
 if (tapDuration < 300 && tapDistance < 10) {
-if (event.target.tagName.toLowerCase() === 'canvas' || touch.identifier === lookTouchId) {
+// Ensure the tap was on the canvas and not the menu button
+if ((event.target === renderer.domElement || touch.identifier === lookTouchId) && !event.target.closest('#menu-btn')) {
 mouse.x = (touch.clientX / window.innerWidth)*2 - 1;
 mouse.y = -(touch.clientY / window.innerHeight)*2 + 1;
 raycaster.setFromCamera(mouse, camera);
@@ -1247,13 +1561,26 @@ if (touch.identifier === lookTouchId) { isDragging = !1; lookTouchId = null; bre
 }}
 
 function handleRotation(deltaX, deltaY, speed) {
+// Prevent rotation if menu is open
+if (isMenuOpen) return;
+
 cameraRig.rotation.y -= deltaX*speed; cameraPitch.rotation.x -= deltaY*speed;
 const maxPitch = Math.PI/2.5;
 cameraPitch.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, cameraPitch.rotation.x));
 }
 function onMouseClick(event) {
+// Prevent click interaction if menu is open (clicks handled by menu listeners)
+if (isMenuOpen) return;
+
 if (!isSceneActive) return;
 if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
+
+// Prevent click if interacting with the menu button
+if (event.target.closest('#menu-btn')) return;
+
+// Ensure the click is on the canvas
+if (event.target !== renderer.domElement) return;
+
 event.preventDefault();
 mouse.x = (event.clientX / window.innerWidth)*2 - 1;
 mouse.y = -(event.clientY / window.innerHeight)*2 + 1;
@@ -1269,6 +1596,9 @@ case 'askjohn': showOverlay('askJohnOverlay'); break;
 case 'minigames': showOverlay('miniGamesOverlay'); break;
 }}}
 function updatePlayerMovement(delta) {
+// Prevent movement if menu is open
+if (isMenuOpen) return;
+
 const actualSpeed = 35.0*delta;
 const forward = new THREE.Vector3(), right = new THREE.Vector3();
 cameraRig.getWorldDirection(forward); forward.y = 0; forward.normalize();
@@ -1289,12 +1619,15 @@ if (cameraRig.position.y <= playerHeight) { cameraRig.position.y = playerHeight;
 function animate() {
 requestAnimationFrame(animate);
 const delta = clock.getDelta(), time = clock.getElapsedTime();
+// Movement is handled inside updatePlayerMovement, which checks isMenuOpen
 if (isSceneActive) { updatePlayerMovement(delta); updateCoins(delta, time); }
 updateFireworks(delta);
+// Rendering continues even if menu is open, as the scene is still visible
 if (isSceneActive || fireworks.length > 0) composer.render();
 }
 
 // --- UI and Chat Logic ---
+// [Chat logic remains unchanged]
 
 const ACCESS_CODE = "ROSEBUD";
 let isPremiumAccessGranted = !1;

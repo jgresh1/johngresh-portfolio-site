@@ -11,110 +11,110 @@ canvas{display:block;touch-action:none;}
 
 /* --- New Menu Button Styles --- */
 #menu-btn {
-    position: fixed;
-    top: 25px; /* Adjusted from 20px for more spacing */
-    left: 25px; /* Adjusted from 20px for more spacing */
-    width: 60px;
-    height: 55px;
-    background-color: #2a9d8f; /* Retro green */
-    border: 4px solid black;
-    z-index: 2000; /* Highest priority */
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
-    transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
-    padding: 0;
+    position: fixed;
+    top: 25px; /* Adjusted from 20px for more spacing */
+    left: 25px; /* Adjusted from 20px for more spacing */
+    width: 60px;
+    height: 55px;
+    background-color: #2a9d8f; /* Retro green */
+    border: 4px solid black;
+    z-index: 2000; /* Highest priority */
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+    transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
+    padding: 0;
 }
 
 #menu-btn:hover {
-    background-color: #36c9b4;
+    background-color: #36c9b4;
 }
 
 #menu-btn:active {
-    transform: translate(3px, 3px);
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+    transform: translate(3px, 3px);
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
 }
 
 .menu-bar {
-    width: 70%;
-    height: 6px;
-    background-color: white;
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
-    transition: transform 0.3s, opacity 0.3s;
+    width: 70%;
+    height: 6px;
+    background-color: white;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+    transition: transform 0.3s, opacity 0.3s;
 }
 
 /* Active state (X shape) */
 #menu-btn.active .menu-bar:nth-child(1) {
-    transform: translateY(14px) rotate(45deg);
+    transform: translateY(14px) rotate(45deg);
 }
 #menu-btn.active .menu-bar:nth-child(2) {
-    opacity: 0;
+    opacity: 0;
 }
 #menu-btn.active .menu-bar:nth-child(3) {
-    transform: translateY(-14px) rotate(-45deg);
+    transform: translateY(-14px) rotate(-45deg);
 }
 
 
 /* --- New Menu Drawer Styles --- */
 #menu-drawer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 300px;
-    height: 100%;
-    background-color: #1a1a2e; /* Matching theme dark blue */
-    border-right: 4px solid black;
-    z-index: 1999; /* Below button, above everything else */
-    transform: translateX(-105%);
-    transition: transform 0.3s ease-in-out;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.7);
-    overflow-y: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 100%;
+    background-color: #1a1a2e; /* Matching theme dark blue */
+    border-right: 4px solid black;
+    z-index: 1999; /* Below button, above everything else */
+    transform: translateX(-105%);
+    transition: transform 0.3s ease-in-out;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.7);
+    overflow-y: auto;
 }
 
 #menu-drawer.open {
-    transform: translateX(0);
+    transform: translateX(0);
 }
 
 .drawer-header {
-    background-color: #2a1a3d;
-    padding: 30px 20px;
-    border-bottom: 4px dashed #6c6383;
-    text-align: center;
+    background-color: #2a1a3d;
+    padding: 30px 20px;
+    border-bottom: 4px dashed #6c6383;
+    text-align: center;
 }
 
 .drawer-header h2 {
-    margin: 0;
-    font-size: 36px;
-    color: #ff7d5c; /* Theme orange/red */
-    text-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+    margin: 0;
+    font-size: 36px;
+    color: #ff7d5c; /* Theme orange/red */
+    text-shadow: 3px 3px 0px rgba(0,0,0,0.5);
 }
 
 .drawer-nav {
-    list-style: none;
-    padding: 0;
-    margin: 20px 0;
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
 }
 
 .drawer-nav li {
-    margin: 0;
+    margin: 0;
 }
 
 .drawer-nav a {
-    display: block;
-    padding: 15px 25px;
-    color: white;
-    text-decoration: none;
-    font-size: 26px;
-    transition: background-color 0.2s, color 0.2s;
+    display: block;
+    padding: 15px 25px;
+    color: white;
+    text-decoration: none;
+    font-size: 26px;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .drawer-nav a:hover {
-    background-color: #6c6383;
-    color: #ffd700; /* Theme gold */
+    background-color: #6c6383;
+    color: #ffd700; /* Theme gold */
 }
 /* --- End New Menu Styles --- */
 
@@ -168,54 +168,54 @@ canvas{display:block;touch-action:none;}
 
 /* Styles for Think Toggle Area */
 #think-toggle-area {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    /* Updated margins for new position below input */
-    margin-top: 10px;
-    margin-bottom: 5px;
-    font-size: 18px;
-    /* Default SuperThink Color (Blue) */
-    color: #00aaff;
-    cursor: pointer;
-    user-select: none;
-    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
-    transition: color 0.3s, text-shadow 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    /* Updated margins for new position below input */
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 18px;
+    /* Default SuperThink Color (Blue) */
+    color: #00aaff;
+    cursor: pointer;
+    user-select: none;
+    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+    transition: color 0.3s, text-shadow 0.3s;
 }
 
 /* Premium (UltraThink) colors override (Red) */
 #askJohnContainer.premium-active #think-toggle-area {
-    color: #ff0000;
-    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+    color: #ff0000;
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
 }
 
 /* Thinking Box Styles */
 #thinking-box {
-    display: none; /* Hidden by default */
-    width: 100%;
-    padding: 8px 12px;
-    margin-bottom: 10px; /* Space between thinking box and input area below it */
-    font-size: 18px;
-    text-align: center;
-    border: 3px solid #000;
-    box-sizing: border-box;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; /* Handle long messages */
+    display: none; /* Hidden by default */
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 10px; /* Space between thinking box and input area below it */
+    font-size: 18px;
+    text-align: center;
+    border: 3px solid #000;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Handle long messages */
 
-    /* Default (SuperThink) colors - Blue style */
-    background-color: #001a33; /* Dark blue background */
-    color: #00aaff; /* Bright blue text */
-    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
-    box-shadow: 0px 5px 0px rgba(0,0,0,0.8);
+    /* Default (SuperThink) colors - Blue style */
+    background-color: #001a33; /* Dark blue background */
+    color: #00aaff; /* Bright blue text */
+    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+    box-shadow: 0px 5px 0px rgba(0,0,0,0.8);
 }
 
 /* Premium (UltraThink) override for thinking box (Stays Red) */
 #askJohnContainer.premium-active #thinking-box {
-    background-color: #4d0000; /* Dark red background */
-    color: #ff0000; /* Bright red text */
-    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+    background-color: #4d0000; /* Dark red background */
+    color: #ff0000; /* Bright red text */
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
 }
 
 
@@ -284,27 +284,27 @@ canvas{display:block;touch-action:none;}
 
 /* Mobile Menu Button Adjustments */
 #menu-btn {
-    /* Keep mobile positioning tighter to the edge */
-    top: 10px;
-    left: 10px;
-    width: 45px;
-    height: 40px;
-    border-width: 3px;
-    gap: 6px;
+    /* Keep mobile positioning tighter to the edge */
+    top: 10px;
+    left: 10px;
+    width: 45px;
+    height: 40px;
+    border-width: 3px;
+    gap: 6px;
 }
 .menu-bar {
-    height: 4px;
+    height: 4px;
 }
 /* Mobile Active state (X shape) adjustments */
 #menu-btn.active .menu-bar:nth-child(1) {
-    transform: translateY(10px) rotate(45deg);
+    transform: translateY(10px) rotate(45deg);
 }
 #menu-btn.active .menu-bar:nth-child(3) {
-    transform: translateY(-10px) rotate(-45deg);
+    transform: translateY(-10px) rotate(-45deg);
 }
 
 #menu-drawer {
-    width: 250px; /* Slightly narrower on mobile */
+    width: 250px; /* Slightly narrower on mobile */
 }
 
 
@@ -334,22 +334,22 @@ canvas{display:block;touch-action:none;}
 <body>
 
 <button id="menu-btn" aria-label="Open Navigation Menu">
-  <div class="menu-bar"></div>
-  <div class="menu-bar"></div>
-  <div class="menu-bar"></div>
+  <div class="menu-bar"></div>
+  <div class="menu-bar"></div>
+  <div class="menu-bar"></div>
 </button>
 
 <div id="menu-drawer">
-  <div class="drawer-header">
-    <h2>MENU</h2>
-  </div>
-  <ul class="drawer-nav">
-    <li><a href="#" data-overlay="resumeOverlay">> RESUME</a></li>
-    <li><a href="#" data-overlay="projectsOverlay">> PROJECTS</a></li>
-    <li><a href="#" data-overlay="tshirtsOverlay">> T-SHIRTS</a></li>
-    <li><a href="#" data-overlay="askJohnOverlay">> ASK JOHN (AI)</a></li>
-    <li><a href="#" data-overlay="miniGamesOverlay">> MINI GAMES</a></li>
-  </ul>
+  <div class="drawer-header">
+    <h2>MENU</h2>
+  </div>
+  <ul class="drawer-nav">
+    <li><a href="#" data-overlay="resumeOverlay">> RESUME</a></li>
+    <li><a href="#" data-overlay="projectsOverlay">> PROJECTS</a></li>
+    <li><a href="#" data-overlay="tshirtsOverlay">> T-SHIRTS</a></li>
+    <li><a href="#" data-overlay="askJohnOverlay">> ASK JOHN (AI)</a></li>
+    <li><a href="#" data-overlay="miniGamesOverlay">> MINI GAMES</a></li>
+  </ul>
 </div>
 
 
@@ -362,20 +362,20 @@ canvas{display:block;touch-action:none;}
 
 <div id="askJohnOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="askJohnContainer" class="overlay-container"><div class="resume-header">
 <div id="john-only-toggle">
-    <label for="premium-model-checkbox">John<br>Only</label>
-    <input type="checkbox" id="premium-model-checkbox">
-    <span class="custom-checkbox"></span>
+    <label for="premium-model-checkbox">John<br>Only</label>
+    <input type="checkbox" id="premium-model-checkbox">
+    <span class="custom-checkbox"></span>
 </div>
 <h1 id="ask-john-title">Ask John (AI)</h1><p id="ask-john-subtitle">Chat with an AI trained on John's professional background.</p></div>
 <div id="chat-container">
-    <div id="chat-window"><div id="chat-messages"></div></div>
-    <div id="thinking-box"></div>
-    <div id="chat-input-area"><input type="text" id="chat-input" placeholder="Type your question..."><button id="send-btn">SEND</button></div>
-    <div id="think-toggle-area">
-        <input type="checkbox" id="think-mode-checkbox">
-        <span class="custom-checkbox"></span>
-        <label for="think-mode-checkbox" id="think-mode-label">SuperThink</label>
-    </div>
+    <div id="chat-window"><div id="chat-messages"></div></div>
+    <div id="thinking-box"></div>
+    <div id="chat-input-area"><input type="text" id="chat-input" placeholder="Type your question..."><button id="send-btn">SEND</button></div>
+    <div id="think-toggle-area">
+        <input type="checkbox" id="think-mode-checkbox">
+        <span class="custom-checkbox"></span>
+        <label for="think-mode-checkbox" id="think-mode-label">SuperThink</label>
+    </div>
 </div></div></div>
 
 <div id="miniGamesOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="miniGamesContainer" class="overlay-container"><div class="resume-header"><h1>Pong AI</h1></div><div id="pong-score">Player: <span id="player-score">0</span> | AI: <span id="ai-score">0</span> | Round: <span id="pong-round">1</span></div><canvas id="pong-canvas"></canvas><div id="pong-instructions"><p>First to 5 wins the round. The AI adapts each round!</p><p>Desktop: Use Mouse or W/S/Up/Down Arrows.</p><p>Mobile: Drag your paddle.</p></div></div></div>
@@ -594,71 +594,71 @@ animate();
 
 // --- New Menu Initialization and Toggle Logic ---
 function initMenu() {
-    const menuBtn = document.getElementById('menu-btn');
-    const menuDrawer = document.getElementById('menu-drawer');
-    const navLinks = document.querySelectorAll('.drawer-nav a');
+    const menuBtn = document.getElementById('menu-btn');
+    const menuDrawer = document.getElementById('menu-drawer');
+    const navLinks = document.querySelectorAll('.drawer-nav a');
 
-    if (!menuBtn || !menuDrawer) return;
+    if (!menuBtn || !menuDrawer) return;
 
-    // Toggle drawer visibility
-    menuBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent the document click listener from firing immediately
-        toggleMenu();
-    });
+    // Toggle drawer visibility
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent the document click listener from firing immediately
+        toggleMenu();
+    });
 
-    // Handle navigation links
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const overlayId = link.getAttribute('data-overlay');
-            if (overlayId) {
-                // Close menu first, then show overlay
-                toggleMenu();
-                setTimeout(() => showOverlay(overlayId), 100);
-            }
-        });
-    });
+    // Handle navigation links
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const overlayId = link.getAttribute('data-overlay');
+            if (overlayId) {
+                // Close menu first, then show overlay
+                toggleMenu();
+                setTimeout(() => showOverlay(overlayId), 100);
+            }
+        });
+    });
 
-    // Close drawer when clicking outside (if open)
-    const closeHandler = (e) => {
-        if (isMenuOpen && !menuDrawer.contains(e.target) && e.target !== menuBtn && !menuBtn.contains(e.target)) {
-            toggleMenu();
-        }
-    };
-    document.addEventListener('click', closeHandler);
-    // Use passive listener for touchstart to avoid performance issues, but ensure it closes the menu
-    document.addEventListener('touchstart', closeHandler, {passive: true});
+    // Close drawer when clicking outside (if open)
+    const closeHandler = (e) => {
+        if (isMenuOpen && !menuDrawer.contains(e.target) && e.target !== menuBtn && !menuBtn.contains(e.target)) {
+            toggleMenu();
+        }
+    };
+    document.addEventListener('click', closeHandler);
+    // Use passive listener for touchstart to avoid performance issues, but ensure it closes the menu
+    document.addEventListener('touchstart', closeHandler, {passive: true});
 }
 
 function toggleMenu() {
-    const menuBtn = document.getElementById('menu-btn');
-    const menuDrawer = document.getElementById('menu-drawer');
-    isMenuOpen = !isMenuOpen;
+    const menuBtn = document.getElementById('menu-btn');
+    const menuDrawer = document.getElementById('menu-drawer');
+    isMenuOpen = !isMenuOpen;
 
-    menuDrawer.classList.toggle('open', isMenuOpen);
-    menuBtn.classList.toggle('active', isMenuOpen);
+    menuDrawer.classList.toggle('open', isMenuOpen);
+    menuBtn.classList.toggle('active', isMenuOpen);
 
-    // Handle interaction blocking
-    if (isMenuOpen) {
-        // If the scene is active, pause interactions
-        if (isSceneActive) {
-            renderer.domElement.style.pointerEvents = 'none';
-            document.body.style.cursor = 'default';
-        }
-    } else {
-        // If the scene is active (no overlay open), restore interactions
-        if (isSceneActive) {
-            renderer.domElement.style.pointerEvents = 'auto';
-            document.body.style.cursor = 'grab';
-        }
-    }
+    // Handle interaction blocking
+    if (isMenuOpen) {
+        // If the scene is active, pause interactions
+        if (isSceneActive) {
+            renderer.domElement.style.pointerEvents = 'none';
+            document.body.style.cursor = 'default';
+        }
+    } else {
+        // If the scene is active (no overlay open), restore interactions
+        if (isSceneActive) {
+            renderer.domElement.style.pointerEvents = 'auto';
+            document.body.style.cursor = 'grab';
+        }
+    }
 }
 
 
 function showOverlay(overlayId) {
 // Ensure menu is closed if overlay is opened (e.g. by clicking a 3D sign)
 if (isMenuOpen) {
-    toggleMenu();
+    toggleMenu();
 }
 
 hideAllOverlays(); const overlay = document.getElementById(overlayId);
@@ -670,7 +670,7 @@ document.getElementById('coin-counter').style.display = 'none';
 
 // Hide the menu button when an overlay is active
 if (document.getElementById('menu-btn')) {
-    document.getElementById('menu-btn').style.display = 'none';
+    document.getElementById('menu-btn').style.display = 'none';
 }
 
 
@@ -693,7 +693,7 @@ document.getElementById('password-modal').style.display = 'none';
 
 // Ensure menu state is reset if open (should be handled by toggleMenu, but safety check)
 if (isMenuOpen) {
-    toggleMenu();
+    toggleMenu();
 }
 
 const overlays = document.querySelectorAll('.scene-overlay'); let wasActive = !1;
@@ -704,7 +704,7 @@ isDragging = !1; lookTouchId = null; document.getElementById('coin-counter').sty
 
 // Show the menu button again when returning to the scene
 if (document.getElementById('menu-btn')) {
-    document.getElementById('menu-btn').style.display = 'flex';
+    document.getElementById('menu-btn').style.display = 'flex';
 }
 
 if (!isMobileDevice()) document.getElementById('instructions').style.display = 'block';
@@ -761,149 +761,154 @@ return texture;
 
 // UPDATED: Initialize materials for 3D coins
 function initCoins() {
-    // Define materials for the 3D coin
-    // Side/Base Material (Slightly rougher)
-    const sideMaterial = new THREE.MeshStandardMaterial({
-        color: colors.coinGold,
-        metalness: 0.8,
-        roughness: 0.5,
-        emissive: 0x4a2d00
-    });
-    // Face/Embossed Material (Slightly shinier/brighter)
-    const faceMaterial = new THREE.MeshStandardMaterial({
-        color: colors.coinGold,
-        metalness: 0.9,
-        roughness: 0.3,
-        emissive: 0x5a3d00 // Slightly brighter emission
-    });
+    // Define materials for the 3D coin
+    // Side/Base Material (Slightly rougher)
+    const sideMaterial = new THREE.MeshStandardMaterial({
+        color: colors.coinGold,
+        metalness: 0.8,
+        roughness: 0.5,
+        emissive: 0x4a2d00
+    });
+    // Face/Embossed Material (Slightly shinier/brighter)
+    const faceMaterial = new THREE.MeshStandardMaterial({
+        color: colors.coinGold,
+        metalness: 0.9,
+        roughness: 0.3,
+        emissive: 0x5a3d00 // Slightly brighter emission
+    });
 
-    // Store them in the global object
-    coinMaterials = { sideMaterial, faceMaterial };
+    // Store them in the global object
+    coinMaterials = { sideMaterial, faceMaterial };
 }
 
-// NEW: Creates the complex 3D geometry group for the coin
+// NEW/CORRECTED: Creates the complex 3D geometry group for the coin
 function create3DCoinMesh(materials) {
-    const { sideMaterial, faceMaterial } = materials;
-    // Increased segments for smoother curves on the torus/cylinder
-    const segments = isMobileDevice() ? 24 : 48;
+    const { sideMaterial, faceMaterial } = materials;
+    // Increased segments for smoother curves on the torus/cylinder
+    const segments = isMobileDevice() ? 24 : 48;
 
-    const coinGroup = new THREE.Group();
+    const coinGroup = new THREE.Group();
 
-    // 1. Base Cylinder (The main body of the coin)
-    // Radius 2, Thickness 0.6
-    const baseGeo = new THREE.CylinderGeometry(2, 2, 0.6, segments);
-    // Use side material for the base.
-    const base = new THREE.Mesh(baseGeo, sideMaterial);
-    coinGroup.add(base);
+    // 1. Base Cylinder (The main body of the coin)
+    // Radius 2, Thickness 0.6
+    const baseGeo = new THREE.CylinderGeometry(2, 2, 0.6, segments);
+    // Use side material for the base.
+    const base = new THREE.Mesh(baseGeo, sideMaterial);
+    coinGroup.add(base);
 
-    // 2. Embossed Border (Torus)
-    // Radius 1.8 (center of tube), Tube 0.2 (thickness), Radial Segments 8 (adds definition to the tube shape)
-    const borderGeo = new THREE.TorusGeometry(1.8, 0.2, 8, segments);
+    // 2. Embossed Border (Torus)
+    // Radius 1.8 (center of tube), Tube 0.2 (thickness), Radial Segments 8 (adds definition to the tube shape)
+    const borderGeo = new THREE.TorusGeometry(1.8, 0.2, 8, segments);
 
-    // Create two borders, one for each face
-    const border1 = new THREE.Mesh(borderGeo, faceMaterial);
-    border1.rotation.x = Math.PI / 2;
-    border1.position.y = 0.31; // Slightly above the base (0.6/2 = 0.3)
-    coinGroup.add(border1);
+    // Create two borders, one for each face
+    const border1 = new THREE.Mesh(borderGeo, faceMaterial);
+    border1.rotation.x = Math.PI / 2;
+    border1.position.y = 0.31; // Slightly above the base (0.6/2 = 0.3)
+    coinGroup.add(border1);
 
-    const border2 = new THREE.Mesh(borderGeo, faceMaterial);
-    border2.rotation.x = Math.PI / 2;
-    border2.position.y = -0.31; // Slightly below the base
-    coinGroup.add(border2);
+    const border2 = new THREE.Mesh(borderGeo, faceMaterial);
+    border2.rotation.x = Math.PI / 2;
+    border2.position.y = -0.31; // Slightly below the base
+    coinGroup.add(border2);
 
-    // 3. Embossed Dollar Sign (Blocky approximation for retro style)
-    const dollarBoxesGroup = new THREE.Group();
-    // Geometries for the 'S' shape segments
-    // Thickness (Z) is 0.2
-    const hBoxGeo = new THREE.BoxGeometry(1.2, 0.3, 0.2);
-    const vBoxGeo = new THREE.BoxGeometry(0.3, 0.55, 0.2);
+    // 3. Embossed Dollar Sign (Blocky approximation for retro style)
+    const dollarBoxesGroup = new THREE.Group();
+    // Geometries for the 'S' shape segments
+    // Thickness (Z) is 0.2
+    const hBoxGeo = new THREE.BoxGeometry(1.2, 0.3, 0.2);
+    
+    // CORRECTION: The gap between the horizontal bars (Y=1.0 and Y=0.0, height 0.3) 
+    // is from 0.15 to 0.85, which is a height of 0.7. 
+    const vBoxGeo = new THREE.BoxGeometry(0.3, 0.7, 0.2); 
 
-    // Top Horizontal
-    const topH = new THREE.Mesh(hBoxGeo, faceMaterial);
-    topH.position.y = 1.0;
-    dollarBoxesGroup.add(topH);
-    // Middle Horizontal
-    const midH = new THREE.Mesh(hBoxGeo, faceMaterial);
-    dollarBoxesGroup.add(midH);
-    // Bottom Horizontal
-    const botH = new THREE.Mesh(hBoxGeo, faceMaterial);
-    botH.position.y = -1.0;
-    dollarBoxesGroup.add(botH);
+    // Top Horizontal
+    const topH = new THREE.Mesh(hBoxGeo, faceMaterial);
+    topH.position.y = 1.0;
+    dollarBoxesGroup.add(topH);
+    // Middle Horizontal
+    const midH = new THREE.Mesh(hBoxGeo, faceMaterial);
+    dollarBoxesGroup.add(midH);
+    // Bottom Horizontal
+    const botH = new THREE.Mesh(hBoxGeo, faceMaterial);
+    botH.position.y = -1.0;
+    dollarBoxesGroup.add(botH);
 
-    // Top Left Vertical
-    const tlV = new THREE.Mesh(vBoxGeo, faceMaterial);
-    tlV.position.set(-0.45, 0.575, 0);
-    dollarBoxesGroup.add(tlV);
+    // Top Left Vertical
+    const tlV = new THREE.Mesh(vBoxGeo, faceMaterial);
+    // CORRECTION: Positioned at the midpoint of the gap (0.5)
+    tlV.position.set(-0.45, 0.5, 0); 
+    dollarBoxesGroup.add(tlV);
 
-     // Bottom Right Vertical
-    const brV = new THREE.Mesh(vBoxGeo, faceMaterial);
-    brV.position.set(0.45, -0.575, 0);
-    dollarBoxesGroup.add(brV);
+     // Bottom Right Vertical
+    const brV = new THREE.Mesh(vBoxGeo, faceMaterial);
+    // CORRECTION: Positioned at the midpoint of the gap (-0.5)
+    brV.position.set(0.45, -0.5, 0); 
+    dollarBoxesGroup.add(brV);
 
-    // Central Bar (Vertical line through the '$')
-    // Slightly taller and thicker (Z=0.22) to stand out
-    const centerBarGeo = new THREE.BoxGeometry(0.3, 2.5, 0.22);
-    const centerBar = new THREE.Mesh(centerBarGeo, faceMaterial);
-    dollarBoxesGroup.add(centerBar);
+    // Central Bar (Vertical line through the '$')
+    // Slightly taller and thicker (Z=0.22) to stand out
+    const centerBarGeo = new THREE.BoxGeometry(0.3, 2.5, 0.22);
+    const centerBar = new THREE.Mesh(centerBarGeo, faceMaterial);
+    dollarBoxesGroup.add(centerBar);
 
-    // Position the dollar sign group on both faces
-    // The CylinderGeometry is oriented along the Y axis by default.
-    // We rotate the dollar sign group to lay flat on the XY plane, then position it along the Y axis.
-    const dollar1 = dollarBoxesGroup.clone();
-    dollar1.rotation.x = Math.PI / 2;
-    dollar1.position.y = 0.31;
-    coinGroup.add(dollar1);
+    // Position the dollar sign group on both faces
+    // The CylinderGeometry is oriented along the Y axis by default.
+    // We rotate the dollar sign group to lay flat on the XY plane, then position it along the Y axis.
+    const dollar1 = dollarBoxesGroup.clone();
+    dollar1.rotation.x = Math.PI / 2;
+    dollar1.position.y = 0.31;
+    coinGroup.add(dollar1);
 
-    const dollar2 = dollarBoxesGroup.clone();
-    // Rotate 180 degrees on Z axis so the $ isn't backwards when viewed from the back
-    dollar2.rotation.z = Math.PI;
-    dollar2.rotation.x = -Math.PI / 2;
-    dollar2.position.y = -0.31;
-    coinGroup.add(dollar2);
+    const dollar2 = dollarBoxesGroup.clone();
+    // Rotate 180 degrees on Z axis so the $ isn't backwards when viewed from the back
+    dollar2.rotation.z = Math.PI;
+    dollar2.rotation.x = -Math.PI / 2;
+    dollar2.position.y = -0.31;
+    coinGroup.add(dollar2);
 
-    // Set shadows for all children if enabled
-    if (renderer.shadowMap.enabled) {
-        coinGroup.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                child.castShadow = true;
-                // child.receiveShadow = true; // Optional, can look good but costs performance
-            }
-        });
-    }
+    // Set shadows for all children if enabled
+    if (renderer.shadowMap.enabled) {
+        coinGroup.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.castShadow = true;
+                // child.receiveShadow = true; // Optional, can look good but costs performance
+            }
+        });
+    }
 
-    return coinGroup;
+    return coinGroup;
 }
 
 
 // UPDATED: Uses the new 3D mesh creation function
 function createCoin(x, y, z) {
-    // Create the 3D coin group
-    const coin = create3DCoinMesh(coinMaterials);
-    coin.position.set(x, y, z);
-    // Rotate the group (which is Y-axis aligned by default) to match the orientation expected by the animation logic (Z-axis rotation)
-    coin.rotation.x = Math.PI / 2;
+    // Create the 3D coin group
+    const coin = create3DCoinMesh(coinMaterials);
+    coin.position.set(x, y, z);
+    // Rotate the group (which is Y-axis aligned by default) to match the orientation expected by the animation logic (Z-axis rotation)
+    coin.rotation.x = Math.PI / 2;
 
-    scene.add(coin);
-    // The mesh property now points to the Group.
-    coins.push({ mesh: coin, collected: false, startY: y });
+    scene.add(coin);
+    // The mesh property now points to the Group.
+    coins.push({ mesh: coin, collected: false, startY: y });
 }
 
 // UPDATED: Places 8 coins total
 function placeCoins() {
-    const coinHeight = 6.5;
-    // Original 6 coins
-    createCoin(80, coinHeight, 100);
-    createCoin(0, coinHeight-2.5, -18); // Center entrance
-    createCoin(-200, coinHeight, 200); // Far parking lot
-    createCoin(30, coinHeight, TUNNEL_CONFIG.startZ-20); // Before tunnel
-    createCoin(0, coinHeight, TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length/2); // Middle of tunnel
-    createCoin(-45, coinHeight, -35); // Near Resume store
+    const coinHeight = 6.5;
+    // Original 6 coins
+    createCoin(80, coinHeight, 100);
+    createCoin(0, coinHeight-2.5, -18); // Center entrance
+    createCoin(-200, coinHeight, 200); // Far parking lot
+    createCoin(30, coinHeight, TUNNEL_CONFIG.startZ-20); // Before tunnel
+    createCoin(0, coinHeight, TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length/2); // Middle of tunnel
+    createCoin(-45, coinHeight, -35); // Near Resume store
 
-    // New 2 coins
-    // 7. Behind the billboard area (Billboard is rotated, so this is relative to world coords)
-    createCoin(-50, coinHeight, -80);
-    // 8. Near the tunnel exit on the side of the road
-    createCoin(55, coinHeight, TUNNEL_CONFIG.endZ + 30);
+    // New 2 coins
+    // 7. Behind the billboard area (Billboard is rotated, so this is relative to world coords)
+    createCoin(-50, coinHeight, -80);
+    // 8. Near the tunnel exit on the side of the road
+    createCoin(55, coinHeight, TUNNEL_CONFIG.endZ + 30);
 }
 
 function updateCoins(delta, time) {
@@ -1560,7 +1565,7 @@ if (isSceneActive) {
 document.getElementById('coin-counter').style.display = 'block';
 // Ensure menu button is visible if scene is active
 if (document.getElementById('menu-btn')) {
-    document.getElementById('menu-btn').style.display = 'flex';
+    document.getElementById('menu-btn').style.display = 'flex';
 }
 
 if (isMobileDevice()) {
@@ -1576,19 +1581,19 @@ if (document.activeElement.id === 'chat-input' || document.activeElement.id === 
 
 // Handle Escape key interactions
 if (event.key === 'Escape') {
-    if (isMenuOpen) {
-        toggleMenu();
-        return;
-    }
-    if (document.getElementById('password-modal').style.display === 'flex') {
-        document.getElementById('password-modal').style.display = 'none';
-        if (document.getElementById('askJohnOverlay').style.display === 'flex') document.getElementById('chat-input').focus();
-        return;
-    }
-    if (!isSceneActive) {
-        hideAllOverlays();
-        return;
-    }
+    if (isMenuOpen) {
+        toggleMenu();
+        return;
+    }
+    if (document.getElementById('password-modal').style.display === 'flex') {
+        document.getElementById('password-modal').style.display = 'none';
+        if (document.getElementById('askJohnOverlay').style.display === 'flex') document.getElementById('chat-input').focus();
+        return;
+    }
+    if (!isSceneActive) {
+        hideAllOverlays();
+        return;
+    }
 }
 
 if (pongGame && pongGame.isRunning) return;
@@ -1651,7 +1656,7 @@ if ((joystickZone && joystickZone.contains(target)) || (actionButtons && actionB
 
 // Only prevent default if initiating a scene drag on the canvas
 if (isSceneActive && event.target === renderer.domElement) {
-      event.preventDefault();
+      event.preventDefault();
 }
 
 isDragging = !0; lookTouchId = touch.identifier;
@@ -1774,68 +1779,68 @@ let isPremiumAccessGranted = !1;
 
 // Updated function to handle UI state, Think Mode labels, and Titles
 function updatePremiumUIState() {
-    const checkbox = document.getElementById('premium-model-checkbox');
-    const askJohnContainer = document.getElementById('askJohnContainer');
-    const thinkModeLabel = document.getElementById('think-mode-label');
-    // Target the H1 and P tags specifically
-    const title = document.getElementById('ask-john-title');
-    const subtitle = document.getElementById('ask-john-subtitle');
+    const checkbox = document.getElementById('premium-model-checkbox');
+    const askJohnContainer = document.getElementById('askJohnContainer');
+    const thinkModeLabel = document.getElementById('think-mode-label');
+    // Target the H1 and P tags specifically
+    const title = document.getElementById('ask-john-title');
+    const subtitle = document.getElementById('ask-john-subtitle');
 
 
-    if (!checkbox || !askJohnContainer || !thinkModeLabel || !title || !subtitle) return;
+    if (!checkbox || !askJohnContainer || !thinkModeLabel || !title || !subtitle) return;
 
-    if (checkbox.checked && isPremiumAccessGranted) {
-        askJohnContainer.classList.add('premium-active');
-        thinkModeLabel.textContent = "UltraThink"; // Premium mode uses UltraThink
-        title.textContent = "Hello John"; // Change title for premium
-        subtitle.textContent = "Your personal coding assistant.";
-    } else {
-        askJohnContainer.classList.remove('premium-active');
-        thinkModeLabel.textContent = "SuperThink"; // Public mode uses SuperThink
-        title.textContent = "Ask John (AI)"; // Default title
-        subtitle.textContent = "Chat with an AI trained on John's professional background.";
-    }
+    if (checkbox.checked && isPremiumAccessGranted) {
+        askJohnContainer.classList.add('premium-active');
+        thinkModeLabel.textContent = "UltraThink"; // Premium mode uses UltraThink
+        title.textContent = "Hello John"; // Change title for premium
+        subtitle.textContent = "Your personal coding assistant.";
+    } else {
+        askJohnContainer.classList.remove('premium-active');
+        thinkModeLabel.textContent = "SuperThink"; // Public mode uses SuperThink
+        title.textContent = "Ask John (AI)"; // Default title
+        subtitle.textContent = "Chat with an AI trained on John's professional background.";
+    }
 
-    // NEW: Update the greeting if the overlay is currently visible
-    if (document.getElementById('askJohnOverlay').style.display === 'flex') {
-        displayInitialGreeting();
-    }
+    // NEW: Update the greeting if the overlay is currently visible
+    if (document.getElementById('askJohnOverlay').style.display === 'flex') {
+        displayInitialGreeting();
+    }
 }
 
 // NEW: Function to display or update the initial greeting message
 function displayInitialGreeting() {
-    const chatMessages = document.getElementById('chat-messages');
-    if (!chatMessages) return;
+    const chatMessages = document.getElementById('chat-messages');
+    if (!chatMessages) return;
 
-    // Check if the only message present is the initial greeting (identified by a specific class)
-    const existingGreeting = chatMessages.querySelector('.initial-greeting');
+    // Check if the only message present is the initial greeting (identified by a specific class)
+    const existingGreeting = chatMessages.querySelector('.initial-greeting');
 
-    const premiumCheckbox = document.getElementById('premium-model-checkbox');
-    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
+    const premiumCheckbox = document.getElementById('premium-model-checkbox');
+    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
 
-    let greetingMessage = "";
+    let greetingMessage = "";
 
-    if (usePremiumModel) {
-        // Greeting for John (Premium/Coding Assistant)
-        greetingMessage = "Welcome back, John. The expert coding assistant is active. Memory and accuracy parameters are maximized for complex tasks. How can I assist you today?";
-    } else {
-        // Greeting for Public (General Assistant)
-        greetingMessage = "Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.";
-    }
+    if (usePremiumModel) {
+        // Greeting for John (Premium/Coding Assistant)
+        greetingMessage = "Welcome back, John. The expert coding assistant is active. Memory and accuracy parameters are maximized for complex tasks. How can I assist you today?";
+    } else {
+        // Greeting for Public (General Assistant)
+        greetingMessage = "Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.";
+    }
 
-    if (existingGreeting) {
-        // If a greeting exists (user toggled the switch), update its content
-        // We need to find the content span within the message element structure
-          const contentSpan = existingGreeting.querySelector('span:not(.instance-label)');
-          if (contentSpan) {
-              contentSpan.textContent = greetingMessage;
-          }
-    } else if (chatHistory.length === 0) {
-        // If no greeting exists AND history is empty (initial load), add a new one
-        // Pass true for isInitialGreeting
-        addMessageToChat(greetingMessage, 'bot', null, true);
-    }
-    // If history is not empty and no existing greeting, we do nothing (chat is in progress)
+    if (existingGreeting) {
+        // If a greeting exists (user toggled the switch), update its content
+        // We need to find the content span within the message element structure
+          const contentSpan = existingGreeting.querySelector('span:not(.instance-label)');
+          if (contentSpan) {
+              contentSpan.textContent = greetingMessage;
+          }
+    } else if (chatHistory.length === 0) {
+        // If no greeting exists AND history is empty (initial load), add a new one
+        // Pass true for isInitialGreeting
+        addMessageToChat(greetingMessage, 'bot', null, true);
+    }
+    // If history is not empty and no existing greeting, we do nothing (chat is in progress)
 }
 
 
@@ -1852,18 +1857,18 @@ toggle.addEventListener('click', (e) => {
 e.preventDefault();
 
 if (isPremiumAccessGranted) {
-    // If access is already granted, just toggle the state
-    checkbox.checked = !checkbox.checked;
-    updatePremiumUIState();
-    return;
+    // If access is already granted, just toggle the state
+    checkbox.checked = !checkbox.checked;
+    updatePremiumUIState();
+    return;
 }
 // If access not granted, check if trying to enable
 if (!checkbox.checked) {
-    showPasswordModal();
+    showPasswordModal();
 } else {
-    // Should not happen if not granted, but ensure it stays unchecked
-    checkbox.checked = false;
-    updatePremiumUIState();
+    // Should not happen if not granted, but ensure it stays unchecked
+    checkbox.checked = false;
+    updatePremiumUIState();
 }
 });
 
@@ -1906,14 +1911,14 @@ const thinkToggleArea = document.getElementById('think-toggle-area');
 const thinkCheckbox = document.getElementById('think-mode-checkbox');
 
 if (thinkToggleArea && thinkCheckbox) {
-    // Add listener to the whole area (including the label and span) to toggle the checkbox manually
-    thinkToggleArea.addEventListener('click', (e) => {
-        // Prevent default to ensure consistent behavior across clicks on label/span/div
-        e.preventDefault();
-        // Manually toggle the checkbox state
-        thinkCheckbox.checked = !thinkCheckbox.checked;
-        // Note: CSS handles the visual update based on :checked state
-    });
+    // Add listener to the whole area (including the label and span) to toggle the checkbox manually
+    thinkToggleArea.addEventListener('click', (e) => {
+        // Prevent default to ensure consistent behavior across clicks on label/span/div
+        e.preventDefault();
+        // Manually toggle the checkbox state
+        thinkCheckbox.checked = !thinkCheckbox.checked;
+        // Note: CSS handles the visual update based on :checked state
+    });
 }
 
 
@@ -1927,192 +1932,192 @@ chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSen
 
 // UPDATED: Now uses the thinking box and optimizes SuperThink duration
 async function runUltraThinkSimulation() {
-    // ... [Simulation logic remains identical] ...
-    // Determine if we are running UltraThink (Premium) or SuperThink (Public)
-    const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
-    const thinkName = isPremium ? "UltraThink" : "SuperThink";
+    // ... [Simulation logic remains identical] ...
+    // Determine if we are running UltraThink (Premium) or SuperThink (Public)
+    const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
+    const thinkName = isPremium ? "UltraThink" : "SuperThink";
 
-    // Define simulation parameters based on mode
-    let totalSimulationTime, instances, iterations, phase1Duration, phase2Duration, iterationBaseTime;
+    // Define simulation parameters based on mode
+    let totalSimulationTime, instances, iterations, phase1Duration, phase2Duration, iterationBaseTime;
 
-    // NOTE: These timings are purely visual simulations for the user experience.
-    // The actual backend processing time will vary based on the complexity of the continuation calls.
+    // NOTE: These timings are purely visual simulations for the user experience.
+    // The actual backend processing time will vary based on the complexity of the continuation calls.
 
-    if (isPremium) {
-        // UltraThink (Long duration visualization for maximum quality processing happening on backend)
-        totalSimulationTime = 180000; // 3 minutes (Visualization time)
-        instances = 5;
-        iterations = 8;
-        phase1Duration = 20000;
-        phase2Duration = 30000;
-        iterationBaseTime = 8000;
-    } else {
-        // SuperThink (Optimized/Short duration visualization for broader topics)
-        totalSimulationTime = 45000; // 45 seconds (Visualization time)
-        instances = 3;
-        iterations = 3;
-        phase1Duration = 5000;
-        phase2Duration = 8000;
-        iterationBaseTime = 5000;
-    }
+    if (isPremium) {
+        // UltraThink (Long duration visualization for maximum quality processing happening on backend)
+        totalSimulationTime = 180000; // 3 minutes (Visualization time)
+        instances = 5;
+        iterations = 8;
+        phase1Duration = 20000;
+        phase2Duration = 30000;
+        iterationBaseTime = 8000;
+    } else {
+        // SuperThink (Optimized/Short duration visualization for broader topics)
+        totalSimulationTime = 45000; // 45 seconds (Visualization time)
+        instances = 3;
+        iterations = 3;
+        phase1Duration = 5000;
+        phase2Duration = 8000;
+        iterationBaseTime = 5000;
+    }
 
-    const startTime = Date.now();
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-    // Use the updateThinkingBox function instead of adding messages to chat
-    const addMsg = async (msg, ms) => { updateThinkingBox(msg); await delay(ms); };
+    const startTime = Date.now();
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+    // Use the updateThinkingBox function instead of adding messages to chat
+    const addMsg = async (msg, ms) => { updateThinkingBox(msg); await delay(ms); };
 
 
-    await addMsg(`Initializing ${thinkName} Protocol...`, isPremium ? 3000 : 1500);
-    await addMsg(`Allocating ${instances} parallel cognitive instances (${isPremium ? "Premium" : "Standard"} Model)...`, isPremium ? 2500 : 1000);
+    await addMsg(`Initializing ${thinkName} Protocol...`, isPremium ? 3000 : 1500);
+    await addMsg(`Allocating ${instances} parallel cognitive instances (${isPremium ? "Premium" : "Standard"} Model)...`, isPremium ? 2500 : 1000);
 
-    for (let i=1; i<=instances; i++) {
-        const bootTime = isPremium ? (Math.random()*1500 + 1500) : (Math.random()*500 + 500);
-        await addMsg(`Instance ${i}/${instances} [Booting]... Status: Loading Core Knowledge...`, bootTime);
-    }
+    for (let i=1; i<=instances; i++) {
+        const bootTime = isPremium ? (Math.random()*1500 + 1500) : (Math.random()*500 + 500);
+        await addMsg(`Instance ${i}/${instances} [Booting]... Status: Loading Core Knowledge...`, bootTime);
+    }
 
-    await addMsg("All instances synchronized. [Status: Ready]", isPremium ? 3000 : 1500);
-    await addMsg("--- PHASE 1: DIVERGENT ANALYSIS ---", 1000);
-    await addMsg("Broad spectrum analysis initiated (Temp: High)...", isPremium ? 2000 : 1000);
-    await delay(phase1Duration);
-    await addMsg("Phase 1 Complete. Collating initial thought vectors...", isPremium ? 3000 : 1500);
+    await addMsg("All instances synchronized. [Status: Ready]", isPremium ? 3000 : 1500);
+    await addMsg("--- PHASE 1: DIVERGENT ANALYSIS ---", 1000);
+    await addMsg("Broad spectrum analysis initiated (Temp: High)...", isPremium ? 2000 : 1000);
+    await delay(phase1Duration);
+    await addMsg("Phase 1 Complete. Collating initial thought vectors...", isPremium ? 3000 : 1500);
 
-    await addMsg("--- PHASE 2: KNOWLEDGE SYNTHESIS ---", 1000);
-    await addMsg("Activating Synthesizer Module...", isPremium ? 2500 : 1000);
-    await addMsg(`Analyzing ${instances} distinct perspectives...`, 1500);
-    await delay(phase2Duration);
-    await addMsg("Generating Shared Knowledge Base (SKB)...", isPremium ? 4000 : 2000);
-    await addMsg("[SKB Generated]", 2000);
+    await addMsg("--- PHASE 2: KNOWLEDGE SYNTHESIS ---", 1000);
+    await addMsg("Activating Synthesizer Module...", isPremium ? 2500 : 1000);
+    await addMsg(`Analyzing ${instances} distinct perspectives...`, 1500);
+    await delay(phase2Duration);
+    await addMsg("Generating Shared Knowledge Base (SKB)...", isPremium ? 4000 : 2000);
+    await addMsg("[SKB Generated]", 2000);
 
-    await addMsg("--- PHASE 3: ITERATIVE REFINEMENT ---", 1000);
-    await addMsg(`Distributing SKB to ${instances} refinement instances (Temp: Med)...`, isPremium ? 3000 : 1500);
+    await addMsg("--- PHASE 3: ITERATIVE REFINEMENT ---", 1000);
+    await addMsg(`Distributing SKB to ${instances} refinement instances (Temp: Med)...`, isPremium ? 3000 : 1500);
 
-    for (let iter=1; iter<=iterations; iter++) {
-        const iterationStartTime = Date.now();
-        const timeElapsed = iterationStartTime - startTime;
-        // Reserve time for finalization (approx 20s for Ultra, 10s for Super)
-        const finalizationTime = isPremium ? 20000 : 10000;
-        const timeRemaining = totalSimulationTime - timeElapsed - finalizationTime;
+    for (let iter=1; iter<=iterations; iter++) {
+        const iterationStartTime = Date.now();
+        const timeElapsed = iterationStartTime - startTime;
+        // Reserve time for finalization (approx 20s for Ultra, 10s for Super)
+        const finalizationTime = isPremium ? 20000 : 10000;
+        const timeRemaining = totalSimulationTime - timeElapsed - finalizationTime;
 
-        if (timeRemaining <= 0 && iter < iterations) {
-            await addMsg(`[WARNING]: Time limit approaching. Accelerating refinement...`, 1000); break;
-        }
+        if (timeRemaining <= 0 && iter < iterations) {
+            await addMsg(`[WARNING]: Time limit approaching. Accelerating refinement...`, 1000); break;
+        }
 
-        const targetIterationDuration = Math.max(iterationBaseTime, timeRemaining / (iterations - iter + 1));
-        await addMsg(`-- Iteration ${iter}/${iterations} --`, 1000);
-        await addMsg(`[P3.${iter}.1] Instances analyzing SKB and refining output...`, 500);
-        await delay(targetIterationDuration * 0.7);
-        await addMsg(`[P3.${iter}.2] Cross-instance validation and data sharing...`, 500);
-        await delay(targetIterationDuration * 0.2);
-        await addMsg(`Iteration ${iter} complete. Confidence score improved.`, 1000);
-    }
+        const targetIterationDuration = Math.max(iterationBaseTime, timeRemaining / (iterations - iter + 1));
+        await addMsg(`-- Iteration ${iter}/${iterations} --`, 1000);
+        await addMsg(`[P3.${iter}.1] Instances analyzing SKB and refining output...`, 500);
+        await delay(targetIterationDuration * 0.7);
+        await addMsg(`[P3.${iter}.2] Cross-instance validation and data sharing...`, 500);
+        await delay(targetIterationDuration * 0.2);
+        await addMsg(`Iteration ${iter} complete. Confidence score improved.`, 1000);
+    }
 
-    await addMsg("--- PHASE 4: FINALIZATION & CONTINUATION ---", 1000);
-    await addMsg("Activating Finalizer Module...", isPremium ? 2500 : 1000);
-    await addMsg("Consolidating refined outputs...", 1500);
-    await addMsg("Initiating long-form generation (Continuation Segments)...", 1500);
-    await delay(isPremium ? 10000 : 5000);
-    await addMsg("Running coherence and persona alignment checks...", isPremium ? 3000 : 1500);
-    await addMsg(`${thinkName} Protocol Complete. Preparing transmission...`, 1000);
+    await addMsg("--- PHASE 4: FINALIZATION & CONTINUATION ---", 1000);
+    await addMsg("Activating Finalizer Module...", isPremium ? 2500 : 1000);
+    await addMsg("Consolidating refined outputs...", 1500);
+    await addMsg("Initiating long-form generation (Continuation Segments)...", 1500);
+    await delay(isPremium ? 10000 : 5000);
+    await addMsg("Running coherence and persona alignment checks...", isPremium ? 3000 : 1500);
+    await addMsg(`${thinkName} Protocol Complete. Preparing transmission...`, 1000);
 }
 
 // NEW: Updates the content of the thinking box
 function updateThinkingBox(message) {
-    const thinkingBox = document.getElementById('thinking-box');
-    if (thinkingBox) {
-        // Ensure the box is visible when the first message arrives
-        if (thinkingBox.style.display === 'none') {
-            thinkingBox.style.display = 'block';
-        }
-        thinkingBox.textContent = "> " + message;
-    }
+    const thinkingBox = document.getElementById('thinking-box');
+    if (thinkingBox) {
+        // Ensure the box is visible when the first message arrives
+        if (thinkingBox.style.display === 'none') {
+            thinkingBox.style.display = 'block';
+        }
+        thinkingBox.textContent = "> " + message;
+    }
 }
 
 
 // Updated handleSendMessage to use the checkbox state and send persona
 async function handleSendMessage() {
-    const chatInput = document.getElementById('chat-input');
-    const message = chatInput.value.trim();
-    const premiumCheckbox = document.getElementById('premium-model-checkbox');
-    const thinkCheckbox = document.getElementById('think-mode-checkbox');
+    const chatInput = document.getElementById('chat-input');
+    const message = chatInput.value.trim();
+    const premiumCheckbox = document.getElementById('premium-model-checkbox');
+    const thinkCheckbox = document.getElementById('think-mode-checkbox');
 
-    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
-    const isUltraThink = (thinkCheckbox && thinkCheckbox.checked);
+    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
+    const isUltraThink = (thinkCheckbox && thinkCheckbox.checked);
 
-    // Determine Persona (Sent for backend awareness, though backend logic primarily uses usePremiumModel)
-    const persona = usePremiumModel ? "coding_assistant" : "general_assistant";
+    // Determine Persona (Sent for backend awareness, though backend logic primarily uses usePremiumModel)
+    const persona = usePremiumModel ? "coding_assistant" : "general_assistant";
 
 
-    if (message === '') return;
+    if (message === '') return;
 
-    // Remove the initial greeting before adding the user's first message
-    const existingGreeting = document.getElementById('chat-messages').querySelector('.initial-greeting');
-    if (existingGreeting) {
-        existingGreeting.remove();
-    }
+    // Remove the initial greeting before adding the user's first message
+    const existingGreeting = document.getElementById('chat-messages').querySelector('.initial-greeting');
+    if (existingGreeting) {
+        existingGreeting.remove();
+    }
 
-    addMessageToChat(message, 'user');
-    chatHistory.push({role: "user", content: message});
-    chatInput.value = '';
+    addMessageToChat(message, 'user');
+    chatHistory.push({role: "user", content: message});
+    chatInput.value = '';
 
-    // Uncheck the Think checkbox after sending
-    if (thinkCheckbox) thinkCheckbox.checked = false;
+    // Uncheck the Think checkbox after sending
+    if (thinkCheckbox) thinkCheckbox.checked = false;
 
-    toggleInput(!1, isUltraThink);
+    toggleInput(!1, isUltraThink);
 
-    const apiCall = fetch(WORKER_URL, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        // Send flags and persona to the backend
-        body: JSON.stringify({
-            history: chatHistory,
-            usePremiumModel: usePremiumModel,
-            ultraThink: isUltraThink,
-            persona: persona
-        }),
-    });
-    // Run simulation if Think mode was checked
-    const simulation = isUltraThink ? runUltraThinkSimulation() : Promise.resolve();
+    const apiCall = fetch(WORKER_URL, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        // Send flags and persona to the backend
+        body: JSON.stringify({
+            history: chatHistory,
+            usePremiumModel: usePremiumModel,
+            ultraThink: isUltraThink,
+            persona: persona
+        }),
+    });
+    // Run simulation if Think mode was checked
+    const simulation = isUltraThink ? runUltraThinkSimulation() : Promise.resolve();
 
-    try {
-        // Wait for both the simulation (visuals) and the API call (actual data)
-        const [response] = await Promise.all([apiCall, simulation]);
-        if (!response.ok) {
-            let errorDetails = "No details provided by server.";
-            try {
-                const errorData = await response.json();
-                if (errorData.error) errorDetails = errorData.error;
-            } catch (e) { errorDetails = response.statusText; }
-            throw new Error(`Server Error (Status ${response.status}): ${errorDetails}`);
-        }
-        const data = await response.json();
-        if (data.success && data.response) {
-            // Update label based on the actual mode used (determined by backend confirmation and UI state)
-            const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
-            const thinkName = isPremium ? "UltraThink" : "SuperThink";
-            const label = data.isUltraThink ? `${thinkName} Synthesis (4-Phase Iteration)` : null;
+    try {
+        // Wait for both the simulation (visuals) and the API call (actual data)
+        const [response] = await Promise.all([apiCall, simulation]);
+        if (!response.ok) {
+            let errorDetails = "No details provided by server.";
+            try {
+                const errorData = await response.json();
+                if (errorData.error) errorDetails = errorData.error;
+            } catch (e) { errorDetails = response.statusText; }
+            throw new Error(`Server Error (Status ${response.status}): ${errorDetails}`);
+        }
+        const data = await response.json();
+        if (data.success && data.response) {
+            // Update label based on the actual mode used (determined by backend confirmation and UI state)
+            const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
+            const thinkName = isPremium ? "UltraThink" : "SuperThink";
+            const label = data.isUltraThink ? `${thinkName} Synthesis (4-Phase Iteration)` : null;
 
-            addMessageToChat(data.response, 'bot', label);
-            chatHistory.push({role: "assistant", content: data.response});
+            addMessageToChat(data.response, 'bot', label);
+            chatHistory.push({role: "assistant", content: data.response});
 
-            // Increased history limit significantly due to long outputs
-            if (chatHistory.length > 100) chatHistory = chatHistory.slice(-100);
+            // Increased history limit significantly due to long outputs
+            if (chatHistory.length > 100) chatHistory = chatHistory.slice(-100);
 
-        } else {
-            // Handle potential legacy formats or errors
-            if (data.isUltraThink && data.responses) {
-                data.responses.forEach((res, index) => {
-                    addMessageToChat(res, 'bot', `Legacy Instance ${index+1}`);
-                    chatHistory.push({role: "assistant", content: res});
-                });
-            } else throw new Error(data.error || "An unknown error occurred in the response data.");
-        }
-    } catch (error) {
-        let errorMessage = `Error: ${error.message}`;
-        if (error instanceof TypeError) errorMessage = "Network Error or CORS issue. Ensure the backend (" + WORKER_URL + ") is running and accessible.";
-        addMessageToChat(errorMessage, 'bot');
-        if (chatHistory.length > 0 && chatHistory[chatHistory.length-1].role === 'user') chatHistory.pop();
-    } finally {
-        toggleInput(!0); // This will hide the thinking box
-    }
+        } else {
+            // Handle potential legacy formats or errors
+            if (data.isUltraThink && data.responses) {
+                data.responses.forEach((res, index) => {
+                    addMessageToChat(res, 'bot', `Legacy Instance ${index+1}`);
+                    chatHistory.push({role: "assistant", content: res});
+                });
+            } else throw new Error(data.error || "An unknown error occurred in the response data.");
+        }
+    } catch (error) {
+        let errorMessage = `Error: ${error.message}`;
+        if (error instanceof TypeError) errorMessage = "Network Error or CORS issue. Ensure the backend (" + WORKER_URL + ") is running and accessible.";
+        addMessageToChat(errorMessage, 'bot');
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length-1].role === 'user') chatHistory.pop();
+    } finally {
+        toggleInput(!0); // This will hide the thinking box
+    }
 }
 
 // Updated to accept isInitialGreeting flag
@@ -2124,7 +2129,7 @@ messageElement.classList.add('message');
 
 // NEW: Add specific class for the initial greeting
 if (isInitialGreeting) {
-    messageElement.classList.add('initial-greeting');
+    messageElement.classList.add('initial-greeting');
 }
 
 if (sender === 'user') {
@@ -2144,43 +2149,43 @@ chatWindow.scrollTo({top: chatWindow.scrollHeight, behavior: 'smooth'});
 
 // UPDATED: Controls visibility of the thinking box
 function toggleInput(enabled, isUltraThink = !1) {
-    // ... [toggleInput logic remains identical] ...
-    const chatInput = document.getElementById('chat-input'), sendBtn = document.getElementById('send-btn');
-    const toggleArea = document.getElementById('john-only-toggle');
-    const thinkToggleArea = document.getElementById('think-toggle-area');
-    const thinkingBox = document.getElementById('thinking-box'); // Get the thinking box
+    // ... [toggleInput logic remains identical] ...
+    const chatInput = document.getElementById('chat-input'), sendBtn = document.getElementById('send-btn');
+    const toggleArea = document.getElementById('john-only-toggle');
+    const thinkToggleArea = document.getElementById('think-toggle-area');
+    const thinkingBox = document.getElementById('thinking-box'); // Get the thinking box
 
-    if (!chatInput || !sendBtn) return;
-    chatInput.disabled = !enabled; sendBtn.disabled = !enabled;
+    if (!chatInput || !sendBtn) return;
+    chatInput.disabled = !enabled; sendBtn.disabled = !enabled;
 
-    // Disable pointer events on visual toggle areas
-    if (toggleArea) { toggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; toggleArea.style.opacity = enabled ? '1' : '0.5'; }
-    if (thinkToggleArea) { thinkToggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; thinkToggleArea.style.opacity = enabled ? '1' : '0.5'; }
+    // Disable pointer events on visual toggle areas
+    if (toggleArea) { toggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; toggleArea.style.opacity = enabled ? '1' : '0.5'; }
+    if (thinkToggleArea) { thinkToggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; thinkToggleArea.style.opacity = enabled ? '1' : '0.5'; }
 
 
-    if (enabled) {
-        // Hide thinking box when input is enabled
-        if (thinkingBox) thinkingBox.style.display = 'none';
+    if (enabled) {
+        // Hide thinking box when input is enabled
+        if (thinkingBox) thinkingBox.style.display = 'none';
 
-        if (document.getElementById('password-modal').style.display !== 'flex') {
-            if (document.getElementById('askJohnOverlay').style.display === 'flex') chatInput.focus();
-        }
-        chatInput.placeholder = "Type your question...";
-    } else {
-        // Show thinking box when input is disabled (if UltraThink is running)
-        // Note: Visibility is also handled at the start of updateThinkingBox for robustness
-        if (isUltraThink && thinkingBox) {
-            thinkingBox.style.display = 'block';
-            updateThinkingBox("Initializing..."); // Set initial message
-        }
+        if (document.getElementById('password-modal').style.display !== 'flex') {
+            if (document.getElementById('askJohnOverlay').style.display === 'flex') chatInput.focus();
+        }
+        chatInput.placeholder = "Type your question...";
+    } else {
+        // Show thinking box when input is disabled (if UltraThink is running)
+        // Note: Visibility is also handled at the start of updateThinkingBox for robustness
+        if (isUltraThink && thinkingBox) {
+            thinkingBox.style.display = 'block';
+            updateThinkingBox("Initializing..."); // Set initial message
+        }
 
-        // Update placeholder based on the active Think mode label
-        const thinkModeLabel = document.getElementById('think-mode-label');
-        const thinkName = (thinkModeLabel && thinkModeLabel.textContent) || "Thinking";
+        // Update placeholder based on the active Think mode label
+        const thinkModeLabel = document.getElementById('think-mode-label');
+        const thinkName = (thinkModeLabel && thinkModeLabel.textContent) || "Thinking";
 
-        if (isUltraThink) chatInput.placeholder = `${thinkName} (Multi-Phase Iteration)...`;
-        else chatInput.placeholder = "Thinking...";
-    }
+        if (isUltraThink) chatInput.placeholder = `${thinkName} (Multi-Phase Iteration)...`;
+        else chatInput.placeholder = "Thinking...";
+    }
 }
 
 document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });

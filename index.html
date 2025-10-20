@@ -353,7 +353,8 @@ canvas{display:block;touch-action:none;}
 </div>
 
 
-<div id="instructions">WASD/Arrows: Move | Space: Jump | Drag: Look<br>Click the store signs. Find the hidden coins!</div><div id="coin-counter">COINS: 0 / 6</div>
+<div id="instructions">WASD/Arrows: Move | Space: Jump | Drag: Look<br>Click the store signs. Find the hidden coins!</div>
+<div id="coin-counter">COINS: 0 / 8</div>
 <div id="password-modal"><div class="modal-content"><p>Enter Password for Access:</p><input type="password" id="password-input" placeholder="> ********"><div id="password-error">ACCESS DENIED</div><button id="submit-password-btn" class="modal-btn">SUBMIT</button><button id="cancel-password-btn" class="modal-btn">CANCEL</button></div></div>
 <div id="resumeOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="resumeContainer" class="overlay-container"><div class="resume-header"><h1>John Gresh</h1><p>(336) 995-4119 | johngresh.usa@gmail.com</p></div><div class="resume-layout"><div class="layout-main"><section class="resume-section"><h2>Experience</h2><div class="job"><div class="job-title">Maintenance Technician</div><div class="company">Toyota Battery Factory</div><span class="dates">July 2024 - November 2024</span><ul class="responsibilities"><li>General Maintenance</li><li>Preventative Maintenance</li><li>Work orders/Cost Center Management</li><li>Performing Job Safety Analysis</li></ul></div><div class="job"><div class="job-title">Assistant Manager</div><div class="company">New Balance</div><span class="dates">October 2021 - Current</span><ul class="responsibilities"><li>Assisting in the general operation of the store</li><li>Opening and closing the store</li><li>Overseeing the customer experience</li><li>Fitting customers for shoes</li></ul></div><div class="job"><div class="job-title">Sales Representative</div><div class="company">GNC</div><span class="dates">March 2019 - July 2019, Charlotte NC</span><ul class="responsibilities"><li>Opening/Closing store</li><li>Inventory checks</li><li>Customer relations</li><li>Register</li><li>Cleaning</li></ul></div><div class="job"><div class="job-title">Lifeguard</div><div class="company">Forsyth Country Club</div><span class="dates">2016 - 2017 Summer</span><ul class="responsibilities"><li>Lifeguarding</li><li>Checking in guests</li><li>Cleaning pool deck and pool services</li><li>Testing pool chemicals/Adding chemicals</li><li>Strong emphasis on customer relations</li></ul></div><div class="job"><div class="job-title">Bussing tables / working in kitchen</div><div class="company">Vincenzo's Restaurant</div><span class="dates">January 2015 - December 2015, Winston-salem NC</span><ul class="responsibilities"><li>Making bread/Cleaning dishes/Making salads/ Bus Boy</li><li>Cleaning station</li><li>Customer relations</li></ul></div></section></div><div class="layout-sidebar"><section class="resume-section"><h2>Education</h2><div class="education-item"><div class="degree-title">Mechatronics Technician</div><div class="school">Forsyth Tech</div><span class="dates">August 2022 - May 2024, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">Internship</div><div class="school">ThinkPLC</div><span class="dates">August 2022 - May 2023, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">High School Diploma</div><div class="school">Mount Tabor</div><span class="dates">August 2013 - May 2017, Winston Salem NC</span></div></section><section class="resume-section"><h2>Skills</h2><ul class="skills-list"><li>OSHA 10-Hr Certified</li><li>Electrical Safe Work Practices Certified</li><li>Control of Hazardous Energy Certified</li><li>PLC installation / proficient</li><li>PLC programming (RSLogix) / proficient</li><li>Python / proficient</li><li>C++ / beginner</li><li>Matlab / beginner</li><li>Sales experience (GNC, New Balance)</li><li>Cell phone and electronic repair (iPhone/Mac)</li></ul></section></div></div></div></div>
 <div id="projectsOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="projectsContainer" class="overlay-container"><div class="resume-header"><h1>Projects</h1></div><section class="resume-section"><h2>Featured Work</h2><ul class="skills-list"><li>This Website</li></ul></section></div></div>
@@ -405,8 +406,10 @@ let joystickInput = {x:0, y:0}, isDragging = !1, dragStart = {x:0, y:0}, lookTou
 // New state variable for the menu
 let isMenuOpen = !1;
 
-const coins = []; let coinsCollected = 0; const TOTAL_COINS = 6;
-let coinGeometry, coinMaterials; const fireworks = []; let fireworkTimer = null;
+// Updated Total Coins to 8
+const coins = []; let coinsCollected = 0; const TOTAL_COINS = 8;
+// coinGeometry removed, coinMaterials will hold material definitions.
+let coinMaterials; const fireworks = []; let fireworkTimer = null;
 const playerHeight = 10; let isJumping = !1, yVelocity = 0; const gravity = -80, jumpForce = 30;
 const ROAD_CONFIG = {width:36, length:1500, startZ:260, shoulderWidth:10}; ROAD_CONFIG.endZ = ROAD_CONFIG.startZ + ROAD_CONFIG.length;
 const TUNNEL_CONFIG = {startZ:350, length:500, width:50, height:35, wallThickness:10, clearanceWidth:180}; TUNNEL_CONFIG.endZ = TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length;
@@ -570,7 +573,11 @@ cameraRig.position.set(100, playerHeight, 130); cameraPitch.rotation.x = -0.12; 
 renderer = new THREE.WebGLRenderer({antialias:!1}); renderer.setSize(window.innerWidth, window.innerHeight);
 const dpr = window.devicePixelRatio || 1; let effectiveDPR;
 if (isIPad()) effectiveDPR = 1.0; else if (isMobileDevice()) effectiveDPR = Math.min(1.5, dpr); else effectiveDPR = dpr;
-renderer.setPixelRatio(effectiveDPR); renderer.shadowMap.enabled = !isMobileDevice(); renderer.shadowMap.type = THREE.BasicShadowMap;
+renderer.setPixelRatio(effectiveDPR); renderer.shadowMap.enabled = !isMobileDevice();
+
+// Use PCFSoftShadowMap for better shadows on the 3D coins if performance allows
+renderer.shadowMap.type = isMobileDevice() ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
+
 document.body.appendChild(renderer.domElement);
 setupPostProcessing(); setupLighting(); initCoins(); createSky(); createGround(); createBuilding(); createBillboard(); createParkingLights(); createTunnel(); createTrees(); createStars(); placeCoins();
 document.getElementById('coin-counter').textContent = `COINS: 0 / ${TOTAL_COINS}`;
@@ -738,20 +745,9 @@ joystickManager.on('end', () => { joystickInput.x = 0; joystickInput.y = 0; });
 
 
 // 3D Asset Creation Functions
-// ... [All 3D asset creation functions (createCoinTexture, createTextTextureSync, initCoins, placeCoins, updateCoins, collectCoin, createFirework, startFireworks, updateFireworks, createSky, setupLighting, createTextTexture, createStripedTexture, createTunnelSignTexture, createGrassTexture, createGround, createRoad, createTunnel, createParkingLights, addControllerElements, createBuilding, createWindow, addShirt, addPaper, addThoughtBubble, createAwning, createSign, createBillboard, createBush, createTrees, createStars) remain identical] ...
-function createCoinTexture(size=128) {
-const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
-const context = canvas.getContext('2d');
-context.fillStyle = new THREE.Color(colors.coinGold).getStyle(); context.fillRect(0, 0, size, size);
-context.strokeStyle = new THREE.Color(colors.coinDarkGold).getStyle(); context.lineWidth = size*0.08;
-context.beginPath(); context.arc(size/2, size/2, size/2 - context.lineWidth/2, 0, Math.PI*2, !0); context.stroke();
-context.font = `bold ${size*0.6}px 'VT323', monospace`;
-context.textAlign = 'center'; context.textBaseline = 'middle';
-context.fillStyle = new THREE.Color(colors.coinDarkGold).getStyle(); context.fillText('$', size/2, size/2 + size*0.05);
-const texture = new THREE.CanvasTexture(canvas);
-texture.minFilter = THREE.NearestFilter; texture.magFilter = THREE.NearestFilter;
-return texture;
-}
+
+// [createCoinTexture REMOVED]
+
 function createTextTextureSync(text, color, fontSize=24, bgColor=null) {
 const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
 canvas.width = 64; canvas.height = 64;
@@ -762,35 +758,166 @@ const texture = new THREE.CanvasTexture(canvas);
 texture.minFilter = THREE.NearestFilter; texture.magFilter = THREE.NearestFilter;
 return texture;
 }
+
+// UPDATED: Initialize materials for 3D coins
 function initCoins() {
-const segments = isMobileDevice() ? 8 : 12;
-coinGeometry = new THREE.CylinderGeometry(2, 2, 0.6, segments);
-const sideMaterial = new THREE.MeshStandardMaterial({color:colors.coinGold, metalness:0.8, roughness:0.5, emissive:0x4a2d00});
-const coinFaceTexture = createCoinTexture(128); coinFaceTexture.rotation = Math.PI/2; coinFaceTexture.center.set(0.5, 0.5);
-const faceMaterial = new THREE.MeshStandardMaterial({map:coinFaceTexture, metalness:0.8, roughness:0.3, emissive:0x4a2d00});
-coinMaterials = [sideMaterial, faceMaterial, faceMaterial];
+    // Define materials for the 3D coin
+    // Side/Base Material (Slightly rougher)
+    const sideMaterial = new THREE.MeshStandardMaterial({
+        color: colors.coinGold,
+        metalness: 0.8,
+        roughness: 0.5,
+        emissive: 0x4a2d00
+    });
+    // Face/Embossed Material (Slightly shinier/brighter)
+    const faceMaterial = new THREE.MeshStandardMaterial({
+        color: colors.coinGold,
+        metalness: 0.9,
+        roughness: 0.3,
+        emissive: 0x5a3d00 // Slightly brighter emission
+    });
+
+    // Store them in the global object
+    coinMaterials = { sideMaterial, faceMaterial };
 }
+
+// NEW: Creates the complex 3D geometry group for the coin
+function create3DCoinMesh(materials) {
+    const { sideMaterial, faceMaterial } = materials;
+    // Increased segments for smoother curves on the torus/cylinder
+    const segments = isMobileDevice() ? 24 : 48;
+
+    const coinGroup = new THREE.Group();
+
+    // 1. Base Cylinder (The main body of the coin)
+    // Radius 2, Thickness 0.6
+    const baseGeo = new THREE.CylinderGeometry(2, 2, 0.6, segments);
+    // Use side material for the base.
+    const base = new THREE.Mesh(baseGeo, sideMaterial);
+    coinGroup.add(base);
+
+    // 2. Embossed Border (Torus)
+    // Radius 1.8 (center of tube), Tube 0.2 (thickness), Radial Segments 8 (adds definition to the tube shape)
+    const borderGeo = new THREE.TorusGeometry(1.8, 0.2, 8, segments);
+
+    // Create two borders, one for each face
+    const border1 = new THREE.Mesh(borderGeo, faceMaterial);
+    border1.rotation.x = Math.PI / 2;
+    border1.position.y = 0.31; // Slightly above the base (0.6/2 = 0.3)
+    coinGroup.add(border1);
+
+    const border2 = new THREE.Mesh(borderGeo, faceMaterial);
+    border2.rotation.x = Math.PI / 2;
+    border2.position.y = -0.31; // Slightly below the base
+    coinGroup.add(border2);
+
+    // 3. Embossed Dollar Sign (Blocky approximation for retro style)
+    const dollarBoxesGroup = new THREE.Group();
+    // Geometries for the 'S' shape segments
+    // Thickness (Z) is 0.2
+    const hBoxGeo = new THREE.BoxGeometry(1.2, 0.3, 0.2);
+    const vBoxGeo = new THREE.BoxGeometry(0.3, 0.55, 0.2);
+
+    // Top Horizontal
+    const topH = new THREE.Mesh(hBoxGeo, faceMaterial);
+    topH.position.y = 1.0;
+    dollarBoxesGroup.add(topH);
+    // Middle Horizontal
+    const midH = new THREE.Mesh(hBoxGeo, faceMaterial);
+    dollarBoxesGroup.add(midH);
+    // Bottom Horizontal
+    const botH = new THREE.Mesh(hBoxGeo, faceMaterial);
+    botH.position.y = -1.0;
+    dollarBoxesGroup.add(botH);
+
+    // Top Left Vertical
+    const tlV = new THREE.Mesh(vBoxGeo, faceMaterial);
+    tlV.position.set(-0.45, 0.575, 0);
+    dollarBoxesGroup.add(tlV);
+
+     // Bottom Right Vertical
+    const brV = new THREE.Mesh(vBoxGeo, faceMaterial);
+    brV.position.set(0.45, -0.575, 0);
+    dollarBoxesGroup.add(brV);
+
+    // Central Bar (Vertical line through the '$')
+    // Slightly taller and thicker (Z=0.22) to stand out
+    const centerBarGeo = new THREE.BoxGeometry(0.3, 2.5, 0.22);
+    const centerBar = new THREE.Mesh(centerBarGeo, faceMaterial);
+    dollarBoxesGroup.add(centerBar);
+
+    // Position the dollar sign group on both faces
+    // The CylinderGeometry is oriented along the Y axis by default.
+    // We rotate the dollar sign group to lay flat on the XY plane, then position it along the Y axis.
+    const dollar1 = dollarBoxesGroup.clone();
+    dollar1.rotation.x = Math.PI / 2;
+    dollar1.position.y = 0.31;
+    coinGroup.add(dollar1);
+
+    const dollar2 = dollarBoxesGroup.clone();
+    // Rotate 180 degrees on Z axis so the $ isn't backwards when viewed from the back
+    dollar2.rotation.z = Math.PI;
+    dollar2.rotation.x = -Math.PI / 2;
+    dollar2.position.y = -0.31;
+    coinGroup.add(dollar2);
+
+    // Set shadows for all children if enabled
+    if (renderer.shadowMap.enabled) {
+        coinGroup.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.castShadow = true;
+                // child.receiveShadow = true; // Optional, can look good but costs performance
+            }
+        });
+    }
+
+    return coinGroup;
+}
+
+
+// UPDATED: Uses the new 3D mesh creation function
 function createCoin(x, y, z) {
-const coin = new THREE.Mesh(coinGeometry, coinMaterials);
-coin.position.set(x, y, z); coin.rotation.x = Math.PI/2;
-if (renderer.shadowMap.enabled) coin.castShadow = !0;
-scene.add(coin); coins.push({mesh:coin, collected:!1, startY:y});
+    // Create the 3D coin group
+    const coin = create3DCoinMesh(coinMaterials);
+    coin.position.set(x, y, z);
+    // Rotate the group (which is Y-axis aligned by default) to match the orientation expected by the animation logic (Z-axis rotation)
+    coin.rotation.x = Math.PI / 2;
+
+    scene.add(coin);
+    // The mesh property now points to the Group.
+    coins.push({ mesh: coin, collected: false, startY: y });
 }
+
+// UPDATED: Places 8 coins total
 function placeCoins() {
-const coinHeight = 6.5;
-createCoin(80, coinHeight, 100); createCoin(0, coinHeight-2.5, -18); createCoin(-200, coinHeight, 200);
-createCoin(30, coinHeight, TUNNEL_CONFIG.startZ-20); createCoin(0, coinHeight, TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length/2); createCoin(-45, coinHeight, -35);
+    const coinHeight = 6.5;
+    // Original 6 coins
+    createCoin(80, coinHeight, 100);
+    createCoin(0, coinHeight-2.5, -18); // Center entrance
+    createCoin(-200, coinHeight, 200); // Far parking lot
+    createCoin(30, coinHeight, TUNNEL_CONFIG.startZ-20); // Before tunnel
+    createCoin(0, coinHeight, TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length/2); // Middle of tunnel
+    createCoin(-45, coinHeight, -35); // Near Resume store
+
+    // New 2 coins
+    // 7. Behind the billboard area (Billboard is rotated, so this is relative to world coords)
+    createCoin(-50, coinHeight, -80);
+    // 8. Near the tunnel exit on the side of the road
+    createCoin(55, coinHeight, TUNNEL_CONFIG.endZ + 30);
 }
+
 function updateCoins(delta, time) {
 const rotationSpeed = 1.5, hoverSpeed = 1.8, hoverHeight = 0.3, collectionDistance = 8, playerPosition = cameraRig.position;
 coins.forEach(coinData => {
 if (!coinData.collected) {
+// The mesh is now the Group, which handles rotation correctly
 const coin = coinData.mesh; coin.rotation.z += rotationSpeed*delta;
 const timeOffset = coinData.startY + coin.position.x + coin.position.z;
 coin.position.y = coinData.startY + Math.sin((time + timeOffset)*hoverSpeed)*hoverHeight;
 if (playerPosition.distanceTo(coin.position) < collectionDistance) collectCoin(coinData);
 }});
 }
+
 function collectCoin(coinData) {
 if (coinData.collected) return;
 coinData.collected = !0; scene.remove(coinData.mesh); coinsCollected++;
@@ -799,6 +926,8 @@ counter.textContent = `COINS: ${coinsCollected} / ${TOTAL_COINS}`;
 if (coinsCollected === TOTAL_COINS) {
 counter.style.color = "#2a9d8f"; counter.textContent += " (ALL FOUND!)"; startFireworks();
 }}
+
+// ... [Fireworks functions remain unchanged]
 function createFirework(x, y, z, color, life = 8.0) {
 const particleCount = isMobileDevice() ? 80 : 150; const geometry = new THREE.BufferGeometry();
 const positions = new Float32Array(particleCount*3), velocities = new Float32Array(particleCount*3), colorsArray = new Float32Array(particleCount*3);
@@ -853,6 +982,9 @@ positions[index] += velocities[index]*delta; positions[index+1] += velocities[in
 firework.particles.material.opacity = firework.life / firework.maxLife;
 firework.particles.geometry.attributes.position.needsUpdate = !0;
 }}
+
+// ... [Scene element creation functions (createSky, setupLighting, createTextTexture, createStripedTexture, createTunnelSignTexture, createGrassTexture, createGround, createRoad, createTunnel, createParkingLights, addControllerElements, createBuilding, createWindow, addShirt, addPaper, addThoughtBubble, createAwning, createSign, createBillboard, createBush, createTrees, createStars) remain identical] ...
+
 function createSky() {
 const uniforms = {
 colorZenith:{value:new THREE.Color(colors.skyZenith)}, colorHorizonBright:{value:new THREE.Color(colors.horizonGlow)},
@@ -871,7 +1003,11 @@ const hemisphereLight = new THREE.HemisphereLight(colors.skyZenith, 0x8a5a6d, 0.
 const sunLight = new THREE.DirectionalLight(0xffa500, 0.4);
 sunLight.position.copy(sunDirectionVector.clone().multiplyScalar(300));
 sunLight.castShadow = !0; sunLight.shadow.mapSize.width = 2048; sunLight.shadow.mapSize.height = 2048;
-sunLight.shadow.camera.near = 0.5; sunLight.shadow.camera.far = 500; sunLight.shadow.bias = -0.005;
+sunLight.shadow.camera.near = 0.5; sunLight.shadow.camera.far = 500;
+
+// Adjusted bias slightly for cleaner shadows on the detailed coins
+sunLight.shadow.bias = -0.001;
+
 const shadowSize = 180;
 sunLight.shadow.camera.left = -shadowSize; sunLight.shadow.camera.right = shadowSize;
 sunLight.shadow.camera.top = shadowSize; sunLight.shadow.camera.bottom = -shadowSize;
@@ -1515,7 +1651,7 @@ if ((joystickZone && joystickZone.contains(target)) || (actionButtons && actionB
 
 // Only prevent default if initiating a scene drag on the canvas
 if (isSceneActive && event.target === renderer.domElement) {
-     event.preventDefault();
+      event.preventDefault();
 }
 
 isDragging = !0; lookTouchId = touch.identifier;
@@ -1690,10 +1826,10 @@ function displayInitialGreeting() {
     if (existingGreeting) {
         // If a greeting exists (user toggled the switch), update its content
         // We need to find the content span within the message element structure
-            const contentSpan = existingGreeting.querySelector('span:not(.instance-label)');
-            if (contentSpan) {
-                contentSpan.textContent = greetingMessage;
-            }
+          const contentSpan = existingGreeting.querySelector('span:not(.instance-label)');
+          if (contentSpan) {
+              contentSpan.textContent = greetingMessage;
+          }
     } else if (chatHistory.length === 0) {
         // If no greeting exists AND history is empty (initial load), add a new one
         // Pass true for isInitialGreeting

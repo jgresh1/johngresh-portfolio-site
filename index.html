@@ -1,2194 +1,4377 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>John Gresh : Portfolio Web Game</title>
+
 <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
 <style>
+
 body{margin:0;overflow:hidden;background-color:#000;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;}
+
 canvas{display:block;touch-action:none;}
 
+
+
 /* --- New Menu Button Styles --- */
+
 #menu-btn {
-    position: fixed;
-    top: 25px; /* Adjusted from 20px for more spacing */
-    left: 25px; /* Adjusted from 20px for more spacing */
-    width: 60px;
-    height: 55px;
-    background-color: #2a9d8f; /* Retro green */
-    border: 4px solid black;
-    z-index: 2000; /* Highest priority */
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
-    transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
-    padding: 0;
+
+    position: fixed;
+
+    top: 25px; /* Adjusted from 20px for more spacing */
+
+    left: 25px; /* Adjusted from 20px for more spacing */
+
+    width: 60px;
+
+    height: 55px;
+
+    background-color: #2a9d8f; /* Retro green */
+
+    border: 4px solid black;
+
+    z-index: 2000; /* Highest priority */
+
+    cursor: pointer;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 8px;
+
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+
+    transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
+
+    padding: 0;
+
 }
+
+
 
 #menu-btn:hover {
-    background-color: #36c9b4;
+
+    background-color: #36c9b4;
+
 }
+
+
 
 #menu-btn:active {
-    transform: translate(3px, 3px);
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+
+    transform: translate(3px, 3px);
+
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+
 }
+
+
 
 .menu-bar {
-    width: 70%;
-    height: 6px;
-    background-color: white;
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
-    transition: transform 0.3s, opacity 0.3s;
+
+    width: 70%;
+
+    height: 6px;
+
+    background-color: white;
+
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+
+    transition: transform 0.3s, opacity 0.3s;
+
 }
 
+
+
 /* Active state (X shape) */
+
 #menu-btn.active .menu-bar:nth-child(1) {
-    transform: translateY(14px) rotate(45deg);
+
+    transform: translateY(14px) rotate(45deg);
+
 }
+
 #menu-btn.active .menu-bar:nth-child(2) {
-    opacity: 0;
+
+    opacity: 0;
+
 }
+
 #menu-btn.active .menu-bar:nth-child(3) {
-    transform: translateY(-14px) rotate(-45deg);
+
+    transform: translateY(-14px) rotate(-45deg);
+
 }
+
+
+
 
 
 /* --- New Menu Drawer Styles --- */
+
 #menu-drawer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 300px;
-    height: 100%;
-    background-color: #1a1a2e; /* Matching theme dark blue */
-    border-right: 4px solid black;
-    z-index: 1999; /* Below button, above everything else */
-    transform: translateX(-105%);
-    transition: transform 0.3s ease-in-out;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.7);
-    overflow-y: auto;
+
+    position: fixed;
+
+    top: 0;
+
+    left: 0;
+
+    width: 300px;
+
+    height: 100%;
+
+    background-color: #1a1a2e; /* Matching theme dark blue */
+
+    border-right: 4px solid black;
+
+    z-index: 1999; /* Below button, above everything else */
+
+    transform: translateX(-105%);
+
+    transition: transform 0.3s ease-in-out;
+
+    box-shadow: 10px 0 30px rgba(0,0,0,0.7);
+
+    overflow-y: auto;
+
 }
+
+
 
 #menu-drawer.open {
-    transform: translateX(0);
+
+    transform: translateX(0);
+
 }
+
+
 
 .drawer-header {
-    background-color: #2a1a3d;
-    padding: 30px 20px;
-    border-bottom: 4px dashed #6c6383;
-    text-align: center;
+
+    background-color: #2a1a3d;
+
+    padding: 30px 20px;
+
+    border-bottom: 4px dashed #6c6383;
+
+    text-align: center;
+
 }
+
+
 
 .drawer-header h2 {
-    margin: 0;
-    font-size: 36px;
-    color: #ff7d5c; /* Theme orange/red */
-    text-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+
+    margin: 0;
+
+    font-size: 36px;
+
+    color: #ff7d5c; /* Theme orange/red */
+
+    text-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+
 }
+
+
 
 .drawer-nav {
-    list-style: none;
-    padding: 0;
-    margin: 20px 0;
+
+    list-style: none;
+
+    padding: 0;
+
+    margin: 20px 0;
+
 }
+
+
 
 .drawer-nav li {
-    margin: 0;
+
+    margin: 0;
+
 }
+
+
 
 .drawer-nav a {
-    display: block;
-    padding: 15px 25px;
-    color: white;
-    text-decoration: none;
-    font-size: 26px;
-    transition: background-color 0.2s, color 0.2s;
+
+    display: block;
+
+    padding: 15px 25px;
+
+    color: white;
+
+    text-decoration: none;
+
+    font-size: 26px;
+
+    transition: background-color 0.2s, color 0.2s;
+
 }
 
+
+
 .drawer-nav a:hover {
-    background-color: #6c6383;
-    color: #ffd700; /* Theme gold */
+
+    background-color: #6c6383;
+
+    color: #ffd700; /* Theme gold */
+
 }
+
 /* --- End New Menu Styles --- */
 
 
+
+
+
 #instructions{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255, 255, 255, 0.9);font-size:18px;text-shadow:2px 2px 4px black;pointer-events:none;text-align:center;padding:10px;background:rgba(0, 0, 0, 0.5);z-index:10;}
+
 #coin-counter{position:absolute;top:20px;right:20px;color:#ffd700;font-size:36px;text-shadow:3px 3px 0px black;padding:10px 20px;background:rgba(26, 5, 58, 0.8);border:4px solid black;z-index:15;display:block;box-shadow:5px 5px 0px rgba(0,0,0,0.8);pointer-events:none;}
+
 #john-only-toggle{position:absolute;top:15px;left:15px;font-size:18px;color:#ffa700;display:flex;align-items:center;z-index:1;text-shadow:2px 2px 0px rgba(0,0,0,0.5);cursor:pointer;user-select:none;}
+
 #premium-model-checkbox{display:none;}
 
+
+
 /* Updated margins for JohnOnly layout change */
+
 .custom-checkbox{width:18px;height:18px;background-color:#2a1a3d;border:3px solid #000;margin-left:8px; display:inline-block;position:relative;box-shadow:2px 2px 0px rgba(0,0,0,0.8);}
 
+
+
 /* Shared styles for the Think checkbox */
+
 #think-mode-checkbox{display:none;}
+
 /* Specific margins for Think toggle checkbox */
+
 #think-toggle-area .custom-checkbox {margin-left: 0; margin-right: 5px; background-color: #1a1a2e;}
 
+
+
 #premium-model-checkbox:checked + .custom-checkbox,
+
 #think-mode-checkbox:checked + .custom-checkbox {background-color:#e63946;}
 
+
+
 #premium-model-checkbox:checked + .custom-checkbox::after,
+
 #think-mode-checkbox:checked + .custom-checkbox::after {content:'X';position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);color:white;font-size:16px;}
 
+
+
 /* Increased z-index for password modal to be above the menu */
+
 #password-modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0, 0, 0, 0.8);display:none;justify-content:center;align-items:center;z-index:2005;}
+
 .modal-content{background-color:#1a1a2e;padding:30px;border:4px solid #000;box-shadow:0 0 50px rgba(255, 167, 0, 0.9);color:white;text-align:center;width:80%;max-width:400px;}
+
 .modal-content p{font-size:22px;margin-bottom:20px;}
+
 #password-input{width:100%;padding:10px;margin-bottom:20px;font-family:'VT323', monospace;font-size:20px;background-color:#2a1a3d;color:white;border:3px solid #000;box-sizing:border-box;}
+
 #password-error{color:#e63946;font-size:18px;margin-bottom:15px;display:none;}
+
 .modal-btn{padding:10px 20px;font-family:'VT323', monospace;font-size:20px;border:3px solid #000;cursor:pointer;margin:0 10px;box-shadow:4px 4px 0px rgba(0,0,0,0.8);transition:transform 0.1s, box-shadow 0.1s;}
+
 .modal-btn:active{transform:translate(2px, 2px);box-shadow:2px 2px 0px rgba(0,0,0,0.8);}
+
 #submit-password-btn{background-color:#2a9d8f;color:white;}
+
 #cancel-password-btn{background-color:#6c6383;color:white;}
+
 .scene-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(26, 5, 58, 0.9);z-index:1000;display:none;justify-content:center;align-items:center;backdrop-filter:blur(3px);box-sizing:border-box;}
+
 .overlay-container{width:85%;max-width:1100px;height:85vh;overflow-y:auto;padding:30px;border:4px solid #000;box-shadow:0 0 50px rgba(255, 125, 92, 0.9);background-color:#1a1a2e;color:#fff;line-height:1.3;box-sizing:border-box;transition:background-color 0.3s, box-shadow 0.3s;}
+
 #tshirtsContainer{max-width:650px;height:auto;max-height:85vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:0 0 50px rgba(0, 119, 182, 0.9);}
+
 #askJohnContainer{max-width:800px;height:100%;display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:left;box-shadow:0 0 50px rgba(255, 167, 0, 0.9);overflow-y:hidden;position:relative;}
 
+
+
 /* Premium Active Styles */
+
 #askJohnContainer.premium-active{background-color:#0a0000;box-shadow:0 0 60px rgba(230, 57, 70, 0.9);background-image:repeating-linear-gradient(45deg, rgba(80, 0, 0, 0.5) 0, rgba(80, 0, 0, 0.5) 5px, transparent 5px, transparent 10px), repeating-linear-gradient(-45deg, rgba(80, 0, 0, 0.3) 0, rgba(80, 0, 0, 0.3) 8px, transparent 8px, transparent 16px);}
+
 #askJohnContainer.premium-active .resume-header h1{color:#e63946;}
+
 #askJohnContainer.premium-active .resume-header p{color:#ff9999;}
+
 #askJohnContainer.premium-active #chat-window{background-color:#1a0000;}
+
 #askJohnContainer.premium-active #chat-window::-webkit-scrollbar-thumb{background:#e63946;}
+
 #askJohnContainer.premium-active #chat-window::-webkit-scrollbar-thumb:hover{background:#ff5a5f;}
+
 #askJohnContainer.premium-active #chat-input{background-color:#0a0000;border-color:#e63946;}
+
 #askJohnContainer.premium-active #chat-input:focus{border-color:#ff5a5f;}
+
 #askJohnContainer.premium-active #send-btn{background-color:#e63946;color:white;}
+
 #askJohnContainer.premium-active #send-btn:hover{background-color:#ff5a5f;}
+
 #askJohnContainer.premium-active #john-only-toggle{color:#e63946;}
 
+
+
 /* Styles for Think Toggle Area */
+
 #think-toggle-area {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    /* Updated margins for new position below input */
-    margin-top: 10px;
-    margin-bottom: 5px;
-    font-size: 18px;
-    /* Default SuperThink Color (Blue) */
-    color: #00aaff;
-    cursor: pointer;
-    user-select: none;
-    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
-    transition: color 0.3s, text-shadow 0.3s;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 100%;
+
+    /* Updated margins for new position below input */
+
+    margin-top: 10px;
+
+    margin-bottom: 5px;
+
+    font-size: 18px;
+
+    /* Default SuperThink Color (Blue) */
+
+    color: #00aaff;
+
+    cursor: pointer;
+
+    user-select: none;
+
+    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+
+    transition: color 0.3s, text-shadow 0.3s;
+
 }
+
+
 
 /* Premium (UltraThink) colors override (Red) */
+
 #askJohnContainer.premium-active #think-toggle-area {
-    color: #ff0000;
-    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+
+    color: #ff0000;
+
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+
 }
+
+
 
 /* Thinking Box Styles */
-#thinking-box {
-    display: none; /* Hidden by default */
-    width: 100%;
-    padding: 8px 12px;
-    margin-bottom: 10px; /* Space between thinking box and input area below it */
-    font-size: 18px;
-    text-align: center;
-    border: 3px solid #000;
-    box-sizing: border-box;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; /* Handle long messages */
 
-    /* Default (SuperThink) colors - Blue style */
-    background-color: #001a33; /* Dark blue background */
-    color: #00aaff; /* Bright blue text */
-    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
-    box-shadow: 0px 5px 0px rgba(0,0,0,0.8);
+#thinking-box {
+
+    display: none; /* Hidden by default */
+
+    width: 100%;
+
+    padding: 8px 12px;
+
+    margin-bottom: 10px; /* Space between thinking box and input area below it */
+
+    font-size: 18px;
+
+    text-align: center;
+
+    border: 3px solid #000;
+
+    box-sizing: border-box;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis; /* Handle long messages */
+
+
+
+    /* Default (SuperThink) colors - Blue style */
+
+    background-color: #001a33; /* Dark blue background */
+
+    color: #00aaff; /* Bright blue text */
+
+    text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+
+    box-shadow: 0px 5px 0px rgba(0,0,0,0.8);
+
 }
+
+
 
 /* Premium (UltraThink) override for thinking box (Stays Red) */
+
 #askJohnContainer.premium-active #thinking-box {
-    background-color: #4d0000; /* Dark red background */
-    color: #ff0000; /* Bright red text */
-    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+
+    background-color: #4d0000; /* Dark red background */
+
+    color: #ff0000; /* Bright red text */
+
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+
 }
+
+
+
 
 
 .instance-label{font-size:18px;color:#ffc107;margin-bottom:5px;font-weight:bold;text-align:left;display:block;}
+
 #askJohnContainer.premium-active .instance-label{color:#ff5a5f;}
+
 #miniGamesContainer{box-shadow:0 0 50px rgba(106, 13, 173, 0.9);display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;}
+
 .close-btn{position:fixed;top:20px;right:20px;padding:10px 20px;font-size:24px;font-family:'VT323', monospace;background-color:#e63946;color:white;border:3px solid black;cursor:pointer;border-radius:0;box-shadow:5px 5px 0px rgba(0,0,0,0.8);transition:background-color 0.1s, transform 0.1s, box-shadow 0.1s;z-index:1001;}
+
 .close-btn:hover{background-color:#ff5a5f;}
+
 .close-btn:active{transform:translate(3px, 3px);box-shadow:2px 2px 0px rgba(0,0,0,0.8);}
+
 .overlay-container::-webkit-scrollbar{width:14px;}
+
 .overlay-container::-webkit-scrollbar-track{background:#2a1a3d;border-left:2px solid black;}
+
 .overlay-container::-webkit-scrollbar-thumb{background:#6c6383;border:2px solid black;border-radius:0;}
+
 .overlay-container::-webkit-scrollbar-thumb:hover{background:#8a505d;}
+
 .resume-header{text-align:center;margin-bottom:30px;border-bottom:4px dashed #6c6383;padding-bottom:20px;width:100%;position:relative;}
+
 .resume-header h1{font-size:48px;margin:0;color:#ff7d5c;text-shadow:3px 3px 0px rgba(0,0,0,0.5);}
+
 #tshirtsContainer .resume-header h1{color:#0077b6;}
+
 /* Default Ask John Title Color */
+
 #askJohnContainer .resume-header h1{color:#ffa700;}
+
 #miniGamesContainer .resume-header h1{color:#9d4edd;}
+
 .resume-header p{font-size:22px;margin:5px 0 0;color:#d4a3a3;}
+
 .resume-section{margin-bottom:30px;}
+
 .resume-section h2{font-size:30px;color:#2a9d8f;border-bottom:2px solid #2a9d8f;padding-bottom:5px;margin-bottom:15px;text-transform:uppercase;}
+
 .job, .education-item{margin-bottom:20px;padding-left:10px;}
+
 .job-title, .degree-title{font-size:26px;color:#e63946;}
+
 .company, .school{font-size:22px;color:#fff;}
+
 .dates{font-size:20px;color:#a37c7c;display:block;margin-bottom:8px;}
+
 .responsibilities, .skills-list{font-size:21px;list-style:none;padding:0;margin:0;color:#fdf6e3;}
+
 .responsibilities li, .skills-list li{position:relative;padding-left:20px;margin-bottom:5px;}
+
 .responsibilities li:before, .skills-list li:before{content:'>';position:absolute;left:0;color:#0077b6;}
+
 .resume-layout{display:flex;flex-wrap:wrap;gap:30px;}
+
 .layout-main{flex:2;min-width:300px;}
+
 .layout-sidebar{flex:1;min-width:250px;}
+
 .progress-container{width:90%;background-color:#2a1a3d;border:4px solid #000;margin:25px 0;box-shadow:5px 5px 0px rgba(0,0,0,0.8);}
+
 .progress-bar{background-color:#0077b6;height:35px;width:60%;background-image:linear-gradient(90deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.25) 5%, transparent 5%, transparent 100%);background-size:20px 100%;}
+
 .loading-text{font-size:28px;color:#fff;margin-top:15px;}
+
 #chat-container{display:flex;flex-direction:column;width:100%;flex-grow:1;overflow:hidden;min-height:0;}
+
 /* Adjusted margin-bottom to 0, letting the thinking box/input area handle spacing */
+
 #chat-window{flex-grow:1;background-color:#2a1a3d;border:4px solid #000;padding:15px;overflow-y:auto;margin-bottom:0px;box-shadow:inset 0 0 10px rgba(0,0,0,0.5);display:flex;flex-direction:column;min-height:0;transition:background-color 0.3s;}
+
 #chat-window::-webkit-scrollbar{width:14px;}
+
 #chat-window::-webkit-scrollbar-track{background:#1a1a2e;border-left:2px solid black;}
+
 #chat-window::-webkit-scrollbar-thumb{background:#ffa700;border:2px solid black;border-radius:0;}
+
 #chat-window::-webkit-scrollbar-thumb:hover{background:#ffc107;}
+
 #chat-messages{display:flex;flex-direction:column;gap:15px;}
+
 .message{padding:10px 15px;border:3px solid #000;max-width:80%;word-wrap:break-word;font-size:20px;line-height:1.4;}
+
 .user-message{align-self:flex-end;background-color:#0077b6;color:white;box-shadow:5px 5px 0px rgba(0,0,0,0.8);}
+
 .bot-message{align-self:flex-start;background-color:#e63946;color:white;box-shadow:-5px 5px 0px rgba(0,0,0,0.8);}
+
 #chat-input-area{display:flex;gap:10px;}
+
 #chat-input{flex-grow:1;padding:10px 15px;font-family:'VT323', monospace;font-size:22px;background-color:#1a1a2e;color:#fff;border:4px solid #000;box-shadow:5px 5px 0px rgba(0,0,0,0.8);transition:background-color 0.3s, border-color 0.3s;}
+
 #chat-input:focus{outline:none;border-color:#ffa700;}
+
 #send-btn{padding:10px 20px;font-family:'VT323', monospace;font-size:22px;background-color:#ffa700;color:black;border:4px solid #000;cursor:pointer;box-shadow:5px 5px 0px rgba(0,0,0,0.8);transition:background-color 0.1s, transform 0.1s, box-shadow 0.1s;}
+
 #send-btn:hover{background-color:#ffc107;}
+
 #send-btn:active{transform:translate(3px, 3px);box-shadow:2px 2px 0px rgba(0,0,0,0.8);}
+
 #send-btn:disabled{background-color:#6c6383;cursor:not-allowed;transform:none;box-shadow:5px 5px 0px rgba(0,0,0,0.8);}
+
 #mobile-controls{position:fixed;bottom:0;left:0;width:100%;height:200px;z-index:20;display:none;justify-content:space-between;align-items:center;padding:0 20px;box-sizing:border-box;pointer-events:none;}
+
 #joystick-zone{position:relative;width:150px;height:150px;pointer-events:auto;margin-left:20px;touch-action:none;}
+
 #action-buttons{display:flex;gap:20px;pointer-events:auto;margin-right:40px;touch-action:none;}
+
 .action-btn{width:90px;height:90px;border-radius:50%;background:rgba(255, 69, 0, 0.5);border:3px solid rgba(255, 255, 255, 0.7);color:white;font-size:24px;display:flex;justify-content:center;align-items:center;user-select:none;transition:background-color 0.1s, transform 0.1s, box-shadow 0.1s;touch-action:none;}
+
 .action-btn:active, .action-btn.active{background:rgba(255, 69, 0, 0.8);transform:scale(0.95);}
+
 #pong-canvas{background-color:#000;border:4px solid #9d4edd;display:block;margin:0 auto 20px auto;cursor:ns-resize;touch-action:none;}
+
 #pong-score{font-size:36px;color:#fff;text-align:center;margin-bottom:15px;}
+
 #pong-instructions{text-align:center;font-size:20px;margin-top:5px;color:#d4a3a3;padding-bottom:20px;}
+
 #pong-round-message{position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);font-size:36px;color:#ff7d5c;background-color:rgba(26, 5, 58, 0.95);padding:20px 40px;border:3px solid #ff7d5c;display:none;z-index:1002;text-align:center;white-space:nowrap;box-shadow:0 0 30px rgba(255, 125, 92, 0.7);}
 
+
+
 @media (max-width: 800px){
+
 #instructions{display:none;}
 
+
+
 /* Mobile Menu Button Adjustments */
+
 #menu-btn {
-    /* Keep mobile positioning tighter to the edge */
-    top: 10px;
-    left: 10px;
-    width: 45px;
-    height: 40px;
-    border-width: 3px;
-    gap: 6px;
-}
-.menu-bar {
-    height: 4px;
-}
-/* Mobile Active state (X shape) adjustments */
-#menu-btn.active .menu-bar:nth-child(1) {
-    transform: translateY(10px) rotate(45deg);
-}
-#menu-btn.active .menu-bar:nth-child(3) {
-    transform: translateY(-10px) rotate(-45deg);
+
+    /* Keep mobile positioning tighter to the edge */
+
+    top: 10px;
+
+    left: 10px;
+
+    width: 45px;
+
+    height: 40px;
+
+    border-width: 3px;
+
+    gap: 6px;
+
 }
 
-#menu-drawer {
-    width: 250px; /* Slightly narrower on mobile */
+.menu-bar {
+
+    height: 4px;
+
 }
+
+/* Mobile Active state (X shape) adjustments */
+
+#menu-btn.active .menu-bar:nth-child(1) {
+
+    transform: translateY(10px) rotate(45deg);
+
+}
+
+#menu-btn.active .menu-bar:nth-child(3) {
+
+    transform: translateY(-10px) rotate(-45deg);
+
+}
+
+
+
+#menu-drawer {
+
+    width: 250px; /* Slightly narrower on mobile */
+
+}
+
+
+
 
 
 #coin-counter{font-size:20px;top:10px;right:10px;padding:4px 8px;}
+
 /* Reduced mobile button size */
+
 .close-btn{top:5px;right:5px;padding:5px 10px;font-size:16px;border:2px solid black;box-shadow:2px 2px 0px rgba(0,0,0,0.8);}
+
 .close-btn:active{transform:translate(1px, 1px);box-shadow:1px 1px 0px rgba(0,0,0,0.8);}
+
 /* Adjusted mobile toggle layout */
+
 #john-only-toggle{font-size:14px;top:10px;left:10px;flex-direction: row;align-items: flex-start;}
+
 #john-only-toggle label {line-height: 1.1;}
 
+
+
 /* Adjusted for mobile positioning */
+
 #think-toggle-area {font-size: 16px; margin-top: 8px; margin-bottom: 5px;}
 
+
+
 .overlay-container{width:95%;padding:15px;height:85vh;max-height:calc(100vh - 50px);}
+
 .resume-header h1{font-size:36px;}
+
 #pong-score{font-size:28px;}
+
 #pong-round-message{font-size:24px;padding:15px 25px;white-space:normal;}
+
 #chat-input, #send-btn{font-size:18px;padding:8px 12px;}
+
 }
+
 @media only screen and (min-device-width: 768px) and (max-device-width: 1024px){
+
 .close-btn{position:fixed!important;z-index:1001!important;top:15px!important;right:15px!important;padding:12px 24px!important;font-size:26px!important;background-color:#e63946!important;border:4px solid black!important;}
+
 .overlay-container{height:85vh!important;max-height:calc(100vh - 90px)!important;}
+
 }
+
 </style>
+
 </head>
+
 <body>
 
+
+
 <button id="menu-btn" aria-label="Open Navigation Menu">
-  <div class="menu-bar"></div>
-  <div class="menu-bar"></div>
-  <div class="menu-bar"></div>
+
+  <div class="menu-bar"></div>
+
+  <div class="menu-bar"></div>
+
+  <div class="menu-bar"></div>
+
 </button>
 
+
+
 <div id="menu-drawer">
-  <div class="drawer-header">
-    <h2>MENU</h2>
-  </div>
-  <ul class="drawer-nav">
-    <li><a href="#" data-overlay="resumeOverlay">> RESUME</a></li>
-    <li><a href="#" data-overlay="projectsOverlay">> PROJECTS</a></li>
-    <li><a href="#" data-overlay="tshirtsOverlay">> T-SHIRTS</a></li>
-    <li><a href="#" data-overlay="askJohnOverlay">> ASK JOHN (AI)</a></li>
-    <li><a href="#" data-overlay="miniGamesOverlay">> MINI GAMES</a></li>
-  </ul>
+
+  <div class="drawer-header">
+
+    <h2>MENU</h2>
+
+  </div>
+
+  <ul class="drawer-nav">
+
+    <li><a href="#" data-overlay="resumeOverlay">> RESUME</a></li>
+
+    <li><a href="#" data-overlay="projectsOverlay">> PROJECTS</a></li>
+
+    <li><a href="#" data-overlay="tshirtsOverlay">> T-SHIRTS</a></li>
+
+    <li><a href="#" data-overlay="askJohnOverlay">> ASK JOHN (AI)</a></li>
+
+    <li><a href="#" data-overlay="miniGamesOverlay">> MINI GAMES</a></li>
+
+  </ul>
+
 </div>
+
+
+
 
 
 <div id="instructions">WASD/Arrows: Move | Space: Jump | Drag: Look<br>Click the store signs. Find the hidden coins!</div>
+
 <div id="coin-counter">COINS: 0 / 8</div>
+
 <div id="password-modal"><div class="modal-content"><p>Enter Password for Access:</p><input type="password" id="password-input" placeholder="> ********"><div id="password-error">ACCESS DENIED</div><button id="submit-password-btn" class="modal-btn">SUBMIT</button><button id="cancel-password-btn" class="modal-btn">CANCEL</button></div></div>
+
 <div id="resumeOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="resumeContainer" class="overlay-container"><div class="resume-header"><h1>John Gresh</h1><p>(336) 995-4119 | johngresh.usa@gmail.com</p></div><div class="resume-layout"><div class="layout-main"><section class="resume-section"><h2>Experience</h2><div class="job"><div class="job-title">Maintenance Technician</div><div class="company">Toyota Battery Factory</div><span class="dates">July 2024 - November 2024</span><ul class="responsibilities"><li>General Maintenance</li><li>Preventative Maintenance</li><li>Work orders/Cost Center Management</li><li>Performing Job Safety Analysis</li></ul></div><div class="job"><div class="job-title">Assistant Manager</div><div class="company">New Balance</div><span class="dates">October 2021 - Current</span><ul class="responsibilities"><li>Assisting in the general operation of the store</li><li>Opening and closing the store</li><li>Overseeing the customer experience</li><li>Fitting customers for shoes</li></ul></div><div class="job"><div class="job-title">Sales Representative</div><div class="company">GNC</div><span class="dates">March 2019 - July 2019, Charlotte NC</span><ul class="responsibilities"><li>Opening/Closing store</li><li>Inventory checks</li><li>Customer relations</li><li>Register</li><li>Cleaning</li></ul></div><div class="job"><div class="job-title">Lifeguard</div><div class="company">Forsyth Country Club</div><span class="dates">2016 - 2017 Summer</span><ul class="responsibilities"><li>Lifeguarding</li><li>Checking in guests</li><li>Cleaning pool deck and pool services</li><li>Testing pool chemicals/Adding chemicals</li><li>Strong emphasis on customer relations</li></ul></div><div class="job"><div class="job-title">Bussing tables / working in kitchen</div><div class="company">Vincenzo's Restaurant</div><span class="dates">January 2015 - December 2015, Winston-salem NC</span><ul class="responsibilities"><li>Making bread/Cleaning dishes/Making salads/ Bus Boy</li><li>Cleaning station</li><li>Customer relations</li></ul></div></section></div><div class="layout-sidebar"><section class="resume-section"><h2>Education</h2><div class="education-item"><div class="degree-title">Mechatronics Technician</div><div class="school">Forsyth Tech</div><span class="dates">August 2022 - May 2024, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">Internship</div><div class="school">ThinkPLC</div><span class="dates">August 2022 - May 2023, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">High School Diploma</div><div class="school">Mount Tabor</div><span class="dates">August 2013 - May 2017, Winston Salem NC</span></div></section><section class="resume-section"><h2>Skills</h2><ul class="skills-list"><li>OSHA 10-Hr Certified</li><li>Electrical Safe Work Practices Certified</li><li>Control of Hazardous Energy Certified</li><li>PLC installation / proficient</li><li>PLC programming (RSLogix) / proficient</li><li>Python / proficient</li><li>C++ / beginner</li><li>Matlab / beginner</li><li>Sales experience (GNC, New Balance)</li><li>Cell phone and electronic repair (iPhone/Mac)</li></ul></section></div></div></div></div>
+
 <div id="projectsOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="projectsContainer" class="overlay-container"><div class="resume-header"><h1>Projects</h1></div><section class="resume-section"><h2>Featured Work</h2><ul class="skills-list"><li>This Website</li></ul></section></div></div>
+
 <div id="tshirtsOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="tshirtsContainer" class="overlay-container"><div class="resume-header"><h1>T-Shirt Store (WIP)</h1></div><p class="loading-text">Initializing Storefront...</p><div class="progress-container"><div class="progress-bar"></div></div><p class="loading-text">> later this week</p></div></div>
 
+
+
 <div id="askJohnOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="askJohnContainer" class="overlay-container"><div class="resume-header">
+
 <div id="john-only-toggle">
-    <label for="premium-model-checkbox">John<br>Only</label>
-    <input type="checkbox" id="premium-model-checkbox">
-    <span class="custom-checkbox"></span>
+
+    <label for="premium-model-checkbox">John<br>Only</label>
+
+    <input type="checkbox" id="premium-model-checkbox">
+
+    <span class="custom-checkbox"></span>
+
 </div>
+
 <h1 id="ask-john-title">Ask John (AI)</h1><p id="ask-john-subtitle">Chat with an AI trained on John's professional background.</p></div>
+
 <div id="chat-container">
-    <div id="chat-window"><div id="chat-messages"></div></div>
-    <div id="thinking-box"></div>
-    <div id="chat-input-area"><input type="text" id="chat-input" placeholder="Type your question..."><button id="send-btn">SEND</button></div>
-    <div id="think-toggle-area">
-        <input type="checkbox" id="think-mode-checkbox">
-        <span class="custom-checkbox"></span>
-        <label for="think-mode-checkbox" id="think-mode-label">SuperThink</label>
-    </div>
+
+    <div id="chat-window"><div id="chat-messages"></div></div>
+
+    <div id="thinking-box"></div>
+
+    <div id="chat-input-area"><input type="text" id="chat-input" placeholder="Type your question..."><button id="send-btn">SEND</button></div>
+
+    <div id="think-toggle-area">
+
+        <input type="checkbox" id="think-mode-checkbox">
+
+        <span class="custom-checkbox"></span>
+
+        <label for="think-mode-checkbox" id="think-mode-label">SuperThink</label>
+
+    </div>
+
 </div></div></div>
 
+
+
 <div id="miniGamesOverlay" class="scene-overlay"><button class="close-btn">[X] BACK</button><div id="miniGamesContainer" class="overlay-container"><div class="resume-header"><h1>Pong AI</h1></div><div id="pong-score">Player: <span id="player-score">0</span> | AI: <span id="ai-score">0</span> | Round: <span id="pong-round">1</span></div><canvas id="pong-canvas"></canvas><div id="pong-instructions"><p>First to 5 wins the round. The AI adapts each round!</p><p>Desktop: Use Mouse or W/S/Up/Down Arrows.</p><p>Mobile: Drag your paddle.</p></div></div></div>
+
 <div id="pong-round-message"></div><div id="mobile-controls"><div id="joystick-zone"></div><div id="action-buttons"><div id="jump-btn" class="action-btn">JUMP</div></div></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+
 <script id="pixel-vertex-shader" type="x-shader/x-vertex">varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}</script>
+
 <script id="pixel-fragment-shader" type="x-shader/x-fragment">uniform sampler2D tDiffuse;uniform vec2 resolution;uniform float pixelSize;varying vec2 vUv;void main(){vec2 dxy=pixelSize/resolution;vec2 coord=dxy*floor(vUv/dxy+0.5);gl_FragColor=texture2D(tDiffuse,coord);}</script>
+
 <script id="sky-vertex-shader" type="x-shader/x-vertex">varying vec3 vWorldPosition;void main(){vec4 worldPosition=modelMatrix*vec4(position,1.0);vWorldPosition=worldPosition.xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}</script>
+
 <script id="sky-fragment-shader" type="x-shader/x-fragment">
+
 uniform vec3 colorZenith;uniform vec3 colorHorizonBright;uniform vec3 colorHorizonDark;uniform vec3 sunDirection;varying vec3 vWorldPosition;
+
 void main(){
+
 vec3 direction=normalize(vWorldPosition);float h=max(0.0,direction.y);float verticalFade=pow(1.0-h,2.5);
+
 float sunAlignment=dot(direction,sunDirection);float horizontalFactor=(sunAlignment+1.0)*0.5;horizontalFactor=smoothstep(0.3,0.7,horizontalFactor);
+
 vec3 baseHorizonColor=mix(colorHorizonDark,colorHorizonBright,horizontalFactor);vec3 skyColor=mix(colorZenith,baseHorizonColor,verticalFade);
+
 float sunHotspot=max(0.0,sunAlignment);sunHotspot=pow(sunHotspot,32.0);
+
 skyColor+=vec3(1.0,0.9,0.7)*sunHotspot*0.8;gl_FragColor=vec4(skyColor,1.0);
+
 }</script>
+
 <script>
+
 // --- 3D Scene Setup and Variables ---
+
 let scene, camera, renderer, composer, pixelPass, cameraRig, cameraPitch, raycaster, mouse;
+
 const clickableObjects = [], clock = new THREE.Clock(), keys = {ArrowUp:!1, ArrowDown:!1, ArrowLeft:!1, ArrowRight:!1, w:!1, a:!1, s:!1, d:!1, ' ':!1};
+
 let joystickInput = {x:0, y:0}, isDragging = !1, dragStart = {x:0, y:0}, lookTouchId = null, isSceneActive = !0;
+
 // New state variable for the menu
+
 let isMenuOpen = !1;
 
+
+
 // Updated Total Coins to 8
+
 const coins = []; let coinsCollected = 0; const TOTAL_COINS = 8;
+
 // coinGeometry removed, coinMaterials will hold material definitions.
+
 let coinMaterials; const fireworks = []; let fireworkTimer = null;
+
 const playerHeight = 10; let isJumping = !1, yVelocity = 0; const gravity = -80, jumpForce = 30;
+
 const ROAD_CONFIG = {width:36, length:1500, startZ:260, shoulderWidth:10}; ROAD_CONFIG.endZ = ROAD_CONFIG.startZ + ROAD_CONFIG.length;
+
 const TUNNEL_CONFIG = {startZ:350, length:500, width:50, height:35, wallThickness:10, clearanceWidth:180}; TUNNEL_CONFIG.endZ = TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length;
+
 const colors = {
+
 skyZenith:0x1a053a, skyHorizonDark:0x2a1a3d, horizonGlow:0xff7d5c, asphalt:0x1a1a2e, asphaltLine:0x6c6383,
+
 brick:0x8a505d, grass:0x182c25, stucco:0xd4a3a3, stuccoDark:0xa37c7c, windowGlowBright:0xfff5c3,
+
 windowGlowDim:0x839db5, signResume:0xe63946, signTshirts:0x0077b6, signProjects:0x2a9d8f, signAskJohn:0xffa700,
+
 signMiniGames:0x6a0dad, billboardGlow:0xffe8a3, billboardText:0xd95763, treeDark:0x1b3028, treeTrunk:0x4a3f35,
+
 metalDark:0x1a1a2e, poleMetal:0x4a4f63, poleGlow:0xffe0a3, coinGold:0xffd700, coinDarkGold:0xc6a100,
+
 tunnelConcrete:0x3a3a4a, tunnelFacade:0x5a5a6a, tunnelLight:0xffa050
+
 };
+
 const sunDirectionVector = new THREE.Vector3(-1, 0.25, -0.8).normalize();
+
 function isMobileDevice() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800; }
+
 function isIPad() { return /iPad/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
 
+
+
 // PongGame Class (No changes required)
+
 class PongGame {
+
 // ... [PongGame class implementation remains identical] ...
+
 constructor(canvasId) {
+
 this.canvas = document.getElementById(canvasId); this.ctx = this.canvas.getContext('2d');
+
 this.isRunning = !1; this.animationFrameId = null; this.isServing = !1; this.serveTimeoutId = null;
+
 this.width = 640; this.height = 400; this.canvas.width = this.width; this.canvas.height = this.height;
+
 this.paddleWidth = 10; this.paddleHeight = 80; this.playerSpeed = 8; this.ballSize = 10;
+
 this.baseBallSpeed = isMobileDevice() ? 6 : 5;
+
 this.round = 1; this.aiBaseSpeed = 4; this.aiReactionFrequency = 0.1; this.aiErrorMargin = 35;
+
 this.player = {x:this.paddleWidth, y:this.height/2 - this.paddleHeight/2, w:this.paddleWidth, h:this.paddleHeight, score:0};
+
 this.ai = {x:this.width - this.paddleWidth*2, y:this.height/2 - this.paddleHeight/2, w:this.paddleWidth, h:this.paddleHeight, score:0, targetY:this.height/2};
+
 this.ball = {x:this.width/2, y:this.height/2, w:this.ballSize, h:this.ballSize, dx:0, dy:0, speed:this.baseBallSpeed};
+
 this.pongKeys = {ArrowUp:!1, ArrowDown:!1, W:!1, S:!1}; this.isDraggingPaddle = !1;
+
 this.setupEventListeners(); this.resetGame();
+
 }
+
 adjustDifficulty() {
+
 this.aiBaseSpeed = 4 + this.round*0.5; this.aiReactionFrequency = Math.min(0.9, 0.1 + this.round*0.08);
+
 this.aiErrorMargin = Math.max(5, 35 - this.round*4); this.ball.speed = this.baseBallSpeed + this.round*0.3;
+
 }
+
 setupEventListeners() {
+
 document.addEventListener('keydown', (e) => {
+
 if (document.activeElement.id === 'chat-input' || document.activeElement.id === 'password-input') return;
+
 if (this.isRunning) {
+
 if (e.key === 'ArrowUp') { this.pongKeys.ArrowUp = !0; e.preventDefault(); }
+
 if (e.key === 'ArrowDown') { this.pongKeys.ArrowDown = !0; e.preventDefault(); }
+
 if (e.key === 'w' || e.key === 'W') { this.pongKeys.W = !0; e.preventDefault(); }
+
 if (e.key === 's' || e.key === 'S') { this.pongKeys.S = !0; e.preventDefault(); }
+
 }});
+
 document.addEventListener('keyup', (e) => {
+
 if (e.key === 'ArrowUp') this.pongKeys.ArrowUp = !1;
+
 if (e.key === 'ArrowDown') this.pongKeys.ArrowDown = !1;
+
 if (e.key === 'w' || e.key === 'W') this.pongKeys.W = !1;
+
 if (e.key === 's' || e.key === 'S') this.pongKeys.S = !1;
+
 });
+
 this.canvas.addEventListener('mousemove', (e) => { if (this.isRunning && !isMobileDevice()) this.handlePointerMove(e.clientY); });
+
 this.canvas.addEventListener('touchstart', (e) => { if (this.isRunning) { e.preventDefault(); this.isDraggingPaddle = !0; this.handlePointerMove(e.touches[0].clientY); }}, {passive:!1});
+
 this.canvas.addEventListener('touchmove', (e) => { if (this.isRunning && this.isDraggingPaddle) { e.preventDefault(); this.handlePointerMove(e.touches[0].clientY); }}, {passive:!1});
+
 this.canvas.addEventListener('touchend', () => { this.isDraggingPaddle = !1; });
+
 }
+
 handlePointerMove(clientY) {
+
 const rect = this.canvas.getBoundingClientRect(), scaleY = this.height / rect.height;
+
 let pointerY = (clientY - rect.top) * scaleY; this.player.y = pointerY - this.player.h/2;
+
 }
+
 resetBall(scorer) {
+
 if (this.serveTimeoutId) { clearTimeout(this.serveTimeoutId); this.serveTimeoutId = null; }
+
 this.ball.x = this.width/2 - this.ball.w/2; this.ball.y = this.height/2 - this.ball.h/2;
+
 this.ball.dx = 0; this.ball.dy = 0; this.isServing = !0;
+
 this.serveTimeoutId = setTimeout(() => {
+
 if (!this.isRunning) return;
+
 const initialServeSpeed = isMobileDevice() ? 4 : 3; let direction = (Math.random() > 0.5 ? 1 : -1);
+
 if (scorer === 'ai') direction = -1; if (scorer === 'player') direction = 1;
+
 this.ball.dx = initialServeSpeed * direction; this.ball.dy = initialServeSpeed * (Math.random()*1.4 - 0.7);
+
 this.isServing = !1; this.serveTimeoutId = null;
+
 }, 1500);
+
 }
+
 resetGame() { this.player.score = 0; this.ai.score = 0; this.round = 1; this.adjustDifficulty(); this.updateScoreDisplay(); this.resetBall(null); }
+
 start() { if (this.isRunning) return; this.isRunning = !0; this.resizeCanvas(); this.loop(); }
+
 startNewRound() { if (this.isRunning) return; this.isRunning = !0; this.resizeCanvas(); this.resetBall(null); this.loop(); }
+
 stop() {
+
 this.isRunning = !1;
+
 if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+
 if (this.serveTimeoutId) { clearTimeout(this.serveTimeoutId); this.serveTimeoutId = null; }
+
 }
+
 resizeCanvas() {
+
 const container = document.getElementById('miniGamesContainer'); if (!container) return;
+
 const containerWidth = container.offsetWidth, containerHeight = container.offsetHeight, gameAspectRatio = this.width / this.height;
+
 const headerHeight = container.querySelector('.resume-header')?.offsetHeight || 0;
+
 const scoreHeight = document.getElementById('pong-score')?.offsetHeight || 0;
+
 const instructionsHeight = document.getElementById('pong-instructions')?.offsetHeight || 0;
+
 const availableHeight = containerHeight - (headerHeight + scoreHeight + instructionsHeight + 40), availableWidth = containerWidth - 40;
+
 let displayWidth = availableWidth, displayHeight = displayWidth / gameAspectRatio;
+
 if (displayHeight > availableHeight) { displayHeight = availableHeight; displayWidth = displayHeight * gameAspectRatio; }
+
 if (displayWidth > 0 && displayHeight > 0) { this.canvas.style.width = `${displayWidth}px`; this.canvas.style.height = `${displayHeight}px`; }
+
 }
+
 updateScoreDisplay() {
+
 document.getElementById('player-score').textContent = this.player.score;
+
 document.getElementById('ai-score').textContent = this.ai.score;
+
 document.getElementById('pong-round').textContent = this.round;
+
 }
+
 checkWinCondition() {
+
 const winningScore = 5; let roundOver = !1;
+
 if (this.player.score >= winningScore) { this.round++; this.showRoundMessage(`You Won Round ${this.round - 1}!`, `AI adapting... (Level ${this.round})`); roundOver = !0; }
+
 else if (this.ai.score >= winningScore) { this.round++; this.showRoundMessage(`AI Won Round ${this.round - 1}!`, `AI learning... (Level ${this.round})`); roundOver = !0; }
+
 if (roundOver) { this.player.score = 0; this.ai.score = 0; this.adjustDifficulty(); this.updateScoreDisplay(); this.stop(); }
+
 }
+
 showRoundMessage(line1, line2) {
+
 const msgElement = document.getElementById('pong-round-message');
+
 msgElement.innerHTML = `${line1}<br><small>${line2}</small>`; msgElement.style.display = 'block';
+
 setTimeout(() => { msgElement.style.display = 'none'; if (document.getElementById('miniGamesOverlay').style.display !== 'none') this.startNewRound(); }, 3500);
+
 }
+
 update() {
+
 if (this.pongKeys.ArrowUp || this.pongKeys.W) this.player.y -= this.playerSpeed;
+
 if (this.pongKeys.ArrowDown || this.pongKeys.S) this.player.y += this.playerSpeed;
+
 if (this.player.y < 0) this.player.y = 0;
+
 if (this.player.y + this.player.h > this.height) this.player.y = this.height - this.player.h;
+
 if (this.ball.dx > 0 && (this.ball.dx !== 0 || this.ball.dy !== 0)) {
+
 if (Math.random() < this.aiReactionFrequency) {
+
 let predictedY = this.ball.y; predictedY += (Math.random() - 0.5) * this.aiErrorMargin;
+
 this.ai.targetY = predictedY - this.ai.h/2;
+
 }} else if (Math.random() < 0.05) this.ai.targetY = this.height/2 - this.ai.h/2;
+
 if (this.ai.y < this.ai.targetY) this.ai.y += Math.min(this.aiBaseSpeed, this.ai.targetY - this.ai.y);
+
 else if (this.ai.y > this.ai.targetY) this.ai.y -= Math.min(this.aiBaseSpeed, this.ai.y - this.ai.targetY);
+
 if (this.ai.y < 0) this.ai.y = 0;
+
 if (this.ai.y + this.ai.h > this.height) this.ai.y = this.height - this.ai.h;
+
 if (this.ball.dx === 0 && this.ball.dy === 0) return;
+
 this.ball.x += this.ball.dx; this.ball.y += this.ball.dy;
+
 if (this.ball.y <= 0 || this.ball.y + this.ball.h >= this.height) {
+
 this.ball.dy *= -1;
+
 if (this.ball.y <= 0) this.ball.y = 0;
+
 if (this.ball.y + this.ball.h >= this.height) this.ball.y = this.height - this.ball.h;
+
 }
+
 const collision = (paddle, ball) => paddle.x < ball.x + ball.w && paddle.x + paddle.w > ball.x && paddle.y < ball.y + ball.h && paddle.y + paddle.h > ball.y;
+
 let paddleHit = null;
+
 if (this.ball.dx < 0 && collision(this.player, this.ball)) { paddleHit = this.player; this.ball.x = this.player.x + this.player.w; }
+
 else if (this.ball.dx > 0 && collision(this.ai, this.ball)) { paddleHit = this.ai; this.ball.x = this.ai.x - this.ball.w; }
+
 if (paddleHit) {
+
 this.isServing = !1; let reflectionSpeed = this.ball.speed;
+
 let collidePoint = (this.ball.y + this.ball.h/2) - (paddleHit.y + paddleHit.h/2); collidePoint = collidePoint / (paddleHit.h/2);
+
 let angleRad = (Math.PI/3.5) * collidePoint; let direction = (paddleHit === this.player) ? 1 : -1;
+
 this.ball.dx = direction * reflectionSpeed * Math.cos(angleRad); this.ball.dy = reflectionSpeed * Math.sin(angleRad);
+
 }
+
 if (this.ball.x + this.ball.w < 0) { this.ai.score++; this.updateScoreDisplay(); this.checkWinCondition(); if (this.isRunning) this.resetBall('ai'); }
+
 else if (this.ball.x > this.width) { this.player.score++; this.updateScoreDisplay(); this.checkWinCondition(); if (this.isRunning) this.resetBall('player'); }
+
 }
+
 draw() {
+
 this.ctx.fillStyle = '#000'; this.ctx.fillRect(0, 0, this.width, this.height);
+
 this.ctx.strokeStyle = '#4a4f63'; this.ctx.lineWidth = 4; this.ctx.setLineDash([10, 15]);
+
 this.ctx.beginPath(); this.ctx.moveTo(this.width/2, 0); this.ctx.lineTo(this.width/2, this.height); this.ctx.stroke();
+
 this.ctx.fillStyle = '#9d4edd'; this.ctx.fillRect(this.player.x, this.player.y, this.player.w, this.player.h);
+
 this.ctx.fillStyle = '#e63946'; this.ctx.fillRect(this.ai.x, this.ai.y, this.ai.w, this.ai.h);
+
 if (this.isServing && this.ball.dx === 0 && this.ball.dy === 0) {
+
 if (Math.floor(Date.now()/200) % 2 === 0) { this.ctx.fillStyle = '#FFF'; this.ctx.fillRect(this.ball.x, this.ball.y, this.ball.w, this.ball.h); }
+
 } else { this.ctx.fillStyle = '#FFF'; this.ctx.fillRect(this.ball.x, this.ball.y, this.ball.w, this.ball.h); }
+
 }
+
 loop() { if (!this.isRunning) return; this.update(); this.draw(); this.animationFrameId = requestAnimationFrame(() => this.loop()); }
+
 }
+
 let pongGame = null;
 
+
+
 // 3D Scene Initialization
+
 function init() {
+
 scene = new THREE.Scene(); scene.fog = new THREE.Fog(colors.horizonGlow, 600, 5000);
+
 camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 5000);
+
 cameraRig = new THREE.Object3D(); cameraPitch = new THREE.Object3D(); cameraPitch.add(camera); cameraRig.add(cameraPitch); scene.add(cameraRig);
+
 cameraRig.position.set(100, playerHeight, 130); cameraPitch.rotation.x = -0.12; cameraRig.rotation.y = -0.50;
+
 renderer = new THREE.WebGLRenderer({antialias:!1}); renderer.setSize(window.innerWidth, window.innerHeight);
+
 const dpr = window.devicePixelRatio || 1; let effectiveDPR;
+
 if (isIPad()) effectiveDPR = 1.0; else if (isMobileDevice()) effectiveDPR = Math.min(1.5, dpr); else effectiveDPR = dpr;
+
 renderer.setPixelRatio(effectiveDPR); renderer.shadowMap.enabled = !isMobileDevice();
 
+
+
 // Use PCFSoftShadowMap for better shadows on the 3D coins if performance allows
+
 renderer.shadowMap.type = isMobileDevice() ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
 
+
+
 document.body.appendChild(renderer.domElement);
+
 setupPostProcessing(); setupLighting(); initCoins(); createSky(); createGround(); createBuilding(); createBillboard(); createParkingLights(); createTunnel(); createTrees(); createStars(); placeCoins();
+
 document.getElementById('coin-counter').textContent = `COINS: 0 / ${TOTAL_COINS}`;
+
 raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
+
 setupEventListeners(); initChat(); initPasswordModal(); initMenu(); // Initialize the new menu
+
 if (isMobileDevice()) {
+
 document.getElementById('mobile-controls').style.display = 'flex';
+
 requestAnimationFrame(() => { initJoystick();
+
 if (/iPad|iPhone|iPod/.test(navigator.userAgent)) { setTimeout(() => { if (joystickManager && joystickManager[0]) joystickManager[0].trigger('rested'); }, 500); }
+
 });
+
 } else initJoystick();
+
 animate();
+
 }
+
+
 
 // --- New Menu Initialization and Toggle Logic ---
+
 function initMenu() {
-    const menuBtn = document.getElementById('menu-btn');
-    const menuDrawer = document.getElementById('menu-drawer');
-    const navLinks = document.querySelectorAll('.drawer-nav a');
 
-    if (!menuBtn || !menuDrawer) return;
+    const menuBtn = document.getElementById('menu-btn');
 
-    // Toggle drawer visibility
-    menuBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent the document click listener from firing immediately
-        toggleMenu();
-    });
+    const menuDrawer = document.getElementById('menu-drawer');
 
-    // Handle navigation links
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const overlayId = link.getAttribute('data-overlay');
-            if (overlayId) {
-                // Close menu first, then show overlay
-                toggleMenu();
-                setTimeout(() => showOverlay(overlayId), 100);
-            }
-        });
-    });
+    const navLinks = document.querySelectorAll('.drawer-nav a');
 
-    // Close drawer when clicking outside (if open)
-    const closeHandler = (e) => {
-        if (isMenuOpen && !menuDrawer.contains(e.target) && e.target !== menuBtn && !menuBtn.contains(e.target)) {
-            toggleMenu();
-        }
-    };
-    document.addEventListener('click', closeHandler);
-    // Use passive listener for touchstart to avoid performance issues, but ensure it closes the menu
-    document.addEventListener('touchstart', closeHandler, {passive: true});
+
+
+    if (!menuBtn || !menuDrawer) return;
+
+
+
+    // Toggle drawer visibility
+
+    menuBtn.addEventListener('click', (e) => {
+
+        e.stopPropagation(); // Prevent the document click listener from firing immediately
+
+        toggleMenu();
+
+    });
+
+
+
+    // Handle navigation links
+
+    navLinks.forEach(link => {
+
+        link.addEventListener('click', (e) => {
+
+            e.preventDefault();
+
+            const overlayId = link.getAttribute('data-overlay');
+
+            if (overlayId) {
+
+                // Close menu first, then show overlay
+
+                toggleMenu();
+
+                setTimeout(() => showOverlay(overlayId), 100);
+
+            }
+
+        });
+
+    });
+
+
+
+    // Close drawer when clicking outside (if open)
+
+    const closeHandler = (e) => {
+
+        if (isMenuOpen && !menuDrawer.contains(e.target) && e.target !== menuBtn && !menuBtn.contains(e.target)) {
+
+            toggleMenu();
+
+        }
+
+    };
+
+    document.addEventListener('click', closeHandler);
+
+    // Use passive listener for touchstart to avoid performance issues, but ensure it closes the menu
+
+    document.addEventListener('touchstart', closeHandler, {passive: true});
+
 }
+
+
 
 function toggleMenu() {
-    const menuBtn = document.getElementById('menu-btn');
-    const menuDrawer = document.getElementById('menu-drawer');
-    isMenuOpen = !isMenuOpen;
 
-    menuDrawer.classList.toggle('open', isMenuOpen);
-    menuBtn.classList.toggle('active', isMenuOpen);
+    const menuBtn = document.getElementById('menu-btn');
 
-    // Handle interaction blocking
-    if (isMenuOpen) {
-        // If the scene is active, pause interactions
-        if (isSceneActive) {
-            renderer.domElement.style.pointerEvents = 'none';
-            document.body.style.cursor = 'default';
-        }
-    } else {
-        // If the scene is active (no overlay open), restore interactions
-        if (isSceneActive) {
-            renderer.domElement.style.pointerEvents = 'auto';
-            document.body.style.cursor = 'grab';
-        }
-    }
+    const menuDrawer = document.getElementById('menu-drawer');
+
+    isMenuOpen = !isMenuOpen;
+
+
+
+    menuDrawer.classList.toggle('open', isMenuOpen);
+
+    menuBtn.classList.toggle('active', isMenuOpen);
+
+
+
+    // Handle interaction blocking
+
+    if (isMenuOpen) {
+
+        // If the scene is active, pause interactions
+
+        if (isSceneActive) {
+
+            renderer.domElement.style.pointerEvents = 'none';
+
+            document.body.style.cursor = 'default';
+
+        }
+
+    } else {
+
+        // If the scene is active (no overlay open), restore interactions
+
+        if (isSceneActive) {
+
+            renderer.domElement.style.pointerEvents = 'auto';
+
+            document.body.style.cursor = 'grab';
+
+        }
+
+    }
+
 }
+
+
+
 
 
 function showOverlay(overlayId) {
+
 // Ensure menu is closed if overlay is opened (e.g. by clicking a 3D sign)
+
 if (isMenuOpen) {
-    toggleMenu();
+
+    toggleMenu();
+
 }
+
+
 
 hideAllOverlays(); const overlay = document.getElementById(overlayId);
+
 if (overlay) {
+
 isSceneActive = !1; overlay.style.display = 'flex'; renderer.domElement.style.pointerEvents = 'none'; document.body.style.cursor = 'default';
+
 document.getElementById('instructions').style.display = 'none';
+
 document.getElementById('mobile-controls').style.display = 'none';
+
 document.getElementById('coin-counter').style.display = 'none';
 
+
+
 // Hide the menu button when an overlay is active
+
 if (document.getElementById('menu-btn')) {
-    document.getElementById('menu-btn').style.display = 'none';
+
+    document.getElementById('menu-btn').style.display = 'none';
+
 }
+
+
+
 
 
 if (overlayId === 'miniGamesOverlay') {
+
 if (!pongGame) pongGame = new PongGame('pong-canvas');
+
 pongGame.resetGame(); setTimeout(() => { pongGame.start(); }, 100);
+
 }
+
 if (overlayId === 'askJohnOverlay') {
+
 initChat();
+
 updatePremiumUIState(); // This now calls displayInitialGreeting if visible
+
 setTimeout(() => { document.getElementById('chat-input').focus();
+
 const chatWindow = document.getElementById('chat-window'); chatWindow.scrollTop = chatWindow.scrollHeight;
+
 }, 100);
+
 }}}
 
+
+
 function hideAllOverlays() {
+
 if (pongGame && pongGame.isRunning) pongGame.stop();
+
 document.getElementById('pong-round-message').style.display = 'none';
+
 document.getElementById('password-modal').style.display = 'none';
 
+
+
 // Ensure menu state is reset if open (should be handled by toggleMenu, but safety check)
+
 if (isMenuOpen) {
-    toggleMenu();
+
+    toggleMenu();
+
 }
+
+
 
 const overlays = document.querySelectorAll('.scene-overlay'); let wasActive = !1;
+
 overlays.forEach(overlay => { if (overlay.style.display !== 'none') { overlay.style.display = 'none'; wasActive = !0; }});
+
 if (wasActive) {
+
 isSceneActive = !0; renderer.domElement.style.pointerEvents = 'auto'; document.body.style.cursor = 'grab';
+
 isDragging = !1; lookTouchId = null; document.getElementById('coin-counter').style.display = 'block';
 
+
+
 // Show the menu button again when returning to the scene
+
 if (document.getElementById('menu-btn')) {
-    document.getElementById('menu-btn').style.display = 'flex';
+
+    document.getElementById('menu-btn').style.display = 'flex';
+
 }
+
+
 
 if (!isMobileDevice()) document.getElementById('instructions').style.display = 'block';
+
 else document.getElementById('mobile-controls').style.display = 'flex';
+
 }}
 
+
+
 // 3D Utility Functions
+
 // ... [getPixelSize, setupPostProcessing, initJoystick remain the same] ...
+
 function getPixelSize() {
+
 let targetVerticalResolution;
+
 if (isIPad()) targetVerticalResolution = 240; else if (isMobileDevice()) targetVerticalResolution = 280; else targetVerticalResolution = 450;
+
 const effectiveDPR = renderer.getPixelRatio();
+
 const calculatedSize = (window.innerHeight * effectiveDPR) / targetVerticalResolution;
+
 return Math.max(2, calculatedSize);
+
 }
+
 function setupPostProcessing() {
+
 composer = new THREE.EffectComposer(renderer);
+
 const renderPass = new THREE.RenderPass(scene, camera); composer.addPass(renderPass);
+
 const dpr = renderer.getPixelRatio();
+
 pixelPass = new THREE.ShaderPass({
+
 uniforms: {tDiffuse:{value:null}, resolution:{value:new THREE.Vector2(window.innerWidth*dpr, window.innerHeight*dpr)}, pixelSize:{value:getPixelSize()}},
+
 vertexShader: document.getElementById('pixel-vertex-shader').textContent, fragmentShader: document.getElementById('pixel-fragment-shader').textContent
+
 });
+
 pixelPass.renderToScreen = !0; composer.addPass(pixelPass);
+
 }
+
 let joystickManager = null;
+
 function initJoystick() {
+
 if (!isMobileDevice()) { if (joystickManager) { joystickManager.destroy(); joystickManager = null; } return; }
+
 if (joystickManager) return;
+
 const options = {zone:document.getElementById('joystick-zone'), mode:'static', position:{left:'50%', top:'50%'}, color:'rgba(255, 255, 255, 0.5)', size:120};
+
 joystickManager = nipplejs.create(options);
+
 joystickManager.on('move', (evt, data) => {
+
 const angle = data.angle.radian, force = Math.min(data.force, 1.0);
+
 joystickInput.x = Math.cos(angle)*force; joystickInput.y = Math.sin(angle)*force;
+
 });
+
 joystickManager.on('end', () => { joystickInput.x = 0; joystickInput.y = 0; });
+
 }
+
+
+
 
 
 // 3D Asset Creation Functions
 
+
+
 // [createCoinTexture REMOVED]
 
+
+
 function createTextTextureSync(text, color, fontSize=24, bgColor=null) {
+
 const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
+
 canvas.width = 64; canvas.height = 64;
+
 if (bgColor) { context.fillStyle = bgColor; context.fillRect(0, 0, 64, 64); }
+
 context.font = `${fontSize}px 'VT323', monospace`; context.textAlign = 'center'; context.textBaseline = 'middle';
+
 context.fillStyle = color; context.fillText(text, 32, 32 + fontSize*0.1);
+
 const texture = new THREE.CanvasTexture(canvas);
+
 texture.minFilter = THREE.NearestFilter; texture.magFilter = THREE.NearestFilter;
+
 return texture;
+
 }
+
+
 
 // UPDATED: Initialize materials for 3D coins
+
 function initCoins() {
-    // Define materials for the 3D coin
-    // Side/Base Material (Slightly rougher)
-    const sideMaterial = new THREE.MeshStandardMaterial({
-        color: colors.coinGold,
-        metalness: 0.8,
-        roughness: 0.5,
-        emissive: 0x4a2d00
-    });
-    // Face/Embossed Material (Slightly shinier/brighter)
-    const faceMaterial = new THREE.MeshStandardMaterial({
-        color: colors.coinGold,
-        metalness: 0.9,
-        roughness: 0.3,
-        emissive: 0x5a3d00 // Slightly brighter emission
-    });
 
-    // Store them in the global object
-    coinMaterials = { sideMaterial, faceMaterial };
+    // Define materials for the 3D coin
+
+    // Side/Base Material (Slightly rougher)
+
+    const sideMaterial = new THREE.MeshStandardMaterial({
+
+        color: colors.coinGold,
+
+        metalness: 0.8,
+
+        roughness: 0.5,
+
+        emissive: 0x4a2d00
+
+    });
+
+    // Face/Embossed Material (Slightly shinier/brighter)
+
+    const faceMaterial = new THREE.MeshStandardMaterial({
+
+        color: colors.coinGold,
+
+        metalness: 0.9,
+
+        roughness: 0.3,
+
+        emissive: 0x5a3d00 // Slightly brighter emission
+
+    });
+
+
+
+    // Store them in the global object
+
+    coinMaterials = { sideMaterial, faceMaterial };
+
 }
 
-// NEW/CORRECTED: Creates the complex 3D geometry group for the coin
+
+
+// NEW: Creates the complex 3D geometry group for the coin
+
 function create3DCoinMesh(materials) {
-    const { sideMaterial, faceMaterial } = materials;
-    // Increased segments for smoother curves on the torus/cylinder
-    const segments = isMobileDevice() ? 24 : 48;
 
-    const coinGroup = new THREE.Group();
+    const { sideMaterial, faceMaterial } = materials;
 
-    // 1. Base Cylinder (The main body of the coin)
-    // Radius 2, Thickness 0.6
-    const baseGeo = new THREE.CylinderGeometry(2, 2, 0.6, segments);
-    // Use side material for the base.
-    const base = new THREE.Mesh(baseGeo, sideMaterial);
-    coinGroup.add(base);
+    // Increased segments for smoother curves on the torus/cylinder
 
-    // 2. Embossed Border (Torus)
-    // Radius 1.8 (center of tube), Tube 0.2 (thickness), Radial Segments 8 (adds definition to the tube shape)
-    const borderGeo = new THREE.TorusGeometry(1.8, 0.2, 8, segments);
+    const segments = isMobileDevice() ? 24 : 48;
 
-    // Create two borders, one for each face
-    const border1 = new THREE.Mesh(borderGeo, faceMaterial);
-    border1.rotation.x = Math.PI / 2;
-    border1.position.y = 0.31; // Slightly above the base (0.6/2 = 0.3)
-    coinGroup.add(border1);
 
-    const border2 = new THREE.Mesh(borderGeo, faceMaterial);
-    border2.rotation.x = Math.PI / 2;
-    border2.position.y = -0.31; // Slightly below the base
-    coinGroup.add(border2);
 
-    // 3. Embossed Dollar Sign (Blocky approximation for retro style)
-    const dollarBoxesGroup = new THREE.Group();
-    // Geometries for the 'S' shape segments
-    // Thickness (Z) is 0.2
-    const hBoxGeo = new THREE.BoxGeometry(1.2, 0.3, 0.2);
-    
-    // CORRECTION: The gap between the horizontal bars (Y=1.0 and Y=0.0, height 0.3) 
-    // is from 0.15 to 0.85, which is a height of 0.7. 
-    const vBoxGeo = new THREE.BoxGeometry(0.3, 0.7, 0.2); 
+    const coinGroup = new THREE.Group();
 
-    // Top Horizontal
-    const topH = new THREE.Mesh(hBoxGeo, faceMaterial);
-    topH.position.y = 1.0;
-    dollarBoxesGroup.add(topH);
-    // Middle Horizontal
-    const midH = new THREE.Mesh(hBoxGeo, faceMaterial);
-    dollarBoxesGroup.add(midH);
-    // Bottom Horizontal
-    const botH = new THREE.Mesh(hBoxGeo, faceMaterial);
-    botH.position.y = -1.0;
-    dollarBoxesGroup.add(botH);
 
-    // Top Left Vertical
-    const tlV = new THREE.Mesh(vBoxGeo, faceMaterial);
-    // CORRECTION: Positioned at the midpoint of the gap (0.5)
-    tlV.position.set(-0.45, 0.5, 0); 
-    dollarBoxesGroup.add(tlV);
 
-     // Bottom Right Vertical
-    const brV = new THREE.Mesh(vBoxGeo, faceMaterial);
-    // CORRECTION: Positioned at the midpoint of the gap (-0.5)
-    brV.position.set(0.45, -0.5, 0); 
-    dollarBoxesGroup.add(brV);
+    // 1. Base Cylinder (The main body of the coin)
 
-    // Central Bar (Vertical line through the '$')
-    // Slightly taller and thicker (Z=0.22) to stand out
-    const centerBarGeo = new THREE.BoxGeometry(0.3, 2.5, 0.22);
-    const centerBar = new THREE.Mesh(centerBarGeo, faceMaterial);
-    dollarBoxesGroup.add(centerBar);
+    // Radius 2, Thickness 0.6
 
-    // Position the dollar sign group on both faces
-    // The CylinderGeometry is oriented along the Y axis by default.
-    // We rotate the dollar sign group to lay flat on the XY plane, then position it along the Y axis.
-    const dollar1 = dollarBoxesGroup.clone();
-    dollar1.rotation.x = Math.PI / 2;
-    dollar1.position.y = 0.31;
-    coinGroup.add(dollar1);
+    const baseGeo = new THREE.CylinderGeometry(2, 2, 0.6, segments);
 
-    const dollar2 = dollarBoxesGroup.clone();
-    // Rotate 180 degrees on Z axis so the $ isn't backwards when viewed from the back
-    dollar2.rotation.z = Math.PI;
-    dollar2.rotation.x = -Math.PI / 2;
-    dollar2.position.y = -0.31;
-    coinGroup.add(dollar2);
+    // Use side material for the base.
 
-    // Set shadows for all children if enabled
-    if (renderer.shadowMap.enabled) {
-        coinGroup.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                child.castShadow = true;
-                // child.receiveShadow = true; // Optional, can look good but costs performance
-            }
-        });
-    }
+    const base = new THREE.Mesh(baseGeo, sideMaterial);
 
-    return coinGroup;
+    coinGroup.add(base);
+
+
+
+    // 2. Embossed Border (Torus)
+
+    // Radius 1.8 (center of tube), Tube 0.2 (thickness), Radial Segments 8 (adds definition to the tube shape)
+
+    const borderGeo = new THREE.TorusGeometry(1.8, 0.2, 8, segments);
+
+
+
+    // Create two borders, one for each face
+
+    const border1 = new THREE.Mesh(borderGeo, faceMaterial);
+
+    border1.rotation.x = Math.PI / 2;
+
+    border1.position.y = 0.31; // Slightly above the base (0.6/2 = 0.3)
+
+    coinGroup.add(border1);
+
+
+
+    const border2 = new THREE.Mesh(borderGeo, faceMaterial);
+
+    border2.rotation.x = Math.PI / 2;
+
+    border2.position.y = -0.31; // Slightly below the base
+
+    coinGroup.add(border2);
+
+
+
+    // 3. Embossed Dollar Sign (Blocky approximation for retro style)
+
+    const dollarBoxesGroup = new THREE.Group();
+
+    // Geometries for the 'S' shape segments
+
+    // Thickness (Z) is 0.2
+
+    const hBoxGeo = new THREE.BoxGeometry(1.2, 0.3, 0.2);
+
+    const vBoxGeo = new THREE.BoxGeometry(0.3, 0.55, 0.2);
+
+
+
+    // Top Horizontal
+
+    const topH = new THREE.Mesh(hBoxGeo, faceMaterial);
+
+    topH.position.y = 1.0;
+
+    dollarBoxesGroup.add(topH);
+
+    // Middle Horizontal
+
+    const midH = new THREE.Mesh(hBoxGeo, faceMaterial);
+
+    dollarBoxesGroup.add(midH);
+
+    // Bottom Horizontal
+
+    const botH = new THREE.Mesh(hBoxGeo, faceMaterial);
+
+    botH.position.y = -1.0;
+
+    dollarBoxesGroup.add(botH);
+
+
+
+    // Top Left Vertical
+
+    const tlV = new THREE.Mesh(vBoxGeo, faceMaterial);
+
+    tlV.position.set(-0.45, 0.575, 0);
+
+    dollarBoxesGroup.add(tlV);
+
+
+
+     // Bottom Right Vertical
+
+    const brV = new THREE.Mesh(vBoxGeo, faceMaterial);
+
+    brV.position.set(0.45, -0.575, 0);
+
+    dollarBoxesGroup.add(brV);
+
+
+
+    // Central Bar (Vertical line through the '$')
+
+    // Slightly taller and thicker (Z=0.22) to stand out
+
+    const centerBarGeo = new THREE.BoxGeometry(0.3, 2.5, 0.22);
+
+    const centerBar = new THREE.Mesh(centerBarGeo, faceMaterial);
+
+    dollarBoxesGroup.add(centerBar);
+
+
+
+    // Position the dollar sign group on both faces
+
+    // The CylinderGeometry is oriented along the Y axis by default.
+
+    // We rotate the dollar sign group to lay flat on the XY plane, then position it along the Y axis.
+
+    const dollar1 = dollarBoxesGroup.clone();
+
+    dollar1.rotation.x = Math.PI / 2;
+
+    dollar1.position.y = 0.31;
+
+    coinGroup.add(dollar1);
+
+
+
+    const dollar2 = dollarBoxesGroup.clone();
+
+    // Rotate 180 degrees on Z axis so the $ isn't backwards when viewed from the back
+
+    dollar2.rotation.z = Math.PI;
+
+    dollar2.rotation.x = -Math.PI / 2;
+
+    dollar2.position.y = -0.31;
+
+    coinGroup.add(dollar2);
+
+
+
+    // Set shadows for all children if enabled
+
+    if (renderer.shadowMap.enabled) {
+
+        coinGroup.traverse((child) => {
+
+            if (child instanceof THREE.Mesh) {
+
+                child.castShadow = true;
+
+                // child.receiveShadow = true; // Optional, can look good but costs performance
+
+            }
+
+        });
+
+    }
+
+
+
+    return coinGroup;
+
 }
+
+
+
 
 
 // UPDATED: Uses the new 3D mesh creation function
-function createCoin(x, y, z) {
-    // Create the 3D coin group
-    const coin = create3DCoinMesh(coinMaterials);
-    coin.position.set(x, y, z);
-    // Rotate the group (which is Y-axis aligned by default) to match the orientation expected by the animation logic (Z-axis rotation)
-    coin.rotation.x = Math.PI / 2;
 
-    scene.add(coin);
-    // The mesh property now points to the Group.
-    coins.push({ mesh: coin, collected: false, startY: y });
+function createCoin(x, y, z) {
+
+    // Create the 3D coin group
+
+    const coin = create3DCoinMesh(coinMaterials);
+
+    coin.position.set(x, y, z);
+
+    // Rotate the group (which is Y-axis aligned by default) to match the orientation expected by the animation logic (Z-axis rotation)
+
+    coin.rotation.x = Math.PI / 2;
+
+
+
+    scene.add(coin);
+
+    // The mesh property now points to the Group.
+
+    coins.push({ mesh: coin, collected: false, startY: y });
+
 }
+
+
 
 // UPDATED: Places 8 coins total
-function placeCoins() {
-    const coinHeight = 6.5;
-    // Original 6 coins
-    createCoin(80, coinHeight, 100);
-    createCoin(0, coinHeight-2.5, -18); // Center entrance
-    createCoin(-200, coinHeight, 200); // Far parking lot
-    createCoin(30, coinHeight, TUNNEL_CONFIG.startZ-20); // Before tunnel
-    createCoin(0, coinHeight, TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length/2); // Middle of tunnel
-    createCoin(-45, coinHeight, -35); // Near Resume store
 
-    // New 2 coins
-    // 7. Behind the billboard area (Billboard is rotated, so this is relative to world coords)
-    createCoin(-50, coinHeight, -80);
-    // 8. Near the tunnel exit on the side of the road
-    createCoin(55, coinHeight, TUNNEL_CONFIG.endZ + 30);
+function placeCoins() {
+
+    const coinHeight = 6.5;
+
+    // Original 6 coins
+
+    createCoin(80, coinHeight, 100);
+
+    createCoin(0, coinHeight-2.5, -18); // Center entrance
+
+    createCoin(-200, coinHeight, 200); // Far parking lot
+
+    createCoin(30, coinHeight, TUNNEL_CONFIG.startZ-20); // Before tunnel
+
+    createCoin(0, coinHeight, TUNNEL_CONFIG.startZ + TUNNEL_CONFIG.length/2); // Middle of tunnel
+
+    createCoin(-45, coinHeight, -35); // Near Resume store
+
+
+
+    // New 2 coins
+
+    // 7. Behind the billboard area (Billboard is rotated, so this is relative to world coords)
+
+    createCoin(-50, coinHeight, -80);
+
+    // 8. Near the tunnel exit on the side of the road
+
+    createCoin(55, coinHeight, TUNNEL_CONFIG.endZ + 30);
+
 }
+
+
 
 function updateCoins(delta, time) {
+
 const rotationSpeed = 1.5, hoverSpeed = 1.8, hoverHeight = 0.3, collectionDistance = 8, playerPosition = cameraRig.position;
+
 coins.forEach(coinData => {
+
 if (!coinData.collected) {
+
 // The mesh is now the Group, which handles rotation correctly
+
 const coin = coinData.mesh; coin.rotation.z += rotationSpeed*delta;
+
 const timeOffset = coinData.startY + coin.position.x + coin.position.z;
+
 coin.position.y = coinData.startY + Math.sin((time + timeOffset)*hoverSpeed)*hoverHeight;
+
 if (playerPosition.distanceTo(coin.position) < collectionDistance) collectCoin(coinData);
+
 }});
+
 }
+
+
 
 function collectCoin(coinData) {
+
 if (coinData.collected) return;
+
 coinData.collected = !0; scene.remove(coinData.mesh); coinsCollected++;
+
 const counter = document.getElementById('coin-counter');
+
 counter.textContent = `COINS: ${coinsCollected} / ${TOTAL_COINS}`;
+
 if (coinsCollected === TOTAL_COINS) {
+
 counter.style.color = "#2a9d8f"; counter.textContent += " (ALL FOUND!)"; startFireworks();
+
 }}
 
+
+
 // ... [Fireworks functions remain unchanged]
+
 function createFirework(x, y, z, color, life = 8.0) {
+
 const particleCount = isMobileDevice() ? 80 : 150; const geometry = new THREE.BufferGeometry();
+
 const positions = new Float32Array(particleCount*3), velocities = new Float32Array(particleCount*3), colorsArray = new Float32Array(particleCount*3);
+
 const baseColor = new THREE.Color(color);
+
 for (let i=0; i<particleCount; i++) {
+
 const index = i*3; positions[index] = 0; positions[index+1] = 0; positions[index+2] = 0;
+
 const speed = Math.random()*30 + 15, phi = Math.random()*Math.PI*2, theta = Math.random()*Math.PI;
+
 velocities[index] = Math.sin(theta)*Math.cos(phi)*speed;
+
 velocities[index+1] = Math.cos(theta)*speed + 10;
+
 velocities[index+2] = Math.sin(theta)*Math.sin(phi)*speed;
+
 const particleColor = baseColor.clone().multiplyScalar(Math.random()*0.5 + 0.5);
+
 colorsArray[index] = particleColor.r; colorsArray[index+1] = particleColor.g; colorsArray[index+2] = particleColor.b;
+
 }
+
 geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
 geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+
 geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
+
 const material = new THREE.PointsMaterial({
+
 size: isMobileDevice() ? 8 : 12, vertexColors:!0, blending:THREE.AdditiveBlending,
+
 transparent:!0, depthWrite:!1, sizeAttenuation:!0
+
 });
+
 const particles = new THREE.Points(geometry, material); particles.position.set(x, y, z);
+
 fireworks.push({particles:particles, life:life, maxLife:life}); scene.add(particles);
+
 }
+
 function startFireworks() {
+
 const FIREWORK_DURATION=20000, FIREWORK_INTERVAL=500, FIREWORK_Z_POSITION=-100, FIREWORK_X_RANGE=200, FIREWORK_HEIGHT_RANGE=60;
+
 const fireworkColors = [0xe63946, 0x0077b6, 0x2a9d8f, 0xffd700, 0xff7d5c, 0x9d4edd];
+
 let startTime = Date.now();
+
 fireworkTimer = setInterval(() => {
+
 if (Date.now() - startTime >= FIREWORK_DURATION) { clearInterval(fireworkTimer); fireworkTimer = null; return; }
+
 const x=(Math.random()-0.5)*FIREWORK_X_RANGE, y=Math.random()*FIREWORK_HEIGHT_RANGE+80, z=FIREWORK_Z_POSITION+(Math.random()-0.5)*50;
+
 const color=fireworkColors[Math.floor(Math.random()*fireworkColors.length)];
+
 createFirework(x, y, z, color);
+
 }, FIREWORK_INTERVAL);
+
 }
+
 function updateFireworks(delta) {
+
 const particleGravity = -40;
+
 for (let i = fireworks.length-1; i >= 0; i--) {
+
 const firework = fireworks[i]; firework.life -= delta;
+
 if (firework.life <= 0) {
+
 scene.remove(firework.particles); firework.particles.geometry.dispose(); firework.particles.material.dispose();
+
 fireworks.splice(i, 1); continue;
+
 }
+
 const positions = firework.particles.geometry.attributes.position.array;
+
 const velocities = firework.particles.geometry.attributes.velocity.array;
+
 const particleCount = positions.length/3;
+
 for (let j=0; j<particleCount; j++) {
+
 const index = j*3; velocities[index+1] += particleGravity*delta;
+
 const drag = (1 - 0.8*delta);
+
 velocities[index] *= drag; velocities[index+1] *= drag; velocities[index+2] *= drag;
+
 positions[index] += velocities[index]*delta; positions[index+1] += velocities[index+1]*delta; positions[index+2] += velocities[index+2]*delta;
+
 }
+
 firework.particles.material.opacity = firework.life / firework.maxLife;
+
 firework.particles.geometry.attributes.position.needsUpdate = !0;
+
 }}
+
+
 
 // ... [Scene element creation functions (createSky, setupLighting, createTextTexture, createStripedTexture, createTunnelSignTexture, createGrassTexture, createGround, createRoad, createTunnel, createParkingLights, addControllerElements, createBuilding, createWindow, addShirt, addPaper, addThoughtBubble, createAwning, createSign, createBillboard, createBush, createTrees, createStars) remain identical] ...
 
+
+
 function createSky() {
+
 const uniforms = {
+
 colorZenith:{value:new THREE.Color(colors.skyZenith)}, colorHorizonBright:{value:new THREE.Color(colors.horizonGlow)},
+
 colorHorizonDark:{value:new THREE.Color(colors.skyHorizonDark)}, sunDirection:{value:sunDirectionVector}
+
 };
+
 const skyMaterial = new THREE.ShaderMaterial({
+
 vertexShader: document.getElementById('sky-vertex-shader').textContent, fragmentShader: document.getElementById('sky-fragment-shader').textContent,
+
 uniforms: uniforms, side: THREE.BackSide, fog:!1
+
 });
+
 const skyGeometry = new THREE.SphereGeometry(1750, 32, 16);
+
 const sky = new THREE.Mesh(skyGeometry, skyMaterial); scene.add(sky);
+
 }
+
 function setupLighting() {
+
 const ambientLight = new THREE.AmbientLight(0x604080, 0.35); scene.add(ambientLight);
+
 const hemisphereLight = new THREE.HemisphereLight(colors.skyZenith, 0x8a5a6d, 0.5); scene.add(hemisphereLight);
+
 const sunLight = new THREE.DirectionalLight(0xffa500, 0.4);
+
 sunLight.position.copy(sunDirectionVector.clone().multiplyScalar(300));
+
 sunLight.castShadow = !0; sunLight.shadow.mapSize.width = 2048; sunLight.shadow.mapSize.height = 2048;
+
 sunLight.shadow.camera.near = 0.5; sunLight.shadow.camera.far = 500;
 
+
+
 // Adjusted bias slightly for cleaner shadows on the detailed coins
+
 sunLight.shadow.bias = -0.001;
 
+
+
 const shadowSize = 180;
+
 sunLight.shadow.camera.left = -shadowSize; sunLight.shadow.camera.right = shadowSize;
+
 sunLight.shadow.camera.top = shadowSize; sunLight.shadow.camera.bottom = -shadowSize;
+
 scene.add(sunLight);
+
 }
+
 // [createGround, createRoad, createTunnel, createParkingLights, createBuilding, etc. - ALL REMAIN UNCHANGED]
+
 function createTextTexture(text, bgColor, textColor, width=256, height=128, fontSize=50) {
+
 const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
+
 canvas.width = width; canvas.height = height;
+
 context.fillStyle = bgColor; context.fillRect(0, 0, width, height);
+
 context.font = `${fontSize}px 'VT323', Monospace`; context.textAlign = 'center'; context.textBaseline = 'middle';
+
 context.strokeStyle = 'black'; context.lineWidth = 4;
+
 context.strokeText(text, width/2, height/2 + fontSize*0.05);
+
 context.fillStyle = textColor; context.fillText(text, width/2, height/2 + fontSize*0.05);
+
 const texture = new THREE.CanvasTexture(canvas);
+
 texture.minFilter = THREE.NearestFilter; texture.magFilter = THREE.NearestFilter;
+
 return texture;
+
 }
+
 function createStripedTexture(color1, color2, stripeWidth=16) {
+
 const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
+
 canvas.width = stripeWidth*2; canvas.height = stripeWidth;
+
 context.fillStyle = color1; context.fillRect(0, 0, stripeWidth*2, stripeWidth);
+
 context.fillStyle = color2; context.fillRect(0, 0, stripeWidth, stripeWidth);
+
 const texture = new THREE.CanvasTexture(canvas);
+
 texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+
 texture.minFilter = THREE.NearestFilter; texture.magFilter = THREE.NearestFilter;
+
 return texture;
+
 }
+
 function createTunnelSignTexture(text, width=512, height=64, fontSize=45) {
+
 const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+
 const context = canvas.getContext('2d'); const stripeHeight = 16;
+
 const numStripes = Math.ceil(height/stripeHeight);
+
 for (let i=0; i<numStripes; i++) {
+
 context.fillStyle = (i%2 === 0) ? '#000' : '#f7b538';
+
 context.fillRect(0, i*stripeHeight, width, stripeHeight);
+
 }
+
 context.font = `${fontSize}px 'VT323', Monospace`; context.textAlign = 'center'; context.textBaseline = 'middle';
+
 context.strokeStyle = 'black'; context.lineWidth = 8;
+
 context.strokeText(text, width/2, height/2);
+
 context.fillStyle = 'white'; context.fillText(text, width/2, height/2);
+
 const texture = new THREE.CanvasTexture(canvas);
+
 texture.minFilter = THREE.NearestFilter; texture.magFilter = THREE.NearestFilter;
+
 return texture;
+
 }
+
 function createGrassTexture(width=32, height=32) {
+
 const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+
 const context = canvas.getContext('2d'); const imageData = context.createImageData(width, height); const data = imageData.data;
+
 const baseColor = new THREE.Color(colors.grass);
+
 for (let i=0; i<data.length; i+=4) {
+
 const noise = Math.random()*0.15 - 0.075; const c = baseColor.clone();
+
 c.r += noise; c.g += noise; c.b += noise;
+
 data[i] = Math.max(0, Math.min(255, c.r*255)); data[i+1] = Math.max(0, Math.min(255, c.g*255));
+
 data[i+2] = Math.max(0, Math.min(255, c.b*255)); data[i+3] = 255;
+
 }
+
 context.putImageData(imageData, 0, 0);
+
 const texture = new THREE.CanvasTexture(canvas);
+
 texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+
 texture.repeat.set(3000/width, 3000/height);
+
 texture.minFilter = THREE.NearestFilter; texture.magFilter = THREE.NearestFilter;
+
 return texture;
+
 }
+
 function createGround() {
+
 const geometry = new THREE.PlaneGeometry(3000, 3000);
+
 const material = new THREE.MeshStandardMaterial({map:createGrassTexture(), roughness:1.0});
+
 const ground = new THREE.Mesh(geometry, material);
+
 ground.rotation.x = -Math.PI/2; ground.position.y = 0; ground.receiveShadow = !0; scene.add(ground);
+
 const asphaltWidth = 500, asphaltLength = 320;
+
 const asphaltGeometry = new THREE.PlaneGeometry(asphaltWidth, asphaltLength);
+
 const asphaltMaterial = new THREE.MeshStandardMaterial({color:colors.asphalt, roughness:1.0});
+
 const asphalt = new THREE.Mesh(asphaltGeometry, asphaltMaterial);
+
 asphalt.rotation.x = -Math.PI/2; asphalt.position.y = 0.01;
+
 asphalt.position.z = asphaltLength/2 - 60; asphalt.receiveShadow = !0; scene.add(asphalt);
+
 const lineMaterial = new THREE.MeshBasicMaterial({color:colors.asphaltLine});
+
 const lineGeoSlanted = new THREE.PlaneGeometry(1.5, 20), lineGeoStraight = new THREE.PlaneGeometry(1.5, 25);
+
 const createParkingRow = (startZ, count, startX, spacing, slant=!1, offsetX=0) => {
+
 const geo = slant ? lineGeoSlanted : lineGeoStraight; const slantAngle = Math.PI/5;
+
 for (let i=0; i<count; i++) {
+
 const xPos = startX + i*spacing + offsetX; const line = new THREE.Mesh(geo, lineMaterial);
+
 line.rotation.x = -Math.PI/2; if (slant) line.rotation.z = slantAngle;
+
 line.position.set(xPos, 0.02, startZ); scene.add(line);
+
 }};
+
 const numSpotsWide = 32, startXWide = -240, spacing = 15;
+
 createParkingRow(35, 20, -140, spacing, !0); createParkingRow(55, 20, -140, spacing, !0, -5);
+
 createParkingRow(100, numSpotsWide, startXWide, spacing, !1); createParkingRow(130, numSpotsWide, startXWide, spacing, !1);
+
 createParkingRow(190, numSpotsWide, startXWide, spacing, !1); createParkingRow(220, numSpotsWide, startXWide, spacing, !1);
+
 createRoad();
+
 }
+
 function createRoad() {
+
 const {width:roadWidth, length:roadLength, startZ:roadStartZ, shoulderWidth} = ROAD_CONFIG;
+
 const roadMaterial = new THREE.MeshStandardMaterial({color:0x0a0a15, roughness:0.9, metalness:0.1});
+
 const roadGeometry = new THREE.PlaneGeometry(roadWidth, roadLength);
+
 const road = new THREE.Mesh(roadGeometry, roadMaterial);
+
 road.rotation.x = -Math.PI/2; road.position.set(0, 0.11, roadStartZ + roadLength/2);
+
 road.receiveShadow = !0; scene.add(road);
+
 const lineMaterial = new THREE.MeshBasicMaterial({color:0xffd700, polygonOffset:!0, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+
 const centerLineGeo = new THREE.PlaneGeometry(1.5, 18); const dashSpacing = 25;
+
 const numDashes = Math.floor(roadLength/dashSpacing);
+
 for (let i=0; i<numDashes; i++) {
+
 const zPos = roadStartZ + (i*dashSpacing) + 10; const centerLine = new THREE.Mesh(centerLineGeo, lineMaterial);
+
 centerLine.rotation.x = -Math.PI/2; centerLine.position.set(0, 0.12, zPos); scene.add(centerLine);
+
 }
+
 const sideLineMaterial = new THREE.MeshBasicMaterial({color:0xffffff, polygonOffset:!0, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+
 const createSideLinesSegment = (start, end) => {
+
 const segmentLength = end - start; if (segmentLength <= 0) return;
+
 const sideLineGeo = new THREE.PlaneGeometry(1.2, segmentLength);
+
 const leftLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
+
 leftLine.rotation.x = -Math.PI/2; leftLine.position.set(-roadWidth/2 + 1, 0.12, start + segmentLength/2); scene.add(leftLine);
+
 const rightLine = new THREE.Mesh(sideLineGeo, sideLineMaterial);
+
 rightLine.rotation.x = -Math.PI/2; rightLine.position.set(roadWidth/2 - 1, 0.12, start + segmentLength/2); scene.add(rightLine);
+
 };
+
 createSideLinesSegment(roadStartZ, ROAD_CONFIG.endZ);
+
 const shoulderMaterial = new THREE.MeshStandardMaterial({color:0x2a2035, roughness:1.0});
+
 const createShoulderSegment = (start, end) => {
+
 const segmentLength = end - start; if (segmentLength <= 0) return;
+
 const shoulderGeo = new THREE.PlaneGeometry(shoulderWidth, segmentLength);
+
 const leftShoulder = new THREE.Mesh(shoulderGeo, shoulderMaterial);
+
 leftShoulder.rotation.x = -Math.PI/2; leftShoulder.position.set(-roadWidth/2 - shoulderWidth/2, 0.14, start + segmentLength/2);
+
 leftShoulder.receiveShadow = !0; scene.add(leftShoulder);
+
 const rightShoulder = new THREE.Mesh(shoulderGeo, shoulderMaterial);
+
 rightShoulder.rotation.x = -Math.PI/2; rightShoulder.position.set(roadWidth/2 + shoulderWidth/2, 0.14, start + segmentLength/2);
+
 rightShoulder.receiveShadow = !0; scene.add(rightShoulder);
+
 };
+
 createShoulderSegment(roadStartZ, TUNNEL_CONFIG.startZ); createShoulderSegment(TUNNEL_CONFIG.endZ, ROAD_CONFIG.endZ);
+
 const roadLightSpacing = 100;
+
 for (let z = roadStartZ+50; z < TUNNEL_CONFIG.startZ-50; z += roadLightSpacing) {
+
 const roadLight = new THREE.PointLight(0xffd4a3, 0.8, 80);
+
 roadLight.position.set(-roadWidth/2 - 15, 35, z); scene.add(roadLight);
+
 const roadLight2 = new THREE.PointLight(0xffd4a3, 0.8, 80);
+
 roadLight2.position.set(roadWidth/2 + 15, 35, z); scene.add(roadLight2);
+
 }}
+
 // ... [Remaining create... functions]
+
 function createTunnel() {
+
 const {startZ:tunnelStartZ, length:tunnelLength, width:tunnelWidth, height:tunnelHeight, wallThickness} = TUNNEL_CONFIG;
+
 const wallTextureCanvas = document.createElement('canvas'); wallTextureCanvas.width = 32; wallTextureCanvas.height = 128;
+
 const wallCtx = wallTextureCanvas.getContext('2d');
+
 wallCtx.fillStyle = '#3a3a4a'; wallCtx.fillRect(0, 0, 32, 128);
+
 wallCtx.fillStyle = '#2f2f3f'; wallCtx.fillRect(0, 62, 32, 4);
+
 const wallTexture = new THREE.CanvasTexture(wallTextureCanvas);
+
 wallTexture.wrapS = THREE.RepeatWrapping; wallTexture.wrapT = THREE.RepeatWrapping; wallTexture.repeat.set(tunnelLength/10, 4);
+
 const tunnelMaterial = new THREE.MeshStandardMaterial({color:colors.tunnelConcrete, roughness:0.9, side:THREE.DoubleSide, map:wallTexture});
+
 const shape = new THREE.Shape(); const outerWidth = tunnelWidth + wallThickness*2; const outerHeight = tunnelHeight + wallThickness;
+
 shape.moveTo(-outerWidth*1.5, 0); shape.lineTo(-outerWidth/2, 0); shape.lineTo(-outerWidth/2, outerHeight*0.6);
+
 shape.quadraticCurveTo(0, outerHeight+15, outerWidth/2, outerHeight*0.6);
+
 shape.lineTo(outerWidth/2, 0); shape.lineTo(outerWidth*1.5, 0); shape.closePath();
+
 const hole = new THREE.Shape(); const sideWallHeight = tunnelHeight*0.6;
+
 hole.moveTo(-tunnelWidth/2, 0.1); hole.lineTo(-tunnelWidth/2, sideWallHeight);
+
 hole.quadraticCurveTo(0, tunnelHeight+5, tunnelWidth/2, sideWallHeight);
+
 hole.lineTo(tunnelWidth/2, 0.1); hole.closePath(); shape.holes.push(hole);
+
 const extrudeSettings = {steps:1, depth:tunnelLength, bevelEnabled:!1};
+
 const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+
 const tunnel = new THREE.Mesh(geometry, tunnelMaterial);
+
 tunnel.position.set(0, 0.01, tunnelStartZ); tunnel.castShadow = !0; tunnel.receiveShadow = !0; scene.add(tunnel);
+
 const facadeMaterial = new THREE.MeshStandardMaterial({color:colors.tunnelFacade, roughness:1.0});
+
 const facadeShape = new THREE.Shape(); const facadeWidth = outerWidth + 6; const facadeOuterSideWallHeight = outerHeight*0.6 + 3;
+
 facadeShape.moveTo(-facadeWidth/2, 0); facadeShape.lineTo(-facadeWidth/2, facadeOuterSideWallHeight);
+
 facadeShape.quadraticCurveTo(0, outerHeight+20, facadeWidth/2, facadeOuterSideWallHeight);
+
 facadeShape.lineTo(facadeWidth/2, 0); facadeShape.closePath(); facadeShape.holes.push(hole);
+
 const facadeGeometry = new THREE.ExtrudeGeometry(facadeShape, {steps:1, depth:5, bevelEnabled:!1});
+
 const entranceFacade = new THREE.Mesh(facadeGeometry, facadeMaterial); entranceFacade.position.set(0, 0.01, tunnelStartZ-5); entranceFacade.castShadow = !0; scene.add(entranceFacade);
+
 const exitFacade = new THREE.Mesh(facadeGeometry, facadeMaterial); exitFacade.position.set(0, 0.01, tunnelStartZ+tunnelLength); exitFacade.castShadow = !0; scene.add(exitFacade);
+
 const detailMaterial = new THREE.MeshStandardMaterial({color:colors.tunnelFacade, roughness:1.0}); detailMaterial.color.multiplyScalar(0.7);
+
 const pillarHeight = facadeOuterSideWallHeight+1, pillarWidth = 4, pillarDepth = 6; const pillarGeo = new THREE.BoxGeometry(pillarWidth, pillarHeight, pillarDepth);
+
 const leftPillar = new THREE.Mesh(pillarGeo, detailMaterial);
+
 leftPillar.position.set(-facadeWidth/2-pillarWidth/2, pillarHeight/2+0.01, tunnelStartZ-pillarDepth/2+2.5); leftPillar.castShadow = !0; scene.add(leftPillar);
+
 const rightPillar = new THREE.Mesh(pillarGeo, detailMaterial);
+
 rightPillar.position.set(facadeWidth/2+pillarWidth/2, pillarHeight/2+0.01, tunnelStartZ-pillarDepth/2+2.5); rightPillar.castShadow = !0; scene.add(rightPillar);
+
 const leftPillarExit = new THREE.Mesh(pillarGeo, detailMaterial);
+
 leftPillarExit.position.set(-facadeWidth/2-pillarWidth/2, pillarHeight/2+0.01, tunnelStartZ+tunnelLength+pillarDepth/2-2.5); leftPillarExit.castShadow = !0; scene.add(leftPillarExit);
+
 const rightPillarExit = new THREE.Mesh(pillarGeo, detailMaterial);
+
 rightPillarExit.position.set(facadeWidth/2+pillarWidth/2, pillarHeight/2+0.01, tunnelStartZ+tunnelLength+pillarDepth/2-2.5); rightPillarExit.castShadow = !0; scene.add(rightPillarExit);
+
 const signHeight = 5, signWidth = tunnelWidth-10;
+
 const warningTexture = createTunnelSignTexture("TUNNEL", 512, 128, 150);
+
 const warningSignGeo = new THREE.BoxGeometry(signWidth, signHeight, 0.5);
+
 const warningSignMat = new THREE.MeshBasicMaterial({map:warningTexture});
+
 const warningSign = new THREE.Mesh(warningSignGeo, warningSignMat);
+
 const archTopY = tunnelHeight+5; warningSign.position.set(0, archTopY+signHeight/2+1.01, tunnelStartZ-4.8); scene.add(warningSign);
+
 const blackoutHole = new THREE.Shape();
+
 blackoutHole.moveTo(-tunnelWidth/2, 0.5); blackoutHole.lineTo(-tunnelWidth/2, sideWallHeight);
+
 blackoutHole.quadraticCurveTo(0, tunnelHeight+5, tunnelWidth/2, sideWallHeight);
+
 blackoutHole.lineTo(tunnelWidth/2, 0.5); blackoutHole.closePath();
+
 const blackoutGeo = new THREE.ShapeGeometry(blackoutHole);
+
 const blackoutMaterial = new THREE.MeshBasicMaterial({color:0x000000, side:THREE.DoubleSide, fog:!1});
+
 const blackoutPlane = new THREE.Mesh(blackoutGeo, blackoutMaterial);
+
 blackoutPlane.position.set(0, 0, tunnelStartZ+tunnelLength-10); scene.add(blackoutPlane);
+
 const lightIntensity = 1.2, lightSpacing = 50, lightHeight = 22, lightXOffset = tunnelWidth/2*0.9;
+
 const fixtureHousingMat = new THREE.MeshStandardMaterial({color:0x222222, roughness:0.8});
+
 const fixtureLightMat = new THREE.MeshBasicMaterial({color:colors.tunnelLight});
+
 const housingGeo = new THREE.BoxGeometry(1.5, 1.5, 6), lightGeo = new THREE.BoxGeometry(1.0, 1.0, 5);
+
 for (let z = tunnelStartZ+30; z < tunnelStartZ+tunnelLength-30; z += lightSpacing) {
+
 const leftLight = new THREE.PointLight(colors.tunnelLight, lightIntensity, 60); leftLight.position.set(-lightXOffset, lightHeight, z); scene.add(leftLight);
+
 const leftFixture = new THREE.Group(); const leftHousing = new THREE.Mesh(housingGeo, fixtureHousingMat);
+
 const leftLightBox = new THREE.Mesh(lightGeo, fixtureLightMat); leftLightBox.position.y = -0.25;
+
 leftFixture.add(leftHousing, leftLightBox); leftFixture.position.set(-lightXOffset, lightHeight, z); scene.add(leftFixture);
+
 const rightLight = new THREE.PointLight(colors.tunnelLight, lightIntensity, 60); rightLight.position.set(lightXOffset, lightHeight, z); scene.add(rightLight);
+
 const rightFixture = new THREE.Group(); const rightHousing = new THREE.Mesh(housingGeo, fixtureHousingMat);
+
 const rightLightBox = new THREE.Mesh(lightGeo, fixtureLightMat); rightLightBox.position.y = -0.25;
+
 rightFixture.add(rightHousing, rightLightBox); rightFixture.position.set(lightXOffset, lightHeight, z); scene.add(rightFixture);
+
 }
+
 createBush(-85, tunnelStartZ-20); createBush(-70, tunnelStartZ-45); createBush(-95, tunnelStartZ-55); createBush(-105, tunnelStartZ-30);
+
 createBush(85, tunnelStartZ-20); createBush(75, tunnelStartZ-35); createBush(90, tunnelStartZ-50); createBush(105, tunnelStartZ-30);
+
 }
+
 // ... [Remaining create... functions]
+
+
 
 function createParkingLights() {
+
 const poleMat = new THREE.MeshStandardMaterial({color:colors.poleMetal});
+
 const lightMat = new THREE.MeshBasicMaterial({color:colors.poleGlow}); const poleHeight = 40;
+
 const createParkingLight = (x, z) => {
+
 const poleGeo = new THREE.CylinderGeometry(0.8, 1.2, poleHeight, 6); poleGeo.translate(0, poleHeight/2, 0);
+
 const pole = new THREE.Mesh(poleGeo, poleMat); pole.position.set(x, 0, z); pole.castShadow = !0; scene.add(pole);
+
 const fixtureGeo = new THREE.BoxGeometry(8, 2, 6); const fixture = new THREE.Mesh(fixtureGeo, poleMat);
+
 fixture.position.set(x, poleHeight+1, z); fixture.castShadow = !0; scene.add(fixture);
+
 const bulbGeo = new THREE.BoxGeometry(6, 0.5, 4); const bulb = new THREE.Mesh(bulbGeo, lightMat);
+
 bulb.position.set(x, poleHeight, z); scene.add(bulb);
+
 const light = new THREE.SpotLight(colors.poleGlow, 2.0, 120, Math.PI/3, 0.5);
+
 light.position.set(x, poleHeight-1, z); light.target.position.set(x, 0, z);
+
 light.castShadow = !0; scene.add(light); scene.add(light.target);
+
 };
+
 createParkingLight(-150, 75); createParkingLight(0, 75); createParkingLight(150, 75);
+
 createParkingLight(-150, 160); createParkingLight(0, 160); createParkingLight(150, 160);
+
 createParkingLight(-80, 250); createParkingLight(80, 250);
+
 }
+
 function addControllerElements(centerX, y, z) {
+
 const dPadMaterial = new THREE.MeshStandardMaterial({color:0x444444, roughness:0.6});
+
 const dPadThickness = 0.5, dPadSize = 4, dPadArmWidth = 1.5;
+
 const hGeo = new THREE.BoxGeometry(dPadSize, dPadArmWidth, dPadThickness);
+
 const hPart = new THREE.Mesh(hGeo, dPadMaterial); hPart.castShadow = !0;
+
 const vGeo = new THREE.BoxGeometry(dPadArmWidth, dPadSize, dPadThickness);
+
 const vPart = new THREE.Mesh(vGeo, dPadMaterial); vPart.castShadow = !0;
+
 const dPadGroup = new THREE.Group(); dPadGroup.add(hPart); dPadGroup.add(vPart);
+
 dPadGroup.position.set(centerX-7, 8, z); scene.add(dPadGroup);
+
 const buttonGroup = new THREE.Group(); const buttonRadius = 1.0, buttonThickness = 0.4, buttonSpacing = 2.5;
+
 const createButton = (x, y, color, label, textureRotation=0) => {
+
 const geometry = new THREE.CylinderGeometry(buttonRadius, buttonRadius, buttonThickness, 16); geometry.rotateX(Math.PI/2);
+
 const faceTexture = createTextTextureSync(label, '#ffffff', 30); faceTexture.rotation = textureRotation; faceTexture.center.set(0.5, 0.5);
+
 const faceMaterial = new THREE.MeshStandardMaterial({color:color, map:faceTexture, roughness:0.3});
+
 const sideMaterial = new THREE.MeshStandardMaterial({color:color, roughness:0.3});
+
 const button = new THREE.Mesh(geometry, [sideMaterial, faceMaterial, sideMaterial]);
+
 button.position.set(x, y, 0); button.castShadow = !0; buttonGroup.add(button);
+
 };
+
 createButton(0, -buttonSpacing, 0x2ecc71, 'A', Math.PI/2); createButton(-buttonSpacing, 0, 0xe74c3c, 'B', Math.PI/2);
+
 createButton(0, buttonSpacing, 0xf1c40f, 'Y', Math.PI/2); createButton(buttonSpacing, 0, 0x3498db, 'X', Math.PI/2);
+
 buttonGroup.position.set(centerX+7, 8, z); scene.add(buttonGroup);
+
 }
+
 function createBuilding() {
+
 const buildingHeight = 25, buildingDepth = 30, zPos = 0;
+
 const centerMaterial = new THREE.MeshStandardMaterial({color:colors.stucco});
+
 const trimMaterial = new THREE.MeshStandardMaterial({color:colors.stuccoDark});
+
 const sideMaterial = new THREE.MeshStandardMaterial({color:colors.brick});
+
 const centerWidth = 35, centerHeight = buildingHeight+3;
+
 const centerGeo = new THREE.BoxGeometry(centerWidth, centerHeight, buildingDepth); centerGeo.translate(0, centerHeight/2, 0);
+
 const centerBlock = new THREE.Mesh(centerGeo, centerMaterial);
+
 centerBlock.position.set(0, 0, zPos); centerBlock.castShadow = !0; centerBlock.receiveShadow = !0; scene.add(centerBlock);
+
 const roofTrimCGeo = new THREE.BoxGeometry(centerWidth+4, 4, buildingDepth+2);
+
 const roofTrimC = new THREE.Mesh(roofTrimCGeo, trimMaterial);
+
 roofTrimC.position.set(0, buildingHeight+3, zPos); roofTrimC.castShadow = !0; scene.add(roofTrimC);
+
 const archGeo = new THREE.BoxGeometry(centerWidth-10, 6, buildingDepth+1);
+
 const arch = new THREE.Mesh(archGeo, centerMaterial);
+
 arch.position.set(0, buildingHeight+7, zPos); arch.castShadow = !0; scene.add(arch);
+
 const sideWidth = 32; const sideGeo = new THREE.BoxGeometry(sideWidth, buildingHeight, buildingDepth); sideGeo.translate(0, buildingHeight/2, 0);
+
 const xPosLeft = -(centerWidth/2 + sideWidth/2), xPosRight = centerWidth/2 + sideWidth/2, xPosFarRight = xPosRight + sideWidth, xPosExtraFarRight = xPosFarRight + sideWidth;
+
 const leftBlock = new THREE.Mesh(sideGeo, sideMaterial); leftBlock.position.set(xPosLeft, 0, zPos); leftBlock.castShadow = !0; leftBlock.receiveShadow = !0; scene.add(leftBlock);
+
 const rightBlock = new THREE.Mesh(sideGeo, sideMaterial); rightBlock.position.set(xPosRight, 0, zPos); rightBlock.castShadow = !0; rightBlock.receiveShadow = !0; scene.add(rightBlock);
+
 const farRightBlock = new THREE.Mesh(sideGeo, sideMaterial); farRightBlock.position.set(xPosFarRight, 0, zPos); farRightBlock.castShadow = !0; farRightBlock.receiveShadow = !0; scene.add(farRightBlock);
+
 const extraFarRightBlock = new THREE.Mesh(sideGeo, sideMaterial); extraFarRightBlock.position.set(xPosExtraFarRight, 0, zPos); extraFarRightBlock.castShadow = !0; extraFarRightBlock.receiveShadow = !0; scene.add(extraFarRightBlock);
+
 const roofTrimSGeo = new THREE.BoxGeometry(sideWidth+2, 3, buildingDepth+2);
+
 const roofTrimL = new THREE.Mesh(roofTrimSGeo, trimMaterial); roofTrimL.position.set(xPosLeft, buildingHeight+0.5, zPos); roofTrimL.castShadow = !0; scene.add(roofTrimL);
+
 const roofTrimR = new THREE.Mesh(roofTrimSGeo, trimMaterial); roofTrimR.position.set(xPosRight, buildingHeight+0.5, zPos); roofTrimR.castShadow = !0; scene.add(roofTrimR);
+
 const roofTrimFR = new THREE.Mesh(roofTrimSGeo, trimMaterial); roofTrimFR.position.set(xPosFarRight, buildingHeight+0.5, zPos); roofTrimFR.castShadow = !0; scene.add(roofTrimFR);
+
 const roofTrimEFR = new THREE.Mesh(roofTrimSGeo, trimMaterial); roofTrimEFR.position.set(xPosExtraFarRight, buildingHeight+0.5, zPos); roofTrimEFR.castShadow = !0; scene.add(roofTrimEFR);
+
 const windowZ = zPos + buildingDepth/2 + 0.1, windowY = 8, itemZ = 19, itemZ2 = 20.5;
+
 createWindow(0, windowY, windowZ, 28, 12, colors.windowGlowBright, 1.5);
+
 addShirt(-10, 8, itemZ, 0x457b9d); addShirt(10, 8, itemZ, 0xe63946); addShirt(0, 7.5, itemZ2, 0x1d3557);
+
 createWindow(xPosLeft, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2);
+
 addPaper(xPosLeft-7, 8, itemZ); addPaper(xPosLeft+7, 8.5, itemZ); addPaper(xPosLeft, 7, itemZ);
+
 createWindow(xPosRight, windowY, windowZ, 26, 12, colors.windowGlowDim, 0.8);
+
 addPaper(xPosRight-7, 8.5, itemZ); addPaper(xPosRight+7, 8, itemZ); addPaper(xPosRight+1, 7.5, itemZ);
+
 createWindow(xPosFarRight, windowY, windowZ, 26, 12, colors.windowGlowBright, 1.2);
+
 addThoughtBubble(xPosFarRight+5, 8.5, itemZ, 8, 5.5, 0xffe066, 'bottom-right');
+
 addThoughtBubble(xPosFarRight-6, 7.5, itemZ2, 6, 4, 0x48bfe3, 'bottom-left');
+
 addThoughtBubble(xPosFarRight-1, 11.5, itemZ, 4.5, 3, 0xfb6f92, 'top-left');
+
 createWindow(xPosExtraFarRight, windowY, windowZ, 26, 12, colors.windowGlowDim, 1.0);
+
 addControllerElements(xPosExtraFarRight, windowY, itemZ);
+
 const signZ = windowZ + 0.5;
+
 createSign("RESUME", colors.signResume, xPosLeft, 20, signZ, 'resume', 50);
+
 createSign("T-SHIRTS", colors.signTshirts, 0, 21, signZ, 'tshirts', 50);
+
 createSign("PROJECTS", colors.signProjects, xPosRight, 20, signZ, 'projects', 50);
+
 createSign("ASK JOHN", colors.signAskJohn, xPosFarRight, 20, signZ, 'askjohn', 50);
+
 createSign("MINI GAMES", colors.signMiniGames, xPosExtraFarRight, 20, signZ, 'minigames', 45);
+
 const awningY = 15;
+
 createAwning(xPosLeft, awningY, createStripedTexture('#991b1b', '#fecaca'));
+
 createAwning(xPosRight, awningY, createStripedTexture('#065f46', '#047857'));
+
 createAwning(xPosFarRight, awningY, createStripedTexture('#ffA700', '#333333'));
+
 createAwning(xPosExtraFarRight, awningY, createStripedTexture('#6a0dad', '#4b0082'));
+
 }
+
 // ... [Remaining create... and add... functions]
+
 function createWindow(x, y, z, width, height, color, intensity) {
+
 const windowMaterial = new THREE.MeshBasicMaterial({color:color, transparent:!0, opacity:0.95});
+
 const windowGeo = new THREE.PlaneGeometry(width, height);
+
 const windowMesh = new THREE.Mesh(windowGeo, windowMaterial); windowMesh.position.set(x, y, z); scene.add(windowMesh);
+
 const storeLight = new THREE.PointLight(color, intensity, 50);
+
 storeLight.position.set(x, y+5, z-15); storeLight.castShadow = !0; scene.add(storeLight);
+
 const sidewalkLight = new THREE.SpotLight(color, intensity*0.3, 40, Math.PI/3, 0.5);
+
 sidewalkLight.position.set(x, y-5, z+5); sidewalkLight.target.position.set(x, 0, z+25);
+
 scene.add(sidewalkLight); scene.add(sidewalkLight.target);
+
 }
+
 function addShirt(x, y, z, color) {
+
 const material = new THREE.MeshStandardMaterial({color:color, depthWrite:!0, depthTest:!0, polygonOffset:!0, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+
 const shirtGroup = new THREE.Group();
+
 const bodyGeo = new THREE.BoxGeometry(5, 6, 2); bodyGeo.rotateY(Math.PI);
+
 const body = new THREE.Mesh(bodyGeo, material); body.position.z = 0.3; body.renderOrder = 1; shirtGroup.add(body);
+
 const sleeveGeo = new THREE.BoxGeometry(2.5, 2.5, 1.8); sleeveGeo.rotateY(Math.PI);
+
 const sleeveL = new THREE.Mesh(sleeveGeo, material); sleeveL.position.set(-3.5, 1.5, 0.2); sleeveL.rotation.z = Math.PI/6; sleeveL.renderOrder = 1; shirtGroup.add(sleeveL);
+
 const sleeveR = new THREE.Mesh(sleeveGeo, material); sleeveR.position.set(3.5, 1.5, 0.2); sleeveR.rotation.z = -Math.PI/6; sleeveR.renderOrder = 1; shirtGroup.add(sleeveR);
+
 shirtGroup.position.set(x, y, z); shirtGroup.castShadow = !0; scene.add(shirtGroup);
+
 }
+
 function addPaper(x, y, z) {
+
 const material = new THREE.MeshStandardMaterial({color:0xfafafa, roughness:0.8});
+
 const paperGeo = new THREE.BoxGeometry(4, 5.5, 0.2); paperGeo.rotateY(Math.PI);
+
 const paper = new THREE.Mesh(paperGeo, material); paper.position.set(x, y, z);
+
 paper.rotation.z = (Math.random()-0.5)*0.3; paper.rotation.x = Math.PI/12 + (Math.random()-0.5)*0.2;
+
 paper.castShadow = !0; scene.add(paper);
+
 }
+
 function addThoughtBubble(x, y, z, width, height, color, pointerSide='bottom-left') {
+
 const material = new THREE.MeshStandardMaterial({color:color, roughness:0.6, side:THREE.DoubleSide, depthWrite:!0, depthTest:!0, polygonOffset:!0, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+
 const shape = new THREE.Shape(); const radiusX = width/2, radiusY = height/2;
+
 shape.absellipse(0, 0, radiusX, radiusY, 0, Math.PI*2, !1, 0);
+
 const extrudeSettings = {steps:1, depth:0.5, bevelEnabled:!0, bevelThickness:0.1, bevelSize:0.1, bevelSegments:3};
+
 const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings); geometry.rotateY(Math.PI);
+
 const bubble = new THREE.Mesh(geometry, material); bubble.renderOrder = 1;
+
 const pointerShape = new THREE.Shape(); const pointerSize = Math.min(width, height)*0.3;
+
 let p1x, p1y, p2x, p2y, p3x, p3y;
+
 switch (pointerSide) {
+
 case 'top-left': p1x=-radiusX*0.3; p1y=radiusY*0.95; p2x=p1x-pointerSize*0.5; p2y=p1y+pointerSize; p3x=p1x+pointerSize*0.3; p3y=radiusY*0.95; break;
+
 case 'top-right': p1x=radiusX*0.3; p1y=radiusY*0.95; p2x=p1x+pointerSize*0.5; p2y=p1y+pointerSize; p3x=p1x-pointerSize*0.3; p3y=radiusY*0.95; break;
+
 case 'bottom-right': p1x=radiusX*0.4; p1y=-radiusY*0.95; p2x=p1x+pointerSize*0.6; p2y=p1y-pointerSize; p3x=p1x-pointerSize*0.2; p3y=-radiusY*0.95; break;
+
 case 'bottom-left': default: p1x=-radiusX*0.4; p1y=-radiusY*0.95; p2x=p1x-pointerSize*0.6; p2y=p1y-pointerSize; p3x=p1x+pointerSize*0.2; p3y=-radiusY*0.95; break;
+
 }
+
 pointerShape.moveTo(p1x, p1y); pointerShape.lineTo(p2x, p2y); pointerShape.lineTo(p3x, p3y); pointerShape.closePath();
+
 const pointerGeometry = new THREE.ExtrudeGeometry(pointerShape, extrudeSettings); pointerGeometry.rotateY(Math.PI);
+
 const pointerMesh = new THREE.Mesh(pointerGeometry, material); pointerMesh.renderOrder = 1;
+
 const group = new THREE.Group(); group.add(bubble); group.add(pointerMesh);
+
 group.position.set(x, y, z + extrudeSettings.depth/2); group.castShadow = !0; scene.add(group);
+
 }
+
 function createAwning(xPos, yPos, texture) {
+
 texture.repeat.set(6, 1);
+
 const material = new THREE.MeshStandardMaterial({map:texture});
+
 const geometry = new THREE.BoxGeometry(32, 1.5, 8);
+
 const awning = new THREE.Mesh(geometry, material);
+
 awning.position.set(xPos, yPos, 18); awning.rotation.x = Math.PI/4; awning.castShadow = !0;
+
 scene.add(awning);
+
 }
+
 function createSign(text, color, xPos, yPos, zPos, id, fontSize=45) {
+
 const texture = createTextTexture(text, new THREE.Color(color).getStyle(), '#ffffff', 256, 64, fontSize);
+
 const material = new THREE.MeshBasicMaterial({map:texture});
+
 const geometry = new THREE.BoxGeometry(26, 5, 1.5);
+
 const sign = new THREE.Mesh(geometry, material);
+
 sign.position.set(xPos, yPos, zPos); sign.name = id;
+
 scene.add(sign); clickableObjects.push(sign);
+
 }
+
 // ... [Remaining create... functions]
 
+
+
 function createBillboard() {
+
 const poleHeight=70, totalPoleHeight=poleHeight+30, boardY=poleHeight+15, boardZ=-30, rotationAngle=35*Math.PI/180;
+
 const billboardGroup = new THREE.Group(); billboardGroup.position.set(0, 0, boardZ); billboardGroup.rotation.y = rotationAngle;
+
 const poleGeo = new THREE.CylinderGeometry(2.5, 2.5, totalPoleHeight, 8); poleGeo.translate(0, totalPoleHeight/2, 0);
+
 const poleMat = new THREE.MeshStandardMaterial({color:colors.metalDark});
+
 const pole = new THREE.Mesh(poleGeo, poleMat); pole.position.set(0, 0, 0); pole.castShadow = !0; billboardGroup.add(pole);
+
 const boardWidth=80, boardHeight=35;
+
 const texture = createTextTexture("JOHN GRESH", new THREE.Color(colors.billboardGlow).getStyle(), new THREE.Color(colors.billboardText).getStyle(), 512, 256, 70);
+
 texture.generateMipmaps = !1;
+
 const boardMat = new THREE.MeshBasicMaterial({map:texture, side:THREE.FrontSide});
+
 const boardGeo = new THREE.BoxGeometry(boardWidth, boardHeight, 0.5);
+
 const board = new THREE.Mesh(boardGeo, boardMat); board.position.set(0, boardY, 3); board.renderOrder = 1; billboardGroup.add(board);
+
 const structureMat = new THREE.MeshStandardMaterial({color:colors.metalDark});
+
 const structureGeo = new THREE.BoxGeometry(boardWidth+6, boardHeight+6, 1);
+
 const structure = new THREE.Mesh(structureGeo, structureMat);
+
 structure.position.set(0, boardY, 0); structure.castShadow = !0; structure.renderOrder = 0; billboardGroup.add(structure);
+
 const ledgeWidth=boardWidth+6, ledgeDepth=4, ledgeHeight=1; const ledgeGeo = new THREE.BoxGeometry(ledgeWidth, ledgeHeight, ledgeDepth);
+
 const ledgeBack = new THREE.Mesh(ledgeGeo, structureMat);
+
 const structureBottomY = boardY - (boardHeight+6)/2;
+
 ledgeBack.position.set(0, structureBottomY-ledgeHeight/2, -0.5-ledgeDepth/2); ledgeBack.castShadow = !0; billboardGroup.add(ledgeBack);
+
 const railingHeight=4, railThickness=0.4; const topRailGeo = new THREE.BoxGeometry(ledgeWidth, railThickness, railThickness);
+
 const topRailBack = new THREE.Mesh(topRailGeo, structureMat);
+
 const ledgeTopY = structureBottomY, ledgeBackZ = -0.5-ledgeDepth;
+
 topRailBack.position.set(0, ledgeTopY+railingHeight-railThickness/2, ledgeBackZ+railThickness/2); topRailBack.castShadow = !0; billboardGroup.add(topRailBack);
+
 const postGeo = new THREE.BoxGeometry(railThickness, railingHeight, railThickness); const numPosts = 7;
+
 for (let i=0; i<numPosts; i++) {
+
 const post = new THREE.Mesh(postGeo, structureMat);
+
 const xPos = -ledgeWidth/2+railThickness/2 + i*((ledgeWidth-railThickness)/(numPosts-1));
+
 post.position.set(xPos, ledgeTopY+railingHeight/2, ledgeBackZ+railThickness/2); post.castShadow = !0; billboardGroup.add(post);
+
 }
+
 const ledgeFront = new THREE.Mesh(ledgeGeo, structureMat);
+
 ledgeFront.position.set(0, structureBottomY-ledgeHeight/2, 0.5+ledgeDepth/2+2.5); ledgeFront.castShadow = !0; billboardGroup.add(ledgeFront);
+
 const topRailFront = new THREE.Mesh(topRailGeo, structureMat); const ledgeFrontZ = 0.5+ledgeDepth+2.5;
+
 topRailFront.position.set(0, ledgeTopY+railingHeight-railThickness/2, ledgeFrontZ-railThickness/2); topRailFront.castShadow = !0; billboardGroup.add(topRailFront);
+
 for (let i=0; i<numPosts; i++) {
+
 const post = new THREE.Mesh(postGeo, structureMat);
+
 const xPos = -ledgeWidth/2+railThickness/2 + i*((ledgeWidth-railThickness)/(numPosts-1));
+
 post.position.set(xPos, ledgeTopY+railingHeight/2, ledgeFrontZ-railThickness/2); post.castShadow = !0; billboardGroup.add(post);
+
 }
+
 const lightFixtureMat = new THREE.MeshBasicMaterial({color:0x333333});
+
 const lightBulbMat = new THREE.MeshBasicMaterial({color:colors.billboardGlow});
+
 for(let i=-1.5; i<=1.5; i++){
+
 const fixtureX=i*25, fixtureY=boardY+boardHeight/2+3; const fixtureGroup = new THREE.Group(); fixtureGroup.position.set(fixtureX, fixtureY, 5);
+
 const headGeo = new THREE.BoxGeometry(5, 2, 2); const head = new THREE.Mesh(headGeo, lightFixtureMat);
+
 head.position.set(0, 0, 0); fixtureGroup.add(head);
+
 const bulbGeo = new THREE.BoxGeometry(4, 0.8, 0.8); const bulb = new THREE.Mesh(bulbGeo, lightBulbMat);
+
 bulb.position.set(0, -0.8, 0.5); fixtureGroup.add(bulb);
+
 const armGeo = new THREE.BoxGeometry(1, 4, 1); const arm = new THREE.Mesh(armGeo, lightFixtureMat);
+
 arm.position.set(0, -2, -3); fixtureGroup.add(arm); billboardGroup.add(fixtureGroup);
+
 const spotlight = new THREE.SpotLight(0xfff8e1, 2.5, 120, Math.PI/8, 0.5);
+
 spotlight.position.set(fixtureX, fixtureY, 5); spotlight.target = board; billboardGroup.add(spotlight);
+
 }
+
 scene.add(billboardGroup);
+
 }
+
 function createBush(x, z, scale=1.0) {
+
 const foliageMaterial = new THREE.MeshStandardMaterial({color:colors.treeDark, roughness:1.0}); foliageMaterial.color.multiplyScalar(0.85);
+
 const bushGroup = new THREE.Group(); const numLumps = Math.floor(Math.random()*3) + 4;
+
 for (let i=0; i<numLumps; i++) {
+
 const lumpSize = (Math.random()*5 + 5)*scale; const lumpGeo = new THREE.BoxGeometry(lumpSize, lumpSize, lumpSize);
+
 const lump = new THREE.Mesh(lumpGeo, foliageMaterial);
+
 const offsetX=(Math.random()-0.5)*6*scale, offsetY=lumpSize/2-2*scale, offsetZ=(Math.random()-0.5)*6*scale;
+
 lump.position.set(offsetX, offsetY, offsetZ); lump.rotation.y = Math.random()*Math.PI; lump.castShadow = !0; bushGroup.add(lump);
+
 }
+
 bushGroup.position.set(x, 0, z); scene.add(bushGroup);
+
 }
+
 // ... [createTrees, createStars]
 
+
+
 function createTrees() {
+
 const trunkMaterial = new THREE.MeshStandardMaterial({color:colors.treeTrunk, roughness:1.0});
+
 const foliageMaterial = new THREE.MeshStandardMaterial({color:colors.treeDark, roughness:1.0});
+
 const distantFoliageMaterial = new THREE.MeshStandardMaterial({color:colors.treeDark, roughness:1.0, fog:!0}); distantFoliageMaterial.color.multiplyScalar(0.5);
+
 const {width:roadWidth, startZ:roadStartZ, endZ:roadEndZ} = ROAD_CONFIG; const roadClearance = 25;
+
 const {startZ:tunnelStartZ, endZ:tunnelEndZ, clearanceWidth:tunnelClearanceWidth} = TUNNEL_CONFIG;
+
 const isInRoadClearance = (x, z) => (z >= roadStartZ && z <= roadEndZ) ? Math.abs(x) < (roadWidth/2 + roadClearance) : !1;
+
 const isOnParkingLot = (x, z) => {
+
 const asphaltWidth=500, asphaltLength=320, asphaltCenterZ=asphaltLength/2-60;
+
 return Math.abs(x) < asphaltWidth/2 && z > (asphaltCenterZ-asphaltLength/2) && z < (asphaltCenterZ+asphaltLength/2);
+
 };
+
 const isInTunnelClearance = (x, z) => {
+
 const entranceZ=tunnelStartZ-50, exitZ=tunnelEndZ+50;
+
 return (z >= entranceZ && z <= exitZ) ? Math.abs(x) < tunnelClearanceWidth/2 : !1;
+
 };
+
 const createTree = (x, z, scale=1.0, isDistant=!1, y=0) => {
+
 if (y === 0 && (isInTunnelClearance(x, z) || isOnParkingLot(x, z) || (!isDistant && isInRoadClearance(x, z)))) return;
+
 const trunkHeight=(Math.random()*10+15)*scale, trunkRadius=(Math.random()*1.5+1.5)*scale;
+
 const currentFoliageMaterial = isDistant ? distantFoliageMaterial : foliageMaterial;
+
 if (!isDistant) {
+
 const trunkGeo = new THREE.CylinderGeometry(trunkRadius*0.8, trunkRadius, trunkHeight, 6); trunkGeo.translate(0, trunkHeight/2, 0);
+
 const trunk = new THREE.Mesh(trunkGeo, trunkMaterial); trunk.position.set(x, y, z); trunk.castShadow = !0; scene.add(trunk);
+
 }
+
 const foliageLevels=3; let currentY = y + (isDistant ? 0 : trunkHeight*0.8); let baseWidth = (Math.random()*20+25)*scale;
+
 for (let i=0; i<foliageLevels; i++) {
+
 const levelHeight=(Math.random()*15+12)*scale, levelWidth=baseWidth*(1-i*0.25);
+
 const foliageGeo = new THREE.BoxGeometry(levelWidth, levelHeight, levelWidth); const foliage = new THREE.Mesh(foliageGeo, currentFoliageMaterial);
+
 const offsetX=(Math.random()-0.5)*6*scale, offsetZ=(Math.random()-0.5)*6*scale;
+
 foliage.position.set(x+offsetX, currentY+levelHeight/2, z+offsetZ); foliage.rotation.y = Math.random()*Math.PI;
+
 if (!isDistant) { foliage.castShadow = !0; foliage.receiveShadow = !0; }
+
 scene.add(foliage); currentY += levelHeight*0.7;
+
 }};
+
 const boundaryX=450, boundaryZ=280, spacing=45;
+
 for (let i=-boundaryX; i<=boundaryX; i+=spacing) {
+
 createTree(i+Math.random()*15, -60-Math.random()*15);
+
 createTree(i+Math.random()*20, -100-Math.random()*30);
+
 createTree(i+Math.random()*25, -150-Math.random()*50);
+
 }
+
 for (let i=-boundaryX; i<=boundaryX; i+=spacing) {
+
 createTree(i+Math.random()*15, boundaryZ+Math.random()*15);
+
 createTree(i+Math.random()*20, boundaryZ+40+Math.random()*30);
+
 }
+
 for (let i=-150; i<=boundaryZ+40; i+=spacing) {
+
 createTree(-boundaryX+Math.random()*15, i); createTree(-boundaryX-40+Math.random()*20, i);
+
 }
+
 for (let i=-150; i<=boundaryZ+40; i+=spacing) {
+
 createTree(boundaryX+Math.random()*15, i); createTree(boundaryX+40+Math.random()*20, i);
+
 }
+
 for (let i=0; i<25; i++) {
+
 const x=-280+(Math.random()-0.5)*120, z=150+(Math.random()-0.5)*150;
+
 createTree(x, z, 1.0+Math.random()*0.2);
+
 }
+
 const roadSideSpacing=60;
+
 for (let z=roadStartZ+50; z<roadEndZ-100; z+=roadSideSpacing) {
+
 const leftX = -(roadWidth/2+roadClearance+Math.random()*15+20); createTree(leftX, z+Math.random()*20-10);
+
 const rightX = (roadWidth/2+roadClearance+Math.random()*15+20); createTree(rightX, z+Math.random()*20-10);
+
 }
+
 const backgroundDistance=750, bgSpacing=12, bgLayers=4, bgScale=2.5; const angleStep = Math.PI/180*bgSpacing;
+
 for (let angle=0; angle<Math.PI*2; angle+=angleStep) {
+
 for (let layer=0; layer<bgLayers; layer++) {
+
 const layerOffset=layer*50; const distance=backgroundDistance-layerOffset+(Math.random()-0.5)*60;
+
 const angleNoise=(Math.random()-0.5)*angleStep*0.8; const currentAngle=angle+angleNoise;
+
 const x=Math.cos(currentAngle)*distance, z=Math.sin(currentAngle)*distance;
+
 const scale=bgScale+(Math.random()*1.0);
+
 createTree(x, z, scale, !0);
+
 }}}
+
 function createStars() {
+
 const geometry=new THREE.BufferGeometry(); const vertices=[]; const distributionRadius=4900;
+
 for (let i=0; i<400; i++) {
+
 const x=Math.random()*distributionRadius-distributionRadius/2, y=Math.random()*200+150, z=Math.random()*distributionRadius-distributionRadius/2;
+
 if (Math.sqrt(x*x+z*z) > 150) vertices.push(x, y, z);
+
 }
+
 geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+
 const material=new THREE.PointsMaterial({color:0xffffff, size:3, sizeAttenuation:!1, transparent:!0, opacity:0.6, fog:!1});
+
 const stars=new THREE.Points(geometry, material); scene.add(stars);
+
 }
+
+
 
 // Event Listeners and Movement
+
 function setupEventListeners() {
+
 window.addEventListener('resize', onWindowResize, !1);
+
 document.addEventListener('keydown', onKeyDown, !1);
+
 document.addEventListener('keyup', onKeyUp, !1);
+
 // Attach listeners to document instead of renderer.domElement to handle interactions globally (like menu)
+
 document.addEventListener('mousedown', onDesktopDragStart, !1);
+
 document.addEventListener('mousemove', onDesktopDragMove, !1);
+
 document.addEventListener('mouseup', onDesktopDragEnd, !1);
+
 document.addEventListener('click', onMouseClick, !1);
+
 document.addEventListener('touchstart', onTouchStart, {passive:!1});
+
 document.addEventListener('touchmove', onTouchMove, {passive:!1});
+
 document.addEventListener('touchend', onTouchEnd, !1);
+
 document.addEventListener('touchcancel', onTouchEnd, !1);
+
 document.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', hideAllOverlays, !1));
+
 document.querySelectorAll('.scene-overlay').forEach(overlay => {
+
 overlay.addEventListener('click', function(event) {
+
 if (document.getElementById('password-modal').style.display === 'flex') return;
+
 if (event.target === this) hideAllOverlays();
+
 }, !1);
+
 });
+
 const jumpBtn = document.getElementById('jump-btn');
+
 if (jumpBtn) {
+
 jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); keys[' '] = !0; jumpBtn.classList.add('active'); });
+
 jumpBtn.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); keys[' '] = !1; jumpBtn.classList.remove('active'); });
+
 jumpBtn.addEventListener('mousedown', (e) => e.preventDefault());
+
 }}
+
+
 
 function onWindowResize() {
+
 const width=window.innerWidth, height=window.innerHeight;
+
 const dpr=window.devicePixelRatio || 1; let effectiveDPR;
+
 if (isIPad()) effectiveDPR = 1.0; else if (isMobileDevice()) effectiveDPR = Math.min(1.5, dpr); else effectiveDPR = dpr;
+
 renderer.setPixelRatio(effectiveDPR); camera.aspect = width/height; camera.updateProjectionMatrix();
+
 renderer.setSize(width, height); composer.setSize(width, height);
+
 const currentDPR = renderer.getPixelRatio();
+
 if (pixelPass && pixelPass.uniforms.resolution) {
+
 pixelPass.uniforms.resolution.value.set(width*currentDPR, height*currentDPR);
+
 pixelPass.uniforms.pixelSize.value = getPixelSize();
+
 }
+
 if (pongGame && !isSceneActive && document.getElementById('miniGamesOverlay').style.display !== 'none') setTimeout(() => pongGame.resizeCanvas(), 100);
+
 initJoystick();
 
+
+
 // Ensure UI visibility is correct on resize
+
 if (isSceneActive) {
+
 document.getElementById('coin-counter').style.display = 'block';
+
 // Ensure menu button is visible if scene is active
+
 if (document.getElementById('menu-btn')) {
-    document.getElementById('menu-btn').style.display = 'flex';
+
+    document.getElementById('menu-btn').style.display = 'flex';
+
 }
+
+
 
 if (isMobileDevice()) {
+
 document.getElementById('mobile-controls').style.display = 'flex';
+
 document.getElementById('instructions').style.display = 'none';
+
 } else {
+
 document.getElementById('mobile-controls').style.display = 'none';
+
 document.getElementById('instructions').style.display = 'block';
+
 }}}
+
+
 
 function onKeyDown(event) {
+
 if (document.activeElement.id === 'chat-input' || document.activeElement.id === 'password-input') return;
 
+
+
 // Handle Escape key interactions
+
 if (event.key === 'Escape') {
-    if (isMenuOpen) {
-        toggleMenu();
-        return;
-    }
-    if (document.getElementById('password-modal').style.display === 'flex') {
-        document.getElementById('password-modal').style.display = 'none';
-        if (document.getElementById('askJohnOverlay').style.display === 'flex') document.getElementById('chat-input').focus();
-        return;
-    }
-    if (!isSceneActive) {
-        hideAllOverlays();
-        return;
-    }
+
+    if (isMenuOpen) {
+
+        toggleMenu();
+
+        return;
+
+    }
+
+    if (document.getElementById('password-modal').style.display === 'flex') {
+
+        document.getElementById('password-modal').style.display = 'none';
+
+        if (document.getElementById('askJohnOverlay').style.display === 'flex') document.getElementById('chat-input').focus();
+
+        return;
+
+    }
+
+    if (!isSceneActive) {
+
+        hideAllOverlays();
+
+        return;
+
+    }
+
 }
+
+
 
 if (pongGame && pongGame.isRunning) return;
+
 if (!isSceneActive) return;
+
 // Prevent movement if menu is open
+
 if (isMenuOpen) return;
+
+
 
 if (keys.hasOwnProperty(event.key.toLowerCase())) { keys[event.key.toLowerCase()] = !0; event.preventDefault(); }
+
 if(event.key === ' '){ keys[' '] = !0; event.preventDefault(); }
+
 }
+
 function onKeyUp(event) {
+
 if (keys.hasOwnProperty(event.key.toLowerCase())) keys[event.key.toLowerCase()] = !1;
+
 if(event.key === ' ') keys[' '] = !1;
+
 }
+
+
 
 // Updated input handlers to respect menu state
+
 function onDesktopDragStart(event) {
+
 if (isMenuOpen) return; // Prevent drag if menu is open
+
 if (!isSceneActive || isMobileDevice()) return;
+
 // Ensure the interaction is not on a UI element like the menu button
+
 if (event.target.closest('#menu-btn') || event.target.closest('#menu-drawer')) return;
+
+
 
 // Only start drag if on the canvas
+
 if (event.target !== renderer.domElement) return;
+
+
 
 isDragging = !0; dragStart.x = event.clientX; dragStart.y = event.clientY; document.body.style.cursor = 'grabbing';
+
 }
+
 function onDesktopDragMove(event) {
+
 // Movement logic relies on handleRotation which checks isMenuOpen
+
 if (!isDragging || !isSceneActive || isMobileDevice()) return;
+
 const deltaX = event.clientX - dragStart.x, deltaY = event.clientY - dragStart.y;
+
 handleRotation(deltaX, deltaY, 0.003);
+
 dragStart.x = event.clientX; dragStart.y = event.clientY;
+
 }
+
 function onDesktopDragEnd() {
+
 if (isMobileDevice()) return;
+
 isDragging = !1;
+
 // Restore cursor only if scene is active and menu is closed
+
 if (isSceneActive && !isMenuOpen) document.body.style.cursor = 'grab';
+
 }
+
+
 
 function onTouchStart(event) {
+
 if (isMenuOpen) return; // Prevent touch look if menu is open
 
+
+
 if ((!isSceneActive && document.getElementById('password-modal').style.display !== 'flex') || !isMobileDevice()) return;
+
 const joystickZone = document.getElementById('joystick-zone'), actionButtons = document.getElementById('action-buttons');
 
+
+
 // Prevent interactions if touching the menu elements
+
 if (event.target.closest('#menu-btn') || event.target.closest('#menu-drawer')) return;
 
+
+
 if (event.changedTouches.length > 0) {
+
 const touch = event.changedTouches[0], target = touch.target;
+
 if (!(joystickZone && joystickZone.contains(target)) && !(actionButtons && actionButtons.contains(target))) {
+
 dragStart.tapX = touch.clientX; dragStart.tapY = touch.clientY; dragStart.tapTime = Date.now();
+
 }}
+
 if (lookTouchId !== null) return;
+
 for (const touch of event.changedTouches) {
+
 const target = touch.target;
+
 if ((joystickZone && joystickZone.contains(target)) || (actionButtons && actionButtons.contains(target))) continue;
 
+
+
 // Only prevent default if initiating a scene drag on the canvas
+
 if (isSceneActive && event.target === renderer.domElement) {
-      event.preventDefault();
+
+      event.preventDefault();
+
 }
+
+
 
 isDragging = !0; lookTouchId = touch.identifier;
+
 dragStart.x = touch.clientX; dragStart.y = touch.clientY;
+
 break;
+
 }}
+
+
 
 function onTouchMove(event) {
+
 // Movement logic relies on handleRotation which checks isMenuOpen
+
 if ((!isSceneActive && document.getElementById('password-modal').style.display !== 'flex') || !isMobileDevice()) return;
+
 if (isDragging && lookTouchId !== null) {
+
 for (const touch of event.touches) {
+
 if (touch.identifier === lookTouchId) {
+
 // Prevent default during an active scene drag
+
 if (isSceneActive) event.preventDefault();
 
+
+
 const deltaX = touch.clientX - dragStart.x, deltaY = touch.clientY - dragStart.y;
+
 handleRotation(deltaX, deltaY, 0.006);
+
 dragStart.x = touch.clientX; dragStart.y = touch.clientY;
+
 break;
+
 }}}}
 
+
+
 function onTouchEnd(event) {
+
 if (!isMobileDevice()) return;
+
 // Check if scene is active and menu is closed before processing scene clicks
+
 if (event.changedTouches.length > 0 && isSceneActive && !isMenuOpen) {
+
 const touch = event.changedTouches[0];
+
 const tapDuration = Date.now() - (dragStart.tapTime || 0);
+
 const tapDistance = Math.sqrt(Math.pow(touch.clientX - (dragStart.tapX || 0), 2) + Math.pow(touch.clientY - (dragStart.tapY || 0), 2));
+
 if (tapDuration < 300 && tapDistance < 10) {
+
 // Ensure the tap was on the canvas and not the menu button
+
 if ((event.target === renderer.domElement || touch.identifier === lookTouchId) && !event.target.closest('#menu-btn')) {
+
 mouse.x = (touch.clientX / window.innerWidth)*2 - 1;
+
 mouse.y = -(touch.clientY / window.innerHeight)*2 + 1;
+
 raycaster.setFromCamera(mouse, camera);
+
 const intersects = raycaster.intersectObjects(clickableObjects);
+
 if (intersects.length > 0) {
+
 const object = intersects[0].object;
+
 switch(object.name) {
+
 case 'resume': showOverlay('resumeOverlay'); break;
+
 case 'tshirts': showOverlay('tshirtsOverlay'); break;
+
 case 'projects': showOverlay('projectsOverlay'); break;
+
 case 'askjohn': showOverlay('askJohnOverlay'); break;
+
 case 'minigames': showOverlay('miniGamesOverlay'); break;
+
 }}}}}
+
 for (const touch of event.changedTouches) {
+
 if (touch.identifier === lookTouchId) { isDragging = !1; lookTouchId = null; break; }
+
 }}
+
+
 
 function handleRotation(deltaX, deltaY, speed) {
+
 // Prevent rotation if menu is open
+
 if (isMenuOpen) return;
+
+
 
 cameraRig.rotation.y -= deltaX*speed; cameraPitch.rotation.x -= deltaY*speed;
+
 const maxPitch = Math.PI/2.5;
+
 cameraPitch.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, cameraPitch.rotation.x));
+
 }
+
 function onMouseClick(event) {
+
 // Prevent click interaction if menu is open (clicks handled by menu listeners)
+
 if (isMenuOpen) return;
+
+
 
 if (!isSceneActive) return;
+
 if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
 
+
+
 // Prevent click if interacting with the menu button
+
 if (event.target.closest('#menu-btn')) return;
 
+
+
 // Ensure the click is on the canvas
+
 if (event.target !== renderer.domElement) return;
 
+
+
 event.preventDefault();
+
 mouse.x = (event.clientX / window.innerWidth)*2 - 1;
+
 mouse.y = -(event.clientY / window.innerHeight)*2 + 1;
+
 raycaster.setFromCamera(mouse, camera);
+
 const intersects = raycaster.intersectObjects(clickableObjects);
+
 if (intersects.length > 0) {
+
 const object = intersects[0].object;
+
 switch(object.name) {
+
 case 'resume': showOverlay('resumeOverlay'); break;
+
 case 'tshirts': showOverlay('tshirtsOverlay'); break;
+
 case 'projects': showOverlay('projectsOverlay'); break;
+
 case 'askjohn': showOverlay('askJohnOverlay'); break;
+
 case 'minigames': showOverlay('miniGamesOverlay'); break;
+
 }}}
+
 function updatePlayerMovement(delta) {
+
 // Prevent movement if menu is open
+
 if (isMenuOpen) return;
 
+
+
 const actualSpeed = 35.0*delta;
+
 const forward = new THREE.Vector3(), right = new THREE.Vector3();
+
 cameraRig.getWorldDirection(forward); forward.y = 0; forward.normalize();
+
 right.crossVectors(cameraRig.up, forward).normalize();
+
 if (keys.w || keys.ArrowUp) cameraRig.position.addScaledVector(forward, -actualSpeed);
+
 if (keys.s || keys.ArrowDown) cameraRig.position.addScaledVector(forward, actualSpeed);
+
 if (keys.a || keys.ArrowLeft) cameraRig.position.addScaledVector(right, -actualSpeed);
+
 if (keys.d || keys.ArrowRight) cameraRig.position.addScaledVector(right, actualSpeed);
+
 if (Math.abs(joystickInput.x) > 0.05 || Math.abs(joystickInput.y) > 0.05) {
+
 cameraRig.position.addScaledVector(forward, -joystickInput.y*actualSpeed);
+
 cameraRig.position.addScaledVector(right, joystickInput.x*actualSpeed);
+
 }
+
 if (keys[' '] && !isJumping) { isJumping = !0; yVelocity = jumpForce; }
+
 if (isJumping) {
+
 yVelocity += gravity*delta; cameraRig.position.y += yVelocity*delta;
+
 if (cameraRig.position.y <= playerHeight) { cameraRig.position.y = playerHeight; isJumping = !1; yVelocity = 0; }
+
 }}
+
 function animate() {
+
 requestAnimationFrame(animate);
+
 const delta = clock.getDelta(), time = clock.getElapsedTime();
+
 // Movement is handled inside updatePlayerMovement, which checks isMenuOpen
+
 if (isSceneActive) { updatePlayerMovement(delta); updateCoins(delta, time); }
+
 updateFireworks(delta);
+
 // Rendering continues even if menu is open, as the scene is still visible
+
 if (isSceneActive || fireworks.length > 0) composer.render();
+
 }
+
+
 
 // --- UI and Chat Logic ---
 
+
+
 const ACCESS_CODE = "ROSEBUD";
+
 let isPremiumAccessGranted = !1;
 
+
+
 // Updated function to handle UI state, Think Mode labels, and Titles
+
 function updatePremiumUIState() {
-    const checkbox = document.getElementById('premium-model-checkbox');
-    const askJohnContainer = document.getElementById('askJohnContainer');
-    const thinkModeLabel = document.getElementById('think-mode-label');
-    // Target the H1 and P tags specifically
-    const title = document.getElementById('ask-john-title');
-    const subtitle = document.getElementById('ask-john-subtitle');
+
+    const checkbox = document.getElementById('premium-model-checkbox');
+
+    const askJohnContainer = document.getElementById('askJohnContainer');
+
+    const thinkModeLabel = document.getElementById('think-mode-label');
+
+    // Target the H1 and P tags specifically
+
+    const title = document.getElementById('ask-john-title');
+
+    const subtitle = document.getElementById('ask-john-subtitle');
 
 
-    if (!checkbox || !askJohnContainer || !thinkModeLabel || !title || !subtitle) return;
 
-    if (checkbox.checked && isPremiumAccessGranted) {
-        askJohnContainer.classList.add('premium-active');
-        thinkModeLabel.textContent = "UltraThink"; // Premium mode uses UltraThink
-        title.textContent = "Hello John"; // Change title for premium
-        subtitle.textContent = "Your personal coding assistant.";
-    } else {
-        askJohnContainer.classList.remove('premium-active');
-        thinkModeLabel.textContent = "SuperThink"; // Public mode uses SuperThink
-        title.textContent = "Ask John (AI)"; // Default title
-        subtitle.textContent = "Chat with an AI trained on John's professional background.";
-    }
 
-    // NEW: Update the greeting if the overlay is currently visible
-    if (document.getElementById('askJohnOverlay').style.display === 'flex') {
-        displayInitialGreeting();
-    }
+
+    if (!checkbox || !askJohnContainer || !thinkModeLabel || !title || !subtitle) return;
+
+
+
+    if (checkbox.checked && isPremiumAccessGranted) {
+
+        askJohnContainer.classList.add('premium-active');
+
+        thinkModeLabel.textContent = "UltraThink"; // Premium mode uses UltraThink
+
+        title.textContent = "Hello John"; // Change title for premium
+
+        subtitle.textContent = "Your personal coding assistant.";
+
+    } else {
+
+        askJohnContainer.classList.remove('premium-active');
+
+        thinkModeLabel.textContent = "SuperThink"; // Public mode uses SuperThink
+
+        title.textContent = "Ask John (AI)"; // Default title
+
+        subtitle.textContent = "Chat with an AI trained on John's professional background.";
+
+    }
+
+
+
+    // NEW: Update the greeting if the overlay is currently visible
+
+    if (document.getElementById('askJohnOverlay').style.display === 'flex') {
+
+        displayInitialGreeting();
+
+    }
+
 }
+
+
 
 // NEW: Function to display or update the initial greeting message
+
 function displayInitialGreeting() {
-    const chatMessages = document.getElementById('chat-messages');
-    if (!chatMessages) return;
 
-    // Check if the only message present is the initial greeting (identified by a specific class)
-    const existingGreeting = chatMessages.querySelector('.initial-greeting');
+    const chatMessages = document.getElementById('chat-messages');
 
-    const premiumCheckbox = document.getElementById('premium-model-checkbox');
-    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
+    if (!chatMessages) return;
 
-    let greetingMessage = "";
 
-    if (usePremiumModel) {
-        // Greeting for John (Premium/Coding Assistant)
-        greetingMessage = "Welcome back, John. The expert coding assistant is active. Memory and accuracy parameters are maximized for complex tasks. How can I assist you today?";
-    } else {
-        // Greeting for Public (General Assistant)
-        greetingMessage = "Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.";
-    }
 
-    if (existingGreeting) {
-        // If a greeting exists (user toggled the switch), update its content
-        // We need to find the content span within the message element structure
-          const contentSpan = existingGreeting.querySelector('span:not(.instance-label)');
-          if (contentSpan) {
-              contentSpan.textContent = greetingMessage;
-          }
-    } else if (chatHistory.length === 0) {
-        // If no greeting exists AND history is empty (initial load), add a new one
-        // Pass true for isInitialGreeting
-        addMessageToChat(greetingMessage, 'bot', null, true);
-    }
-    // If history is not empty and no existing greeting, we do nothing (chat is in progress)
+    // Check if the only message present is the initial greeting (identified by a specific class)
+
+    const existingGreeting = chatMessages.querySelector('.initial-greeting');
+
+
+
+    const premiumCheckbox = document.getElementById('premium-model-checkbox');
+
+    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
+
+
+
+    let greetingMessage = "";
+
+
+
+    if (usePremiumModel) {
+
+        // Greeting for John (Premium/Coding Assistant)
+
+        greetingMessage = "Welcome back, John. The expert coding assistant is active. Memory and accuracy parameters are maximized for complex tasks. How can I assist you today?";
+
+    } else {
+
+        // Greeting for Public (General Assistant)
+
+        greetingMessage = "Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.";
+
+    }
+
+
+
+    if (existingGreeting) {
+
+        // If a greeting exists (user toggled the switch), update its content
+
+        // We need to find the content span within the message element structure
+
+          const contentSpan = existingGreeting.querySelector('span:not(.instance-label)');
+
+          if (contentSpan) {
+
+              contentSpan.textContent = greetingMessage;
+
+          }
+
+    } else if (chatHistory.length === 0) {
+
+        // If no greeting exists AND history is empty (initial load), add a new one
+
+        // Pass true for isInitialGreeting
+
+        addMessageToChat(greetingMessage, 'bot', null, true);
+
+    }
+
+    // If history is not empty and no existing greeting, we do nothing (chat is in progress)
+
 }
+
+
+
 
 
 function initPasswordModal() {
+
 const toggle = document.getElementById('john-only-toggle'), checkbox = document.getElementById('premium-model-checkbox');
+
 const modal = document.getElementById('password-modal'), submitBtn = document.getElementById('submit-password-btn');
+
 const cancelBtn = document.getElementById('cancel-password-btn'), passwordInput = document.getElementById('password-input');
+
 const errorMsg = document.getElementById('password-error');
+
 if (!toggle || !checkbox || !modal) return;
 
+
+
 // Handles clicking the JohnOnly toggle area (the whole div)
+
 toggle.addEventListener('click', (e) => {
+
 // Prevent the label inside from triggering this twice if clicked directly
+
 e.preventDefault();
 
+
+
 if (isPremiumAccessGranted) {
-    // If access is already granted, just toggle the state
-    checkbox.checked = !checkbox.checked;
-    updatePremiumUIState();
-    return;
+
+    // If access is already granted, just toggle the state
+
+    checkbox.checked = !checkbox.checked;
+
+    updatePremiumUIState();
+
+    return;
+
 }
+
 // If access not granted, check if trying to enable
+
 if (!checkbox.checked) {
-    showPasswordModal();
+
+    showPasswordModal();
+
 } else {
-    // Should not happen if not granted, but ensure it stays unchecked
-    checkbox.checked = false;
-    updatePremiumUIState();
+
+    // Should not happen if not granted, but ensure it stays unchecked
+
+    checkbox.checked = false;
+
+    updatePremiumUIState();
+
 }
+
 });
 
+
+
 cancelBtn.addEventListener('click', hidePasswordModal);
+
 submitBtn.addEventListener('click', verifyPassword);
+
 passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') verifyPassword(); });
 
+
+
 function showPasswordModal() {
+
 modal.style.display = 'flex'; passwordInput.value = ''; errorMsg.style.display = 'none'; passwordInput.focus();
+
 }
+
 function hidePasswordModal() {
+
 modal.style.display = 'none';
+
 if (document.getElementById('askJohnOverlay').style.display === 'flex') document.getElementById('chat-input').focus();
+
 }
+
 function verifyPassword() {
+
 const enteredPassword = passwordInput.value.trim().toUpperCase();
+
 if (enteredPassword === ACCESS_CODE) {
+
 isPremiumAccessGranted = !0; checkbox.checked = !0; updatePremiumUIState(); hidePasswordModal();
+
 } else {
+
 errorMsg.style.display = 'block'; passwordInput.value = ''; passwordInput.focus();
+
 document.querySelector('.modal-content').animate([
+
 {transform: 'translateX(0)'}, {transform: 'translateX(-10px)'}, {transform: 'translateX(10px)'}, {transform: 'translateX(0)'}
+
 ], {duration: 300, iterations: 1});
+
 }}
+
 updatePremiumUIState();
+
 }
+
+
 
 const WORKER_URL = "https://serverbackend.johngresh-usa.workers.dev/chat";
+
 let chatHistory = [], isChatInitialized = !1;
 
+
+
 function initChat() {
+
 if (isChatInitialized) return;
+
 const sendBtn = document.getElementById('send-btn'), chatInput = document.getElementById('chat-input');
 
+
+
 if (!sendBtn || !chatInput) return;
+
 isChatInitialized = !0;
 
+
+
 // Initialize Think Mode Toggle interactivity
+
 const thinkToggleArea = document.getElementById('think-toggle-area');
+
 const thinkCheckbox = document.getElementById('think-mode-checkbox');
 
+
+
 if (thinkToggleArea && thinkCheckbox) {
-    // Add listener to the whole area (including the label and span) to toggle the checkbox manually
-    thinkToggleArea.addEventListener('click', (e) => {
-        // Prevent default to ensure consistent behavior across clicks on label/span/div
-        e.preventDefault();
-        // Manually toggle the checkbox state
-        thinkCheckbox.checked = !thinkCheckbox.checked;
-        // Note: CSS handles the visual update based on :checked state
-    });
+
+    // Add listener to the whole area (including the label and span) to toggle the checkbox manually
+
+    thinkToggleArea.addEventListener('click', (e) => {
+
+        // Prevent default to ensure consistent behavior across clicks on label/span/div
+
+        e.preventDefault();
+
+        // Manually toggle the checkbox state
+
+        thinkCheckbox.checked = !thinkCheckbox.checked;
+
+        // Note: CSS handles the visual update based on :checked state
+
+    });
+
 }
+
+
+
 
 
 // Updated handlers to check the checkbox state on send
+
 sendBtn.addEventListener('click', () => handleSendMessage());
+
 chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSendMessage(); });
 
+
+
 // The initial greeting is now handled by displayInitialGreeting called via showOverlay/updatePremiumUIState
+
 // addMessageToChat("Hello! I'm John's AI assistant. Feel free to ask me about his experience, skills, or projects.", 'bot');
+
 }
+
+
 
 // UPDATED: Now uses the thinking box and optimizes SuperThink duration
+
 async function runUltraThinkSimulation() {
-    // ... [Simulation logic remains identical] ...
-    // Determine if we are running UltraThink (Premium) or SuperThink (Public)
-    const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
-    const thinkName = isPremium ? "UltraThink" : "SuperThink";
 
-    // Define simulation parameters based on mode
-    let totalSimulationTime, instances, iterations, phase1Duration, phase2Duration, iterationBaseTime;
+    // ... [Simulation logic remains identical] ...
 
-    // NOTE: These timings are purely visual simulations for the user experience.
-    // The actual backend processing time will vary based on the complexity of the continuation calls.
+    // Determine if we are running UltraThink (Premium) or SuperThink (Public)
 
-    if (isPremium) {
-        // UltraThink (Long duration visualization for maximum quality processing happening on backend)
-        totalSimulationTime = 180000; // 3 minutes (Visualization time)
-        instances = 5;
-        iterations = 8;
-        phase1Duration = 20000;
-        phase2Duration = 30000;
-        iterationBaseTime = 8000;
-    } else {
-        // SuperThink (Optimized/Short duration visualization for broader topics)
-        totalSimulationTime = 45000; // 45 seconds (Visualization time)
-        instances = 3;
-        iterations = 3;
-        phase1Duration = 5000;
-        phase2Duration = 8000;
-        iterationBaseTime = 5000;
-    }
+    const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
 
-    const startTime = Date.now();
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-    // Use the updateThinkingBox function instead of adding messages to chat
-    const addMsg = async (msg, ms) => { updateThinkingBox(msg); await delay(ms); };
+    const thinkName = isPremium ? "UltraThink" : "SuperThink";
 
 
-    await addMsg(`Initializing ${thinkName} Protocol...`, isPremium ? 3000 : 1500);
-    await addMsg(`Allocating ${instances} parallel cognitive instances (${isPremium ? "Premium" : "Standard"} Model)...`, isPremium ? 2500 : 1000);
 
-    for (let i=1; i<=instances; i++) {
-        const bootTime = isPremium ? (Math.random()*1500 + 1500) : (Math.random()*500 + 500);
-        await addMsg(`Instance ${i}/${instances} [Booting]... Status: Loading Core Knowledge...`, bootTime);
-    }
+    // Define simulation parameters based on mode
 
-    await addMsg("All instances synchronized. [Status: Ready]", isPremium ? 3000 : 1500);
-    await addMsg("--- PHASE 1: DIVERGENT ANALYSIS ---", 1000);
-    await addMsg("Broad spectrum analysis initiated (Temp: High)...", isPremium ? 2000 : 1000);
-    await delay(phase1Duration);
-    await addMsg("Phase 1 Complete. Collating initial thought vectors...", isPremium ? 3000 : 1500);
+    let totalSimulationTime, instances, iterations, phase1Duration, phase2Duration, iterationBaseTime;
 
-    await addMsg("--- PHASE 2: KNOWLEDGE SYNTHESIS ---", 1000);
-    await addMsg("Activating Synthesizer Module...", isPremium ? 2500 : 1000);
-    await addMsg(`Analyzing ${instances} distinct perspectives...`, 1500);
-    await delay(phase2Duration);
-    await addMsg("Generating Shared Knowledge Base (SKB)...", isPremium ? 4000 : 2000);
-    await addMsg("[SKB Generated]", 2000);
 
-    await addMsg("--- PHASE 3: ITERATIVE REFINEMENT ---", 1000);
-    await addMsg(`Distributing SKB to ${instances} refinement instances (Temp: Med)...`, isPremium ? 3000 : 1500);
 
-    for (let iter=1; iter<=iterations; iter++) {
-        const iterationStartTime = Date.now();
-        const timeElapsed = iterationStartTime - startTime;
-        // Reserve time for finalization (approx 20s for Ultra, 10s for Super)
-        const finalizationTime = isPremium ? 20000 : 10000;
-        const timeRemaining = totalSimulationTime - timeElapsed - finalizationTime;
+    // NOTE: These timings are purely visual simulations for the user experience.
 
-        if (timeRemaining <= 0 && iter < iterations) {
-            await addMsg(`[WARNING]: Time limit approaching. Accelerating refinement...`, 1000); break;
-        }
+    // The actual backend processing time will vary based on the complexity of the continuation calls.
 
-        const targetIterationDuration = Math.max(iterationBaseTime, timeRemaining / (iterations - iter + 1));
-        await addMsg(`-- Iteration ${iter}/${iterations} --`, 1000);
-        await addMsg(`[P3.${iter}.1] Instances analyzing SKB and refining output...`, 500);
-        await delay(targetIterationDuration * 0.7);
-        await addMsg(`[P3.${iter}.2] Cross-instance validation and data sharing...`, 500);
-        await delay(targetIterationDuration * 0.2);
-        await addMsg(`Iteration ${iter} complete. Confidence score improved.`, 1000);
-    }
 
-    await addMsg("--- PHASE 4: FINALIZATION & CONTINUATION ---", 1000);
-    await addMsg("Activating Finalizer Module...", isPremium ? 2500 : 1000);
-    await addMsg("Consolidating refined outputs...", 1500);
-    await addMsg("Initiating long-form generation (Continuation Segments)...", 1500);
-    await delay(isPremium ? 10000 : 5000);
-    await addMsg("Running coherence and persona alignment checks...", isPremium ? 3000 : 1500);
-    await addMsg(`${thinkName} Protocol Complete. Preparing transmission...`, 1000);
+
+    if (isPremium) {
+
+        // UltraThink (Long duration visualization for maximum quality processing happening on backend)
+
+        totalSimulationTime = 180000; // 3 minutes (Visualization time)
+
+        instances = 5;
+
+        iterations = 8;
+
+        phase1Duration = 20000;
+
+        phase2Duration = 30000;
+
+        iterationBaseTime = 8000;
+
+    } else {
+
+        // SuperThink (Optimized/Short duration visualization for broader topics)
+
+        totalSimulationTime = 45000; // 45 seconds (Visualization time)
+
+        instances = 3;
+
+        iterations = 3;
+
+        phase1Duration = 5000;
+
+        phase2Duration = 8000;
+
+        iterationBaseTime = 5000;
+
+    }
+
+
+
+    const startTime = Date.now();
+
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    // Use the updateThinkingBox function instead of adding messages to chat
+
+    const addMsg = async (msg, ms) => { updateThinkingBox(msg); await delay(ms); };
+
+
+
+
+
+    await addMsg(`Initializing ${thinkName} Protocol...`, isPremium ? 3000 : 1500);
+
+    await addMsg(`Allocating ${instances} parallel cognitive instances (${isPremium ? "Premium" : "Standard"} Model)...`, isPremium ? 2500 : 1000);
+
+
+
+    for (let i=1; i<=instances; i++) {
+
+        const bootTime = isPremium ? (Math.random()*1500 + 1500) : (Math.random()*500 + 500);
+
+        await addMsg(`Instance ${i}/${instances} [Booting]... Status: Loading Core Knowledge...`, bootTime);
+
+    }
+
+
+
+    await addMsg("All instances synchronized. [Status: Ready]", isPremium ? 3000 : 1500);
+
+    await addMsg("--- PHASE 1: DIVERGENT ANALYSIS ---", 1000);
+
+    await addMsg("Broad spectrum analysis initiated (Temp: High)...", isPremium ? 2000 : 1000);
+
+    await delay(phase1Duration);
+
+    await addMsg("Phase 1 Complete. Collating initial thought vectors...", isPremium ? 3000 : 1500);
+
+
+
+    await addMsg("--- PHASE 2: KNOWLEDGE SYNTHESIS ---", 1000);
+
+    await addMsg("Activating Synthesizer Module...", isPremium ? 2500 : 1000);
+
+    await addMsg(`Analyzing ${instances} distinct perspectives...`, 1500);
+
+    await delay(phase2Duration);
+
+    await addMsg("Generating Shared Knowledge Base (SKB)...", isPremium ? 4000 : 2000);
+
+    await addMsg("[SKB Generated]", 2000);
+
+
+
+    await addMsg("--- PHASE 3: ITERATIVE REFINEMENT ---", 1000);
+
+    await addMsg(`Distributing SKB to ${instances} refinement instances (Temp: Med)...`, isPremium ? 3000 : 1500);
+
+
+
+    for (let iter=1; iter<=iterations; iter++) {
+
+        const iterationStartTime = Date.now();
+
+        const timeElapsed = iterationStartTime - startTime;
+
+        // Reserve time for finalization (approx 20s for Ultra, 10s for Super)
+
+        const finalizationTime = isPremium ? 20000 : 10000;
+
+        const timeRemaining = totalSimulationTime - timeElapsed - finalizationTime;
+
+
+
+        if (timeRemaining <= 0 && iter < iterations) {
+
+            await addMsg(`[WARNING]: Time limit approaching. Accelerating refinement...`, 1000); break;
+
+        }
+
+
+
+        const targetIterationDuration = Math.max(iterationBaseTime, timeRemaining / (iterations - iter + 1));
+
+        await addMsg(`-- Iteration ${iter}/${iterations} --`, 1000);
+
+        await addMsg(`[P3.${iter}.1] Instances analyzing SKB and refining output...`, 500);
+
+        await delay(targetIterationDuration * 0.7);
+
+        await addMsg(`[P3.${iter}.2] Cross-instance validation and data sharing...`, 500);
+
+        await delay(targetIterationDuration * 0.2);
+
+        await addMsg(`Iteration ${iter} complete. Confidence score improved.`, 1000);
+
+    }
+
+
+
+    await addMsg("--- PHASE 4: FINALIZATION & CONTINUATION ---", 1000);
+
+    await addMsg("Activating Finalizer Module...", isPremium ? 2500 : 1000);
+
+    await addMsg("Consolidating refined outputs...", 1500);
+
+    await addMsg("Initiating long-form generation (Continuation Segments)...", 1500);
+
+    await delay(isPremium ? 10000 : 5000);
+
+    await addMsg("Running coherence and persona alignment checks...", isPremium ? 3000 : 1500);
+
+    await addMsg(`${thinkName} Protocol Complete. Preparing transmission...`, 1000);
+
 }
+
+
 
 // NEW: Updates the content of the thinking box
+
 function updateThinkingBox(message) {
-    const thinkingBox = document.getElementById('thinking-box');
-    if (thinkingBox) {
-        // Ensure the box is visible when the first message arrives
-        if (thinkingBox.style.display === 'none') {
-            thinkingBox.style.display = 'block';
-        }
-        thinkingBox.textContent = "> " + message;
-    }
+
+    const thinkingBox = document.getElementById('thinking-box');
+
+    if (thinkingBox) {
+
+        // Ensure the box is visible when the first message arrives
+
+        if (thinkingBox.style.display === 'none') {
+
+            thinkingBox.style.display = 'block';
+
+        }
+
+        thinkingBox.textContent = "> " + message;
+
+    }
+
 }
+
+
+
 
 
 // Updated handleSendMessage to use the checkbox state and send persona
+
 async function handleSendMessage() {
-    const chatInput = document.getElementById('chat-input');
-    const message = chatInput.value.trim();
-    const premiumCheckbox = document.getElementById('premium-model-checkbox');
-    const thinkCheckbox = document.getElementById('think-mode-checkbox');
 
-    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
-    const isUltraThink = (thinkCheckbox && thinkCheckbox.checked);
+    const chatInput = document.getElementById('chat-input');
 
-    // Determine Persona (Sent for backend awareness, though backend logic primarily uses usePremiumModel)
-    const persona = usePremiumModel ? "coding_assistant" : "general_assistant";
+    const message = chatInput.value.trim();
+
+    const premiumCheckbox = document.getElementById('premium-model-checkbox');
+
+    const thinkCheckbox = document.getElementById('think-mode-checkbox');
 
 
-    if (message === '') return;
 
-    // Remove the initial greeting before adding the user's first message
-    const existingGreeting = document.getElementById('chat-messages').querySelector('.initial-greeting');
-    if (existingGreeting) {
-        existingGreeting.remove();
-    }
+    const usePremiumModel = (premiumCheckbox && premiumCheckbox.checked && isPremiumAccessGranted);
 
-    addMessageToChat(message, 'user');
-    chatHistory.push({role: "user", content: message});
-    chatInput.value = '';
+    const isUltraThink = (thinkCheckbox && thinkCheckbox.checked);
 
-    // Uncheck the Think checkbox after sending
-    if (thinkCheckbox) thinkCheckbox.checked = false;
 
-    toggleInput(!1, isUltraThink);
 
-    const apiCall = fetch(WORKER_URL, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        // Send flags and persona to the backend
-        body: JSON.stringify({
-            history: chatHistory,
-            usePremiumModel: usePremiumModel,
-            ultraThink: isUltraThink,
-            persona: persona
-        }),
-    });
-    // Run simulation if Think mode was checked
-    const simulation = isUltraThink ? runUltraThinkSimulation() : Promise.resolve();
+    // Determine Persona (Sent for backend awareness, though backend logic primarily uses usePremiumModel)
 
-    try {
-        // Wait for both the simulation (visuals) and the API call (actual data)
-        const [response] = await Promise.all([apiCall, simulation]);
-        if (!response.ok) {
-            let errorDetails = "No details provided by server.";
-            try {
-                const errorData = await response.json();
-                if (errorData.error) errorDetails = errorData.error;
-            } catch (e) { errorDetails = response.statusText; }
-            throw new Error(`Server Error (Status ${response.status}): ${errorDetails}`);
-        }
-        const data = await response.json();
-        if (data.success && data.response) {
-            // Update label based on the actual mode used (determined by backend confirmation and UI state)
-            const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
-            const thinkName = isPremium ? "UltraThink" : "SuperThink";
-            const label = data.isUltraThink ? `${thinkName} Synthesis (4-Phase Iteration)` : null;
+    const persona = usePremiumModel ? "coding_assistant" : "general_assistant";
 
-            addMessageToChat(data.response, 'bot', label);
-            chatHistory.push({role: "assistant", content: data.response});
 
-            // Increased history limit significantly due to long outputs
-            if (chatHistory.length > 100) chatHistory = chatHistory.slice(-100);
 
-        } else {
-            // Handle potential legacy formats or errors
-            if (data.isUltraThink && data.responses) {
-                data.responses.forEach((res, index) => {
-                    addMessageToChat(res, 'bot', `Legacy Instance ${index+1}`);
-                    chatHistory.push({role: "assistant", content: res});
-                });
-            } else throw new Error(data.error || "An unknown error occurred in the response data.");
-        }
-    } catch (error) {
-        let errorMessage = `Error: ${error.message}`;
-        if (error instanceof TypeError) errorMessage = "Network Error or CORS issue. Ensure the backend (" + WORKER_URL + ") is running and accessible.";
-        addMessageToChat(errorMessage, 'bot');
-        if (chatHistory.length > 0 && chatHistory[chatHistory.length-1].role === 'user') chatHistory.pop();
-    } finally {
-        toggleInput(!0); // This will hide the thinking box
-    }
+
+
+    if (message === '') return;
+
+
+
+    // Remove the initial greeting before adding the user's first message
+
+    const existingGreeting = document.getElementById('chat-messages').querySelector('.initial-greeting');
+
+    if (existingGreeting) {
+
+        existingGreeting.remove();
+
+    }
+
+
+
+    addMessageToChat(message, 'user');
+
+    chatHistory.push({role: "user", content: message});
+
+    chatInput.value = '';
+
+
+
+    // Uncheck the Think checkbox after sending
+
+    if (thinkCheckbox) thinkCheckbox.checked = false;
+
+
+
+    toggleInput(!1, isUltraThink);
+
+
+
+    const apiCall = fetch(WORKER_URL, {
+
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+
+        // Send flags and persona to the backend
+
+        body: JSON.stringify({
+
+            history: chatHistory,
+
+            usePremiumModel: usePremiumModel,
+
+            ultraThink: isUltraThink,
+
+            persona: persona
+
+        }),
+
+    });
+
+    // Run simulation if Think mode was checked
+
+    const simulation = isUltraThink ? runUltraThinkSimulation() : Promise.resolve();
+
+
+
+    try {
+
+        // Wait for both the simulation (visuals) and the API call (actual data)
+
+        const [response] = await Promise.all([apiCall, simulation]);
+
+        if (!response.ok) {
+
+            let errorDetails = "No details provided by server.";
+
+            try {
+
+                const errorData = await response.json();
+
+                if (errorData.error) errorDetails = errorData.error;
+
+            } catch (e) { errorDetails = response.statusText; }
+
+            throw new Error(`Server Error (Status ${response.status}): ${errorDetails}`);
+
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.response) {
+
+            // Update label based on the actual mode used (determined by backend confirmation and UI state)
+
+            const isPremium = document.getElementById('askJohnContainer').classList.contains('premium-active');
+
+            const thinkName = isPremium ? "UltraThink" : "SuperThink";
+
+            const label = data.isUltraThink ? `${thinkName} Synthesis (4-Phase Iteration)` : null;
+
+
+
+            addMessageToChat(data.response, 'bot', label);
+
+            chatHistory.push({role: "assistant", content: data.response});
+
+
+
+            // Increased history limit significantly due to long outputs
+
+            if (chatHistory.length > 100) chatHistory = chatHistory.slice(-100);
+
+
+
+        } else {
+
+            // Handle potential legacy formats or errors
+
+            if (data.isUltraThink && data.responses) {
+
+                data.responses.forEach((res, index) => {
+
+                    addMessageToChat(res, 'bot', `Legacy Instance ${index+1}`);
+
+                    chatHistory.push({role: "assistant", content: res});
+
+                });
+
+            } else throw new Error(data.error || "An unknown error occurred in the response data.");
+
+        }
+
+    } catch (error) {
+
+        let errorMessage = `Error: ${error.message}`;
+
+        if (error instanceof TypeError) errorMessage = "Network Error or CORS issue. Ensure the backend (" + WORKER_URL + ") is running and accessible.";
+
+        addMessageToChat(errorMessage, 'bot');
+
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length-1].role === 'user') chatHistory.pop();
+
+    } finally {
+
+        toggleInput(!0); // This will hide the thinking box
+
+    }
+
 }
+
+
 
 // Updated to accept isInitialGreeting flag
+
 function addMessageToChat(message, sender, instanceLabel = null, isInitialGreeting = false) {
+
 const chatMessages = document.getElementById('chat-messages'), chatWindow = document.getElementById('chat-window');
+
 if (!chatMessages || !chatWindow) return;
+
 const messageElement = document.createElement('div');
+
 messageElement.classList.add('message');
 
+
+
 // NEW: Add specific class for the initial greeting
+
 if (isInitialGreeting) {
-    messageElement.classList.add('initial-greeting');
+
+    messageElement.classList.add('initial-greeting');
+
 }
+
+
 
 if (sender === 'user') {
+
 messageElement.classList.add('user-message'); messageElement.textContent = message;
+
 } else {
+
 messageElement.classList.add('bot-message');
+
 if (instanceLabel) {
+
 const labelSpan = document.createElement('span'); labelSpan.classList.add('instance-label');
+
 labelSpan.textContent = instanceLabel + ":"; messageElement.appendChild(labelSpan);
+
 }
+
 const contentSpan = document.createElement('span'); contentSpan.textContent = message; messageElement.appendChild(contentSpan);
+
 }
+
 chatMessages.appendChild(messageElement);
+
 // Use smooth behavior for actual chat messages
+
 chatWindow.scrollTo({top: chatWindow.scrollHeight, behavior: 'smooth'});
+
 }
+
+
 
 // UPDATED: Controls visibility of the thinking box
+
 function toggleInput(enabled, isUltraThink = !1) {
-    // ... [toggleInput logic remains identical] ...
-    const chatInput = document.getElementById('chat-input'), sendBtn = document.getElementById('send-btn');
-    const toggleArea = document.getElementById('john-only-toggle');
-    const thinkToggleArea = document.getElementById('think-toggle-area');
-    const thinkingBox = document.getElementById('thinking-box'); // Get the thinking box
 
-    if (!chatInput || !sendBtn) return;
-    chatInput.disabled = !enabled; sendBtn.disabled = !enabled;
+    // ... [toggleInput logic remains identical] ...
 
-    // Disable pointer events on visual toggle areas
-    if (toggleArea) { toggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; toggleArea.style.opacity = enabled ? '1' : '0.5'; }
-    if (thinkToggleArea) { thinkToggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; thinkToggleArea.style.opacity = enabled ? '1' : '0.5'; }
+    const chatInput = document.getElementById('chat-input'), sendBtn = document.getElementById('send-btn');
+
+    const toggleArea = document.getElementById('john-only-toggle');
+
+    const thinkToggleArea = document.getElementById('think-toggle-area');
+
+    const thinkingBox = document.getElementById('thinking-box'); // Get the thinking box
 
 
-    if (enabled) {
-        // Hide thinking box when input is enabled
-        if (thinkingBox) thinkingBox.style.display = 'none';
 
-        if (document.getElementById('password-modal').style.display !== 'flex') {
-            if (document.getElementById('askJohnOverlay').style.display === 'flex') chatInput.focus();
-        }
-        chatInput.placeholder = "Type your question...";
-    } else {
-        // Show thinking box when input is disabled (if UltraThink is running)
-        // Note: Visibility is also handled at the start of updateThinkingBox for robustness
-        if (isUltraThink && thinkingBox) {
-            thinkingBox.style.display = 'block';
-            updateThinkingBox("Initializing..."); // Set initial message
-        }
+    if (!chatInput || !sendBtn) return;
 
-        // Update placeholder based on the active Think mode label
-        const thinkModeLabel = document.getElementById('think-mode-label');
-        const thinkName = (thinkModeLabel && thinkModeLabel.textContent) || "Thinking";
+    chatInput.disabled = !enabled; sendBtn.disabled = !enabled;
 
-        if (isUltraThink) chatInput.placeholder = `${thinkName} (Multi-Phase Iteration)...`;
-        else chatInput.placeholder = "Thinking...";
-    }
+
+
+    // Disable pointer events on visual toggle areas
+
+    if (toggleArea) { toggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; toggleArea.style.opacity = enabled ? '1' : '0.5'; }
+
+    if (thinkToggleArea) { thinkToggleArea.style.pointerEvents = enabled ? 'auto' : 'none'; thinkToggleArea.style.opacity = enabled ? '1' : '0.5'; }
+
+
+
+
+
+    if (enabled) {
+
+        // Hide thinking box when input is enabled
+
+        if (thinkingBox) thinkingBox.style.display = 'none';
+
+
+
+        if (document.getElementById('password-modal').style.display !== 'flex') {
+
+            if (document.getElementById('askJohnOverlay').style.display === 'flex') chatInput.focus();
+
+        }
+
+        chatInput.placeholder = "Type your question...";
+
+    } else {
+
+        // Show thinking box when input is disabled (if UltraThink is running)
+
+        // Note: Visibility is also handled at the start of updateThinkingBox for robustness
+
+        if (isUltraThink && thinkingBox) {
+
+            thinkingBox.style.display = 'block';
+
+            updateThinkingBox("Initializing..."); // Set initial message
+
+        }
+
+
+
+        // Update placeholder based on the active Think mode label
+
+        const thinkModeLabel = document.getElementById('think-mode-label');
+
+        const thinkName = (thinkModeLabel && thinkModeLabel.textContent) || "Thinking";
+
+
+
+        if (isUltraThink) chatInput.placeholder = `${thinkName} (Multi-Phase Iteration)...`;
+
+        else chatInput.placeholder = "Thinking...";
+
+    }
+
 }
 
+
+
 document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
+
 </script>
+
 </body>
+
 </html>

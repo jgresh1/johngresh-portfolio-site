@@ -817,10 +817,8 @@ function create3DCoinMesh(materials) {
     // Thickness (Z) is 0.2
     const hBoxGeo = new THREE.BoxGeometry(1.2, 0.3, 0.2);
     
-    // *** CORRECTION START ***
-    // Increased height of vertical boxes from 0.55 to 1.0 to ensure overlap
+    // Height of vertical boxes is 1.0 to ensure overlap
     const vBoxGeo = new THREE.BoxGeometry(0.3, 1.0, 0.2);
-    // *** CORRECTION END ***
 
     // Top Horizontal
     const topH = new THREE.Mesh(hBoxGeo, faceMaterial);
@@ -834,21 +832,23 @@ function create3DCoinMesh(materials) {
     botH.position.y = -1.0;
     dollarBoxesGroup.add(botH);
 
-    // Top Left Vertical
-    const tlV = new THREE.Mesh(vBoxGeo, faceMaterial);
     // *** CORRECTION START ***
-    // Adjusted Y position from 0.575 to 0.5 (center between 0.0 and 1.0)
-    tlV.position.set(-0.45, 0.5, 0);
-    // *** CORRECTION END ***
-    dollarBoxesGroup.add(tlV);
+    // The geometry needed to be mirrored (built as a '2') because the rotations 
+    // applied later cause it to appear mirrored in the final view. 
+    // By building it as a '2' here, it appears as an 'S' in the scene.
 
-     // Bottom Right Vertical
-    const brV = new THREE.Mesh(vBoxGeo, faceMaterial);
-    // *** CORRECTION START ***
-    // Adjusted Y position from -0.575 to -0.5 (center between -1.0 and 0.0)
-    brV.position.set(0.45, -0.5, 0);
+    // Top RIGHT Vertical (was Top Left)
+    const trV = new THREE.Mesh(vBoxGeo, faceMaterial);
+    // X is positive (Right), Y is 0.5 (center between 0.0 and 1.0)
+    trV.position.set(0.45, 0.5, 0); 
+    dollarBoxesGroup.add(trV);
+
+     // Bottom LEFT Vertical (was Bottom Right)
+    const blV = new THREE.Mesh(vBoxGeo, faceMaterial);
+    // X is negative (Left), Y is -0.5 (center between -1.0 and 0.0)
+    blV.position.set(-0.45, -0.5, 0);
+    dollarBoxesGroup.add(blV);
     // *** CORRECTION END ***
-    dollarBoxesGroup.add(brV);
 
     // Central Bar (Vertical line through the '$')
     // Slightly taller and thicker (Z=0.22) to stand out

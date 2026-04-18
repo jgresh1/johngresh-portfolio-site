@@ -4277,7 +4277,34 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
       if (typeof renderer !== 'undefined' && renderer && renderer.domElement){
         renderer.domElement.style.pointerEvents = 'auto';
       }
+
+      // Drawer/menu state can be stale (drawer was open when user picked the template,
+      // and showOverlay may have inline-hidden the HUD). Force a clean "scene visible,
+      // menu closed" state so menu/coin/instructions/joystick reappear.
+      try {
+        if (typeof isMenuOpen !== 'undefined' && isMenuOpen) {
+          window.isMenuOpen = false;
+          try { isMenuOpen = false; } catch(_){}
+        }
+      } catch(_){}
+      if (drawer)  drawer.classList.remove('open');
+      if (menuBtn) { menuBtn.classList.remove('active'); menuBtn.style.display = 'flex'; }
+      var _coin  = document.getElementById('coin-counter');
+      var _instr = document.getElementById('instructions');
+      var _mc    = document.getElementById('mobile-controls');
+      if (_coin) _coin.style.display = 'block';
+      var _isMobile = (typeof isMobileDevice === 'function') ? isMobileDevice() : false;
+      if (_instr) _instr.style.display = _isMobile ? 'none' : 'block';
+      if (_mc)    _mc.style.display    = _isMobile ? 'flex' : 'none';
+
+      // On mobile the URL bar shows/hides as the template scrolls, changing innerHeight.
+      // The Three.js renderer is still sized to the old viewport, so the canvas looks
+      // zoomed/stretched on return. Re-fit it now and again after the URL bar settles.
       window.scrollTo(0,0);
+      if (typeof onWindowResize === 'function') {
+        try { onWindowResize(); } catch(_){}
+        setTimeout(function(){ try { onWindowResize(); } catch(_){} }, 250);
+      }
       return;
     }
 

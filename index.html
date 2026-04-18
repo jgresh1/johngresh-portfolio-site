@@ -381,16 +381,19 @@ body.template-active #password-modal{z-index:2010!important;}
 /* ============================================================
    MOBILE OVERRIDES — make every template's nav usable on phones
    ============================================================ */
-@media(max-width:800px){
-  /* Re-enable nav-links as a horizontally scrollable chip strip on mobile */
-  #template-host .nav-links{display:flex!important;gap:14px!important;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;flex:1 1 auto;min-width:0;padding:4px 6px 4px 0;font-size:12px!important;letter-spacing:1px!important;text-transform:uppercase;}
+@media(max-width:900px){
+  /* Re-enable nav-links as a horizontally scrollable chip strip on mobile.
+     Uses -webkit-overflow-scrolling so the chip strip can be flicked
+     horizontally without the page itself being panned. */
+  #template-host .nav-links{display:flex!important;gap:14px!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;-ms-overflow-style:none;scrollbar-width:none;flex:1 1 auto!important;min-width:0!important;padding:4px 6px 4px 0!important;font-size:12px!important;letter-spacing:1px!important;text-transform:uppercase;touch-action:pan-x;}
   #template-host .nav-links::-webkit-scrollbar{display:none;}
   #template-host .nav-links a{white-space:nowrap;flex-shrink:0;border:none!important;}
-  #template-host .nav{gap:10px;flex-wrap:nowrap;padding-left:14px!important;padding-right:14px!important;}
+  #template-host .nav{gap:10px!important;flex-wrap:nowrap!important;padding-left:14px!important;padding-right:14px!important;align-items:center!important;}
   /* Hide nav CTAs that would compete with templates dropdown */
   #template-host .nav .nav-cta{display:none!important;}
-  #template-host .tpl-switch-btn{padding:10px 14px!important;font-size:12px!important;letter-spacing:1px!important;min-height:44px;display:inline-flex;align-items:center;}
-  #template-host .tpl-switch-panel{right:0;min-width:230px;}
+  #template-host .tpl-switch{flex-shrink:0;}
+  #template-host .tpl-switch-btn{padding:10px 14px!important;font-size:12px!important;letter-spacing:1px!important;min-height:44px;display:inline-flex;align-items:center;white-space:nowrap;}
+  #template-host .tpl-switch-panel{right:0;min-width:230px;max-height:70vh;overflow-y:auto;}
   /* Mobile tap targets */
   #template-host .tpl-switch-panel a{padding:13px 14px!important;}
   /* H-scroll card widths fit phones */
@@ -407,8 +410,9 @@ body.template-active #password-modal{z-index:2010!important;}
   .tpl-slate .metric-item .lbl{font-size:11px!important;}
   .tpl-aurora .marquee-chip{padding:8px 16px;font-size:12px;}
   /* Logos shrink so nav fits */
-  .tpl-aurora .nav-logo,.tpl-noir .nav-logo,.tpl-terra .nav-logo,.tpl-slate .nav-logo{font-size:16px!important;flex-shrink:0;}
+  .tpl-aurora .nav-logo,.tpl-noir .nav-logo,.tpl-terra .nav-logo,.tpl-slate .nav-logo,.tpl-halo .nav-logo{font-size:16px!important;flex-shrink:0;}
   .tpl-forge .nav-logo{font-size:22px!important;letter-spacing:2px!important;flex-shrink:0;}
+  .tpl-manor .nav-logo{font-size:15px!important;letter-spacing:.35em!important;flex-shrink:0;}
   /* Hero stat in Forge stacks below */
   .tpl-forge .hero-stat{padding:24px!important;}
   .tpl-forge .hero-stat .big{font-size:80px!important;}
@@ -908,7 +912,7 @@ body.template-active #password-modal{z-index:2010!important;}
 .tpl-manor .nav-links a:hover{color:#f5f1ea;}
 .tpl-manor .hero{position:relative;height:100vh;min-height:720px;display:flex;align-items:center;justify-content:center;text-align:center;background:#0f0e0c;overflow:hidden;}
 .tpl-manor .hero-canvas{position:absolute;inset:0;z-index:0;}
-.tpl-manor .hero-canvas canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none;}
+.tpl-manor .hero-canvas canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:pan-y;}
 .tpl-manor .hero-canvas.grabbing canvas{cursor:grabbing;}
 .tpl-manor .hero-inner{pointer-events:none;}
 .tpl-manor .scroll-cue{pointer-events:none;}
@@ -4795,6 +4799,7 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
     const momentumDecay = 0.955;
 
     function getPoint(e){ return e.touches && e.touches[0] ? e.touches[0] : e; }
+    function isTouchEvt(e){ return e && (e.type && e.type.indexOf('touch') === 0 || (e.touches && e.touches.length)); }
 
     function onDown(e){
       isDragging = true;
@@ -4802,20 +4807,24 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
       const p = getPoint(e);
       lastX = p.clientX; lastY = p.clientY;
       velX = 0; velY = 0; // freeze any leftover momentum the moment user grabs
-      if (e.cancelable) e.preventDefault();
+      // Only block default on mouse — let browser own vertical scroll on touch (touch-action:pan-y)
+      if (!isTouchEvt(e) && e.cancelable) e.preventDefault();
     }
     function onMove(e){
       if (!isDragging) return;
+      const touch = isTouchEvt(e);
       const p = getPoint(e);
       const dx = p.clientX - lastX;
       const dy = p.clientY - lastY;
       lastX = p.clientX; lastY = p.clientY;
       gem.rotation.y += dx * dragSensitivity;
-      gem.rotation.x += dy * dragSensitivity;
-      // Capture instantaneous velocity for momentum after release
       velY = dx * dragSensitivity;
-      velX = dy * dragSensitivity;
-      if (e.cancelable) e.preventDefault();
+      if (!touch){
+        // Desktop: free rotation in both axes
+        gem.rotation.x += dy * dragSensitivity;
+        velX = dy * dragSensitivity;
+        if (e.cancelable) e.preventDefault();
+      }
     }
     function onUp(){
       if (!isDragging) return;
@@ -4827,8 +4836,8 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
     window.addEventListener('mouseleave', onUp);
-    canvas.addEventListener('touchstart', onDown, { passive: false });
-    window.addEventListener('touchmove', onMove, { passive: false });
+    canvas.addEventListener('touchstart', onDown, { passive: true });
+    window.addEventListener('touchmove', onMove, { passive: true });
     window.addEventListener('touchend', onUp);
     window.addEventListener('touchcancel', onUp);
 

@@ -1339,9 +1339,14 @@ body.template-active #pong-instructions p{margin:4px 0!important;}
   body.template-active #askJohnContainer{padding:24px 20px 20px!important;}
   body.template-active .resume-header h1{font-size:32px!important;}
   body.template-active .resume-header{padding-top:42px!important;}
-  body.template-active #john-only-toggle{font-size:10px!important;padding:6px 10px!important;}
+  /* Move John-Only toggle to the left so it doesn't collide with the fixed close button on the right. */
+  body.template-active #john-only-toggle{font-size:10px!important;padding:6px 10px!important;left:0!important;right:auto!important;}
   body.template-active .resume-layout{gap:20px!important;}
   body.template-active .resume-section h2{font-size:19px!important;}
+}
+/* Same collision happens in the default (pixel-game) overlay on mobile — pin John-Only top-left too. */
+@media(max-width:800px){
+  #askJohnContainer #john-only-toggle{left:10px;right:auto;}
 }
 
 /* ============================================================
@@ -1871,7 +1876,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
       <div class="menu-grid">
         <div class="dish">
-          <div class="img" style="background-image:url('https://images.unsplash.com/photo-1549931319-a545dcf3bc7c?w=900&q=80&auto=format&fit=crop');background-size:cover;background-position:center;"></div>
+          <div class="img" style="background-image:url('https://images.unsplash.com/photo-1509440159596-0249088772ff?w=900&q=80&auto=format&fit=crop');background-size:cover;background-position:center;"></div>
           <div class="body">
             <h3>Pane di Casa <span class="price">$8</span></h3>
             <p>Hand-shaped country bread, baked daily, served with cultured butter and sea salt.</p>
@@ -2705,8 +2710,16 @@ if (isMenuOpen) {
 const overlays = document.querySelectorAll('.scene-overlay'); let wasActive = !1;
 overlays.forEach(overlay => { if (overlay.style.display !== 'none') { overlay.style.display = 'none'; wasActive = !0; }});
 if (wasActive) {
+// If a template is still active behind the overlay, don't wake the pixel-game scene — its
+// touch handlers call preventDefault on every touchmove and block template scrolling.
+const templateActive = document.body.classList.contains('template-active');
+isDragging = !1; lookTouchId = null;
+if (templateActive) {
+isSceneActive = !1;
+if (renderer && renderer.domElement) renderer.domElement.style.pointerEvents = 'none';
+} else {
 isSceneActive = !0; renderer.domElement.style.pointerEvents = 'auto'; document.body.style.cursor = 'grab';
-isDragging = !1; lookTouchId = null; document.getElementById('coin-counter').style.display = 'block';
+document.getElementById('coin-counter').style.display = 'block';
 
 // Show the menu button again when returning to the scene
 if (document.getElementById('menu-btn')) {
@@ -2715,6 +2728,7 @@ if (document.getElementById('menu-btn')) {
 
 if (!isMobileDevice()) document.getElementById('instructions').style.display = 'block';
 else document.getElementById('mobile-controls').style.display = 'flex';
+}
 }}
 
 // 3D Utility Functions

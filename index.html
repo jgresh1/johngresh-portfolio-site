@@ -755,8 +755,8 @@ body.template-active #password-modal{z-index:2010!important;}
 .tpl-terra footer .copy{margin-top:30px;font-size:12px;color:#7a6f5e;}
 .tpl-terra .press{padding:30px 0;background:#2c2419;color:#e3a87c;border-top:1px solid rgba(227,168,124,.2);border-bottom:1px solid rgba(227,168,124,.2);}
 .tpl-terra .press .marquee-track{animation-duration:42s;}
-.tpl-terra .press::before{background:linear-gradient(90deg,#2c2419,transparent);}
-.tpl-terra .press::after{background:linear-gradient(-90deg,#2c2419,transparent);}
+.tpl-terra .press::before{background:linear-gradient(90deg,#2c2419,transparent);left:0;}
+.tpl-terra .press::after{background:linear-gradient(-90deg,#2c2419,transparent);right:0;}
 .tpl-terra .press-item{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;display:inline-flex;align-items:center;gap:32px;color:#d4cab8;}
 .tpl-terra .press-item strong{font-style:normal;font-family:system-ui,sans-serif;font-weight:600;font-size:11px;letter-spacing:3px;color:#e3a87c;text-transform:uppercase;}
 .tpl-terra .press-item::after{content:'\2756';color:#e3a87c;opacity:.5;}
@@ -820,8 +820,8 @@ body.template-active #password-modal{z-index:2010!important;}
 .tpl-slate footer{padding:40px 7vw;border-top:1px solid #eef0f6;display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px;font-size:14px;color:#8893b4;}
 .tpl-slate .metrics-bar{padding:18px 0;background:#0f1e3a;color:#fff;}
 .tpl-slate .metrics-bar .marquee-track{animation-duration:40s;}
-.tpl-slate .metrics-bar::before{background:linear-gradient(90deg,#0f1e3a,transparent);}
-.tpl-slate .metrics-bar::after{background:linear-gradient(-90deg,#0f1e3a,transparent);}
+.tpl-slate .metrics-bar::before{background:linear-gradient(90deg,#0f1e3a,transparent);left:0;}
+.tpl-slate .metrics-bar::after{background:linear-gradient(-90deg,#0f1e3a,transparent);right:0;}
 .tpl-slate .metric-item{display:inline-flex;align-items:baseline;gap:14px;font-family:'Inter',sans-serif;}
 .tpl-slate .metric-item .num{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:500;color:#5b8def;line-height:1;}
 .tpl-slate .metric-item .lbl{font-size:13px;color:#a3b2d4;letter-spacing:1px;text-transform:uppercase;}
@@ -4984,6 +4984,19 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
       if (w > 0 && h > 0){ renderer.setSize(w, h, false); camera.aspect = w/h; camera.updateProjectionMatrix(); }
     }
     window.addEventListener('resize', resize);
+    // iOS fires `resize` before layout settles after an orientation flip; the
+    // gem ends up rendered at the old aspect and CSS-stretched into the new
+    // box — looks "compressed and tall". Listen for orientationchange too and
+    // retry a few times until the new viewport stabilizes. ResizeObserver, when
+    // available, catches the actual settled parent box.
+    window.addEventListener('orientationchange', function(){
+      setTimeout(resize, 50);
+      setTimeout(resize, 250);
+      setTimeout(resize, 600);
+    });
+    if (typeof ResizeObserver !== 'undefined'){
+      try { new ResizeObserver(resize).observe(canvas.parentElement); } catch(_){}
+    }
     setTimeout(resize, 50);
     setTimeout(resize, 300);
 

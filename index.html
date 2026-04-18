@@ -345,8 +345,13 @@ canvas{display:block;touch-action:none;}
 /* =========================================================
    TEMPLATE FULLSCREEN HOST
    ========================================================= */
-#template-host{position:fixed;inset:0;z-index:1500;display:none;overflow-y:auto;overflow-x:hidden;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+#template-host{position:fixed;inset:0;z-index:1500;display:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:pan-y;}
 #template-host.active{display:block;}
+/* Decorative canvases inside templates must not hijack touch — scrolling passes through them. */
+#template-host canvas{touch-action:auto;}
+#template-host .hero-bg canvas,#template-host .canvas-cell canvas{pointer-events:none;}
+/* Manor's hero gem is interactive: horizontal drag rotates, vertical scrolls the page. */
+.tpl-manor .hero-canvas canvas{pointer-events:auto;touch-action:pan-y;}
 body.template-active #coin-counter,body.template-active #instructions,body.template-active #mobile-controls{display:none!important;}
 /* Hide the pixel-game hamburger + drawer while a template is active — each template has its own nav + Templates dropdown */
 body.template-active #menu-btn,body.template-active #menu-drawer{display:none!important;}
@@ -422,6 +427,14 @@ body.template-active #password-modal{z-index:2010!important;}
   .tpl-noir .lookbook-head,.tpl-forge .gallery-head,.tpl-slate .case-studies-head{margin-bottom:24px;}
   /* Buttons keep 44px tap targets */
   #template-host .btn-primary,#template-host .btn-secondary,#template-host .btn-fill,#template-host .btn-out,#template-host .btn-link,#template-host .btn-light{min-height:44px;display:inline-flex;align-items:center;justify-content:center;}
+  /* Pull hero text up under the sticky nav — desktop top padding left too much whitespace on phones. */
+  .tpl-aurora .hero{padding-top:36px!important;}
+  .tpl-halo .hero{padding-top:32px!important;min-height:auto!important;padding-bottom:60px!important;}
+  .tpl-forge .hero{padding-top:48px!important;padding-bottom:60px!important;}
+  .tpl-terra .hero{padding-top:32px!important;padding-bottom:40px!important;min-height:auto!important;}
+  .tpl-slate .hero{padding-top:44px!important;padding-bottom:60px!important;}
+  .tpl-noir .hero{height:auto!important;min-height:auto!important;padding:60px 6vw 80px!important;}
+  .tpl-manor .hero{height:auto!important;min-height:560px!important;}
 }
 #template-host .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.3,1);}
 #template-host .reveal.in{opacity:1;transform:translateY(0);}
@@ -4241,6 +4254,15 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
       host.classList.remove('active');
       document.body.classList.remove('template-active');
       clearTemplateBodyClasses();
+      // Restore the pixel-game scene: it owns touch + drag again.
+      if (typeof isSceneActive !== 'undefined'){
+        window.isSceneActive = true;
+        try { isSceneActive = true; } catch(_){}
+      }
+      if (typeof isDragging !== 'undefined'){ try { isDragging = false; lookTouchId = null; } catch(_){} }
+      if (typeof renderer !== 'undefined' && renderer && renderer.domElement){
+        renderer.domElement.style.pointerEvents = 'auto';
+      }
       window.scrollTo(0,0);
       return;
     }
@@ -4254,6 +4276,14 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
     clearTemplateBodyClasses();
     document.body.classList.add('tpl-active-' + name);
     setActiveSwitchLinks(name);
+    // Pause the pixel-game scene so its global touch handlers stop preventDefault'ing
+    // every touchmove (which was blocking scroll inside the template).
+    if (typeof isSceneActive !== 'undefined'){
+      try { isSceneActive = false; isDragging = false; lookTouchId = null; } catch(_){}
+    }
+    if (typeof renderer !== 'undefined' && renderer && renderer.domElement){
+      renderer.domElement.style.pointerEvents = 'none';
+    }
   }
 
   // Pixel-menu drawer submenu link clicks

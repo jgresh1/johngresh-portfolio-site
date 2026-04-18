@@ -387,20 +387,14 @@ body.template-active #password-modal{z-index:2010!important;}
    MOBILE OVERRIDES — make every template's nav usable on phones
    ============================================================ */
 @media(max-width:900px){
-  /* Re-enable nav-links as a horizontally scrollable chip strip on mobile.
-     Uses -webkit-overflow-scrolling so the chip strip can be flicked
-     horizontally without the page itself being panned. */
-  #template-host .nav-links{display:flex!important;gap:14px!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;-ms-overflow-style:none;scrollbar-width:none;flex:1 1 auto!important;min-width:0!important;padding:4px 6px 4px 0!important;font-size:12px!important;letter-spacing:1px!important;text-transform:uppercase;touch-action:pan-x;}
-  #template-host .nav-links::-webkit-scrollbar{display:none;}
-  #template-host .nav-links a{white-space:nowrap;flex-shrink:0;border:none!important;}
-  #template-host .nav{gap:10px!important;flex-wrap:nowrap!important;padding-left:14px!important;padding-right:14px!important;align-items:center!important;}
-  /* Hide nav CTAs that would compete with templates dropdown */
+  /* On mobile the inline nav-links + templates button are replaced by a per-template
+     hamburger that contains both the page links and the templates list. */
+  #template-host .nav-links{display:none!important;}
+  #template-host .tpl-switch{display:none!important;}
+  #template-host .tpl-burger{display:inline-flex!important;}
+  #template-host .nav{gap:10px!important;flex-wrap:nowrap!important;padding-left:14px!important;padding-right:14px!important;align-items:center!important;justify-content:space-between!important;}
+  /* Hide nav CTAs that would compete with the burger */
   #template-host .nav .nav-cta{display:none!important;}
-  #template-host .tpl-switch{flex-shrink:0;}
-  #template-host .tpl-switch-btn{padding:10px 14px!important;font-size:12px!important;letter-spacing:1px!important;min-height:44px;display:inline-flex;align-items:center;white-space:nowrap;}
-  #template-host .tpl-switch-panel{right:0;min-width:230px;max-height:70vh;overflow-y:auto;}
-  /* Mobile tap targets */
-  #template-host .tpl-switch-panel a{padding:13px 14px!important;}
   /* H-scroll card widths fit phones */
   .tpl-noir .lookbook-card{width:78vw!important;max-width:300px;height:380px!important;}
   .tpl-forge .job-card{width:80vw!important;max-width:320px;}
@@ -447,6 +441,84 @@ body.template-active #password-modal{z-index:2010!important;}
 #template-host .tpl-switch-panel a{display:flex;justify-content:space-between;align-items:center;text-decoration:none;cursor:pointer;padding:11px 14px;border-radius:8px;font-size:14px;font-weight:500;color:inherit;transition:background .2s;}
 #template-host .tpl-switch-panel a .tag-mini{font-size:10px;letter-spacing:1.5px;padding:2px 7px;border-radius:999px;font-weight:700;text-transform:uppercase;}
 #template-host .tpl-switch-panel a.active{font-weight:700;}
+
+/* ===== Per-template hamburger (mobile-only — desktop hides it) ===== */
+#template-host .tpl-burger{position:relative;display:none;flex-shrink:0;}
+#template-host .tpl-burger-btn{cursor:pointer;background:transparent;border:0;padding:0;width:46px;height:46px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:inherit;-webkit-tap-highlight-color:transparent;}
+#template-host .tpl-burger-btn .bar{display:block;width:24px;height:2px;background:currentColor;transition:transform .25s cubic-bezier(.2,.8,.3,1),opacity .2s ease;}
+#template-host .tpl-burger.open .tpl-burger-btn .bar:nth-child(1){transform:translateY(7px) rotate(45deg);}
+#template-host .tpl-burger.open .tpl-burger-btn .bar:nth-child(2){opacity:0;}
+#template-host .tpl-burger.open .tpl-burger-btn .bar:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+#template-host .tpl-burger-panel{position:absolute;top:calc(100% + 12px);right:0;min-width:240px;max-width:84vw;max-height:78vh;overflow-y:auto;display:none;z-index:60;padding:10px;}
+#template-host .tpl-burger.open .tpl-burger-panel{display:block;}
+#template-host .tpl-burger-panel a{display:flex;justify-content:space-between;align-items:center;text-decoration:none;cursor:pointer;padding:13px 16px;border-radius:8px;font-size:14px;font-weight:500;color:inherit;transition:background .2s;}
+#template-host .tpl-burger-panel a .tag-mini{font-size:10px;letter-spacing:1.5px;padding:2px 7px;border-radius:999px;font-weight:700;text-transform:uppercase;}
+#template-host .tpl-burger-panel a.active{font-weight:700;}
+#template-host .tpl-burger-panel .tpl-burger-divider{height:1px;background:currentColor;opacity:.14;margin:8px 6px;}
+#template-host .tpl-burger-panel .tpl-burger-label{padding:6px 14px 4px;font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:.55;font-weight:700;}
+
+/* Per-template burger skinning (mirrors each template's tpl-switch-panel) */
+.tpl-aurora .tpl-burger-btn{color:#fff;}
+.tpl-aurora .tpl-burger-panel{background:rgba(15,18,40,.96);border:1px solid rgba(255,255,255,.12);border-radius:14px;backdrop-filter:blur(18px);box-shadow:0 30px 80px -20px rgba(0,0,0,.7);}
+.tpl-aurora .tpl-burger-panel a{color:#cfd2e8;}
+.tpl-aurora .tpl-burger-panel a:hover{background:rgba(167,139,250,.15);color:#fff;}
+.tpl-aurora .tpl-burger-panel a.active{background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(236,72,153,.18));color:#fff;}
+.tpl-aurora .tpl-burger-panel a .tag-mini{background:rgba(167,139,250,.2);color:#c4b5fd;}
+.tpl-aurora .tpl-burger-panel .tpl-burger-label{color:#a78bfa;opacity:1;}
+
+.tpl-noir .tpl-burger-btn{color:#d4af37;}
+.tpl-noir .tpl-burger-panel{background:#0c0c0c;border:1px solid rgba(212,175,55,.4);padding:8px;border-radius:0;}
+.tpl-noir .tpl-burger-panel a{color:#cfc8b8;font-family:system-ui,sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-radius:0;border-bottom:1px solid rgba(212,175,55,.08);}
+.tpl-noir .tpl-burger-panel a:hover{color:#d4af37;background:rgba(212,175,55,.06);}
+.tpl-noir .tpl-burger-panel a.active{color:#d4af37;}
+.tpl-noir .tpl-burger-panel a .tag-mini{background:rgba(212,175,55,.15);color:#d4af37;border-radius:0;}
+.tpl-noir .tpl-burger-panel .tpl-burger-divider{background:#d4af37;opacity:.35;}
+.tpl-noir .tpl-burger-panel .tpl-burger-label{color:#d4af37;opacity:1;}
+
+.tpl-forge .tpl-burger-btn{color:#ff6b00;}
+.tpl-forge .tpl-burger-panel{background:#0e0e10;border:2px solid #ff6b00;padding:6px;border-radius:0;}
+.tpl-forge .tpl-burger-panel a{color:#fff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:0;border-left:3px solid transparent;}
+.tpl-forge .tpl-burger-panel a:hover{background:#16161a;border-left-color:#ff6b00;color:#ff6b00;}
+.tpl-forge .tpl-burger-panel a.active{background:#16161a;border-left-color:#ff6b00;color:#ff6b00;}
+.tpl-forge .tpl-burger-panel a .tag-mini{background:#ff6b00;color:#000;border-radius:0;}
+.tpl-forge .tpl-burger-panel .tpl-burger-divider{background:#ff6b00;opacity:.6;}
+.tpl-forge .tpl-burger-panel .tpl-burger-label{color:#ff6b00;opacity:1;}
+
+.tpl-terra .tpl-burger-btn{color:#c0573b;}
+.tpl-terra .tpl-burger-panel{background:#fff;border:1px solid rgba(192,87,59,.18);border-radius:18px;box-shadow:0 30px 80px -20px rgba(44,36,25,.25);}
+.tpl-terra .tpl-burger-panel a{color:#5a4a35;font-family:'Inter',sans-serif;}
+.tpl-terra .tpl-burger-panel a:hover{background:#f7f1e8;color:#c0573b;}
+.tpl-terra .tpl-burger-panel a.active{background:#f7f1e8;color:#c0573b;}
+.tpl-terra .tpl-burger-panel a .tag-mini{background:rgba(192,87,59,.12);color:#c0573b;}
+.tpl-terra .tpl-burger-panel .tpl-burger-divider{background:#c0573b;opacity:.35;}
+.tpl-terra .tpl-burger-panel .tpl-burger-label{color:#c0573b;opacity:1;}
+
+.tpl-slate .tpl-burger-btn{color:#0f1e3a;}
+.tpl-slate .tpl-burger-panel{background:#fff;border:1px solid #eef0f6;border-radius:10px;box-shadow:0 20px 50px -15px rgba(15,30,58,.18);}
+.tpl-slate .tpl-burger-panel a{color:#48557a;font-size:14px;}
+.tpl-slate .tpl-burger-panel a:hover{background:#fafbfd;color:#0f1e3a;}
+.tpl-slate .tpl-burger-panel a.active{background:#eef4ff;color:#0f1e3a;}
+.tpl-slate .tpl-burger-panel a .tag-mini{background:#eef4ff;color:#5b8def;}
+.tpl-slate .tpl-burger-panel .tpl-burger-divider{background:#5b8def;opacity:.25;}
+.tpl-slate .tpl-burger-panel .tpl-burger-label{color:#5b8def;opacity:1;}
+
+.tpl-halo .tpl-burger-btn{color:#fafafa;}
+.tpl-halo .tpl-burger-panel{background:#111;border:1px solid rgba(255,255,255,.10);border-radius:12px;backdrop-filter:blur(20px);box-shadow:0 30px 80px -20px rgba(0,0,0,.7);}
+.tpl-halo .tpl-burger-panel a{color:#d4d4d4;font-family:'JetBrains Mono',monospace;font-size:13px;border-radius:6px;}
+.tpl-halo .tpl-burger-panel a:hover{background:rgba(255,255,255,.05);color:#fafafa;}
+.tpl-halo .tpl-burger-panel a.active{background:rgba(59,130,246,.15);color:#3b82f6;}
+.tpl-halo .tpl-burger-panel a .tag-mini{background:rgba(59,130,246,.15);color:#3b82f6;font-family:'JetBrains Mono',monospace;}
+.tpl-halo .tpl-burger-panel .tpl-burger-divider{background:#3b82f6;opacity:.4;}
+.tpl-halo .tpl-burger-panel .tpl-burger-label{color:#3b82f6;font-family:'JetBrains Mono',monospace;opacity:1;}
+
+.tpl-manor .tpl-burger-btn{color:#c9a961;}
+.tpl-manor .tpl-burger-panel{background:#0a0908;border:1px solid rgba(201,169,97,.3);padding:8px;border-radius:0;}
+.tpl-manor .tpl-burger-panel a{color:#cfc8b8;font-family:'EB Garamond',serif;font-size:12px;letter-spacing:.18em;text-transform:uppercase;border-radius:0;border-bottom:1px solid rgba(201,169,97,.06);font-style:italic;}
+.tpl-manor .tpl-burger-panel a:hover{color:#c9a961;background:rgba(201,169,97,.05);}
+.tpl-manor .tpl-burger-panel a.active{color:#c9a961;}
+.tpl-manor .tpl-burger-panel a .tag-mini{background:rgba(201,169,97,.15);color:#c9a961;border-radius:0;}
+.tpl-manor .tpl-burger-panel .tpl-burger-divider{background:#c9a961;opacity:.35;}
+.tpl-manor .tpl-burger-panel .tpl-burger-label{color:#c9a961;font-family:'EB Garamond',serif;opacity:1;}
 
 /* ===== TEMPLATE 1 — AURORA (Modern SaaS / Tech) ===== */
 .tpl-aurora{font-family:'Inter','Segoe UI',sans-serif;background:#07091a;color:#e6e8f5;min-height:100%;line-height:1.55;}
@@ -939,8 +1011,9 @@ body.template-active #password-modal{z-index:2010!important;}
 .tpl-manor .hero h1 .char{display:inline-block;opacity:0;transform:translateY(40px);animation:manor-char .8s cubic-bezier(.2,.8,.3,1) forwards;}
 .tpl-manor .hero p.epigraph{font-style:italic;font-size:20px;color:#cfc8b8;max-width:520px;margin:0 auto 48px;font-family:'EB Garamond',serif;font-weight:400;opacity:0;animation:manor-fade-in 2s 1.4s ease forwards;}
 @keyframes manor-char{to{opacity:1;transform:translateY(0);}}
-.tpl-manor .hero .scroll-cue{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);z-index:3;font-family:'EB Garamond',serif;font-style:italic;color:#8b7355;font-size:13px;letter-spacing:.2em;text-transform:lowercase;display:flex;flex-direction:column;align-items:center;gap:14px;animation:manor-fade-in 1.6s 2s ease backwards;}
+.tpl-manor .hero .scroll-cue{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);z-index:3;font-family:'EB Garamond',serif;font-style:italic;color:#8b7355;font-size:13px;letter-spacing:.2em;text-transform:lowercase;display:flex;flex-direction:column;align-items:center;gap:14px;animation:manor-scroll-cue-in 1.6s 2s ease backwards;}
 .tpl-manor .hero .scroll-cue::after{content:'';width:1px;height:50px;background:linear-gradient(180deg,#8b7355,transparent);animation:manor-scroll-pulse 2.6s ease-in-out infinite;}
+@keyframes manor-scroll-cue-in{from{opacity:0;transform:translate(-50%,8px);}to{opacity:1;transform:translate(-50%,0);}}
 @keyframes manor-scroll-pulse{0%,100%{transform:scaleY(.4);transform-origin:top;}50%{transform:scaleY(1);}}
 .tpl-manor .established{padding:140px 6vw;text-align:center;border-bottom:1px solid rgba(201,169,97,.12);background:#0f0e0c;}
 .tpl-manor .established .label{margin-bottom:42px;}
@@ -4247,11 +4320,49 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
     host.querySelectorAll('.tpl-switch.open').forEach(function(s){ s.classList.remove('open'); });
   }
 
+  function closeAllBurgerPanels(){
+    host.querySelectorAll('.tpl-burger.open').forEach(function(s){ s.classList.remove('open'); });
+  }
+
   function setActiveSwitchLinks(name){
-    host.querySelectorAll('.tpl-switch-panel a').forEach(function(a){
+    host.querySelectorAll('.tpl-switch-panel a, .tpl-burger-panel a[data-template]').forEach(function(a){
       a.classList.toggle('active', a.getAttribute('data-template') === name);
     });
   }
+
+  // Inject a per-template hamburger into each template's <nav>. The burger
+  // contains the same overlay links as .nav-links plus the templates list, so
+  // mobile users get one tidy menu instead of a crowded chip strip + dropdown.
+  (function buildBurgers(){
+    var TPL_LIST = [
+      ['default','Default','Game'],['aurora','Aurora','Lift'],['noir','Noir','Luxe'],
+      ['forge','Forge','Steel'],['terra','Terra','Table'],['slate','Slate','Studio'],
+      ['halo','Halo','Elite'],['manor','Manor','Maison']
+    ];
+    host.querySelectorAll('[data-tpl]').forEach(function(tpl){
+      var nav = tpl.querySelector('nav.nav');
+      if (!nav || nav.querySelector('.tpl-burger')) return;
+      var tplName = tpl.getAttribute('data-tpl');
+      var html = '<div class="tpl-burger-label">Menu</div>';
+      var srcLinks = nav.querySelectorAll('.nav-links a[data-overlay]');
+      srcLinks.forEach(function(a){
+        html += '<a href="#" data-overlay="' + a.getAttribute('data-overlay') + '">' + a.textContent.trim() + '</a>';
+      });
+      html += '<div class="tpl-burger-divider"></div><div class="tpl-burger-label">Templates</div>';
+      TPL_LIST.forEach(function(t){
+        var active = (t[0] === tplName) ? ' class="active"' : '';
+        html += '<a href="#" data-template="' + t[0] + '"' + active + '>' + t[1] + '<span class="tag-mini">' + t[2] + '</span></a>';
+      });
+      var burger = document.createElement('div');
+      burger.className = 'tpl-burger';
+      burger.innerHTML =
+        '<button type="button" class="tpl-burger-btn" aria-label="Open menu">' +
+          '<span class="bar"></span><span class="bar"></span><span class="bar"></span>' +
+        '</button>' +
+        '<div class="tpl-burger-panel">' + html + '</div>';
+      nav.appendChild(burger);
+    });
+  })();
 
   const TPL_NAMES = ['aurora','noir','forge','terra','slate','halo','manor'];
 
@@ -4261,6 +4372,7 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
 
   function showTemplate(name){
     closeAllSwitchPanels();
+    closeAllBurgerPanels();
     // Hide every template panel first
     host.querySelectorAll('[data-tpl]').forEach(function(el){ el.style.display = 'none'; });
 
@@ -4350,6 +4462,19 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
       const wrap = switchBtn.parentElement;
       const wasOpen = wrap.classList.contains('open');
       closeAllSwitchPanels();
+      closeAllBurgerPanels();
+      if (!wasOpen) wrap.classList.add('open');
+      return;
+    }
+
+    const burgerBtn = e.target.closest('.tpl-burger-btn');
+    if (burgerBtn){
+      e.preventDefault();
+      e.stopPropagation();
+      const wrap = burgerBtn.closest('.tpl-burger');
+      const wasOpen = wrap.classList.contains('open');
+      closeAllSwitchPanels();
+      closeAllBurgerPanels();
       if (!wasOpen) wrap.classList.add('open');
       return;
     }
@@ -4366,14 +4491,16 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
       e.preventDefault();
       const id = ovLink.getAttribute('data-overlay');
       closeAllSwitchPanels();
+      closeAllBurgerPanels();
       if (typeof showOverlay === 'function') showOverlay(id);
       return;
     }
   });
 
-  // Click outside any open switcher closes it
+  // Click outside any open switcher / burger closes them
   document.addEventListener('click', function(e){
     if (!e.target.closest('.tpl-switch')) closeAllSwitchPanels();
+    if (!e.target.closest('.tpl-burger')) closeAllBurgerPanels();
   });
 
   // ============================================================

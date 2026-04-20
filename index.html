@@ -8,8 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap" rel="stylesheet">
 <style>
 html{height:100%;overflow:hidden;overscroll-behavior:none;}
-body{margin:0;overflow:hidden;background-color:#1a053a;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;}
-body.template-active{position:fixed;inset:0;width:100%;height:100%;}
+body{margin:0;overflow:hidden;background-color:#1a053a;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;height:100%;}
 .emoji-icon{display:inline-block;width:1em;height:1em;vertical-align:-0.15em;stroke-width:2;flex-shrink:0;}
 
 /* --- Loading screen --- */
@@ -360,7 +359,7 @@ canvas{display:block;touch-action:none;}
 /* =========================================================
    TEMPLATE FULLSCREEN HOST
    ========================================================= */
-#template-host{position:fixed;inset:0;z-index:1500;display:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:pan-y;}
+#template-host{position:fixed;inset:0;z-index:1500;display:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:none;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:pan-y;}
 #template-host.active{display:block;}
 /* Decorative canvases inside templates must not hijack touch — scrolling passes through them. */
 #template-host canvas{touch-action:auto;}
@@ -1907,7 +1906,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
     </nav>
     <section class="hero">
-      <video class="hero-video-bg" autoplay muted loop playsinline onloadedmetadata="this.playbackRate=0.333"><source src="https://cdn.pixabay.com/video/2017/11/02/12716-241674181_large.mp4" type="video/mp4"></video>
+      <video class="hero-video-bg" autoplay muted loop playsinline preload="auto" data-rate="0.333"><source src="https://cdn.pixabay.com/video/2017/11/02/12716-241674181_large.mp4" type="video/mp4"></video>
       <div class="hero-video-overlay"></div>
       <div class="pill"><svg class="emoji-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Websites &middot; Web Apps &middot; Automation</div>
       <h1>Websites that<br><span class="accent">actually ship.</span></h1>
@@ -2012,7 +2011,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
     </nav>
     <section class="hero">
-      <video class="hero-video-bg" autoplay muted loop playsinline><source src="https://cdn.pixabay.com/video/2023/11/13/189018-884234917_large.mp4" type="video/mp4"></video>
+      <video class="hero-video-bg" autoplay muted loop playsinline preload="auto" data-rate="0.5"><source src="https://cdn.pixabay.com/video/2023/11/13/189018-884234917_large.mp4" type="video/mp4"></video>
       <div class="hero-video-overlay"></div>
       <div class="hero-inner">
         <div class="ornament">&mdash; &diams; &mdash;</div>
@@ -2097,7 +2096,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
     </nav>
     <section class="hero">
-      <video class="hero-video-bg" autoplay muted loop playsinline onloadedmetadata="this.playbackRate=0.5"><source src="https://cdn.pixabay.com/video/2017/10/21/12543-239934681_large.mp4" type="video/mp4"></video>
+      <video class="hero-video-bg" autoplay muted loop playsinline preload="auto" data-rate="0.5"><source src="https://cdn.pixabay.com/video/2017/10/21/12543-239934681_large.mp4" type="video/mp4"></video>
       <div class="hero-video-overlay"></div>
       <div class="hero-grid">
         <div>
@@ -2210,7 +2209,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
     </nav>
     <section class="hero">
-      <video class="hero-video-bg" autoplay muted loop playsinline><source src="https://cdn.pixabay.com/video/2016/05/12/3152-166336023_large.mp4" type="video/mp4"></video>
+      <video class="hero-video-bg" autoplay muted loop playsinline preload="auto" data-rate="0.5"><source src="https://cdn.pixabay.com/video/2016/05/12/3152-166336023_large.mp4" type="video/mp4"></video>
       <div class="hero-video-overlay"></div>
       <div>
         <div class="label">&mdash; Winston-Salem, NC</div>
@@ -2704,7 +2703,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
     </nav>
     <section class="hero">
-      <video class="hero-video-bg" autoplay muted loop playsinline><source src="https://cdn.pixabay.com/video/2021/10/12/91744-636709154_large.mp4" type="video/mp4"></video>
+      <video class="hero-video-bg" autoplay muted loop playsinline preload="auto" data-rate="0.5"><source src="https://cdn.pixabay.com/video/2021/10/12/91744-636709154_large.mp4" type="video/mp4"></video>
       <div class="hero-video-overlay"></div>
       <div class="eyebrow">Website &amp; Software Studio</div>
       <h1>Quiet studio.<br><em>Shipped work.</em></h1>
@@ -2930,7 +2929,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
     </nav>
     <section class="hero-photo ivy-hero-clean">
-      <video class="bg" autoplay muted loop playsinline poster="https://images.unsplash.com/photo-1592919505780-303950717480?w=1800&amp;q=80&amp;auto=format&amp;fit=crop">
+      <video class="bg" autoplay muted loop playsinline preload="auto" data-rate="0.5" poster="https://images.unsplash.com/photo-1592919505780-303950717480?w=1800&amp;q=80&amp;auto=format&amp;fit=crop">
         <source src="https://cdn.pixabay.com/video/2020/07/22/45301-442657794_large.mp4" type="video/mp4">
       </video>
       <a class="ivy-hero-scroll" href="#intro" aria-label="Scroll down">
@@ -3137,7 +3136,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
     </nav>
     <section class="hero">
-      <video class="hero-video-bg" autoplay muted loop playsinline><source src="https://cdn.pixabay.com/video/2023/08/15/176072-854875280_large.mp4" type="video/mp4"></video>
+      <video class="hero-video-bg" autoplay muted loop playsinline preload="auto" data-rate="0.5"><source src="https://cdn.pixabay.com/video/2023/08/15/176072-854875280_large.mp4" type="video/mp4"></video>
       <div class="hero-video-overlay"></div>
       <div class="hero-bg"><canvas data-halo-gradient></canvas></div>
       <div class="eyebrow"><span class="pulse"></span><span class="mono">v3.0 &middot; shipped today</span></div>
@@ -3323,7 +3322,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
     </nav>
     <section class="hero">
-      <video class="hero-video-bg" autoplay muted loop playsinline><source src="https://cdn.pixabay.com/video/2022/12/22/143861-784164182_large.mp4" type="video/mp4"></video>
+      <video class="hero-video-bg" autoplay muted loop playsinline preload="auto" data-rate="0.5"><source src="https://cdn.pixabay.com/video/2022/12/22/143861-784164182_large.mp4" type="video/mp4"></video>
       <div class="hero-video-overlay"></div>
       <div class="hero-canvas"><canvas data-manor-gem></canvas></div>
       <div class="hero-vignette"></div>
@@ -6203,20 +6202,32 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
           v.setAttribute('playsinline','');
           v.setAttribute('webkit-playsinline','');
         } catch(_){}
+        var rate = parseFloat(v.getAttribute('data-rate') || '1') || 1;
+        var applyRate = function(){ try { v.playbackRate = rate; v.defaultPlaybackRate = rate; } catch(_){} };
+        if (rate !== 1 && !v._rateBound){
+          v._rateBound = true;
+          // Apply rate on every event that could reset it. iOS resets playbackRate
+          // when a video is paused/resumed or when it loops, so rebind liberally.
+          ['loadedmetadata','canplay','play','playing','seeked','ratechange'].forEach(function(ev){
+            v.addEventListener(ev, applyRate);
+          });
+        }
         var p;
         try { p = v.play(); } catch(_){}
-        if (p && typeof p.catch === 'function'){
-          p.catch(function(){
+        if (p && typeof p.then === 'function'){
+          p.then(applyRate).catch(function(){
             // Autoplay was blocked (rare — iOS Low Power Mode, etc.).
             // Retry on the first user interaction anywhere on the page.
             var retry = function(){
-              v.play().catch(function(){});
+              v.play().then(applyRate).catch(function(){});
               document.removeEventListener('touchstart', retry, true);
               document.removeEventListener('click', retry, true);
             };
             document.addEventListener('touchstart', retry, { capture:true, once:true, passive:true });
             document.addEventListener('click', retry, { capture:true, once:true });
           });
+        } else {
+          applyRate();
         }
       });
       // Premium init/scenes

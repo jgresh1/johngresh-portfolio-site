@@ -6185,6 +6185,32 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
         if (prev) prev.disabled = true;
         if (next) next.disabled = max <= 0;
       });
+      // Kick autoplay videos. iOS/Safari/Chrome pause videos inside display:none
+      // panels and won't re-fire the autoplay attribute when the panel is shown.
+      // The template switch itself is a user gesture, so muted .play() is allowed.
+      panel.querySelectorAll('video[autoplay]').forEach(function(v){
+        try { v.muted = true; v.defaultMuted = true; v.playsInline = true; } catch(_){}
+        try {
+          v.setAttribute('muted','');
+          v.setAttribute('playsinline','');
+          v.setAttribute('webkit-playsinline','');
+        } catch(_){}
+        var p;
+        try { p = v.play(); } catch(_){}
+        if (p && typeof p.catch === 'function'){
+          p.catch(function(){
+            // Autoplay was blocked (rare — iOS Low Power Mode, etc.).
+            // Retry on the first user interaction anywhere on the page.
+            var retry = function(){
+              v.play().catch(function(){});
+              document.removeEventListener('touchstart', retry, true);
+              document.removeEventListener('click', retry, true);
+            };
+            document.addEventListener('touchstart', retry, { capture:true, once:true, passive:true });
+            document.addEventListener('click', retry, { capture:true, once:true });
+          });
+        }
+      });
       // Premium init/scenes
       if (TPL_INIT[name] && !TPL_DONE[name]){
         TPL_INIT[name](panel);

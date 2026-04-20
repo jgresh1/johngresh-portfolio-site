@@ -3161,7 +3161,7 @@ if (isSceneActive) { updatePlayerMovement(delta); updateCoins(delta, time); }
 if (isSceneActive || fireworks.length > 0) composer.render();
 if (!hasRenderedOnce) {
  hasRenderedOnce = true;
- const loader = document.getElementById('site-loader'); if (loader) setTimeout(() => { loader.classList.add('hidden'); setTimeout(() => loader.remove(), 700); }, 200);
+ const loader = document.getElementById('site-loader'); if (loader) setTimeout(() => { loader.classList.add('hidden'); setTimeout(() => loader.remove(), 700); }, 200); try { window.__templateVideoPrefetch && window.__templateVideoPrefetch.kick(); } catch(_){}
 }
 }
 // Safety fallback: hide loader after 6s even if render never fires
@@ -4322,7 +4322,7 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
  const origShowTemplate = showTemplate;
  showTemplate = function(name){
   stopAllTplScenes();
- origShowTemplate(name); if (!name || name === 'default') return; const panel = host.querySelector('[data-tpl="' + name + '"]'); if (!panel) return;
+ origShowTemplate(name); try { window.__templateVideoPrefetch && window.__templateVideoPrefetch.priority(name); } catch(_){} if (!name || name === 'default') return; const panel = host.querySelector('[data-tpl="' + name + '"]'); if (!panel) return;
   if (revealObserver){
    panel.querySelectorAll('.reveal').forEach(function(el){
     el.classList.remove('in');
@@ -4388,6 +4388,132 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   // attach magnetic to anything new in nav
   attachMagnetic(panel);
  };
+ // ============================================================
+ // BACKGROUND TEMPLATE-VIDEO PREFETCH
+ //
+ // Problem: every <video> in the template host ships preload="none"
+ // so mobile isn't blocked on initial page load. Cost: the first tap on
+ // any template sits on a cold network for seconds while the video downloads.
+ //
+ // Fix: once the 3D scene has rendered at least once (hasRenderedOnce hook
+ // in animate()), warm the browser's HTTP cache for every unique template
+ // video URL in the background. When the user later opens a template, its
+ // <video>.load() pulls straight from cache.
+ //
+ // - Mobile:   1 concurrent fetch, 250ms gap, starts ~1.8s after first render
+ //             AND downgrades _large.mp4 to _medium.mp4 across the HTML so
+ //             both the cache and the <video> element use the smaller file
+ //             (Pixabay ships both; _medium is ~2-4x smaller).
+ // - Desktop:  2 concurrent, 80ms gap, starts ~600ms after first render.
+ // - When showTemplate(name) fires, that template's URLs jump to the front
+ //   of the queue and any non-priority in-flight fetches are aborted.
+ // ============================================================
+ (function initTplVideoPrefetch(){
+  if (!host) return;
+  var mobile = (typeof isMobileDevice === 'function') ? !!isMobileDevice() : (window.innerWidth <= 800);
+
+  if (mobile){
+   var down = function(u){ return u ? u.replace(/_large\.mp4/g, '_medium.mp4') : u; };
+   host.querySelectorAll('video source').forEach(function(s){
+    var u = s.getAttribute('src'); if (u && /_large\.mp4/.test(u)) s.setAttribute('src', down(u));
+    var du = s.getAttribute('data-src'); if (du && /_large\.mp4/.test(du)) s.setAttribute('data-src', down(du));
+   });
+   host.querySelectorAll('video[data-playlist]').forEach(function(v){
+    try {
+     var list = JSON.parse(v.getAttribute('data-playlist') || '[]');
+     v.setAttribute('data-playlist', JSON.stringify(list.map(down)));
+    } catch(_){}
+   });
+  }
+
+  // A sibling script (right after #template-host closes) strips each <source>
+  // src into data-src so no video starts loading on initial page load. The
+  // prefetcher reads from BOTH so it also works before that lazy-swap runs.
+  function collect(root){
+   var set = {};
+   root.querySelectorAll('video source').forEach(function(s){
+    var u = s.getAttribute('src') || s.getAttribute('data-src');
+    if (u && u.indexOf('.mp4') !== -1) set[u] = true;
+   });
+   root.querySelectorAll('video[data-playlist]').forEach(function(v){
+    try {
+     JSON.parse(v.getAttribute('data-playlist') || '[]').forEach(function(u){ if (u) set[u] = true; });
+    } catch(_){}
+   });
+   return Object.keys(set);
+  }
+
+  var queue = null;
+  var done = Object.create(null);
+  var inFlight = Object.create(null);
+  var active = 0;
+  var started = false;
+  var maxConc = mobile ? 1 : 2;
+  var gapMs = mobile ? 250 : 80;
+
+  function fetchOne(url){
+   if (done[url] || inFlight[url]) { drain(); return; }
+   var ctrl = ('AbortController' in window) ? new AbortController() : null;
+   inFlight[url] = ctrl || true; active++;
+   var opts = { mode:'cors', credentials:'omit', cache:'force-cache' };
+   if (ctrl) opts.signal = ctrl.signal;
+   fetch(url, opts).then(function(r){
+    if (!r || !r.ok) throw 0;
+    if (r.body && r.body.getReader){
+     var reader = r.body.getReader();
+     return (function pump(){
+      return reader.read().then(function(res){ return res.done ? null : pump(); });
+     })();
+    }
+    return r.blob();
+   }).catch(function(){}).then(function(){
+    done[url] = true; delete inFlight[url]; active = Math.max(0, active - 1);
+    setTimeout(drain, gapMs);
+   });
+  }
+
+  function drain(){
+   if (!queue) return;
+   while (active < maxConc && queue.length){
+    var url = queue.shift();
+    if (!done[url] && !inFlight[url]) fetchOne(url);
+   }
+  }
+
+  function kick(){
+   if (started) return; started = true;
+   queue = collect(host);
+   var begin = function(){ drain(); };
+   var delay = mobile ? 1800 : 600;
+   setTimeout(function(){
+    if ('requestIdleCallback' in window){
+     try { requestIdleCallback(begin, { timeout: 3000 }); return; } catch(_){}
+    }
+    begin();
+   }, delay);
+  }
+
+  function priority(name){
+   if (!queue) return;
+   var panel = host.querySelector('[data-tpl="' + name + '"]'); if (!panel) return;
+   var urls = collect(panel);
+   Object.keys(inFlight).forEach(function(u){
+    if (urls.indexOf(u) === -1){
+     var c = inFlight[u]; if (c && c.abort) { try { c.abort(); } catch(_){} }
+     delete inFlight[u]; active = Math.max(0, active - 1);
+     if (queue.indexOf(u) === -1 && !done[u]) queue.push(u);
+    }
+   });
+   for (var i = urls.length - 1; i >= 0; i--){
+    var u = urls[i]; var idx = queue.indexOf(u); if (idx !== -1) queue.splice(idx, 1);
+    if (!done[u] && !inFlight[u]) queue.unshift(u);
+   }
+   if (!started){ started = true; setTimeout(drain, 0); } else { drain(); }
+  }
+
+  window.__templateVideoPrefetch = { kick: kick, priority: priority };
+ })();
+
 })();
 </script>
 

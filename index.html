@@ -1632,11 +1632,10 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
       <div class="footer-fine">&copy; 2026 The Greshwood Club &middot; All Rights Reserved &middot; <em>Founded MMXXV</em></div>
 </footer>
 <script>
-  (function(){
-   // The Grounds tiles now autoplay (muted+loop) on every platform so the
-   // first frame/motion is visible on mobile, where there is no hover.
-   // On desktop we just make sure playback resumes if the browser paused
-   // them (e.g. tab refocus) — no pause-on-mouseleave anymore.
+  window.__ivyInit = (function(){
+   var done = false;
+   return function(){
+   if (done) return; done = true;
    var tiles=document.querySelectorAll('.tpl-ivy .ivy-grounds-tile video');
    tiles.forEach(function(v){
     try{ v.muted=true; v.defaultMuted=true; v.playsInline=true; }catch(_){}
@@ -1691,6 +1690,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
     kick(); v.addEventListener('loadeddata', kick, {once:true}); v.addEventListener('canplay', kick, {once:true});
     preloadBack();
    });
+   };
   })();
 </script>
   </div>
@@ -1823,6 +1823,17 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
 <!-- ============================================================
      END TEMPLATE HOST
      ============================================================ -->
+<script>
+(function(){
+  document.querySelectorAll('[data-tpl] video').forEach(function(v){
+    v.querySelectorAll('source').forEach(function(s){
+      if (s.getAttribute('src')) { s.dataset.src = s.getAttribute('src'); s.removeAttribute('src'); }
+    });
+    if (v.hasAttribute('autoplay')) { v.dataset.autoplay = '1'; v.removeAttribute('autoplay'); }
+    try { v.load(); } catch(_){}
+  });
+})();
+</script>
 
 <!-- Contact / Booking modal — themes per active template via CSS vars -->
 <div id="tpl-contact-modal" role="dialog" aria-modal="true" aria-labelledby="tpl-contact-title">
@@ -3674,7 +3685,12 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   var _fontsLink = document.getElementById('tpl-fonts'); if (_fontsLink && _fontsLink.media !== 'all') _fontsLink.media = 'all';
   const panel = host.querySelector('[data-tpl="' + name + '"]');
  if (!panel) return; panel.style.display = 'block'; host.scrollTop = 0; host.classList.add('active'); document.body.classList.add('template-active');
-  panel.querySelectorAll('video').forEach(function(v){ try { v.load(); } catch(_){} });
+  panel.querySelectorAll('video').forEach(function(v){
+    v.querySelectorAll('source').forEach(function(s){ if (!s.getAttribute('src') && s.dataset.src) s.setAttribute('src', s.dataset.src); });
+    if (v.dataset.autoplay && !v.hasAttribute('autoplay')) v.setAttribute('autoplay','');
+    try { v.preload='auto'; v.load(); var p=v.play(); if(p&&p.catch)p.catch(function(){}); } catch(_){}
+  });
+  if (name === 'ivy' && typeof window.__ivyInit === 'function') { try { window.__ivyInit(); } catch(_){} }
   clearTemplateBodyClasses();
  document.body.classList.add('tpl-active-' + name); setActiveSwitchLinks(name);
   // Pause the pixel-game scene so its global touch handlers stop preventDefault'ing

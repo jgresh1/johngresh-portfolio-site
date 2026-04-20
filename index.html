@@ -2938,7 +2938,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
     <section class="ivy-intro" id="intro">
       <div class="ivy-intro-eyebrow">The Greshwood Club &middot; Est. 2025 &middot; Winston-Salem</div>
       <h2>Where Carolina Craft Meets <em>Quiet Software.</em></h2>
-      <p>For the last year, the Greshwood Club has practiced a slow sort of web development on the quiet end of Reynolda Road &mdash; marketing sites, custom software, and Shopify commerce tools for the independent shops, kitchens, and small manufacturers of the Piedmont Triad. Members welcome by appointment. Non-members too.</p>
+      <p>For the last year, the Greshwood Club has practiced a slow sort of web development from a small studio on Buckingham Road &mdash; marketing sites, custom software, and Shopify commerce tools for the independent shops, kitchens, and small manufacturers of the Piedmont Triad. Members welcome by appointment. Non-members too.</p>
       <a class="ivy-intro-link" href="#commissions">The Recent Book of Work &rarr;</a>
     </section>
     <section class="ivy-grounds" id="grounds">
@@ -2949,19 +2949,19 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       </div>
       <div class="ivy-grounds-grid">
         <figure class="ivy-grounds-tile" data-ivy-hover>
-          <video muted loop playsinline preload="metadata">
+          <video autoplay muted loop playsinline preload="auto" webkit-playsinline>
             <source src="https://cdn.pixabay.com/video/2022/09/08/130578-747868205_large.mp4" type="video/mp4">
           </video>
           <figcaption>The Coastal Green</figcaption>
         </figure>
         <figure class="ivy-grounds-tile" data-ivy-hover>
-          <video muted loop playsinline preload="metadata">
+          <video autoplay muted loop playsinline preload="auto" webkit-playsinline>
             <source src="https://cdn.pixabay.com/video/2017/07/23/10803-226624929_large.mp4" type="video/mp4">
           </video>
           <figcaption>The Seventh Bunker</figcaption>
         </figure>
         <figure class="ivy-grounds-tile" data-ivy-hover>
-          <video muted loop playsinline preload="metadata">
+          <video autoplay muted loop playsinline preload="auto" webkit-playsinline>
             <source src="https://cdn.pixabay.com/video/2026/02/17/335040_large.mp4" type="video/mp4">
           </video>
           <figcaption>Greshwood Pines</figcaption>
@@ -3012,7 +3012,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
         <div class="commission-card">
           <div class="chapter">No. II</div>
           <div class="result"><em>Autumn</em> 2025</div>
-          <h3>A Reynolda Village Storefront</h3>
+          <h3>A Winston-Salem Storefront</h3>
           <p>A slow Shopify theme replaced, top to bottom. Twenty-two percent return in conversion against the prior quarter.</p>
           <div class="marks"><span>Shopify</span><span>Speed</span></div>
         </div>
@@ -3040,11 +3040,11 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       <div class="bio">
         <div class="bio-portrait"><div class="initials">JG</div></div>
         <div>
-          <div class="role">Principal &middot; 605 Reynolda Road, Winston-Salem</div>
+          <div class="role">Principal &middot; 150 Buckingham Rd, Winston-Salem</div>
           <h3>John Gresh</h3>
-          <p>An independent developer on the quiet end of Reynolda Road in Winston-Salem, North Carolina. A background in mechatronics at North Carolina State and ten years of production code at companies in Raleigh and Charlotte before the studio opened its doors in the spring of 2025.</p>
+          <p>An independent developer working from a small studio on Buckingham Road in Winston-Salem, North Carolina. A background in mechatronics at North Carolina State and ten years of production code at companies in Raleigh and Charlotte before the studio opened its doors in the spring of 2025.</p>
           <p>Small businesses seldom need a six-figure agency. What they need is a site that works on a phone, loads quickly on the Piedmont's uneven cellular, and someone who picks up the line in the evening when a form starts dropping submissions from the contact page.</p>
-          <p>Outside the studio: a slow runner through Reynolda Gardens, a patient golden retriever named Birdie, and a long-standing and unsuccessful feud with the crepe myrtle out front.</p>
+          <p>Outside the studio: a slow runner, a patient golden retriever named Birdie, and a long-standing and unsuccessful feud with the crepe myrtle out front.</p>
           <div class="bio-signature">&mdash; John</div>
         </div>
       </div>
@@ -3055,8 +3055,8 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
       <h2>Start a project.</h2>
       <p>Calls are free and unscripted. Most projects begin within the fortnight after a scope is signed. The studio is small by design; two or three engagements run at a time, no more.</p>
       <div class="contact-address">
-        605 Reynolda Road<br>
-        Winston-Salem, North Carolina 27104<br>
+        150 Buckingham Rd<br>
+        Winston-Salem, North Carolina<br>
         <em>by appointment</em>
       </div>
       <div class="contact-lines">
@@ -3067,7 +3067,7 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
     <footer>
       <div class="footer-col">
         <div class="fine">The Studio</div>
-        <div class="footer-address">The Greshwood Club<br>605 Reynolda Road<br>Winston-Salem, NC 27104<br>(336) 995&#8209;4119</div>
+        <div class="footer-address">The Greshwood Club<br>150 Buckingham Rd<br>Winston-Salem, NC<br>(336) 995&#8209;4119</div>
       </div>
       <div class="footer-col">
         <div class="fine">On the Premises</div>
@@ -3091,12 +3091,17 @@ body.tpl-active-manor .bot-message{border-radius:0!important;}
     </footer>
     <script>
     (function(){
-      var tiles=document.querySelectorAll('.tpl-ivy .ivy-grounds-tile[data-ivy-hover]');
-      tiles.forEach(function(tile){
-        var v=tile.querySelector('video');
-        if(!v)return;
-        tile.addEventListener('mouseenter',function(){var p=v.play();if(p&&p.catch)p.catch(function(){});});
-        tile.addEventListener('mouseleave',function(){v.pause();try{v.currentTime=0;}catch(e){}});
+      // The Grounds tiles now autoplay (muted+loop) on every platform so the
+      // first frame/motion is visible on mobile, where there is no hover.
+      // On desktop we just make sure playback resumes if the browser paused
+      // them (e.g. tab refocus) — no pause-on-mouseleave anymore.
+      var tiles=document.querySelectorAll('.tpl-ivy .ivy-grounds-tile video');
+      tiles.forEach(function(v){
+        try{ v.muted=true; v.defaultMuted=true; v.playsInline=true; }catch(_){}
+        var kick=function(){ var p=v.play(); if(p&&p.catch)p.catch(function(){}); };
+        kick();
+        v.addEventListener('loadeddata', kick, {once:true});
+        v.addEventListener('canplay', kick, {once:true});
       });
     })();
     </script>

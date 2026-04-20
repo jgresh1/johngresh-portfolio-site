@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background:#1a053a">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>John Gresh : Portfolio Web Game (V2 + Templates)</title><link rel="preconnect" href="https://cdn.pixabay.com" crossorigin><link rel="dns-prefetch" href="https://cdn.pixabay.com"><link rel="preconnect" href="https://images.unsplash.com" crossorigin><link rel="dns-prefetch" href="https://images.unsplash.com"><link rel="preload" as="video" href="https://cdn.pixabay.com/video/2020/07/22/45301-442657794_medium.mp4" type="video/mp4" crossorigin><link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap" rel="stylesheet">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><meta name="theme-color" content="#1a053a"><style>html,body{background:#1a053a}</style><title>John Gresh : Portfolio Web Game (V2 + Templates)</title><link rel="preconnect" href="https://cdn.pixabay.com" crossorigin><link rel="dns-prefetch" href="https://cdn.pixabay.com"><link rel="preconnect" href="https://images.unsplash.com" crossorigin><link rel="dns-prefetch" href="https://images.unsplash.com"><link rel="preload" as="video" href="https://cdn.pixabay.com/video/2020/07/22/45301-442657794_medium.mp4" type="video/mp4" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap"></noscript>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap"></noscript>
 <style>
 html{height:100%;overflow:hidden;overscroll-behavior:none}body{margin:0;overflow:hidden;background-color:#1a053a;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;height:100%}
 .emoji-icon{display:inline-block;width:1em;height:1em;vertical-align:-0.15em;stroke-width:2;flex-shrink:0}
@@ -596,8 +596,10 @@ body.template-active .scene-overlay{z-index:1700!important}body.template-active 
 .tpl-halo .bento-cell.span-3{grid-column:span 3}.tpl-halo .bento-cell.span-2{grid-column:span 2}.tpl-halo .bento-cell.span-4{grid-column:span 4}.tpl-halo .bento-cell.tall{grid-row:span 2}
 .tpl-halo .bento-cell.feature .visual{position:absolute;right:-40px;bottom:-60px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,#3b82f6 0%,transparent 70%);opacity:.15;filter:blur(24px)}
 .tpl-halo .bento-cell .canvas-cell{position:absolute;inset:0;z-index:0;pointer-events:none}.tpl-halo .bento-cell .canvas-cell canvas{width:100%;height:100%;display:block}
+.tpl-halo .bento-cell.feature .bento-bg-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.55;filter:saturate(.9) contrast(1.05);border:0;pointer-events:none;border-radius:18px}
+.tpl-halo .bento-cell.feature > *:not(.canvas-cell):not(.bento-bg-video){position:relative;z-index:2}
 .tpl-halo .bento-cell.feature::before{content:'';position:absolute;inset:0;background:linear-gradient(115deg,rgba(17,17,17,.96) 0%,rgba(17,17,17,.78) 28%,rgba(17,17,17,.25) 55%,transparent 78%);z-index:1;pointer-events:none;border-radius:18px}
-.tpl-halo .bento-cell.feature > *:not(.canvas-cell){position:relative;z-index:2}.tpl-halo .bento-cell.feature .label,.tpl-halo .bento-cell.feature h3,.tpl-halo .bento-cell.feature p{max-width:62%}
+.tpl-halo .bento-cell.feature .label,.tpl-halo .bento-cell.feature h3,.tpl-halo .bento-cell.feature p{max-width:62%}
 .tpl-halo .bento-cell .stat-num{font-family:'Space Grotesk',sans-serif;font-size:60px;font-weight:600;letter-spacing:-2px;line-height:1;background:linear-gradient(180deg,#fff,#737373);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px}
 .tpl-halo .bento-cell .stat-lbl{font-family:'JetBrains Mono',monospace;font-size:12px;color:#a3a3a3;letter-spacing:1px}
 .tpl-halo .bento-cell .code-chip{font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 10px;background:#0a0a0a;border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#a78bfa;display:inline-block;margin:4px 4px 0 0}
@@ -947,9 +949,9 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
 <div class="drawer-header"><h2>MENU</h2></div><ul class="drawer-nav">
     <li><a href="#" data-overlay="resumeOverlay">> RESUME</a></li>
     <li><a href="#" data-overlay="projectsOverlay">> PROJECTS</a></li>
-    <li><a href="#" data-overlay="tshirtsOverlay">> T-SHIRTS</a></li>
-    <li><a href="#" data-overlay="askJohnOverlay">> ASK JOHN (AI)</a></li>
-    <li><a href="#" data-overlay="miniGamesOverlay">> MINI GAMES</a></li>
+    <li><a href="#" data-overlay="tshirtsOverlay">> SHIRTS</a></li>
+    <li><a href="#" data-overlay="askJohnOverlay">> ASK</a></li>
+    <li><a href="#" data-overlay="miniGamesOverlay">> GAMES</a></li>
     <li class="has-submenu" id="templates-dropdown">
       <a href="#" id="templates-toggle">> TEMPLATES</a>
       <ul class="submenu">
@@ -1078,7 +1080,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
   <div class="tpl-forge" data-tpl="forge" style="display:none;">
 <nav class="nav"><div class="nav-logo">GRESH<span>.</span>WORKS</div><div class="nav-links"><a href="#" data-overlay="resumeOverlay">BIO</a><a href="#" data-overlay="projectsOverlay">JOBS</a>
         <a href="#" data-overlay="tshirtsOverlay">SHOP</a>
-<a href="#" data-overlay="askJohnOverlay">ASK</a><a href="#" data-overlay="miniGamesOverlay">BREAK ROOM</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">TEMPLATES &#9662;</button><div class="tpl-switch-panel">
+<a href="#" data-overlay="askJohnOverlay">ASK</a><a href="#" data-overlay="miniGamesOverlay">BREAK</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">TEMPLATES &#9662;</button><div class="tpl-switch-panel">
           <a href="#" data-template="default">DEFAULT<span class="tag-mini">GAME</span></a>
 <a href="#" data-template="aurora">AURORA<span class="tag-mini">LIFT</span></a><a href="#" data-template="noir">NOIR<span class="tag-mini">LUXE</span></a>
           <a href="#" data-template="forge" class="active">FORGE<span class="tag-mini">STEEL</span></a>
@@ -1463,7 +1465,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
   <div class="tpl-slate" data-tpl="slate" style="display:none;">
 <nav class="nav"><div class="nav-logo"><span class="dot"></span> Gresh &amp; Co.</div><div class="nav-links"><a href="#" data-overlay="resumeOverlay">About</a><a href="#" data-overlay="projectsOverlay">Engagements</a>
         <a href="#" data-overlay="tshirtsOverlay">Imprint</a>
-<a href="#" data-overlay="askJohnOverlay">Counsel</a><a href="#" data-overlay="miniGamesOverlay">Off-Hours</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
+<a href="#" data-overlay="askJohnOverlay">Counsel</a><a href="#" data-overlay="miniGamesOverlay">Hours</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
         <div class="tpl-switch-panel">
 <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1560,7 +1562,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
 </svg><nav class="nav"><div class="nav-logo"><svg class="ivy-crest-mark ivy-crest-sm"><use href="#ivy-crest"/></svg>
         The Greshwood Club
       </div>
-<div class="nav-links"><a href="#" data-overlay="resumeOverlay">Our Studio</a><a href="#" data-overlay="projectsOverlay">Our Work</a><a href="#" data-overlay="tshirtsOverlay">Pro Shop</a><a href="#" data-overlay="askJohnOverlay">Correspondence</a>
+<div class="nav-links"><a href="#" data-overlay="resumeOverlay">Studio</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="askJohnOverlay">Correspondence</a>
         <a href="#" data-overlay="miniGamesOverlay">Members</a>
 </div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel"><a href="#" data-template="default">Default<span class="tag-mini">Game</span></a>
           <a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a>
@@ -1604,7 +1606,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
           <p>Three spreadsheets and a stack of paper logs replaced with a single internal tool. Staff learned it in an afternoon.</p>
 <div class="marks"><span>Web App</span><span>Postgres</span></div></div></div></div></section><section class="ivy-quote"><div class="ivy-quote-inner">
         <div class="ivy-quote-mark">&ldquo;</div>
-<blockquote>John built us a site we can actually edit from our phones. Seven months in and we've never once had to call him about a problem &mdash; though we have called him about the weather.</blockquote><div class="ivy-quote-attr">
+<blockquote>John built us a site we can actually edit from our phones. Seven months in and we've never once had to call him about a problem, though we have called him about the weather.</blockquote><div class="ivy-quote-attr">
           <div class="ivy-quote-name">Margaret Cole</div>
 <div class="ivy-quote-role">Owner &middot; The Foothills Grocer, Winston-Salem</div></div></div></section><section class="section" id="about"><div class="bio"><div class="bio-portrait"><div class="initials">JG</div></div><div>
           <div class="role">Principal &middot; 150 Buckingham Rd, Winston-Salem</div>
@@ -1622,11 +1624,11 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <em>by appointment</em>
 </div><div class="contact-lines"><a class="btn-light" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a><a class="btn-light" href="tel:+13369954119">(336) 995&#8209;4119</a></div></section><footer><div class="footer-col">
         <div class="fine">The Studio</div>
-<div class="footer-address">The Greshwood Club<br>150 Buckingham Rd<br>Winston-Salem, NC<br>(336) 995&#8209;4119</div></div><div class="footer-col"><div class="fine">On the Premises</div><div class="footer-links"><a href="#about">About John</a>
-          <a href="#commissions">The Book of Work</a>
-<a href="#pillars">Practice Areas</a><a href="#contact">Correspondence</a></div></div><div class="footer-col"><div class="fine">Members &amp; Letters</div><div class="footer-links">
+<div class="footer-address">The Greshwood Club<br>150 Buckingham Rd<br>Winston-Salem, NC<br>(336) 995&#8209;4119</div></div><div class="footer-col"><div class="fine">On the Premises</div><div class="footer-links"><a href="#about">About</a>
+          <a href="#commissions">Work</a>
+<a href="#pillars">Practice</a><a href="#contact">Correspondence</a></div></div><div class="footer-col"><div class="fine">Members &amp; Letters</div><div class="footer-links">
           <a href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a>
-<a href="#" data-overlay="miniGamesOverlay">Member Login</a><a href="#" data-overlay="tshirtsOverlay">Pro Shop</a><a href="#">Privacy &amp; Terms</a></div></div>
+<a href="#" data-overlay="miniGamesOverlay">Member Login</a><a href="#" data-overlay="tshirtsOverlay">Pro Shop</a><a href="#">Privacy</a></div></div>
       <div class="footer-fine">&copy; 2026 The Greshwood Club &middot; All Rights Reserved &middot; <em>Founded MMXXV</em></div>
 </footer>
 <script>
@@ -1644,11 +1646,50 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
    document.querySelectorAll('.ivy-hero-playlist').forEach(function(v){
     var list=[]; try{ list=JSON.parse(v.getAttribute('data-playlist')||'[]'); }catch(_){}
     if(!list.length) return;
-    var i=0;
+    // Remove the static <source> so src attribute drives playback
+    while(v.firstChild) v.removeChild(v.firstChild);
+    v.src=list[0];
+    // Build a twin buffer for seamless double-buffered playback
+    var b=v.cloneNode(false);
+    b.classList.remove('ivy-hero-playlist');
+    b.removeAttribute('data-playlist');
+    b.removeAttribute('autoplay');
+    b.style.opacity='0';
+    b.style.transition='opacity .6s ease';
+    v.style.opacity='1';
+    v.style.transition='opacity .6s ease';
+    v.parentNode.insertBefore(b, v.nextSibling);
     try{ v.muted=true; v.defaultMuted=true; v.playsInline=true; }catch(_){}
-    var playNext=function(){ i=(i+1)%list.length; v.src=list[i]; v.load(); var p=v.play(); if(p&&p.catch)p.catch(function(){}); };
-    v.addEventListener('ended', playNext);
-    v.addEventListener('error', playNext);
+    try{ b.muted=true; b.defaultMuted=true; b.playsInline=true; b.preload='auto'; }catch(_){}
+    var front=v, back=b, i=0, swapping=false;
+    var preloadBack=function(){ var next=list[(i+1)%list.length];
+     if(back.src!==next){ back.src=next; back.load(); }
+     else if(back.readyState<3){ back.load(); }
+    };
+    var doSwap=function(){
+     try{ back.currentTime=0; }catch(_){}
+     var p=back.play(); if(p&&p.catch)p.catch(function(){});
+     back.style.opacity='1'; front.style.opacity='0';
+     setTimeout(function(){ try{ front.pause(); }catch(_){}
+      i=(i+1)%list.length; var t=front; front=back; back=t; swapping=false; preloadBack();
+     }, 620);
+    };
+    var swap=function(){ if(swapping)return; swapping=true;
+     if(back.readyState>=3){ doSwap(); return; }
+     var next=list[(i+1)%list.length];
+     if(back.src!==next){ back.src=next; }
+     back.load();
+     var ready=false;
+     var onReady=function(){ if(ready)return; ready=true; back.removeEventListener('canplay', onReady); doSwap(); };
+     back.addEventListener('canplay', onReady);
+     setTimeout(function(){ if(!ready){ ready=true; back.removeEventListener('canplay', onReady); doSwap(); } }, 3000);
+    };
+    var onEnd=function(e){ if(e.currentTarget===front) swap(); };
+    v.addEventListener('ended', onEnd); v.addEventListener('error', onEnd);
+    b.addEventListener('ended', onEnd); b.addEventListener('error', onEnd);
+    var kick=function(){ var p=v.play(); if(p&&p.catch)p.catch(function(){}); };
+    kick(); v.addEventListener('loadeddata', kick, {once:true}); v.addEventListener('canplay', kick, {once:true});
+    preloadBack();
    });
   })();
 </script>
@@ -1676,15 +1717,15 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <div class="l">NEW&nbsp;BALANCE</div>
 <div class="l">SHOPIFY</div><div class="l">RAILWAY</div></div></section><section class="section" id="bento"><div class="section-head"><div class="eyebrow">Capabilities</div><h2>Built like infrastructure.<br>Priced like a service.</h2>
         <p>Six tiles. One developer. The site your last freelancer didn't finish.</p>
-</div><div class="bento"><div class="bento-cell feature span-3 tall"><div class="canvas-cell"><canvas data-halo-knot></canvas></div><div class="label">// flagship</div><h3>Full-stack web builds</h3>
+</div><div class="bento"><div class="bento-cell feature span-3 tall"><video class="bento-bg-video" autoplay muted loop playsinline preload="auto" data-rate="0.1"><source src="https://cdn.pixabay.com/video/2025/10/11/309178_medium.mp4" type="video/mp4"></video><div class="canvas-cell"><canvas data-halo-knot></canvas></div><div class="label">flagship</div><h3>Full-stack web builds</h3>
           <p>Design, code, launch. Marketing sites, Shopify stores, or custom web apps &mdash; all shipped under 30 days.</p>
-</div><div class="bento-cell span-3"><div class="label">// launch</div><div class="stat-num countup" data-target="14" data-suffix=" days">0 days</div>
+</div><div class="bento-cell span-3"><div class="label">launch</div><div class="stat-num countup" data-target="14" data-suffix=" days">0 days</div>
           <div class="stat-lbl">avg. time from kickoff to live</div>
-</div><div class="bento-cell span-2"><div class="label">// stack</div><h3>Modern by default</h3>
+</div><div class="bento-cell span-2"><div class="label">stack</div><h3>Modern by default</h3>
           <span class="code-chip">Remix</span><span class="code-chip">React</span><span class="code-chip">TypeScript</span><span class="code-chip">Postgres</span>
-</div><div class="bento-cell span-2"><div class="label">// perf</div><h3>Fast on day one</h3>
+</div><div class="bento-cell span-2"><div class="label">perf</div><h3>Fast on day one</h3>
           <p>Every build lands green on Lighthouse. Mobile-first by default.</p>
-</div><div class="bento-cell span-2"><div class="label">// response</div><div class="stat-num countup" data-target="2" data-suffix="h">0h</div><div class="stat-lbl">avg. inbound response</div></div></div></section>
+</div><div class="bento-cell span-2"><div class="label">response</div><div class="stat-num countup" data-target="2" data-suffix="h">0h</div><div class="stat-lbl">avg. inbound response</div></div></div></section>
     <section class="section">
 <div class="section-head"><div class="eyebrow">Pricing</div><h2>Three tiers.<br>No retainers.</h2><p>Fixed scope, fixed price, written into the proposal before work begins.</p></div><div class="pricing"><div class="price-card"><div class="tier">// basic</div>
           <div class="price">$2,000<small>/ site</small></div>
@@ -4198,6 +4239,14 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
    const c1 = panel.querySelector('canvas[data-halo-gradient]');
  const c2 = panel.querySelector('canvas[data-halo-knot]'); if (c1) tplScenes.haloGradient = initHaloGradient(c1);
    if (c2) tplScenes.haloKnot     = initHaloKnot(c2);
+   // Force slow playback on bento bg video
+   panel.querySelectorAll('.bento-bg-video').forEach(function(v){
+    var r = parseFloat(v.getAttribute('data-rate')) || 0.1;
+    var apply = function(){ try{ v.playbackRate = r; v.defaultPlaybackRate = r; }catch(_){} };
+    ['loadedmetadata','canplay','play','playing','seeked','ratechange','timeupdate'].forEach(function(ev){ v.addEventListener(ev, apply); });
+    apply();
+    try{ v.muted = true; v.play().then(apply).catch(function(){}); }catch(_){}
+   });
    // text scramble
    panel.querySelectorAll('[data-scramble]').forEach(runScramble);
    // counters via observer

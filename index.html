@@ -979,7 +979,8 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
 #galleryOverlay .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px;width:100%;margin-top:10px;overflow-y:auto;overflow-x:hidden;flex:1 1 auto;min-height:0;padding:6px 8px 6px 0}
 /* padding-bottom:75% gives a 4:3 cell whose height is known to the grid (aspect-ratio doesn't
    feed back into auto-row sizing, so rows would otherwise collapse and cells overlap). */
-#galleryOverlay .gallery-grid .gallery-cell{position:relative;width:100%;padding-bottom:75%;background:#1a1a2e;border:2px solid #000;overflow:hidden;border-radius:0}
+#galleryOverlay .gallery-grid .gallery-cell{position:relative;width:100%;padding-bottom:75%;background:#1a1a2e;border:2px solid #000;overflow:hidden;border-radius:0;cursor:zoom-in;transition:transform .2s ease}
+#galleryOverlay .gallery-grid .gallery-cell:hover{transform:scale(1.02)}
 #galleryOverlay .gallery-grid img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s ease}
 #galleryOverlay .gallery-grid img.loaded{opacity:1}
 #galleryOverlay .gallery-grid .gallery-cell::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(0,0,0,.25));pointer-events:none}
@@ -1076,7 +1077,7 @@ body.tpl-active-forge #galleryOverlay .gallery-grid .gallery-cell,body.tpl-activ
 <div id="password-modal"><div class="modal-content"><p>Enter Password for Access:</p><input type="password" id="password-input" placeholder="> ********"><div id="password-error">ACCESS DENIED</div><button id="submit-password-btn" class="modal-btn">SUBMIT</button><button id="cancel-password-btn" class="modal-btn">CANCEL</button></div></div>
 <div id="resumeOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="resumeContainer" class="overlay-container"><div class="resume-header"><h1>John Gresh</h1><p>(336) 995-4119 | johngresh.usa@gmail.com</p></div><div class="resume-layout"><div class="layout-main"><section class="resume-section"><h2>Experience</h2><div class="job"><div class="job-title">Maintenance Technician</div><div class="company">Toyota Battery Factory</div><span class="dates">July 2024 - November 2024</span><ul class="responsibilities"><li>General Maintenance</li><li>Preventative Maintenance</li><li>Work orders/Cost Center Management</li><li>Performing Job Safety Analysis</li></ul></div><div class="job"><div class="job-title">Assistant Manager</div><div class="company">New Balance</div><span class="dates">October 2021 - Current</span><ul class="responsibilities"><li>Assisting in the general operation of the store</li><li>Opening and closing the store</li><li>Overseeing the customer experience</li><li>Fitting customers for shoes</li></ul></div><div class="job"><div class="job-title">Sales Representative</div><div class="company">GNC</div><span class="dates">March 2019 - July 2019, Charlotte NC</span><ul class="responsibilities"><li>Opening/Closing store</li><li>Inventory checks</li><li>Customer relations</li><li>Register</li><li>Cleaning</li></ul></div><div class="job"><div class="job-title">Lifeguard</div><div class="company">Forsyth Country Club</div><span class="dates">2016 - 2017 Summer</span><ul class="responsibilities"><li>Lifeguarding</li><li>Checking in guests</li><li>Cleaning pool deck and pool services</li><li>Testing pool chemicals/Adding chemicals</li><li>Strong emphasis on customer relations</li></ul></div><div class="job"><div class="job-title">Bussing tables / working in kitchen</div><div class="company">Vincenzo's Restaurant</div><span class="dates">January 2015 - December 2015, Winston-salem NC</span><ul class="responsibilities"><li>Making bread/Cleaning dishes/Making salads/ Bus Boy</li><li>Cleaning station</li><li>Customer relations</li></ul></div></section></div><div class="layout-sidebar"><section class="resume-section"><h2>Education</h2><div class="education-item"><div class="degree-title">Mechatronics Technician</div><div class="school">Forsyth Tech</div><span class="dates">August 2022 - May 2024, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">Internship</div><div class="school">ThinkPLC</div><span class="dates">August 2022 - May 2023, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">High School Diploma</div><div class="school">Mount Tabor</div><span class="dates">August 2013 - May 2017, Winston Salem NC</span></div></section><section class="resume-section"><h2>Skills</h2><ul class="skills-list"><li>OSHA 10-Hr Certified</li><li>Electrical Safe Work Practices Certified</li><li>Control of Hazardous Energy Certified</li><li>PLC installation / proficient</li><li>PLC programming (RSLogix) / proficient</li><li>Python / proficient</li><li>C++ / beginner</li><li>Matlab / beginner</li><li>Sales experience (GNC, New Balance)</li><li>Cell phone and electronic repair (iPhone/Mac)</li></ul></section></div></div></div></div>
 <div id="projectsOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="projectsContainer" class="overlay-container"><div class="resume-header"><h1>Projects</h1></div><section class="resume-section"><h2>Featured Work</h2><ul class="skills-list"><li>This Website</li></ul></section></div></div>
-<div id="galleryOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="galleryContainer" class="overlay-container"><div class="resume-header"><h1 class="gallery-title">Gallery</h1><p class="gallery-sub">Loading&hellip;</p></div><div class="gallery-grid"></div></div></div>
+<div id="galleryOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="galleryContainer" class="overlay-container"><div class="resume-header"><h1 class="gallery-title">Gallery</h1><p class="gallery-sub">Loading&hellip;</p></div><div class="gallery-grid"></div></div><div id="galleryLightbox" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,0.94);align-items:center;justify-content:center;padding:60px 20px 20px;box-sizing:border-box;"><button type="button" class="close-btn" id="galleryLightboxClose" style="position:absolute;top:20px;right:20px;z-index:2501;">BACK</button><img id="galleryLightboxImg" src="" alt="" style="max-width:100%;max-height:100%;object-fit:contain;display:block;"></div></div>
 <div id="tshirtsOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="tshirtsContainer" class="overlay-container"><div class="resume-header"><h1>T-Shirt Store</h1><p>Limited apparel. Printed on demand. Shipped worldwide.</p></div><div id="shirtThumb" role="button" tabindex="0" onclick="window.__openShirtLb&&__openShirtLb()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.__openShirtLb&&__openShirtLb();}" style="display:block;margin:24px auto 8px;max-width:280px;width:100%;cursor:zoom-in;"><img src="https://imgproxy.fourthwall.com/QWCMqzmGUoXkj1YPUk-cYecC1LogGdn771MEfJl1h64/w:1920/sm:1/enc/9atjENTEN8axoRKx/Y12ZzHXeKUuy2Q4W/JM9GPIhcUrc_xWeL/OWjfsGeKkGUi_57_/JslE9eGFpRVr_FQg/L3IyeInB638B50pG/_IfX4eJw40sI2mSf/2jzx6H7IR4e-c6t_/3gPyd1npbgtL8m0Q/V9cne6KX6UkKDo0a/jYerbT4OAc32waRf/Qw0Zuq3ePjOzDB4d/GrH0cK7Ub4IQjwHi/27o-5YLYXIdeG4Fg/ovNtcx7gZbw" alt="John Gresh Navy Tee" loading="lazy" style="display:block;width:100%;height:auto;border:4px solid #000;box-shadow:6px 6px 0 rgba(0,0,0,0.6);background:#fff;"></div><div style="display:flex;flex-direction:column;gap:18px;align-items:center;margin:18px 0 10px;width:100%;max-width:360px;"><a href="https://john-gresh-store-shop.fourthwall.com/products/john-gresh-navy-tee" target="_blank" rel="noopener" class="modal-btn view-shirt-btn" style="background-color:#0077b6;color:#fff;text-decoration:none;font-size:24px;padding:14px 28px;width:100%;text-align:center;box-sizing:border-box;">VIEW FEATURED SHIRT &rarr;</a><a href="https://john-gresh-store-shop.fourthwall.com" target="_blank" rel="noopener" class="modal-btn browse-shop-btn" style="background-color:#2a1a3d;color:#ffd700;text-decoration:none;font-size:20px;padding:12px 24px;width:100%;text-align:center;box-sizing:border-box;">BROWSE FULL SHOP</a></div><p class="loading-text" style="font-size:16px;color:#d4a3a3;margin-top:8px;">&gt; Checkout runs on fourthwall.com</p><div id="shirtLightbox" onclick="if(event.target===this)window.__closeShirtLb&&__closeShirtLb()" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;padding:60px 20px 20px;box-sizing:border-box;"><button type="button" class="close-btn" onclick="event.stopImmediatePropagation();window.__closeShirtLb&&__closeShirtLb()" style="position:absolute;top:20px;right:20px;z-index:2501;">BACK</button><img src="https://imgproxy.fourthwall.com/QWCMqzmGUoXkj1YPUk-cYecC1LogGdn771MEfJl1h64/w:1920/sm:1/enc/9atjENTEN8axoRKx/Y12ZzHXeKUuy2Q4W/JM9GPIhcUrc_xWeL/OWjfsGeKkGUi_57_/JslE9eGFpRVr_FQg/L3IyeInB638B50pG/_IfX4eJw40sI2mSf/2jzx6H7IR4e-c6t_/3gPyd1npbgtL8m0Q/V9cne6KX6UkKDo0a/jYerbT4OAc32waRf/Qw0Zuq3ePjOzDB4d/GrH0cK7Ub4IQjwHi/27o-5YLYXIdeG4Fg/ovNtcx7gZbw" alt="John Gresh Navy Tee" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;background:#fff;border:4px solid #000;box-shadow:6px 6px 0 rgba(0,0,0,0.6);"></div></div></div><script>(function(){var ov=document.getElementById('tshirtsOverlay');if(!ov)return;var thumb=document.getElementById('shirtThumb');var ovClose=ov.querySelector(':scope > .close-btn');var lockUntil=0;function lockThumb(){lockUntil=Date.now()+500;if(!thumb)return;thumb.style.pointerEvents='none';setTimeout(function(){thumb.style.pointerEvents='';},500);}new MutationObserver(function(){if(ov.style.display&&ov.style.display!=='none')lockThumb();}).observe(ov,{attributes:true,attributeFilter:['style']});window.__openShirtLb=function(){if(Date.now()<lockUntil)return;var lb=document.getElementById('shirtLightbox');if(!lb)return;lb.style.display='flex';if(ovClose)ovClose.style.visibility='hidden';};window.__closeShirtLb=function(){var lb=document.getElementById('shirtLightbox');if(!lb)return;lb.style.display='none';if(ovClose)ovClose.style.visibility='';};})();</script>
 
 <div id="askJohnOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="askJohnContainer" class="overlay-container"><div class="resume-header">
@@ -2320,18 +2321,18 @@ setTimeout(() => { document.getElementById('chat-input').focus();
 // Built fresh each open so switching templates between visits picks up the new theme,
 // but only when the overlay is opened (not on page load) so it doesn't slow startup.
 // loremflickr's `lock` param only produces variety with simple integer values, so each
-// template gets a reserved numeric range (base..base+19) — keeps each template's 20 images
-// stable AND unique within and across templates.
+// template gets a reserved numeric range (base..base+19). Keywords are tuned per template
+// vibe — single specific tokens give better-themed Flickr results than multi-keyword AND queries.
 const GALLERY_THEMES = {
 default: { label: 'Gallery', sub: 'Twenty open-source photos.', kw: 'arcade', base: 900 },
-aurora:  { label: 'Showcase', sub: 'Selected work + visual references.', kw: 'abstract', base: 100 },
-noir:    { label: 'Lookbook', sub: 'A small collection.', kw: 'fashion', base: 200 },
-forge:   { label: 'JOBS', sub: 'WORK ON THE FLOOR.', kw: 'industrial', base: 300 },
-terra:   { label: 'Plates', sub: 'From the kitchen and the cellar.', kw: 'food', base: 400 },
-slate:   { label: 'Showcase', sub: 'Selected engagements.', kw: 'architecture', base: 500 },
+aurora:  { label: 'Showcase', sub: 'Selected work + visual references.', kw: 'neon', base: 100 },
+noir:    { label: 'Lookbook', sub: 'A small collection.', kw: 'luxury', base: 200 },
+forge:   { label: 'JOBS', sub: 'WORK ON THE FLOOR.', kw: 'factory', base: 300 },
+terra:   { label: 'Plates', sub: 'From the kitchen and the cellar.', kw: 'pasta', base: 400 },
+slate:   { label: 'Showcase', sub: 'Selected engagements.', kw: 'skyscraper', base: 500 },
 ivy:     { label: 'Album', sub: 'Scenes from the Club.', kw: 'golf', base: 600 },
-halo:    { label: 'shots', sub: 'snapshots from the studio.', kw: 'technology', base: 700 },
-manor:   { label: 'Atelier', sub: 'From the workshop.', kw: 'interior', base: 800 }
+halo:    { label: 'shots', sub: 'snapshots from the studio.', kw: 'code', base: 700 },
+manor:   { label: 'Atelier', sub: 'From the workshop.', kw: 'workshop', base: 800 }
 };
 
 function populateGallery(){
@@ -2366,6 +2367,32 @@ this.src = 'https://picsum.photos/seed/' + active + '-' + i + '/600/450';
 cell.appendChild(img); grid.appendChild(cell);
 }
 }
+
+// Lightbox: click any gallery cell -> fullscreen view of the image (request a larger
+// resolution from loremflickr; fall back to whatever the cell already has on error).
+(function setupGalleryLightbox(){
+const grid = document.querySelector('#galleryOverlay .gallery-grid');
+const lb = document.getElementById('galleryLightbox');
+const lbImg = document.getElementById('galleryLightboxImg');
+const lbClose = document.getElementById('galleryLightboxClose');
+if (!grid || !lb || !lbImg) return;
+function open(srcSmall){
+  // Upgrade size for fullscreen — loremflickr returns the same image at any size.
+  const big = srcSmall.replace('/600/450/', '/1600/1200/').replace('/600/450', '/1600/1200');
+  lbImg.src = big;
+  lbImg.onerror = function(){ lbImg.onerror = null; lbImg.src = srcSmall; };
+  lb.style.display = 'flex';
+}
+function close(){ lb.style.display = 'none'; lbImg.removeAttribute('src'); }
+grid.addEventListener('click', function(e){
+  const cell = e.target.closest('.gallery-cell'); if (!cell) return;
+  const img = cell.querySelector('img'); if (!img || !img.src) return;
+  open(img.src);
+});
+lb.addEventListener('click', function(e){ if (e.target === this) close(); });
+if (lbClose) lbClose.addEventListener('click', function(e){ e.stopPropagation(); close(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && lb.style.display === 'flex') close(); });
+})();
 
 function hideAllOverlays() {
 if (pongGame && pongGame.isRunning) pongGame.stop();

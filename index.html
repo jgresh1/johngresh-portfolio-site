@@ -937,6 +937,39 @@ body.tpl-active-manor .responsibilities li:before{color:#c9a961!important}body.t
 body.tpl-active-manor #pong-round-message{font-family:'Cormorant Garamond',serif!important;font-style:italic!important}
 body.tpl-active-manor .progress-bar{background:linear-gradient(90deg,#c9a961,#8b7355)!important;background-image:linear-gradient(90deg,#c9a961,#8b7355)!important}body.tpl-active-manor .message{border-radius:0!important}
 body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-manor .bot-message{border-radius:0!important}
+/* ============== About + FAQ overlays (custom content per template) ============== */
+#aboutOverlay .tpl-content,#faqOverlay .tpl-content{display:none}
+body.tpl-active-aurora #aboutOverlay .about-aurora,body.tpl-active-aurora #faqOverlay .faq-aurora,
+body.tpl-active-noir #aboutOverlay .about-noir,body.tpl-active-noir #faqOverlay .faq-noir,
+body.tpl-active-forge #aboutOverlay .about-forge,body.tpl-active-forge #faqOverlay .faq-forge,
+body.tpl-active-terra #aboutOverlay .about-terra,body.tpl-active-terra #faqOverlay .faq-terra,
+body.tpl-active-slate #aboutOverlay .about-slate,body.tpl-active-slate #faqOverlay .faq-slate,
+body.tpl-active-ivy #aboutOverlay .about-ivy,body.tpl-active-ivy #faqOverlay .faq-ivy,
+body.tpl-active-halo #aboutOverlay .about-halo,body.tpl-active-halo #faqOverlay .faq-halo,
+body.tpl-active-manor #aboutOverlay .about-manor,body.tpl-active-manor #faqOverlay .faq-manor{display:block}
+#aboutOverlay .resume-link{display:inline-block;margin-top:18px;font-size:14px;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:2px;transition:opacity .2s}
+#aboutOverlay .resume-link:hover{opacity:.7}
+body.template-active #aboutOverlay .resume-link{color:var(--ov-accent)!important}
+#faqOverlay .faq-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}
+#faqOverlay .faq-item{border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:0;overflow:hidden;background:transparent;transition:border-color .25s}
+body.template-active #faqOverlay .faq-item{border:1px solid var(--ov-border)!important;border-radius:var(--ov-radius-sm)!important;background:var(--ov-soft)!important}
+#faqOverlay .faq-item summary{cursor:pointer;padding:18px 22px;font-weight:600;font-size:16px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px;-webkit-tap-highlight-color:transparent;transition:background .2s}
+#faqOverlay .faq-item summary::-webkit-details-marker{display:none}
+#faqOverlay .faq-item summary::after{content:'+';font-size:24px;font-weight:300;line-height:1;flex-shrink:0;transition:transform .25s ease}
+#faqOverlay .faq-item[open] summary::after{transform:rotate(45deg)}
+body.template-active #faqOverlay .faq-item summary{font-family:var(--ov-heading)!important;font-style:var(--ov-heading-style)!important;color:var(--ov-text)!important}
+body.template-active #faqOverlay .faq-item summary::after{color:var(--ov-accent)!important}
+body.template-active #faqOverlay .faq-item summary:hover{background:var(--ov-soft)!important}
+#faqOverlay .faq-item[open] summary{border-bottom:1px solid rgba(0,0,0,.08)}
+body.template-active #faqOverlay .faq-item[open] summary{border-bottom:1px solid var(--ov-border)!important}
+#faqOverlay .faq-item p{margin:0;padding:18px 22px;line-height:1.6;font-size:15px}
+body.template-active #faqOverlay .faq-item p{color:var(--ov-muted)!important;font-family:var(--ov-font)!important}
+body.tpl-active-forge #faqOverlay .faq-item{border-radius:0!important}
+body.tpl-active-noir #faqOverlay .faq-item,body.tpl-active-manor #faqOverlay .faq-item,body.tpl-active-ivy #faqOverlay .faq-item{border-radius:0!important}
+body.tpl-active-forge #faqOverlay .faq-item summary,body.tpl-active-noir #faqOverlay .faq-item summary,body.tpl-active-manor #faqOverlay .faq-item summary{letter-spacing:1px}
+body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;font-family:'Bebas Neue',Impact,sans-serif!important;font-size:20px;letter-spacing:2px}
+#aboutOverlay .about-title,#faqOverlay .faq-title{margin:0}
+@media(max-width:800px){#faqOverlay .faq-item summary{padding:14px 16px;font-size:15px}#faqOverlay .faq-item p{padding:14px 16px;font-size:14px}}
 /* ============== Google Maps location embed (per-template styling) ============== */
 #template-host .tpl-map{display:block;width:100%;position:relative}
 #template-host .tpl-map iframe{display:block;width:100%;border:0}
@@ -1034,6 +1067,76 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
 <span class="custom-checkbox"></span><label for="think-mode-checkbox" id="think-mode-label">SuperThink</label></div></div></div></div>
 
 <div id="miniGamesOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="miniGamesContainer" class="overlay-container"><div class="resume-header"><h1>Pong AI</h1></div><div id="pong-score">Player: <span id="player-score">0</span> | AI: <span id="ai-score">0</span> | Round: <span id="pong-round">1</span></div><canvas id="pong-canvas"></canvas><div id="pong-instructions"><p>First to 5 wins the round. The AI adapts each round!</p><p>Desktop: Use Mouse or W/S/Up/Down Arrows.</p><p>Mobile: Drag your paddle.</p></div></div></div>
+
+<div id="aboutOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="aboutContainer" class="overlay-container"><div class="resume-header"><h1 class="about-title">About</h1></div>
+<div class="tpl-content about-aurora"><section class="resume-section"><p>Hi, I'm John Gresh. I build fast, clean websites and web apps for small businesses in Winston-Salem and across the country. My background is in mechatronics and software &mdash; so I care about how things actually work, not just how they look.</p><p>Fixed price. Two-week launches. No retainers. You own the code and the domain from day one. Tell me what you need and I'll quote by morning.</p><p><a href="#" data-overlay="resumeOverlay" class="resume-link">View full resume &rarr;</a></p></section></div>
+<div class="tpl-content about-noir"><section class="resume-section"><p><em>John Gresh</em> is an independent developer working with a small number of clients each year. The approach is considered: fewer sites, more care per site.</p><p>Each build is tailored, hand-coded, and owned entirely by the client. Based in Winston-Salem. Available by appointment.</p><p><a href="#" data-overlay="resumeOverlay" class="resume-link">View full resume &rarr;</a></p></section></div>
+<div class="tpl-content about-forge"><section class="resume-section"><p>GRESH WORKS IS THE INDEPENDENT PRACTICE OF JOHN GRESH. WEBSITES AND WEB APPS FOR TRADESPEOPLE, SHOPS, AND SMALL OPERATORS WHO NEED A SITE THAT WORKS ON DAY ONE.</p><p>TWO-WEEK BUILDS. FIXED QUOTE. HOSTING SET UP FOR YOU. YOUR CODE, YOUR DOMAIN. CALL (336) 995-4119 TO QUOTE.</p><p><a href="#" data-overlay="resumeOverlay" class="resume-link">FULL RESUME &rarr;</a></p></section></div>
+<div class="tpl-content about-terra"><section class="resume-section"><p>Terra &amp; Gresh opened with a simple idea: pair honest seasonal ingredients with unhurried service. Our kitchen cooks from what arrives fresh each morning. Our bread is made in-house daily. Our wine list leans toward small producers in Italy and the Carolinas.</p><p>Whether it's your anniversary or a Tuesday &mdash; we're glad you're here.</p></section></div>
+<div class="tpl-content about-slate"><section class="resume-section"><p>Gresh &amp; Co. is an independent technology practice in Winston-Salem, North Carolina. We build websites, web applications, and internal tools for small-to-mid-sized companies.</p><p>Our clients range from retail shops to logistics firms. Most engagements start with a conversation and an initial call &mdash; which is always free. No retainers. No agency overhead.</p><p><a href="#" data-overlay="resumeOverlay" class="resume-link">View full resume &rarr;</a></p></section></div>
+<div class="tpl-content about-ivy"><section class="resume-section"><p><em>The Greshwood Club</em> was founded in MMXXV as a small studio in the Carolinas. Membership remains by introduction.</p><p>Our work draws on a long tradition of private practice: a quiet pace, a short list, and correspondence answered within the day. Inquiries are welcomed.</p><p><a href="#" data-overlay="resumeOverlay" class="resume-link">View full resume &rarr;</a></p></section></div>
+<div class="tpl-content about-halo"><section class="resume-section"><p>Halo is a small, modern dev studio building websites and web apps for people who actually run the business. Founded by John Gresh in Winston-Salem.</p><p>We ship production work on a predictable cadence &mdash; fixed quote, two-week launches, monthly care plans available. All systems operational.</p><p><a href="#" data-overlay="resumeOverlay" class="resume-link">View full resume &rarr;</a></p></section></div>
+<div class="tpl-content about-manor"><section class="resume-section"><p><em>The Manor</em> is a small atelier of craft, founded by John Gresh and kept by a single workshop. We build a limited number of websites each season, entirely by hand.</p><p>Each one is considered in depth and maintained for as long as the client wishes. Detail over scale. By appointment.</p><p><a href="#" data-overlay="resumeOverlay" class="resume-link">View full resume &rarr;</a></p></section></div>
+</div></div>
+
+<div id="faqOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="faqContainer" class="overlay-container"><div class="resume-header"><h1 class="faq-title">Frequently Asked</h1></div>
+<div class="tpl-content faq-aurora"><div class="faq-list">
+<details class="faq-item"><summary>How long does a build take?</summary><p>Most marketing sites launch in two weeks. Web apps take four to six weeks.</p></details>
+<details class="faq-item"><summary>What's the pricing?</summary><p>Fixed quote. Most sites run between $2,000 and $8,000 depending on scope.</p></details>
+<details class="faq-item"><summary>Do I own the code?</summary><p>Yes. You own the code and the domain from day one. No vendor lock-in.</p></details>
+<details class="faq-item"><summary>Do you do ongoing maintenance?</summary><p>Optional care plans from $200/mo include uptime monitoring, updates, and quarterly audits.</p></details>
+<details class="faq-item"><summary>Which stack do you use?</summary><p>TypeScript, React/Next.js, Remix, and Python for automation.</p></details>
+</div></div>
+<div class="tpl-content faq-noir"><div class="faq-list">
+<details class="faq-item"><summary>How many clients per year?</summary><p>A handful. Each build receives full attention from start to launch.</p></details>
+<details class="faq-item"><summary>What is the process?</summary><p>An initial call. A proposal. A month of design and build. Then launch.</p></details>
+<details class="faq-item"><summary>Pricing?</summary><p>Considered work, priced accordingly. Starting at $5,000.</p></details>
+<details class="faq-item"><summary>Is ongoing care offered?</summary><p>Retainers are available for a small number of clients each year.</p></details>
+<details class="faq-item"><summary>Are you accepting new work?</summary><p>Occasionally. An inquiry is the way to ask.</p></details>
+</div></div>
+<div class="tpl-content faq-forge"><div class="faq-list">
+<details class="faq-item"><summary>HOW LONG?</summary><p>TWO WEEKS FOR MOST SITES. FOUR TO SIX FOR WEB APPS.</p></details>
+<details class="faq-item"><summary>HOW MUCH?</summary><p>FIXED QUOTE BEFORE WORK BEGINS. NO SURPRISES.</p></details>
+<details class="faq-item"><summary>DO YOU HOST IT?</summary><p>YES &mdash; OR YOU CAN HOST. YOUR CALL.</p></details>
+<details class="faq-item"><summary>IF SOMETHING BREAKS?</summary><p>CALL (336) 995-4119. MONTHLY CARE PLANS AVAILABLE.</p></details>
+<details class="faq-item"><summary>DO YOU DO SHOPIFY?</summary><p>YES. CUSTOM THEMES AND APPS. TWO SHIPPED TO THE APP STORE.</p></details>
+</div></div>
+<div class="tpl-content faq-terra"><div class="faq-list">
+<details class="faq-item"><summary>Are reservations required?</summary><p>Recommended &mdash; especially Friday and Saturday. Walk-ins are always welcomed at the bar.</p></details>
+<details class="faq-item"><summary>Do you accommodate dietary needs?</summary><p>Yes. Please note at booking or let your server know when seated.</p></details>
+<details class="faq-item"><summary>Can we host private events?</summary><p>Parties of twelve or more are welcome in our private dining room. Contact us to book.</p></details>
+<details class="faq-item"><summary>Is there parking?</summary><p>Complimentary valet on Friday and Saturday; street parking otherwise.</p></details>
+<details class="faq-item"><summary>Are children welcome?</summary><p>Yes. A small menu is available for younger guests.</p></details>
+</div></div>
+<div class="tpl-content faq-slate"><div class="faq-list">
+<details class="faq-item"><summary>What kind of projects do you take on?</summary><p>Websites, web applications, internal tools, and Shopify work for small-to-mid-sized businesses.</p></details>
+<details class="faq-item"><summary>Do you work on retainer?</summary><p>No &mdash; each engagement is quoted individually.</p></details>
+<details class="faq-item"><summary>How soon can we start?</summary><p>Most engagements begin within two weeks of the initial call.</p></details>
+<details class="faq-item"><summary>Do you work alongside existing teams?</summary><p>Yes. We often collaborate with internal marketing or IT teams.</p></details>
+<details class="faq-item"><summary>What's the pricing structure?</summary><p>Project-based. Initial calls are free and used to scope cost.</p></details>
+</div></div>
+<div class="tpl-content faq-ivy"><div class="faq-list">
+<details class="faq-item"><summary>How does one become a member?</summary><p>Membership is extended by introduction. Correspondence is welcomed.</p></details>
+<details class="faq-item"><summary>Are commissions presently open?</summary><p>A small number are accepted each season.</p></details>
+<details class="faq-item"><summary>How long is a typical engagement?</summary><p>Commissions range from a fortnight to several months, depending on scope.</p></details>
+<details class="faq-item"><summary>Do you maintain completed work?</summary><p>Yes. Ongoing stewardship is available for members.</p></details>
+<details class="faq-item"><summary>Where are you based?</summary><p>150 Buckingham Road, Winston-Salem. By appointment.</p></details>
+</div></div>
+<div class="tpl-content faq-halo"><div class="faq-list">
+<details class="faq-item"><summary>what's your stack?</summary><p>TypeScript, React, Next.js, and Python. Postgres for data. Deploy on Vercel or Fly.</p></details>
+<details class="faq-item"><summary>how fast can you ship?</summary><p>Most marketing sites in 10 business days. Web apps in four to six weeks.</p></details>
+<details class="faq-item"><summary>do you do shopify?</summary><p>Yes &mdash; custom themes and apps. Two shipped to the App Store.</p></details>
+<details class="faq-item"><summary>is there a maintenance plan?</summary><p>$200/mo covers uptime, monthly updates, and quarterly audits.</p></details>
+<details class="faq-item"><summary>what about pricing?</summary><p>Fixed quote before work begins. Starts at $2k.</p></details>
+</div></div>
+<div class="tpl-content faq-manor"><div class="faq-list">
+<details class="faq-item"><summary>How does one commission a work?</summary><p>An inquiry begins the conversation. From there: consultation, proposal, and bespoke quote.</p></details>
+<details class="faq-item"><summary>How many estates per year?</summary><p>Six, typically. No more.</p></details>
+<details class="faq-item"><summary>What is included in the care plan?</summary><p>Full maintenance of the estate for as long as you wish.</p></details>
+<details class="faq-item"><summary>Where are you based?</summary><p>The Manor keeps two workshops &mdash; Winston-Salem, NC and Como, Italy.</p></details>
+<details class="faq-item"><summary>When can I expect a reply?</summary><p>Correspondence is answered within the day.</p></details>
+</div></div>
+</div></div>
 <div id="pong-round-message"></div><div id="mobile-controls"><div id="joystick-zone"></div><div id="action-buttons"><div id="jump-btn" class="action-btn">JUMP</div></div></div>
 
 <!-- ============================================================
@@ -1043,7 +1146,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
 
   <!-- ============== TEMPLATE 1: AURORA — Modern SaaS / Tech ============== -->
   <div class="tpl-aurora" data-tpl="aurora" style="display:none;">
-<nav class="nav"><div class="nav-logo">JG / Aurora</div><div class="nav-links"><a href="#" data-overlay="resumeOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="tshirtsOverlay">Shop</a>
+<nav class="nav"><div class="nav-logo">JG / Aurora</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a>
         <a href="#" data-overlay="askJohnOverlay">Chat</a>
 <a href="#" data-overlay="miniGamesOverlay">Demo</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel">
           <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a>
@@ -1088,13 +1191,13 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <p class="quote">&ldquo;Shipped the site in ten days. No handholding.&rdquo;</p>
 <div class="author">&mdash; Recent client</div></div></section><div class="cta-banner" id="contact"><h2>Need a site?</h2><p>Tell me what you need. I'll quote by morning.</p>
       <a class="btn-primary" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a>
-</div><section class="tpl-map" id="visit"><span class="tpl-map-label">Find the Studio</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer>&copy; John Gresh &middot; Winston-Salem, NC &middot; (336) 995-4119</footer></div>
+</div><section class="tpl-map" id="visit"><span class="tpl-map-label">Find the Studio</span><div class="tpl-map-frame"><iframe data-src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer>&copy; John Gresh &middot; Winston-Salem, NC &middot; (336) 995-4119</footer></div>
 
   <!-- ============== TEMPLATE 2: NOIR — Luxury / Boutique ============== -->
   <div class="tpl-noir" data-tpl="noir" style="display:none;">
-<nav class="nav"><div class="nav-logo">J &middot; G</div><div class="nav-links"><a href="#" data-overlay="resumeOverlay">Resume</a><a href="#" data-overlay="projectsOverlay">Works</a><a href="#" data-overlay="tshirtsOverlay">Atelier</a>
-        <a href="#" data-overlay="askJohnOverlay">Concierge</a>
-<a href="#" data-overlay="miniGamesOverlay">Salon</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel">
+<nav class="nav"><div class="nav-logo">J &middot; G</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a>
+        <a href="#" data-overlay="askJohnOverlay">Contact</a>
+<a href="#" data-overlay="miniGamesOverlay">Play</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel">
           <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a>
 <a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir" class="active">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1121,15 +1224,15 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
           <div class="lookbook-card"><div class="img" style="background:linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(0,0,0,.55) 100%),url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&q=80&auto=format&fit=crop') center/cover;"><div class="glyph" style="opacity:.18;">IV</div></div><div class="meta"><div class="num">No. 04 &middot; 2025</div><h3>Private Dashboard</h3><p>Internal tool</p></div></div>
           <div class="lookbook-card"><div class="img" style="background:linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(0,0,0,.55) 100%),url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&q=80&auto=format&fit=crop') center/cover;"><div class="glyph" style="opacity:.18;">V</div></div><div class="meta"><div class="num">No. 05 &middot; 2024</div><h3>Launch Page</h3><p>Landing site</p></div></div>
         </div>
-</div></section><section class="quote-section" id="word"><p class="quote">&ldquo;Detail is what separates the considered from the convenient.&rdquo;</p></section><section class="tpl-map"><span class="tpl-map-label">By Appointment &middot; Winston-Salem</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer id="visit"><div class="mono">J &middot; G</div>
+</div></section><section class="quote-section" id="word"><p class="quote">&ldquo;Detail is what separates the considered from the convenient.&rdquo;</p></section><section class="tpl-map"><span class="tpl-map-label">By Appointment &middot; Winston-Salem</span><div class="tpl-map-frame"><iframe data-src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer id="visit"><div class="mono">J &middot; G</div>
       <div class="meta">By Appointment &middot; Winston-Salem, NC<br>johngresh.usa@gmail.com &middot; (336) 995-4119</div>
 </footer></div>
 
   <!-- ============== TEMPLATE 3: FORGE — Industrial / Trades ============== -->
   <div class="tpl-forge" data-tpl="forge" style="display:none;">
-<nav class="nav"><div class="nav-logo">GRESH<span>.</span>WORKS</div><div class="nav-links"><a href="#" data-overlay="resumeOverlay">BIO</a><a href="#" data-overlay="projectsOverlay">JOBS</a>
+<nav class="nav"><div class="nav-logo">GRESH<span>.</span>WORKS</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">ABOUT</a><a href="#" data-overlay="projectsOverlay">WORK</a><a href="#" data-overlay="faqOverlay">FAQ</a>
         <a href="#" data-overlay="tshirtsOverlay">SHOP</a>
-<a href="#" data-overlay="askJohnOverlay">ASK</a><a href="#" data-overlay="miniGamesOverlay">BREAK</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">TEMPLATES &#9662;</button><div class="tpl-switch-panel">
+<a href="#" data-overlay="askJohnOverlay">CONTACT</a><a href="#" data-overlay="miniGamesOverlay">PLAY</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">TEMPLATES &#9662;</button><div class="tpl-switch-panel">
           <a href="#" data-template="default">DEFAULT<span class="tag-mini">GAME</span></a>
 <a href="#" data-template="aurora">AURORA<span class="tag-mini">LIFT</span></a><a href="#" data-template="noir">NOIR<span class="tag-mini">LUXE</span></a>
           <a href="#" data-template="forge" class="active">FORGE<span class="tag-mini">STEEL</span></a>
@@ -1171,13 +1274,13 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <div class="cert"><div class="icon"><svg class="emoji-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="nm">Hosting + SSL<br>Set Up For You</div></div>
         <div class="cert"><div class="icon"><svg class="emoji-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0 5 5l-9.4 9.4a2.8 2.8 0 1 1-4-4L15.7 7.3"/><path d="M18 2l4 4-3 3-4-4 3-3z"/></svg></div><div class="nm">Code &amp; Domain<br>Owned By You</div></div>
       </div>
-</section><div class="cta-block" id="callout"><h2>READY TO BUILD.<br>CALL TO QUOTE.</h2><a class="phone" href="tel:3369954119">(336) 995-4119</a></div><section class="tpl-map" id="location"><span class="tpl-map-label">// LOCATION &middot; WINSTON-SALEM, NC</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer>&copy; GRESH WORKS &middot; WINSTON-SALEM, NC &middot; JOHNGRESH.USA@GMAIL.COM</footer></div>
+</section><div class="cta-block" id="callout"><h2>READY TO BUILD.<br>CALL TO QUOTE.</h2><a class="phone" href="tel:3369954119">(336) 995-4119</a></div><section class="tpl-map" id="location"><span class="tpl-map-label">// LOCATION &middot; WINSTON-SALEM, NC</span><div class="tpl-map-frame"><iframe data-src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer>&copy; GRESH WORKS &middot; WINSTON-SALEM, NC &middot; JOHNGRESH.USA@GMAIL.COM</footer></div>
 
   <!-- ============== TEMPLATE 4: TERRA — Restaurant / Hospitality ============== -->
   <div class="tpl-terra" data-tpl="terra" style="display:none;">
-<nav class="nav"><div class="nav-logo">Terra &amp; Gresh</div><div class="nav-links"><a href="#" data-overlay="resumeOverlay">Story</a><a href="#" data-overlay="projectsOverlay">Press</a>
-        <a href="#" data-overlay="tshirtsOverlay">Pantry</a>
-<a href="#" data-overlay="askJohnOverlay">Reserve</a><a href="#" data-overlay="miniGamesOverlay">Aperitivo</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
+<nav class="nav"><div class="nav-logo">Terra &amp; Gresh</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Press</a><a href="#" data-overlay="faqOverlay">FAQ</a>
+        <a href="#" data-overlay="tshirtsOverlay">Shop</a>
+<a href="#" data-overlay="askJohnOverlay">Contact</a><a href="#" data-overlay="miniGamesOverlay">Hours</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
         <div class="tpl-switch-panel">
 <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1503,7 +1606,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <div class="review"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"The kind of place you start telling friends about before you've even paid the check."</p><div class="author">&mdash; A. R.</div></div>
         <div class="review"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"Three courses, two hours, zero rushed moments. Genuine hospitality."</p><div class="author">&mdash; M. P.</div></div>
         <div class="review"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"The bread alone is worth the drive."</p><div class="author">&mdash; C. T.</div></div>
-</div></section><section class="tpl-map"><span class="tpl-map-label">Find our table</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer id="visit"><div class="nm">Terra &amp; Gresh</div><div class="meta">
+</div></section><section class="tpl-map"><span class="tpl-map-label">Find our table</span><div class="tpl-map-frame"><iframe data-src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer id="visit"><div class="nm">Terra &amp; Gresh</div><div class="meta">
         Winston-Salem, NC &middot; (336) 995-4119<br>
         johngresh.usa@gmail.com<br>
         Tue&ndash;Sat 5pm&ndash;10pm &middot; Closed Sun &amp; Mon
@@ -1512,9 +1615,9 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
 
   <!-- ============== TEMPLATE 5: SLATE — Professional Services / Consulting ============== -->
   <div class="tpl-slate" data-tpl="slate" style="display:none;">
-<nav class="nav"><div class="nav-logo"><span class="dot"></span> Gresh &amp; Co.</div><div class="nav-links"><a href="#" data-overlay="resumeOverlay">About</a><a href="#" data-overlay="projectsOverlay">Engagements</a>
-        <a href="#" data-overlay="tshirtsOverlay">Imprint</a>
-<a href="#" data-overlay="askJohnOverlay">Counsel</a><a href="#" data-overlay="miniGamesOverlay">Hours</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
+<nav class="nav"><div class="nav-logo"><span class="dot"></span> Gresh &amp; Co.</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Projects</a><a href="#" data-overlay="faqOverlay">FAQ</a>
+        <a href="#" data-overlay="tshirtsOverlay">Shop</a>
+<a href="#" data-overlay="askJohnOverlay">Contact</a><a href="#" data-overlay="miniGamesOverlay">Hours</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
         <div class="tpl-switch-panel">
 <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1572,7 +1675,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
           <p>Small shops don't need a six-figure agency. They need a site that works and someone who picks up the phone.</p>
 </div></div></section><section class="contact" id="contact"><h2>Let's start a conversation.</h2><p>Initial calls are free. Most projects start within two weeks.</p>
       <a class="btn-light" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a>
-</section><section class="tpl-map"><span class="tpl-map-label">Winston-Salem Office</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer><div>&copy; Gresh &amp; Co. &middot; Winston-Salem, NC</div><div>(336) 995-4119 &middot; johngresh.usa@gmail.com</div></footer></div>
+</section><section class="tpl-map"><span class="tpl-map-label">Winston-Salem Office</span><div class="tpl-map-frame"><iframe data-src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer><div>&copy; Gresh &amp; Co. &middot; Winston-Salem, NC</div><div>(336) 995-4119 &middot; johngresh.usa@gmail.com</div></footer></div>
 
   <!-- ============== TEMPLATE 6B: IVY — Private Club / Country Club Heritage ============== -->
   <div class="tpl-ivy" data-tpl="ivy" style="display:none;">
@@ -1611,7 +1714,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
 </svg><nav class="nav"><div class="nav-logo"><svg class="ivy-crest-mark ivy-crest-sm"><use href="#ivy-crest"/></svg>
         The Greshwood Club
       </div>
-<div class="nav-links"><a href="#" data-overlay="resumeOverlay">Studio</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="askJohnOverlay">Correspondence</a>
+<div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a><a href="#" data-overlay="askJohnOverlay">Contact</a>
         <a href="#" data-overlay="miniGamesOverlay">Members</a>
 </div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel"><a href="#" data-template="default">Default<span class="tag-mini">Game</span></a>
           <a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a>
@@ -1671,7 +1774,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         150 Buckingham Rd<br>
         Winston-Salem, North Carolina<br>
         <em>by appointment</em>
-</div><div class="contact-lines"><a class="btn-light" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a><a class="btn-light" href="tel:+13369954119">(336) 995&#8209;4119</a></div></section><section class="tpl-map"><span class="tpl-map-label">&mdash; The Grounds &mdash;</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="The Greshwood Club &middot; 150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer><div class="footer-col">
+</div><div class="contact-lines"><a class="btn-light" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a><a class="btn-light" href="tel:+13369954119">(336) 995&#8209;4119</a></div></section><section class="tpl-map"><span class="tpl-map-label">&mdash; The Grounds &mdash;</span><div class="tpl-map-frame"><iframe data-src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="The Greshwood Club &middot; 150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer><div class="footer-col">
         <div class="fine">The Studio</div>
 <div class="footer-address">The Greshwood Club<br>150 Buckingham Rd<br>Winston-Salem, NC<br>(336) 995&#8209;4119</div></div><div class="footer-col"><div class="fine">On the Premises</div><div class="footer-links"><a href="#about">About</a>
           <a href="#commissions">Work</a>
@@ -1746,9 +1849,9 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
 
   <!-- ============== TEMPLATE 6: HALO — Premium Tech / AI / SaaS ============== -->
   <div class="tpl-halo" data-tpl="halo" style="display:none;">
-<nav class="nav"><div class="nav-logo"><span class="ring"></span> Halo</div><div class="nav-links"><a href="#" data-overlay="resumeOverlay">about</a><a href="#" data-overlay="projectsOverlay">work</a>
-        <a href="#" data-overlay="tshirtsOverlay">store</a>
-<a href="#" data-overlay="askJohnOverlay">chat</a><a href="#" data-overlay="miniGamesOverlay">lab</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
+<nav class="nav"><div class="nav-logo"><span class="ring"></span> Halo</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">about</a><a href="#" data-overlay="projectsOverlay">work</a><a href="#" data-overlay="faqOverlay">faq</a>
+        <a href="#" data-overlay="tshirtsOverlay">shop</a>
+<a href="#" data-overlay="askJohnOverlay">chat</a><a href="#" data-overlay="miniGamesOverlay">demo</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
         <div class="tpl-switch-panel">
 <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1794,7 +1897,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <div class="changelog-item"><div class="when"><span class="tag ship">SHIPPED</span><br>2026.01.05</div><div><h4>Internal dashboard for small retailer</h4><p>Replaced three spreadsheets with one owned tool. Staff picked it up same day.</p></div></div>
 </div></section>
     <section class="cta-finale">
-<h2>Your next site<br>could be your last rebuild.</h2><p>Tell me what you need. I'll quote by morning.</p><a class="btn-primary magnetic" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com<span class="arrow">&rarr;</span></a></section><section class="tpl-map"><span class="tpl-map-label"><span class="pin">&#9673;</span> HQ &middot; WINSTON-SALEM, NC</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer>
+<h2>Your next site<br>could be your last rebuild.</h2><p>Tell me what you need. I'll quote by morning.</p><a class="btn-primary magnetic" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com<span class="arrow">&rarr;</span></a></section><section class="tpl-map"><span class="tpl-map-label"><span class="pin">&#9673;</span> HQ &middot; WINSTON-SALEM, NC</span><div class="tpl-map-frame"><iframe data-src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer>
       <div class="footer-grid">
 <div><div class="nav-logo" style="margin-bottom:14px;"><span class="ring"></span> Halo</div><p style="color:#a3a3a3;font-size:14px;max-width:300px;margin:0;">Websites and web apps for people who actually run the business.</p></div><div><h5>Product</h5>
           <a href="#">Basic</a><a href="#">Pro</a><a href="#">Premium</a><a href="#">Pricing</a>
@@ -1806,9 +1909,9 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
 
   <!-- ============== TEMPLATE 7: MANOR — Ultra-Luxury Heritage / Maison ============== -->
   <div class="tpl-manor" data-tpl="manor" style="display:none;">
-<nav class="nav"><div class="nav-logo">M&nbsp;A&nbsp;N&nbsp;O&nbsp;R</div><div class="nav-links"><a href="#" data-overlay="resumeOverlay">Maison</a><a href="#" data-overlay="projectsOverlay">Collection</a>
-        <a href="#" data-overlay="tshirtsOverlay">Atelier</a>
-<a href="#" data-overlay="askJohnOverlay">Concierge</a><a href="#" data-overlay="miniGamesOverlay">Salon</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
+<nav class="nav"><div class="nav-logo">M&nbsp;A&nbsp;N&nbsp;O&nbsp;R</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="faqOverlay">FAQ</a>
+        <a href="#" data-overlay="tshirtsOverlay">Shop</a>
+<a href="#" data-overlay="askJohnOverlay">Contact</a><a href="#" data-overlay="miniGamesOverlay">Play</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
         <div class="tpl-switch-panel">
 <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1852,7 +1955,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <blockquote>"Detail is the difference between a site that's visited, and a site that's loved."<cite>&mdash; The Keeper</cite></blockquote>
 <p>If this is the kind of work you're looking for, the concierge is glad to hear from you.</p></div></section><section class="by-appt">
       <span class="label">&mdash; By Appointment &mdash;</span>
-<h2>The line is open.</h2><p>A small number of new commissions each season. Inquiries answered within the day.</p><a class="btn magnetic" href="mailto:johngresh.usa@gmail.com">Make an Inquiry</a></section><section class="tpl-map"><span class="tpl-map-label">&mdash; The Estate in Winston-Salem &mdash;</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="The Manor &middot; 150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer><div class="foot-grid">
+<h2>The line is open.</h2><p>A small number of new commissions each season. Inquiries answered within the day.</p><a class="btn magnetic" href="mailto:johngresh.usa@gmail.com">Make an Inquiry</a></section><section class="tpl-map"><span class="tpl-map-label">&mdash; The Estate in Winston-Salem &mdash;</span><div class="tpl-map-frame"><iframe data-src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="The Manor &middot; 150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer><div class="foot-grid">
         <div>
 <div class="foot-mark">M&middot;A&middot;N&middot;O&middot;R</div><p>Six estates &middot; One small workshop<br>Established 1912</p></div><div class="foot-city"><h5>Winston-Salem</h5><p class="addr">The Manor<br>By Appointment<br>(336) 995-4119</p></div><div class="foot-city">
           <h5>Como</h5>
@@ -3747,6 +3850,34 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
     others.forEach(function(v){ io.observe(v); });
   } else {
     others.forEach(eagerStart);
+  }
+  // Deferred Google Maps load: only the active template's map, queued to fire AFTER
+  // the hero video has buffered its initial frames and after a grace window so any
+  // in-view sub-videos (which load lazily via the IO above) get bandwidth first.
+  var mapFrame = panel.querySelector('.tpl-map iframe[data-src]');
+  if (mapFrame){
+    var loadMap = function(){
+      if (mapFrame.src) return;
+      mapFrame.src = mapFrame.dataset.src;
+    };
+    var queueMap = function(){
+      var fire = function(){
+        if ('requestIdleCallback' in window){
+          window.requestIdleCallback(loadMap, { timeout: 3000 });
+        } else { loadMap(); }
+      };
+      // 2s grace window after hero is ready: lets sub-videos in viewport pick up
+      // their initial chunks before the map iframe joins the network queue.
+      setTimeout(fire, 2000);
+    };
+    if (heroV){
+      if (heroV.readyState >= 2) queueMap();
+      else heroV.addEventListener('loadeddata', queueMap, { once: true });
+      // Failsafe in case hero never fires loadeddata (offline, blocked, no source).
+      setTimeout(function(){ if (!mapFrame.src) queueMap(); }, 6000);
+    } else {
+      queueMap();
+    }
   }
   if (name === 'ivy' && typeof window.__ivyInit === 'function') { try { window.__ivyInit(); } catch(_){} }
   clearTemplateBodyClasses();

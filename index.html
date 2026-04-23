@@ -43,7 +43,7 @@ html{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;background-
 .scene-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(26, 5, 58, 0.9);z-index:1000;display:none;justify-content:center;align-items:center;backdrop-filter:blur(3px);box-sizing:border-box}
 .overlay-container{width:85%;max-width:1100px;height:85vh;overflow-y:auto;padding:30px;border:4px solid #000;box-shadow:0 0 50px rgba(255, 125, 92, 0.9);background-color:#1a1a2e;color:#fff;line-height:1.3;box-sizing:border-box;transition:background-color 0.3s, box-shadow 0.3s}
 #tshirtsContainer{max-width:650px;height:auto;max-height:85vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:0 0 50px rgba(0, 119, 182, 0.9)}
-#askJohnContainer{max-width:800px;height:100%;display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:left;box-shadow:0 0 50px rgba(255, 167, 0, 0.9);overflow-y:hidden;position:relative}
+#askJohnContainer{max-width:800px;height:calc(100vh - 60px);max-height:calc(100vh - 60px);display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:left;box-shadow:0 0 50px rgba(255, 167, 0, 0.9);overflow-y:hidden;position:relative}
 #askJohnContainer.premium-active{background-color:#0a0000;box-shadow:0 0 60px rgba(230, 57, 70, 0.9);background-image:repeating-linear-gradient(45deg, rgba(80, 0, 0, 0.5) 0, rgba(80, 0, 0, 0.5) 5px, transparent 5px, transparent 10px), repeating-linear-gradient(-45deg, rgba(80, 0, 0, 0.3) 0, rgba(80, 0, 0, 0.3) 8px, transparent 8px, transparent 16px)}
 #askJohnContainer.premium-active .resume-header h1{color:#e63946}#askJohnContainer.premium-active .resume-header p{color:#ff9999}#askJohnContainer.premium-active #chat-window{background-color:#1a0000}
 #askJohnContainer.premium-active #chat-window::-webkit-scrollbar-thumb{background:#e63946}#askJohnContainer.premium-active #chat-window::-webkit-scrollbar-thumb:hover{background:#ff5a5f}
@@ -144,7 +144,7 @@ body.template-active .scene-overlay{z-index:1700!important}body.template-active 
 #template-host .tpl-burger-btn .bar{display:block;width:24px;height:2px;background:currentColor;transition:transform .25s cubic-bezier(.2,.8,.3,1),opacity .2s ease}
 #template-host .tpl-burger.open .tpl-burger-btn .bar:nth-child(1){transform:translateY(7px) rotate(45deg)}#template-host .tpl-burger.open .tpl-burger-btn .bar:nth-child(2){opacity:0}
 #template-host .tpl-burger.open .tpl-burger-btn .bar:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
-#template-host .tpl-burger-panel{position:absolute;top:calc(100% + 12px);right:0;min-width:240px;max-width:84vw;max-height:78vh;overflow-y:auto;display:none;z-index:60;padding:10px}
+#template-host .tpl-burger-panel{position:absolute;top:calc(100% + 12px);right:0;min-width:240px;max-width:84vw;max-height:78vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:none;z-index:60;padding:10px}
 #template-host .tpl-burger.open .tpl-burger-panel{display:block}
 #template-host .tpl-burger-panel a{display:flex;justify-content:space-between;align-items:center;text-decoration:none;cursor:pointer;padding:13px 16px;border-radius:8px;font-size:14px;font-weight:500;color:inherit;transition:background .2s}
 #template-host .tpl-burger-panel a .tag-mini{font-size:10px;letter-spacing:1.5px;padding:2px 7px;border-radius:999px;font-weight:700;text-transform:uppercase}#template-host .tpl-burger-panel a.active{font-weight:700}
@@ -947,16 +947,17 @@ body.tpl-active-slate #aboutOverlay .about-slate,body.tpl-active-slate #faqOverl
 body.tpl-active-ivy #aboutOverlay .about-ivy,body.tpl-active-ivy #faqOverlay .faq-ivy,
 body.tpl-active-halo #aboutOverlay .about-halo,body.tpl-active-halo #faqOverlay .faq-halo,
 body.tpl-active-manor #aboutOverlay .about-manor,body.tpl-active-manor #faqOverlay .faq-manor{display:block}
-#aboutOverlay .resume-link{display:inline-block;margin-top:18px;font-size:14px;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:2px;transition:opacity .2s}
-#aboutOverlay .resume-link:hover{opacity:.7}
-body.template-active #aboutOverlay .resume-link{color:var(--ov-accent)!important}
+#aboutOverlay .resume-link{display:inline-block;margin-top:24px;font-size:13px;font-weight:500;letter-spacing:.5px;text-decoration:none;padding:11px 22px;border:1px solid currentColor;border-radius:6px;cursor:pointer;background:transparent;transition:opacity .2s ease,transform .2s ease,background-color .2s ease,color .2s ease}
+#aboutOverlay .resume-link:hover{opacity:.85;transform:translateY(-1px)}
+body.template-active #aboutOverlay .resume-link{color:var(--ov-accent)!important;border-color:var(--ov-accent)!important}
+body.template-active #aboutOverlay .resume-link:hover{background:var(--ov-accent)!important;color:var(--ov-card,#fff)!important;opacity:1}
 #faqOverlay .faq-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}
 #faqOverlay .faq-item{border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:0;overflow:hidden;background:transparent;transition:border-color .25s}
 body.template-active #faqOverlay .faq-item{border:1px solid var(--ov-border)!important;border-radius:var(--ov-radius-sm)!important;background:var(--ov-soft)!important}
 #faqOverlay .faq-item summary{cursor:pointer;padding:18px 22px;font-weight:600;font-size:16px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px;-webkit-tap-highlight-color:transparent;transition:background .2s}
 #faqOverlay .faq-item summary::-webkit-details-marker{display:none}
-#faqOverlay .faq-item summary::after{content:'+';font-size:24px;font-weight:300;line-height:1;flex-shrink:0;transition:transform .25s ease}
-#faqOverlay .faq-item[open] summary::after{transform:rotate(45deg)}
+#faqOverlay .faq-item summary::after{content:'\25BE';font-size:18px;font-weight:400;line-height:1;flex-shrink:0;transition:transform .25s ease;display:inline-block}
+#faqOverlay .faq-item[open] summary::after{transform:rotate(180deg)}
 body.template-active #faqOverlay .faq-item summary{font-family:var(--ov-heading)!important;font-style:var(--ov-heading-style)!important;color:var(--ov-text)!important}
 body.template-active #faqOverlay .faq-item summary::after{color:var(--ov-accent)!important}
 body.template-active #faqOverlay .faq-item summary:hover{background:var(--ov-soft)!important}
@@ -970,6 +971,26 @@ body.tpl-active-forge #faqOverlay .faq-item summary,body.tpl-active-noir #faqOve
 body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;font-family:'Bebas Neue',Impact,sans-serif!important;font-size:20px;letter-spacing:2px}
 #aboutOverlay .about-title,#faqOverlay .faq-title{margin:0}
 @media(max-width:800px){#faqOverlay .faq-item summary{padding:14px 16px;font-size:15px}#faqOverlay .faq-item p{padding:14px 16px;font-size:14px}}
+/* ============== Gallery overlay (lazy-loaded image grid, per-template themed) ============== */
+/* Container clips its rounded corners; the grid is the scroll surface so the scrollbar
+   never paints past the curve. */
+#galleryContainer{display:flex;flex-direction:column;overflow:hidden}
+#galleryContainer .resume-header{flex-shrink:0}
+#galleryOverlay .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px;width:100%;margin-top:10px;overflow-y:auto;overflow-x:hidden;flex:1 1 auto;min-height:0;padding:6px 8px 6px 0}
+/* padding-bottom:75% gives a 4:3 cell whose height is known to the grid (aspect-ratio doesn't
+   feed back into auto-row sizing, so rows would otherwise collapse and cells overlap). */
+#galleryOverlay .gallery-grid .gallery-cell{position:relative;width:100%;padding-bottom:75%;background:#1a1a2e;border:2px solid #000;overflow:hidden;border-radius:0}
+#galleryOverlay .gallery-grid img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s ease}
+#galleryOverlay .gallery-grid img.loaded{opacity:1}
+#galleryOverlay .gallery-grid .gallery-cell::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(0,0,0,.25));pointer-events:none}
+#galleryOverlay .gallery-grid::-webkit-scrollbar{width:8px}
+#galleryOverlay .gallery-grid::-webkit-scrollbar-track{background:transparent;border:none}
+#galleryOverlay .gallery-grid::-webkit-scrollbar-thumb{background:#6c6383;border:none;border-radius:999px}
+body.template-active #galleryOverlay .gallery-grid{gap:22px!important;margin-top:16px!important;padding:8px 10px 8px 2px!important}
+body.template-active #galleryOverlay .gallery-grid::-webkit-scrollbar-thumb{background:var(--ov-accent)!important}
+body.template-active #galleryOverlay .gallery-grid .gallery-cell{border:1px solid var(--ov-border)!important;border-radius:var(--ov-radius-sm,8px)!important;background:var(--ov-soft,rgba(255,255,255,.04))!important}
+body.tpl-active-forge #galleryOverlay .gallery-grid .gallery-cell,body.tpl-active-noir #galleryOverlay .gallery-grid .gallery-cell,body.tpl-active-manor #galleryOverlay .gallery-grid .gallery-cell,body.tpl-active-ivy #galleryOverlay .gallery-grid .gallery-cell{border-radius:0!important}
+@media(max-width:800px){#galleryOverlay .gallery-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}}
 /* ============== Google Maps location embed (per-template styling) ============== */
 #template-host .tpl-map{display:block;width:100%;position:relative}
 #template-host .tpl-map iframe{display:block;width:100%;border:0}
@@ -1055,6 +1076,7 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
 <div id="password-modal"><div class="modal-content"><p>Enter Password for Access:</p><input type="password" id="password-input" placeholder="> ********"><div id="password-error">ACCESS DENIED</div><button id="submit-password-btn" class="modal-btn">SUBMIT</button><button id="cancel-password-btn" class="modal-btn">CANCEL</button></div></div>
 <div id="resumeOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="resumeContainer" class="overlay-container"><div class="resume-header"><h1>John Gresh</h1><p>(336) 995-4119 | johngresh.usa@gmail.com</p></div><div class="resume-layout"><div class="layout-main"><section class="resume-section"><h2>Experience</h2><div class="job"><div class="job-title">Maintenance Technician</div><div class="company">Toyota Battery Factory</div><span class="dates">July 2024 - November 2024</span><ul class="responsibilities"><li>General Maintenance</li><li>Preventative Maintenance</li><li>Work orders/Cost Center Management</li><li>Performing Job Safety Analysis</li></ul></div><div class="job"><div class="job-title">Assistant Manager</div><div class="company">New Balance</div><span class="dates">October 2021 - Current</span><ul class="responsibilities"><li>Assisting in the general operation of the store</li><li>Opening and closing the store</li><li>Overseeing the customer experience</li><li>Fitting customers for shoes</li></ul></div><div class="job"><div class="job-title">Sales Representative</div><div class="company">GNC</div><span class="dates">March 2019 - July 2019, Charlotte NC</span><ul class="responsibilities"><li>Opening/Closing store</li><li>Inventory checks</li><li>Customer relations</li><li>Register</li><li>Cleaning</li></ul></div><div class="job"><div class="job-title">Lifeguard</div><div class="company">Forsyth Country Club</div><span class="dates">2016 - 2017 Summer</span><ul class="responsibilities"><li>Lifeguarding</li><li>Checking in guests</li><li>Cleaning pool deck and pool services</li><li>Testing pool chemicals/Adding chemicals</li><li>Strong emphasis on customer relations</li></ul></div><div class="job"><div class="job-title">Bussing tables / working in kitchen</div><div class="company">Vincenzo's Restaurant</div><span class="dates">January 2015 - December 2015, Winston-salem NC</span><ul class="responsibilities"><li>Making bread/Cleaning dishes/Making salads/ Bus Boy</li><li>Cleaning station</li><li>Customer relations</li></ul></div></section></div><div class="layout-sidebar"><section class="resume-section"><h2>Education</h2><div class="education-item"><div class="degree-title">Mechatronics Technician</div><div class="school">Forsyth Tech</div><span class="dates">August 2022 - May 2024, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">Internship</div><div class="school">ThinkPLC</div><span class="dates">August 2022 - May 2023, Winston Salem NC</span></div><div class="education-item"><div class="degree-title">High School Diploma</div><div class="school">Mount Tabor</div><span class="dates">August 2013 - May 2017, Winston Salem NC</span></div></section><section class="resume-section"><h2>Skills</h2><ul class="skills-list"><li>OSHA 10-Hr Certified</li><li>Electrical Safe Work Practices Certified</li><li>Control of Hazardous Energy Certified</li><li>PLC installation / proficient</li><li>PLC programming (RSLogix) / proficient</li><li>Python / proficient</li><li>C++ / beginner</li><li>Matlab / beginner</li><li>Sales experience (GNC, New Balance)</li><li>Cell phone and electronic repair (iPhone/Mac)</li></ul></section></div></div></div></div>
 <div id="projectsOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="projectsContainer" class="overlay-container"><div class="resume-header"><h1>Projects</h1></div><section class="resume-section"><h2>Featured Work</h2><ul class="skills-list"><li>This Website</li></ul></section></div></div>
+<div id="galleryOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="galleryContainer" class="overlay-container"><div class="resume-header"><h1 class="gallery-title">Gallery</h1><p class="gallery-sub">Loading&hellip;</p></div><div class="gallery-grid"></div></div></div>
 <div id="tshirtsOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="tshirtsContainer" class="overlay-container"><div class="resume-header"><h1>T-Shirt Store</h1><p>Limited apparel. Printed on demand. Shipped worldwide.</p></div><div id="shirtThumb" role="button" tabindex="0" onclick="window.__openShirtLb&&__openShirtLb()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.__openShirtLb&&__openShirtLb();}" style="display:block;margin:24px auto 8px;max-width:280px;width:100%;cursor:zoom-in;"><img src="https://imgproxy.fourthwall.com/QWCMqzmGUoXkj1YPUk-cYecC1LogGdn771MEfJl1h64/w:1920/sm:1/enc/9atjENTEN8axoRKx/Y12ZzHXeKUuy2Q4W/JM9GPIhcUrc_xWeL/OWjfsGeKkGUi_57_/JslE9eGFpRVr_FQg/L3IyeInB638B50pG/_IfX4eJw40sI2mSf/2jzx6H7IR4e-c6t_/3gPyd1npbgtL8m0Q/V9cne6KX6UkKDo0a/jYerbT4OAc32waRf/Qw0Zuq3ePjOzDB4d/GrH0cK7Ub4IQjwHi/27o-5YLYXIdeG4Fg/ovNtcx7gZbw" alt="John Gresh Navy Tee" loading="lazy" style="display:block;width:100%;height:auto;border:4px solid #000;box-shadow:6px 6px 0 rgba(0,0,0,0.6);background:#fff;"></div><div style="display:flex;flex-direction:column;gap:18px;align-items:center;margin:18px 0 10px;width:100%;max-width:360px;"><a href="https://john-gresh-store-shop.fourthwall.com/products/john-gresh-navy-tee" target="_blank" rel="noopener" class="modal-btn view-shirt-btn" style="background-color:#0077b6;color:#fff;text-decoration:none;font-size:24px;padding:14px 28px;width:100%;text-align:center;box-sizing:border-box;">VIEW FEATURED SHIRT &rarr;</a><a href="https://john-gresh-store-shop.fourthwall.com" target="_blank" rel="noopener" class="modal-btn browse-shop-btn" style="background-color:#2a1a3d;color:#ffd700;text-decoration:none;font-size:20px;padding:12px 24px;width:100%;text-align:center;box-sizing:border-box;">BROWSE FULL SHOP</a></div><p class="loading-text" style="font-size:16px;color:#d4a3a3;margin-top:8px;">&gt; Checkout runs on fourthwall.com</p><div id="shirtLightbox" onclick="if(event.target===this)window.__closeShirtLb&&__closeShirtLb()" style="display:none;position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;padding:60px 20px 20px;box-sizing:border-box;"><button type="button" class="close-btn" onclick="event.stopImmediatePropagation();window.__closeShirtLb&&__closeShirtLb()" style="position:absolute;top:20px;right:20px;z-index:2501;">BACK</button><img src="https://imgproxy.fourthwall.com/QWCMqzmGUoXkj1YPUk-cYecC1LogGdn771MEfJl1h64/w:1920/sm:1/enc/9atjENTEN8axoRKx/Y12ZzHXeKUuy2Q4W/JM9GPIhcUrc_xWeL/OWjfsGeKkGUi_57_/JslE9eGFpRVr_FQg/L3IyeInB638B50pG/_IfX4eJw40sI2mSf/2jzx6H7IR4e-c6t_/3gPyd1npbgtL8m0Q/V9cne6KX6UkKDo0a/jYerbT4OAc32waRf/Qw0Zuq3ePjOzDB4d/GrH0cK7Ub4IQjwHi/27o-5YLYXIdeG4Fg/ovNtcx7gZbw" alt="John Gresh Navy Tee" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;background:#fff;border:4px solid #000;box-shadow:6px 6px 0 rgba(0,0,0,0.6);"></div></div></div><script>(function(){var ov=document.getElementById('tshirtsOverlay');if(!ov)return;var thumb=document.getElementById('shirtThumb');var ovClose=ov.querySelector(':scope > .close-btn');var lockUntil=0;function lockThumb(){lockUntil=Date.now()+500;if(!thumb)return;thumb.style.pointerEvents='none';setTimeout(function(){thumb.style.pointerEvents='';},500);}new MutationObserver(function(){if(ov.style.display&&ov.style.display!=='none')lockThumb();}).observe(ov,{attributes:true,attributeFilter:['style']});window.__openShirtLb=function(){if(Date.now()<lockUntil)return;var lb=document.getElementById('shirtLightbox');if(!lb)return;lb.style.display='flex';if(ovClose)ovClose.style.visibility='hidden';};window.__closeShirtLb=function(){var lb=document.getElementById('shirtLightbox');if(!lb)return;lb.style.display='none';if(ovClose)ovClose.style.visibility='';};})();</script>
 
 <div id="askJohnOverlay" class="scene-overlay"><button class="close-btn">BACK</button><div id="askJohnContainer" class="overlay-container"><div class="resume-header">
@@ -1146,8 +1168,8 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
 
   <!-- ============== TEMPLATE 1: AURORA — Modern SaaS / Tech ============== -->
   <div class="tpl-aurora" data-tpl="aurora" style="display:none;">
-<nav class="nav"><div class="nav-logo">JG / Aurora</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a>
-        <a href="#" data-overlay="askJohnOverlay">Chat</a>
+<nav class="nav"><div class="nav-logo">JG / Aurora</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="galleryOverlay">Showcase</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a>
+        <a href="#" data-overlay="askJohnOverlay">AI Lab</a>
 <a href="#" data-overlay="miniGamesOverlay">Demo</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel">
           <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a>
 <a href="#" data-template="aurora" class="active">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
@@ -1195,8 +1217,8 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
 
   <!-- ============== TEMPLATE 2: NOIR — Luxury / Boutique ============== -->
   <div class="tpl-noir" data-tpl="noir" style="display:none;">
-<nav class="nav"><div class="nav-logo">J &middot; G</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a>
-        <a href="#" data-overlay="askJohnOverlay">Contact</a>
+<nav class="nav"><div class="nav-logo">J &middot; G</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="galleryOverlay">Lookbook</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a>
+        <a href="#" data-overlay="askJohnOverlay">AI Concierge</a>
 <a href="#" data-overlay="miniGamesOverlay">Play</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel">
           <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a>
 <a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir" class="active">Noir<span class="tag-mini">Luxe</span></a>
@@ -1231,8 +1253,8 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
   <!-- ============== TEMPLATE 3: FORGE — Industrial / Trades ============== -->
   <div class="tpl-forge" data-tpl="forge" style="display:none;">
 <nav class="nav"><div class="nav-logo">GRESH<span>.</span>WORKS</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">ABOUT</a><a href="#" data-overlay="projectsOverlay">WORK</a><a href="#" data-overlay="faqOverlay">FAQ</a>
-        <a href="#" data-overlay="tshirtsOverlay">SHOP</a>
-<a href="#" data-overlay="askJohnOverlay">CONTACT</a><a href="#" data-overlay="miniGamesOverlay">PLAY</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">TEMPLATES &#9662;</button><div class="tpl-switch-panel">
+        <a href="#" data-overlay="galleryOverlay">JOBS</a><a href="#" data-overlay="tshirtsOverlay">SHOP</a>
+<a href="#" data-overlay="askJohnOverlay">AI ASSIST</a><a href="#" data-overlay="miniGamesOverlay">PLAY</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">TEMPLATES &#9662;</button><div class="tpl-switch-panel">
           <a href="#" data-template="default">DEFAULT<span class="tag-mini">GAME</span></a>
 <a href="#" data-template="aurora">AURORA<span class="tag-mini">LIFT</span></a><a href="#" data-template="noir">NOIR<span class="tag-mini">LUXE</span></a>
           <a href="#" data-template="forge" class="active">FORGE<span class="tag-mini">STEEL</span></a>
@@ -1279,8 +1301,8 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
   <!-- ============== TEMPLATE 4: TERRA — Restaurant / Hospitality ============== -->
   <div class="tpl-terra" data-tpl="terra" style="display:none;">
 <nav class="nav"><div class="nav-logo">Terra &amp; Gresh</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Press</a><a href="#" data-overlay="faqOverlay">FAQ</a>
-        <a href="#" data-overlay="tshirtsOverlay">Shop</a>
-<a href="#" data-overlay="askJohnOverlay">Contact</a><a href="#" data-overlay="miniGamesOverlay">Hours</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
+        <a href="#" data-overlay="galleryOverlay">Plates</a><a href="#" data-overlay="tshirtsOverlay">Shop</a>
+<a href="#" data-overlay="askJohnOverlay">AI Sommelier</a><a href="#" data-overlay="miniGamesOverlay">Late Night</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
         <div class="tpl-switch-panel">
 <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1616,8 +1638,8 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
   <!-- ============== TEMPLATE 5: SLATE — Professional Services / Consulting ============== -->
   <div class="tpl-slate" data-tpl="slate" style="display:none;">
 <nav class="nav"><div class="nav-logo"><span class="dot"></span> Gresh &amp; Co.</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Projects</a><a href="#" data-overlay="faqOverlay">FAQ</a>
-        <a href="#" data-overlay="tshirtsOverlay">Shop</a>
-<a href="#" data-overlay="askJohnOverlay">Contact</a><a href="#" data-overlay="miniGamesOverlay">Hours</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
+        <a href="#" data-overlay="galleryOverlay">Showcase</a><a href="#" data-overlay="tshirtsOverlay">Shop</a>
+<a href="#" data-overlay="askJohnOverlay">AI Advisor</a><a href="#" data-overlay="miniGamesOverlay">Sandbox</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button>
         <div class="tpl-switch-panel">
 <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1714,8 +1736,8 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
 </svg><nav class="nav"><div class="nav-logo"><svg class="ivy-crest-mark ivy-crest-sm"><use href="#ivy-crest"/></svg>
         The Greshwood Club
       </div>
-<div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a><a href="#" data-overlay="askJohnOverlay">Contact</a>
-        <a href="#" data-overlay="miniGamesOverlay">Members</a>
+<div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="galleryOverlay">Album</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a><a href="#" data-overlay="askJohnOverlay">AI Counsel</a>
+        <a href="#" data-overlay="miniGamesOverlay">Lawn Games</a>
 </div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel"><a href="#" data-template="default">Default<span class="tag-mini">Game</span></a>
           <a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a>
 <a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a><a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1849,9 +1871,9 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
 
   <!-- ============== TEMPLATE 6: HALO — Premium Tech / AI / SaaS ============== -->
   <div class="tpl-halo" data-tpl="halo" style="display:none;">
-<nav class="nav"><div class="nav-logo"><span class="ring"></span> Halo</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">about</a><a href="#" data-overlay="projectsOverlay">work</a><a href="#" data-overlay="faqOverlay">faq</a>
+<nav class="nav"><div class="nav-logo"><span class="ring"></span> Halo</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">about</a><a href="#" data-overlay="projectsOverlay">work</a><a href="#" data-overlay="galleryOverlay">shots</a><a href="#" data-overlay="faqOverlay">faq</a>
         <a href="#" data-overlay="tshirtsOverlay">shop</a>
-<a href="#" data-overlay="askJohnOverlay">chat</a><a href="#" data-overlay="miniGamesOverlay">demo</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
+<a href="#" data-overlay="askJohnOverlay">halo ai</a><a href="#" data-overlay="miniGamesOverlay">demo</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
         <div class="tpl-switch-panel">
 <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -1909,9 +1931,9 @@ body.tpl-active-forge #faqOverlay .faq-item summary{text-transform:uppercase;fon
 
   <!-- ============== TEMPLATE 7: MANOR — Ultra-Luxury Heritage / Maison ============== -->
   <div class="tpl-manor" data-tpl="manor" style="display:none;">
-<nav class="nav"><div class="nav-logo">M&nbsp;A&nbsp;N&nbsp;O&nbsp;R</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="faqOverlay">FAQ</a>
+<nav class="nav"><div class="nav-logo">M&nbsp;A&nbsp;N&nbsp;O&nbsp;R</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="galleryOverlay">Atelier</a><a href="#" data-overlay="faqOverlay">FAQ</a>
         <a href="#" data-overlay="tshirtsOverlay">Shop</a>
-<a href="#" data-overlay="askJohnOverlay">Contact</a><a href="#" data-overlay="miniGamesOverlay">Play</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
+<a href="#" data-overlay="askJohnOverlay">AI Ma&icirc;tre</a><a href="#" data-overlay="miniGamesOverlay">Play</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
         <div class="tpl-switch-panel">
 <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
@@ -2283,6 +2305,9 @@ if (overlayId === 'miniGamesOverlay') {
 if (!pongGame) pongGame = new PongGame('pong-canvas');
  pongGame.resetGame(); setTimeout(() => { pongGame.start(); }, 100);
 }
+if (overlayId === 'galleryOverlay') {
+populateGallery();
+}
 if (overlayId === 'askJohnOverlay') {
 initChat();
 updatePremiumUIState(); // This now calls displayInitialGreeting if visible
@@ -2290,6 +2315,57 @@ setTimeout(() => { document.getElementById('chat-input').focus();
  const chatWindow = document.getElementById('chat-window'); chatWindow.scrollTop = chatWindow.scrollHeight;
 }, 100);
 }}}
+
+// Per-template gallery: 20 lazy-loaded images themed to the active template.
+// Built fresh each open so switching templates between visits picks up the new theme,
+// but only when the overlay is opened (not on page load) so it doesn't slow startup.
+// loremflickr's `lock` param only produces variety with simple integer values, so each
+// template gets a reserved numeric range (base..base+19) — keeps each template's 20 images
+// stable AND unique within and across templates.
+const GALLERY_THEMES = {
+default: { label: 'Gallery', sub: 'Twenty open-source photos.', kw: 'arcade', base: 900 },
+aurora:  { label: 'Showcase', sub: 'Selected work + visual references.', kw: 'abstract', base: 100 },
+noir:    { label: 'Lookbook', sub: 'A small collection.', kw: 'fashion', base: 200 },
+forge:   { label: 'JOBS', sub: 'WORK ON THE FLOOR.', kw: 'industrial', base: 300 },
+terra:   { label: 'Plates', sub: 'From the kitchen and the cellar.', kw: 'food', base: 400 },
+slate:   { label: 'Showcase', sub: 'Selected engagements.', kw: 'architecture', base: 500 },
+ivy:     { label: 'Album', sub: 'Scenes from the Club.', kw: 'golf', base: 600 },
+halo:    { label: 'shots', sub: 'snapshots from the studio.', kw: 'technology', base: 700 },
+manor:   { label: 'Atelier', sub: 'From the workshop.', kw: 'interior', base: 800 }
+};
+
+function populateGallery(){
+const grid = document.querySelector('#galleryContainer .gallery-grid');
+const titleEl = document.querySelector('#galleryContainer .gallery-title');
+const subEl = document.querySelector('#galleryContainer .gallery-sub');
+if (!grid) return;
+const TPL = ['aurora','noir','forge','terra','slate','ivy','halo','manor'];
+let active = 'default';
+for (let i=0;i<TPL.length;i++){ if (document.body.classList.contains('tpl-active-'+TPL[i])){ active = TPL[i]; break; } }
+const theme = GALLERY_THEMES[active] || GALLERY_THEMES.default;
+if (titleEl) titleEl.textContent = theme.label;
+if (subEl) subEl.textContent = theme.sub;
+// Skip rebuild if same template is already populated
+if (grid.dataset.tpl === active && grid.children.length) return;
+grid.dataset.tpl = active;
+grid.innerHTML = '';
+const kw = encodeURIComponent(theme.kw);
+for (let i = 1; i <= 20; i++){
+const cell = document.createElement('div'); cell.className = 'gallery-cell';
+const img = document.createElement('img');
+img.loading = 'lazy'; img.decoding = 'async';
+img.alt = theme.label + ' ' + i;
+const lockN = (theme.base || 0) + i;
+img.src = 'https://loremflickr.com/600/450/' + kw + '?lock=' + lockN;
+img.addEventListener('load', function(){ this.classList.add('loaded'); });
+img.addEventListener('error', function(){
+if (this.dataset.fallback) return;
+this.dataset.fallback = '1';
+this.src = 'https://picsum.photos/seed/' + active + '-' + i + '/600/450';
+});
+cell.appendChild(img); grid.appendChild(cell);
+}
+}
 
 function hideAllOverlays() {
 if (pongGame && pongGame.isRunning) pongGame.stop();
@@ -3082,6 +3158,15 @@ document.addEventListener('click', onMouseClick, !1);
 document.addEventListener('touchend', onTouchEnd, !1);
  document.addEventListener('touchcancel', onTouchEnd, !1);
 document.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', hideAllOverlays, !1));
+// Cross-overlay nav: any [data-overlay] click inside a .scene-overlay (e.g. About → Resume)
+// hides the current overlay and opens the targeted one. Without this, the resume-link in
+// #aboutOverlay just navigates to "#" because no global handler catches scene-overlay clicks.
+document.querySelectorAll('.scene-overlay').forEach(overlay => {
+overlay.addEventListener('click', function(event){
+const link = event.target.closest('[data-overlay]'); if (!link || !overlay.contains(link)) return;
+event.preventDefault(); event.stopPropagation(); const id = link.getAttribute('data-overlay'); if (id && typeof showOverlay === 'function') showOverlay(id);
+}, !1);
+});
 document.querySelectorAll('.scene-overlay').forEach(overlay => {
 overlay.addEventListener('click', function(event) {
 if (document.getElementById('password-modal').style.display === 'flex') return;
@@ -3919,8 +4004,10 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   if (burgerBtn){
    e.preventDefault();
  e.stopPropagation(); const wrap = burgerBtn.closest('.tpl-burger'); const wasOpen = wrap.classList.contains('open'); closeAllSwitchPanels(); closeAllBurgerPanels();
-   if (!wasOpen) wrap.classList.add('open');
- return;
+   if (!wasOpen) {
+    wrap.classList.add('open');
+    var _bp = wrap.querySelector('.tpl-burger-panel'); if (_bp) _bp.scrollTop = 0;
+   } return;
   }
 
   const tplLink = e.target.closest('[data-template]');

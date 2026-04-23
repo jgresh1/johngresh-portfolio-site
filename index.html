@@ -2368,30 +2368,129 @@ cell.appendChild(img); grid.appendChild(cell);
 }
 }
 
-// Lightbox: click any gallery cell -> fullscreen view of the image (request a larger
-// resolution from loremflickr; fall back to whatever the cell already has on error).
+// Lightbox: click any gallery cell -> fullscreen view (request a larger resolution from
+// loremflickr; fall back to thumbnail src on error). Includes wheel/pinch/dbl-tap zoom +
+// drag-to-pan, working across desktop and touch.
 (function setupGalleryLightbox(){
 const grid = document.querySelector('#galleryOverlay .gallery-grid');
 const lb = document.getElementById('galleryLightbox');
 const lbImg = document.getElementById('galleryLightboxImg');
 const lbClose = document.getElementById('galleryLightboxClose');
 if (!grid || !lb || !lbImg) return;
+
+const MIN = 1, MAX = 6;
+let scale = 1, tx = 0, ty = 0;
+function apply(){ lbImg.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')'; lbImg.style.cursor = scale > MIN ? 'grab' : 'zoom-in'; }
+function reset(){ scale = 1; tx = 0; ty = 0; apply(); }
+lbImg.style.transformOrigin = 'center center';
+lbImg.style.transition = 'transform .15s ease-out';
+lbImg.style.touchAction = 'none';
+lbImg.style.userSelect = 'none';
+lbImg.style.webkitUserSelect = 'none';
+
 function open(srcSmall){
-  // Upgrade size for fullscreen — loremflickr returns the same image at any size.
   const big = srcSmall.replace('/600/450/', '/1600/1200/').replace('/600/450', '/1600/1200');
   lbImg.src = big;
   lbImg.onerror = function(){ lbImg.onerror = null; lbImg.src = srcSmall; };
-  lb.style.display = 'flex';
+  reset(); lb.style.display = 'flex';
 }
-function close(){ lb.style.display = 'none'; lbImg.removeAttribute('src'); }
+function close(){ lb.style.display = 'none'; lbImg.removeAttribute('src'); reset(); }
+
 grid.addEventListener('click', function(e){
   const cell = e.target.closest('.gallery-cell'); if (!cell) return;
   const img = cell.querySelector('img'); if (!img || !img.src) return;
   open(img.src);
 });
-lb.addEventListener('click', function(e){ if (e.target === this) close(); });
+// Backdrop click closes — but only when not zoomed (avoid closing during a pan-release).
+lb.addEventListener('click', function(e){ if (e.target === this && scale === MIN) close(); });
 if (lbClose) lbClose.addEventListener('click', function(e){ e.stopPropagation(); close(); });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && lb.style.display === 'flex') close(); });
+
+// Wheel zoom (desktop). Centers on the cursor by adjusting translate based on the scale delta.
+lb.addEventListener('wheel', function(e){
+  if (lb.style.display !== 'flex') return;
+  e.preventDefault();
+  const rect = lbImg.getBoundingClientRect();
+  const cx = rect.left + rect.width/2; const cy = rect.top + rect.height/2;
+  const mx = e.clientX - cx; const my = e.clientY - cy;
+  const old = scale;
+  scale = Math.max(MIN, Math.min(MAX, scale * (1 - e.deltaY * 0.0015)));
+  const f = scale / old;
+  tx = (tx - mx) * f + mx; ty = (ty - my) * f + my;
+  if (scale === MIN){ tx = 0; ty = 0; }
+  apply();
+}, { passive: false });
+
+// Mouse drag pan (desktop)
+let mDrag = false, mLastX = 0, mLastY = 0;
+lbImg.addEventListener('mousedown', function(e){
+  if (scale <= MIN) return; e.preventDefault();
+  mDrag = true; mLastX = e.clientX; mLastY = e.clientY;
+  lbImg.style.transition = 'none'; lbImg.style.cursor = 'grabbing';
+});
+window.addEventListener('mousemove', function(e){
+  if (!mDrag) return;
+  tx += e.clientX - mLastX; ty += e.clientY - mLastY;
+  mLastX = e.clientX; mLastY = e.clientY; apply();
+});
+window.addEventListener('mouseup', function(){
+  if (!mDrag) return; mDrag = false;
+  lbImg.style.transition = 'transform .15s ease-out'; apply();
+});
+
+// Touch: pinch-zoom + single-finger pan when zoomed (mobile)
+let tPrev = [];
+function touchPts(e){ return Array.from(e.touches).map(t => ({x:t.clientX, y:t.clientY})); }
+lbImg.addEventListener('touchstart', function(e){
+  tPrev = touchPts(e); lbImg.style.transition = 'none';
+}, { passive: false });
+lbImg.addEventListener('touchmove', function(e){
+  const cur = touchPts(e);
+  if (cur.length === 2 && tPrev.length === 2){
+    e.preventDefault();
+    const d0 = Math.hypot(tPrev[0].x - tPrev[1].x, tPrev[0].y - tPrev[1].y);
+    const d1 = Math.hypot(cur[0].x - cur[1].x, cur[0].y - cur[1].y);
+    if (d0 > 0){
+      const f = d1 / d0;
+      const old = scale;
+      scale = Math.max(MIN, Math.min(MAX, scale * f));
+      // Keep the midpoint of the two fingers as the zoom anchor
+      const rect = lbImg.getBoundingClientRect();
+      const cx = rect.left + rect.width/2; const cy = rect.top + rect.height/2;
+      const mid = {x:(cur[0].x + cur[1].x)/2 - cx, y:(cur[0].y + cur[1].y)/2 - cy};
+      const fr = scale / old;
+      tx = (tx - mid.x) * fr + mid.x; ty = (ty - mid.y) * fr + mid.y;
+      if (scale === MIN){ tx = 0; ty = 0; }
+      apply();
+    }
+  } else if (cur.length === 1 && tPrev.length === 1 && scale > MIN){
+    e.preventDefault();
+    tx += cur[0].x - tPrev[0].x; ty += cur[0].y - tPrev[0].y; apply();
+  }
+  tPrev = cur;
+}, { passive: false });
+lbImg.addEventListener('touchend', function(e){
+  tPrev = touchPts(e);
+  lbImg.style.transition = 'transform .15s ease-out';
+}, { passive: false });
+
+// Double-click / double-tap to toggle 1x <-> 2.5x at the click point
+let lastTap = 0;
+function toggleZoomAt(clientX, clientY){
+  if (scale > MIN){ reset(); return; }
+  const rect = lbImg.getBoundingClientRect();
+  const cx = rect.left + rect.width/2; const cy = rect.top + rect.height/2;
+  const mx = clientX - cx; const my = clientY - cy;
+  const old = scale; scale = 2.5; const f = scale / old;
+  tx = (tx - mx) * f + mx; ty = (ty - my) * f + my; apply();
+}
+lbImg.addEventListener('dblclick', function(e){ e.preventDefault(); toggleZoomAt(e.clientX, e.clientY); });
+lbImg.addEventListener('touchend', function(e){
+  if (e.changedTouches.length !== 1) return;
+  const now = Date.now(); const t = e.changedTouches[0];
+  if (now - lastTap < 300){ e.preventDefault(); toggleZoomAt(t.clientX, t.clientY); lastTap = 0; }
+  else { lastTap = now; }
+}, { passive: false });
 })();
 
 function hideAllOverlays() {
@@ -3184,7 +3283,9 @@ document.addEventListener('click', onMouseClick, !1);
  document.addEventListener('touchstart', onTouchStart, {passive:!1}); document.addEventListener('touchmove', onTouchMove, {passive:!1});
 document.addEventListener('touchend', onTouchEnd, !1);
  document.addEventListener('touchcancel', onTouchEnd, !1);
-document.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', hideAllOverlays, !1));
+// Exclude the gallery lightbox's BACK button — it should only close the lightbox, not
+// hide every overlay (which would dump the user out of the gallery itself).
+document.querySelectorAll('.close-btn:not(#galleryLightboxClose)').forEach(btn => btn.addEventListener('click', hideAllOverlays, !1));
 // Cross-overlay nav: any [data-overlay] click inside a .scene-overlay (e.g. About → Resume)
 // hides the current overlay and opens the targeted one. Without this, the resume-link in
 // #aboutOverlay just navigates to "#" because no global handler catches scene-overlay clicks.

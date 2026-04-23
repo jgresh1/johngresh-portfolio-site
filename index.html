@@ -815,7 +815,7 @@ body.template-active #pong-round-message{background:var(--ov-card)!important;col
 body.template-active .view-shirt-btn{background-color:var(--ov-accent)!important;color:var(--ov-card)!important;border:2px solid var(--ov-accent)!important;border-radius:var(--ov-radius-sm)!important;font-family:var(--ov-font)!important;text-shadow:none!important;box-shadow:0 10px 24px -10px var(--ov-accent)!important;letter-spacing:.5px}
 body.template-active .browse-shop-btn{background-color:transparent!important;color:var(--ov-accent)!important;border:2px solid var(--ov-accent)!important;border-radius:var(--ov-radius-sm)!important;font-family:var(--ov-font)!important;text-shadow:none!important;box-shadow:none!important;letter-spacing:.5px}
 body.template-active .browse-shop-btn:hover{background-color:var(--ov-accent)!important;color:var(--ov-card)!important}
-body.template-active .overlay-container::-webkit-scrollbar-track, body.template-active #chat-window::-webkit-scrollbar-track{background:var(--ov-card-2)!important;border:none!important;margin:var(--ov-radius,0) 0!important}
+body.template-active .overlay-container::-webkit-scrollbar-track, body.template-active #chat-window::-webkit-scrollbar-track{background:transparent!important;border:none!important;margin:var(--ov-radius,0) 0!important}
 body.template-active .overlay-container::-webkit-scrollbar-thumb, body.template-active #chat-window::-webkit-scrollbar-thumb{background:var(--ov-accent)!important;border:none!important;border-radius:999px!important}
 body.template-active #password-modal .modal-content{background:var(--ov-card)!important;color:var(--ov-text)!important;border:1px solid var(--ov-border)!important;border-radius:var(--ov-radius)!important;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)!important;font-family:var(--ov-font)!important}
 body.template-active #password-input{background:var(--ov-card-2)!important;color:var(--ov-text)!important;border:1px solid var(--ov-border)!important;border-radius:var(--ov-radius-sm)!important;font-family:var(--ov-font)!important}
@@ -3173,6 +3173,20 @@ if (document.getElementById('password-modal').style.display === 'flex') return;
  if (event.target === this) hideAllOverlays();
 }, !1);
 });
+function attachSlowWheel(el, factor){
+  if (!el || el.dataset.slowWheel) return; el.dataset.slowWheel = '1';
+  el.addEventListener('wheel', function(e){
+    if (e.ctrlKey) return; if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    if (el.scrollHeight <= el.clientHeight) return;
+    const atTop = el.scrollTop <= 0 && e.deltaY < 0;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1 && e.deltaY > 0;
+    if (atTop || atBottom) return;
+    e.preventDefault(); el.scrollTop += e.deltaY * factor;
+  }, { passive: false });
+}
+document.querySelectorAll('.overlay-container').forEach(c => attachSlowWheel(c, 0.4));
+document.querySelectorAll('#galleryOverlay .gallery-grid').forEach(g => attachSlowWheel(g, 0.4));
+
  const jumpBtn = document.getElementById('jump-btn');
 if (jumpBtn) {
 jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); keys[' '] = !0; jumpBtn.classList.add('active'); });

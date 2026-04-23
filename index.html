@@ -937,6 +937,52 @@ body.tpl-active-manor .responsibilities li:before{color:#c9a961!important}body.t
 body.tpl-active-manor #pong-round-message{font-family:'Cormorant Garamond',serif!important;font-style:italic!important}
 body.tpl-active-manor .progress-bar{background:linear-gradient(90deg,#c9a961,#8b7355)!important;background-image:linear-gradient(90deg,#c9a961,#8b7355)!important}body.tpl-active-manor .message{border-radius:0!important}
 body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-manor .bot-message{border-radius:0!important}
+/* ============== Google Maps location embed (per-template styling) ============== */
+#template-host .tpl-map{display:block;width:100%;position:relative}
+#template-host .tpl-map iframe{display:block;width:100%;border:0}
+#template-host .tpl-map .tpl-map-label{display:block;text-align:center}
+.tpl-aurora .tpl-map{padding:60px 6vw 0;background:#0a0a14}
+.tpl-aurora .tpl-map .tpl-map-label{font-family:'Inter',system-ui,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#a78bfa;margin-bottom:18px}
+.tpl-aurora .tpl-map .tpl-map-frame{border-radius:18px;overflow:hidden;border:1px solid rgba(167,139,250,.18);box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 0 1px rgba(236,72,153,.06) inset;max-width:1200px;margin:0 auto}
+.tpl-aurora .tpl-map iframe{height:340px;filter:hue-rotate(220deg) saturate(.85) brightness(.9) contrast(1.05)}
+.tpl-noir .tpl-map{padding:80px 6vw 40px;background:#0c0c0c;border-top:1px solid rgba(212,175,55,.12)}
+.tpl-noir .tpl-map .tpl-map-label{font-family:system-ui,sans-serif;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#d4af37;margin-bottom:24px}
+.tpl-noir .tpl-map .tpl-map-frame{border:1px solid rgba(212,175,55,.28);max-width:1100px;margin:0 auto;position:relative}
+.tpl-noir .tpl-map .tpl-map-frame::before,.tpl-noir .tpl-map .tpl-map-frame::after{content:'';position:absolute;width:14px;height:14px;border:1px solid #d4af37;pointer-events:none}
+.tpl-noir .tpl-map .tpl-map-frame::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.tpl-noir .tpl-map .tpl-map-frame::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+.tpl-noir .tpl-map iframe{height:380px;filter:grayscale(.5) contrast(1.1) brightness(.85)}
+.tpl-forge .tpl-map{padding:0;background:#000;border-top:2px solid #ff6b00}
+.tpl-forge .tpl-map .tpl-map-label{font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ff6b00;padding:20px 6vw;background:#0a0a0c;border-bottom:1px solid #2a2a30}
+.tpl-forge .tpl-map .tpl-map-frame{border:0}
+.tpl-forge .tpl-map iframe{height:360px;filter:grayscale(.7) contrast(1.15)}
+.tpl-terra .tpl-map{padding:50px 6vw 0;background:#f5ede0}
+.tpl-terra .tpl-map .tpl-map-label{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;color:#5a4a35;margin-bottom:22px}
+.tpl-terra .tpl-map .tpl-map-frame{border-radius:4px;overflow:hidden;border:1px solid rgba(192,87,59,.25);max-width:1100px;margin:0 auto;box-shadow:0 14px 40px rgba(44,36,25,.18)}
+.tpl-terra .tpl-map iframe{height:340px;filter:sepia(.18) saturate(1.05) contrast(1.02)}
+.tpl-slate .tpl-map{padding:60px 7vw 0;background:#fff;border-top:1px solid #eef0f6}
+.tpl-slate .tpl-map .tpl-map-label{font-family:system-ui,sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#5b8def;font-weight:600;margin-bottom:20px}
+.tpl-slate .tpl-map .tpl-map-frame{border-radius:6px;overflow:hidden;border:1px solid #e6e9f2;max-width:1200px;margin:0 auto;box-shadow:0 8px 24px rgba(15,30,58,.06)}
+.tpl-slate .tpl-map iframe{height:320px}
+.tpl-ivy .tpl-map{padding:64px 7vw 0;background:#faf6eb;border-top:1px solid rgba(184,147,90,.2)}
+.tpl-ivy .tpl-map .tpl-map-label{font-family:'EB Garamond',serif;font-style:italic;font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:#8a6d3d;margin-bottom:24px}
+.tpl-ivy .tpl-map .tpl-map-frame{border:1px solid rgba(184,147,90,.4);max-width:1100px;margin:0 auto;position:relative;padding:8px;background:#fff}
+.tpl-ivy .tpl-map .tpl-map-frame::before{content:'';position:absolute;inset:3px;border:1px solid rgba(184,147,90,.25);pointer-events:none;z-index:2}
+.tpl-ivy .tpl-map iframe{height:360px;filter:sepia(.22) saturate(.92) contrast(.98)}
+.tpl-halo .tpl-map{padding:60px 5vw 0;background:#0a0a0a;border-top:1px solid rgba(255,255,255,.04)}
+.tpl-halo .tpl-map .tpl-map-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#737373;margin-bottom:20px;max-width:1280px;margin-left:auto;margin-right:auto}
+.tpl-halo .tpl-map .tpl-map-label .pin{color:#22c55e}
+.tpl-halo .tpl-map .tpl-map-frame{border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.06);max-width:1280px;margin:0 auto;box-shadow:0 0 0 1px rgba(34,197,94,.04),0 18px 50px rgba(0,0,0,.5)}
+.tpl-halo .tpl-map iframe{height:340px;filter:invert(.92) hue-rotate(180deg) saturate(.6) brightness(.95)}
+.tpl-manor .tpl-map{padding:100px 6vw 0;background:#0f0e0c;border-top:1px solid rgba(201,169,97,.12)}
+.tpl-manor .tpl-map .tpl-map-label{font-family:'Italiana','Cormorant Garamond',serif;font-style:italic;font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:#c9a961;margin-bottom:30px}
+.tpl-manor .tpl-map .tpl-map-frame{border:1px solid rgba(201,169,97,.3);max-width:1200px;margin:0 auto;position:relative;padding:14px;background:#0a0908}
+.tpl-manor .tpl-map .tpl-map-frame::before{content:'';position:absolute;inset:6px;border:1px solid rgba(201,169,97,.18);pointer-events:none;z-index:2}
+.tpl-manor .tpl-map iframe{height:380px;filter:sepia(.25) saturate(.7) contrast(1.05) brightness(.85)}
+@media(max-width:800px){
+#template-host .tpl-map{padding-top:40px!important;padding-bottom:0!important}
+.tpl-aurora .tpl-map iframe,.tpl-noir .tpl-map iframe,.tpl-forge .tpl-map iframe,.tpl-terra .tpl-map iframe,.tpl-slate .tpl-map iframe,.tpl-ivy .tpl-map iframe,.tpl-halo .tpl-map iframe,.tpl-manor .tpl-map iframe{height:260px}
+}
 </style>
 </head>
 <body>
@@ -1042,7 +1088,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <p class="quote">&ldquo;Shipped the site in ten days. No handholding.&rdquo;</p>
 <div class="author">&mdash; Recent client</div></div></section><div class="cta-banner" id="contact"><h2>Need a site?</h2><p>Tell me what you need. I'll quote by morning.</p>
       <a class="btn-primary" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a>
-</div><footer>&copy; John Gresh &middot; Winston-Salem, NC &middot; (336) 995-4119</footer></div>
+</div><section class="tpl-map" id="visit"><span class="tpl-map-label">Find the Studio</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer>&copy; John Gresh &middot; Winston-Salem, NC &middot; (336) 995-4119</footer></div>
 
   <!-- ============== TEMPLATE 2: NOIR — Luxury / Boutique ============== -->
   <div class="tpl-noir" data-tpl="noir" style="display:none;">
@@ -1075,7 +1121,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
           <div class="lookbook-card"><div class="img" style="background:linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(0,0,0,.55) 100%),url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&q=80&auto=format&fit=crop') center/cover;"><div class="glyph" style="opacity:.18;">IV</div></div><div class="meta"><div class="num">No. 04 &middot; 2025</div><h3>Private Dashboard</h3><p>Internal tool</p></div></div>
           <div class="lookbook-card"><div class="img" style="background:linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(0,0,0,.55) 100%),url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&q=80&auto=format&fit=crop') center/cover;"><div class="glyph" style="opacity:.18;">V</div></div><div class="meta"><div class="num">No. 05 &middot; 2024</div><h3>Launch Page</h3><p>Landing site</p></div></div>
         </div>
-</div></section><section class="quote-section" id="word"><p class="quote">&ldquo;Detail is what separates the considered from the convenient.&rdquo;</p></section><footer id="visit"><div class="mono">J &middot; G</div>
+</div></section><section class="quote-section" id="word"><p class="quote">&ldquo;Detail is what separates the considered from the convenient.&rdquo;</p></section><section class="tpl-map"><span class="tpl-map-label">By Appointment &middot; Winston-Salem</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer id="visit"><div class="mono">J &middot; G</div>
       <div class="meta">By Appointment &middot; Winston-Salem, NC<br>johngresh.usa@gmail.com &middot; (336) 995-4119</div>
 </footer></div>
 
@@ -1125,7 +1171,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <div class="cert"><div class="icon"><svg class="emoji-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="nm">Hosting + SSL<br>Set Up For You</div></div>
         <div class="cert"><div class="icon"><svg class="emoji-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0 5 5l-9.4 9.4a2.8 2.8 0 1 1-4-4L15.7 7.3"/><path d="M18 2l4 4-3 3-4-4 3-3z"/></svg></div><div class="nm">Code &amp; Domain<br>Owned By You</div></div>
       </div>
-</section><div class="cta-block" id="callout"><h2>READY TO BUILD.<br>CALL TO QUOTE.</h2><a class="phone" href="tel:3369954119">(336) 995-4119</a></div><footer>&copy; GRESH WORKS &middot; WINSTON-SALEM, NC &middot; JOHNGRESH.USA@GMAIL.COM</footer></div>
+</section><div class="cta-block" id="callout"><h2>READY TO BUILD.<br>CALL TO QUOTE.</h2><a class="phone" href="tel:3369954119">(336) 995-4119</a></div><section class="tpl-map" id="location"><span class="tpl-map-label">// LOCATION &middot; WINSTON-SALEM, NC</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer>&copy; GRESH WORKS &middot; WINSTON-SALEM, NC &middot; JOHNGRESH.USA@GMAIL.COM</footer></div>
 
   <!-- ============== TEMPLATE 4: TERRA — Restaurant / Hospitality ============== -->
   <div class="tpl-terra" data-tpl="terra" style="display:none;">
@@ -1457,7 +1503,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <div class="review"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"The kind of place you start telling friends about before you've even paid the check."</p><div class="author">&mdash; A. R.</div></div>
         <div class="review"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"Three courses, two hours, zero rushed moments. Genuine hospitality."</p><div class="author">&mdash; M. P.</div></div>
         <div class="review"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>"The bread alone is worth the drive."</p><div class="author">&mdash; C. T.</div></div>
-</div></section><footer id="visit"><div class="nm">Terra &amp; Gresh</div><div class="meta">
+</div></section><section class="tpl-map"><span class="tpl-map-label">Find our table</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer id="visit"><div class="nm">Terra &amp; Gresh</div><div class="meta">
         Winston-Salem, NC &middot; (336) 995-4119<br>
         johngresh.usa@gmail.com<br>
         Tue&ndash;Sat 5pm&ndash;10pm &middot; Closed Sun &amp; Mon
@@ -1526,7 +1572,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
           <p>Small shops don't need a six-figure agency. They need a site that works and someone who picks up the phone.</p>
 </div></div></section><section class="contact" id="contact"><h2>Let's start a conversation.</h2><p>Initial calls are free. Most projects start within two weeks.</p>
       <a class="btn-light" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a>
-</section><footer><div>&copy; Gresh &amp; Co. &middot; Winston-Salem, NC</div><div>(336) 995-4119 &middot; johngresh.usa@gmail.com</div></footer></div>
+</section><section class="tpl-map"><span class="tpl-map-label">Winston-Salem Office</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer><div>&copy; Gresh &amp; Co. &middot; Winston-Salem, NC</div><div>(336) 995-4119 &middot; johngresh.usa@gmail.com</div></footer></div>
 
   <!-- ============== TEMPLATE 6B: IVY — Private Club / Country Club Heritage ============== -->
   <div class="tpl-ivy" data-tpl="ivy" style="display:none;">
@@ -1625,7 +1671,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         150 Buckingham Rd<br>
         Winston-Salem, North Carolina<br>
         <em>by appointment</em>
-</div><div class="contact-lines"><a class="btn-light" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a><a class="btn-light" href="tel:+13369954119">(336) 995&#8209;4119</a></div></section><footer><div class="footer-col">
+</div><div class="contact-lines"><a class="btn-light" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com</a><a class="btn-light" href="tel:+13369954119">(336) 995&#8209;4119</a></div></section><section class="tpl-map"><span class="tpl-map-label">&mdash; The Grounds &mdash;</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="The Greshwood Club &middot; 150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer><div class="footer-col">
         <div class="fine">The Studio</div>
 <div class="footer-address">The Greshwood Club<br>150 Buckingham Rd<br>Winston-Salem, NC<br>(336) 995&#8209;4119</div></div><div class="footer-col"><div class="fine">On the Premises</div><div class="footer-links"><a href="#about">About</a>
           <a href="#commissions">Work</a>
@@ -1748,7 +1794,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <div class="changelog-item"><div class="when"><span class="tag ship">SHIPPED</span><br>2026.01.05</div><div><h4>Internal dashboard for small retailer</h4><p>Replaced three spreadsheets with one owned tool. Staff picked it up same day.</p></div></div>
 </div></section>
     <section class="cta-finale">
-<h2>Your next site<br>could be your last rebuild.</h2><p>Tell me what you need. I'll quote by morning.</p><a class="btn-primary magnetic" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com<span class="arrow">&rarr;</span></a></section><footer>
+<h2>Your next site<br>could be your last rebuild.</h2><p>Tell me what you need. I'll quote by morning.</p><a class="btn-primary magnetic" href="mailto:johngresh.usa@gmail.com">johngresh.usa@gmail.com<span class="arrow">&rarr;</span></a></section><section class="tpl-map"><span class="tpl-map-label"><span class="pin">&#9673;</span> HQ &middot; WINSTON-SALEM, NC</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer>
       <div class="footer-grid">
 <div><div class="nav-logo" style="margin-bottom:14px;"><span class="ring"></span> Halo</div><p style="color:#a3a3a3;font-size:14px;max-width:300px;margin:0;">Websites and web apps for people who actually run the business.</p></div><div><h5>Product</h5>
           <a href="#">Basic</a><a href="#">Pro</a><a href="#">Premium</a><a href="#">Pricing</a>
@@ -1806,7 +1852,7 @@ body.tpl-active-manor .user-message{border-radius:0!important}body.tpl-active-ma
         <blockquote>"Detail is the difference between a site that's visited, and a site that's loved."<cite>&mdash; The Keeper</cite></blockquote>
 <p>If this is the kind of work you're looking for, the concierge is glad to hear from you.</p></div></section><section class="by-appt">
       <span class="label">&mdash; By Appointment &mdash;</span>
-<h2>The line is open.</h2><p>A small number of new commissions each season. Inquiries answered within the day.</p><a class="btn magnetic" href="mailto:johngresh.usa@gmail.com">Make an Inquiry</a></section><footer><div class="foot-grid">
+<h2>The line is open.</h2><p>A small number of new commissions each season. Inquiries answered within the day.</p><a class="btn magnetic" href="mailto:johngresh.usa@gmail.com">Make an Inquiry</a></section><section class="tpl-map"><span class="tpl-map-label">&mdash; The Estate in Winston-Salem &mdash;</span><div class="tpl-map-frame"><iframe src="https://maps.google.com/maps?q=150+Buckingham+Rd,+Winston-Salem,+NC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="The Manor &middot; 150 Buckingham Rd, Winston-Salem, NC"></iframe></div></section><footer><div class="foot-grid">
         <div>
 <div class="foot-mark">M&middot;A&middot;N&middot;O&middot;R</div><p>Six estates &middot; One small workshop<br>Established 1912</p></div><div class="foot-city"><h5>Winston-Salem</h5><p class="addr">The Manor<br>By Appointment<br>(336) 995-4119</p></div><div class="foot-city">
           <h5>Como</h5>

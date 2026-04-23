@@ -4129,6 +4129,41 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   });
  }
 
+ // ===== Hero video pre-warming =====
+ // Hero videos start at preload="none" so initial page load stays light. Without this,
+ // switching to a template means downloading the hero video from scratch -> ~1s of
+ // empty hero. Two non-blocking strategies:
+ //  (1) After idle, walk every template's hero and request metadata so the first frame
+ //      is decoded and ready to paint when the panel becomes visible.
+ //  (2) On hover/touch of any template-switcher link, upgrade THAT hero to preload=auto
+ //      so the click finds it already buffered.
+ function _heroVideoFor(name){
+  var p = host.querySelector('[data-tpl="' + name + '"]'); if (!p) return null;
+  return p.querySelector('video.hero-video-bg, video.ivy-hero-playlist, video.bg');
+ }
+ function _warmHero(v, level){
+  if (!v || v.dataset.warmed === 'auto') return;
+  if (level === 'metadata' && v.dataset.warmed === 'metadata') return;
+  try { v.preload = level; v.load(); v.dataset.warmed = level; } catch(_){}
+ }
+ (function backgroundWarmAll(){
+  var TPL = ['aurora','noir','forge','terra','slate','ivy','halo','manor'];
+  function step(i){
+   if (i >= TPL.length) return;
+   _warmHero(_heroVideoFor(TPL[i]), 'metadata');
+   setTimeout(function(){ step(i + 1); }, 700);
+  }
+  function kick(){ step(0); }
+  if ('requestIdleCallback' in window) window.requestIdleCallback(kick, { timeout: 5000 });
+  else setTimeout(kick, 2500);
+ })();
+ function _onPredictiveTrigger(e){
+  var link = e.target.closest('[data-template]'); if (!link) return;
+  _warmHero(_heroVideoFor(link.getAttribute('data-template')), 'auto');
+ }
+ document.addEventListener('mouseover', _onPredictiveTrigger, true);
+ document.addEventListener('touchstart', _onPredictiveTrigger, { capture: true, passive: true });
+
  // Event delegation INSIDE template host:
  //   - .tpl-switch-btn   → toggle that template's own templates dropdown
  //   - [data-template]   → switch to that template

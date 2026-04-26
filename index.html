@@ -101,6 +101,23 @@ html{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;background-
 .drawer-nav .submenu .tpl-tag{display:inline-block;font-size:12px;padding:2px 6px;margin-left:8px;background:#ff7d5c;color:#000;vertical-align:middle;letter-spacing:1px}
 #template-host{position:fixed;inset:0;z-index:1500;display:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:none;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:pan-y}#template-host [data-tpl]{padding-bottom:env(safe-area-inset-bottom,0px)}#template-host [data-tpl]>*:last-child{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 0px)}@supports(-webkit-touch-callout:none){#template-host{min-height:100vh;min-height:-webkit-fill-available}}
 #template-host.active{display:block}#template-host canvas{touch-action:auto}#template-host .hero-bg canvas,#template-host .canvas-cell canvas{pointer-events:none}.tpl-manor .hero-canvas canvas{pointer-events:auto;touch-action:pan-y}
+/* Make the template panel a flex column with a viewport-sized min-height so its footer
+   (the last child) gets pushed to the bottom on iPad / any tall viewport — fills the
+   leftover area with actual website content instead of just background color.
+   Display is set to 'flex' from JS (showTemplate); when hidden it uses inline display:none. */
+#template-host [data-tpl]{flex-direction:column;min-height:100vh;min-height:-webkit-fill-available;min-height:100dvh}
+#template-host [data-tpl] > *:last-child{margin-top:auto}
+/* Match #template-host background to the active template so the iPad/iOS Safari URL-bar
+   reflow zone (and any safe-area padding) doesn't show a black strip at the bottom of
+   light-themed templates (Terra cream, Slate white, Ivy cream). */
+body.tpl-active-aurora #template-host{background:#07091a}
+body.tpl-active-noir #template-host{background:#0c0c0c}
+body.tpl-active-forge #template-host{background:#0e0e10}
+body.tpl-active-terra #template-host{background:#f7f1e8}
+body.tpl-active-slate #template-host{background:#fff}
+body.tpl-active-ivy #template-host{background:#f5efde}
+body.tpl-active-halo #template-host{background:#0a0a0a}
+body.tpl-active-manor #template-host{background:#0f0e0c}
 body.template-active #coin-counter,body.template-active #instructions,body.template-active #mobile-controls{display:none!important}body.template-active #menu-btn,body.template-active #menu-drawer{display:none!important}
 body.template-active .scene-overlay{z-index:1700!important}body.template-active .close-btn{z-index:1701!important}body.template-active #password-modal{z-index:2010!important}
 @keyframes tpl-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}@keyframes tpl-fade-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
@@ -4055,7 +4072,7 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
 
   var _fontsLink = document.getElementById('tpl-fonts'); if (_fontsLink && _fontsLink.media !== 'all') _fontsLink.media = 'all';
   const panel = host.querySelector('[data-tpl="' + name + '"]');
- if (!panel) return; panel.style.display = 'block'; host.scrollTop = 0; host.classList.add('active'); document.body.classList.add('template-active');
+ if (!panel) return; panel.style.display = 'flex'; host.scrollTop = 0; host.classList.add('active'); document.body.classList.add('template-active');
   panel.querySelectorAll('video').forEach(function(v){
     v.querySelectorAll('source').forEach(function(s){ if (!s.getAttribute('src') && s.dataset.src) s.setAttribute('src', s.dataset.src); });
     if (v.dataset.autoplay && !v.hasAttribute('autoplay')) v.setAttribute('autoplay','');

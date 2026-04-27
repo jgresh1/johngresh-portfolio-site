@@ -1,10 +1,21 @@
 <!DOCTYPE html>
-<html lang="en" style="background:#1a053a">
+<html lang="en" style="background:#0a0a14">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><meta name="theme-color" content="#1a053a"><style>html,body{background:#1a053a}</style><title>John Gresh : Portfolio Web Game (V2 + Templates)</title><link rel="preconnect" href="https://cdn.pixabay.com" crossorigin><link rel="dns-prefetch" href="https://cdn.pixabay.com"><link rel="preconnect" href="https://images.unsplash.com" crossorigin><link rel="dns-prefetch" href="https://images.unsplash.com"><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap"></noscript>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><meta name="theme-color" content="#1a053a"><style>html,body{background:#0a0a14}</style><title>John Gresh : Portfolio Web Game (V2 + Templates)</title><link rel="preconnect" href="https://cdn.pixabay.com" crossorigin><link rel="dns-prefetch" href="https://cdn.pixabay.com"><link rel="preconnect" href="https://images.unsplash.com" crossorigin><link rel="dns-prefetch" href="https://images.unsplash.com"><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap"></noscript>
 <link id="tpl-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap" media="print"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap"></noscript>
 <style>
-html{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;background-color:#1a053a}body{margin:0;padding:0;overflow:hidden;background-color:#1a053a;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;height:100%;width:100%;position:fixed;top:0;left:0;right:0;bottom:0}
+html{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;background-color:#0a0a14}body{margin:0;padding:0;overflow:hidden;background-color:#0a0a14;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;height:100%;width:100%;position:fixed;top:0;left:0;right:0;bottom:0}
+/* Per-template html/body background: any thin strip iOS Safari leaves between the rendered
+   surface and the visible viewport should blend into the active template, not flash purple.
+   :has() handles html-level so iOS overscroll/rubber-band shows the right color too. */
+body.tpl-active-aurora,html:has(body.tpl-active-aurora){background:#07091a!important}
+body.tpl-active-noir,html:has(body.tpl-active-noir){background:#0c0c0c!important}
+body.tpl-active-forge,html:has(body.tpl-active-forge){background:#0e0e10!important}
+body.tpl-active-terra,html:has(body.tpl-active-terra){background:#f7f1e8!important}
+body.tpl-active-slate,html:has(body.tpl-active-slate){background:#fff!important}
+body.tpl-active-ivy,html:has(body.tpl-active-ivy){background:#f5efde!important}
+body.tpl-active-halo,html:has(body.tpl-active-halo){background:#0a0a0a!important}
+body.tpl-active-manor,html:has(body.tpl-active-manor){background:#0f0e0c!important}
 .emoji-icon{display:inline-block;width:1em;height:1em;vertical-align:-0.15em;stroke-width:2;flex-shrink:0}
 
 /* --- Loading screen --- */
@@ -1055,6 +1066,84 @@ body.tpl-active-forge #galleryOverlay .gallery-grid .gallery-cell,body.tpl-activ
 #template-host .tpl-map{padding-top:40px!important;padding-bottom:0!important}
 .tpl-aurora .tpl-map iframe,.tpl-noir .tpl-map iframe,.tpl-forge .tpl-map iframe,.tpl-terra .tpl-map iframe,.tpl-slate .tpl-map iframe,.tpl-ivy .tpl-map iframe,.tpl-halo .tpl-map iframe,.tpl-manor .tpl-map iframe{height:260px}
 }
+
+/* ============================================================
+   PAGE MODE — turns the modal-style overlays into full scrollable
+   pages that feel native to whichever template is active. Toggle is
+   in the templates menu (burger + dropdown). State persists via
+   localStorage. When body.page-mode is on:
+   - .scene-overlay loses its backdrop/blur and centering, becomes a
+     full-viewport scroll surface
+   - .overlay-container drops the card chrome (border, radius, shadow,
+     fixed height) and becomes a normal page section
+   - close-btn moves to a top corner and styles like a "Back" link
+   - page-extras (top breadcrumb + bottom related-pages strip + footer
+     mirroring the template) get inserted into each open overlay
+   ============================================================ */
+.page-mode-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:600;color:inherit;cursor:pointer;user-select:none;margin:0 0 8px}
+.page-mode-toggle .pmt-label{font-size:11px;letter-spacing:1.2px}
+.page-mode-toggle .pmt-switch{position:relative;width:36px;height:20px;border-radius:999px;background:rgba(255,255,255,.18);transition:background .2s;flex-shrink:0}
+.page-mode-toggle .pmt-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.2,.8,.3,1);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+body.page-mode .page-mode-toggle .pmt-switch{background:var(--ov-accent,#a78bfa)}
+body.page-mode .page-mode-toggle .pmt-switch::after{transform:translateX(16px)}
+/* Per-template tinting of the toggle pill so it matches the template chrome */
+.tpl-noir .page-mode-toggle,.tpl-manor .page-mode-toggle{background:transparent;border:1px solid rgba(212,175,55,.35);border-radius:0}
+.tpl-forge .page-mode-toggle{background:transparent;border:2px solid #ff6b00;border-radius:0;color:#ff6b00}
+.tpl-terra .page-mode-toggle{background:#f7f1e8;border:1px solid rgba(192,87,59,.25);color:#2c2419}
+.tpl-slate .page-mode-toggle{background:#fafbfd;border:1px solid #eef0f6;color:#0f1e3a}
+.tpl-ivy .page-mode-toggle{background:#faf6eb;border:1px solid rgba(184,147,90,.3);color:#2a3a30;border-radius:0}
+.tpl-halo .page-mode-toggle{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);font-family:'JetBrains Mono',monospace;font-size:11px}
+
+/* === The big switch: turn overlays into pages === */
+body.page-mode.template-active .scene-overlay{background:var(--ov-card,#0f1230)!important;backdrop-filter:none!important;display:block!important;align-items:stretch!important;justify-content:stretch!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch;padding:0!important}
+body.page-mode.template-active .overlay-container{width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;min-height:100vh!important;min-height:100dvh!important;border:none!important;border-radius:0!important;box-shadow:none!important;background:var(--ov-card,#0f1230)!important;display:block!important;animation:none!important;padding:0!important;overflow:visible!important}
+/* Inner page wrapper (created by JS) gives consistent gutters per template */
+body.page-mode.template-active .overlay-container .page-inner{display:block;max-width:1200px;margin:0 auto;padding:120px 6vw 60px;width:100%;box-sizing:border-box}
+body.page-mode.template-active .overlay-container .resume-header{padding:0 0 32px!important;margin-bottom:42px!important;border-bottom:1px solid var(--ov-border,rgba(255,255,255,.1))!important;text-align:left!important;width:100%!important}
+body.page-mode.template-active .overlay-container .resume-header h1{font-size:64px!important;line-height:1.05!important;margin:0 0 12px!important;text-align:left!important}
+body.page-mode.template-active .overlay-container .resume-header > p{font-size:18px!important;text-align:left!important;color:var(--ov-muted,#9ca0c0)!important}
+@media(max-width:800px){
+body.page-mode.template-active .overlay-container .page-inner{padding:88px 6vw 40px}
+body.page-mode.template-active .overlay-container .resume-header h1{font-size:38px!important}
+}
+
+/* Special-case the askJohn (chat) page so it actually fills the viewport (chat needs height) */
+body.page-mode.template-active #askJohnContainer{padding:0!important;height:auto!important;max-height:none!important;display:flex!important;flex-direction:column!important;min-height:100vh!important;min-height:100dvh!important;box-shadow:none!important}
+body.page-mode.template-active #askJohnContainer > .resume-header{padding:80px 6vw 24px!important;border-bottom:1px solid var(--ov-border)!important;margin-bottom:0!important}
+body.page-mode.template-active #askJohnContainer > #chat-container{flex:1 1 auto;min-height:0;padding:24px 6vw}
+body.page-mode.template-active #askJohnContainer > #chat-input-area{padding:16px 6vw 28px;border-top:1px solid var(--ov-border)}
+
+/* Special-case gallery so the inner grid still scrolls within the page */
+body.page-mode.template-active #galleryContainer{display:block!important;overflow:visible!important;min-height:100vh!important;min-height:100dvh!important}
+body.page-mode.template-active #galleryContainer .gallery-grid{overflow:visible!important;flex:initial!important;min-height:0!important;padding:0!important;max-width:1200px;margin:0 auto}
+body.page-mode.template-active #galleryContainer > .resume-header{max-width:1200px;margin:0 auto 28px!important}
+
+/* Close button: become a top-left "← Back" link that sits over the page */
+body.page-mode .scene-overlay .close-btn{position:fixed!important;top:18px!important;left:18px!important;right:auto!important;z-index:1900!important;padding:10px 18px!important;font-size:12px!important;letter-spacing:1.5px!important;border-radius:999px!important;background:var(--ov-card-2,rgba(255,255,255,.1))!important;color:var(--ov-text,#fff)!important;border:1px solid var(--ov-border,rgba(255,255,255,.18))!important;box-shadow:0 6px 20px -8px rgba(0,0,0,.5)!important;font-weight:600!important;text-transform:uppercase!important}
+body.page-mode .scene-overlay .close-btn::before{content:'\2190  '}
+body.page-mode .scene-overlay .close-btn:hover{background:var(--ov-accent,#a78bfa)!important;color:var(--ov-card,#fff)!important}
+
+/* Page extras (injected by JS): a small top eyebrow and a "more pages" strip + footer */
+.page-eyebrow{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ov-muted,#9ca0c0);margin-bottom:14px;font-weight:600}
+.page-related{margin-top:64px;padding-top:36px;border-top:1px solid var(--ov-border,rgba(255,255,255,.1));max-width:1200px;margin-left:auto;margin-right:auto}
+.page-related h3{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--ov-muted,#9ca0c0);margin:0 0 18px;font-weight:600}
+.page-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.page-related-grid a{display:block;padding:18px 20px;border:1px solid var(--ov-border,rgba(255,255,255,.10));border-radius:var(--ov-radius-sm,8px);background:var(--ov-soft,rgba(255,255,255,.04));text-decoration:none;color:var(--ov-text,#fff);font-size:15px;font-weight:600;transition:transform .2s ease,border-color .2s ease,background .2s ease}
+.page-related-grid a:hover{transform:translateY(-2px);border-color:var(--ov-accent,#a78bfa);background:var(--ov-card-2,rgba(255,255,255,.06))}
+.page-related-grid a small{display:block;font-weight:400;color:var(--ov-muted,#9ca0c0);font-size:12px;margin-top:4px;letter-spacing:.3px}
+.page-footer{margin-top:80px;padding:36px 0 24px;border-top:1px solid var(--ov-border,rgba(255,255,255,.1));font-size:13px;color:var(--ov-muted,#9ca0c0);max-width:1200px;margin-left:auto;margin-right:auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.page-footer .pf-mark{font-weight:600;color:var(--ov-accent,#a78bfa)}
+.tpl-noir .page-related,.tpl-noir .page-footer,.tpl-manor .page-related,.tpl-manor .page-footer,.tpl-ivy .page-related,.tpl-ivy .page-footer{border-radius:0}
+.tpl-forge .page-related h3{font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:3px}
+@media(max-width:800px){
+.page-related{margin-top:42px}
+.page-footer{margin-top:48px;flex-direction:column;align-items:flex-start}
+}
+
+/* When NOT in template-active (i.e. retro), keep page mode subtle so the retro chrome
+   still works — only adjust the overlay-container's height to be full so it scrolls. */
+body.page-mode:not(.template-active) .overlay-container{height:auto!important;min-height:90vh!important;max-height:none!important}
+body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!important;padding-top:30px!important;padding-bottom:30px!important;overflow-y:auto!important}
 </style>
 </head>
 <body>
@@ -3991,6 +4080,7 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
  // Inject a per-template hamburger into each template's <nav>. The burger
  // contains the same overlay links as .nav-links plus the templates list, so
  // mobile users get one tidy menu instead of a crowded chip strip + dropdown.
+ var PAGE_MODE_TOGGLE_HTML = '<div class="page-mode-toggle" data-page-mode-toggle><span class="pmt-label">Page Mode</span><span class="pmt-switch" aria-hidden="true"></span></div>';
  (function buildBurgers(){
   var TPL_LIST = [
    ['default','Default','Game'],['aurora','Aurora','Lift'],['noir','Noir','Luxe'],
@@ -3999,7 +4089,7 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   ];
   host.querySelectorAll('[data-tpl]').forEach(function(tpl){
    var nav = tpl.querySelector('nav.nav');
- if (!nav || nav.querySelector('.tpl-burger')) return; var tplName = tpl.getAttribute('data-tpl'); var html = '<div class="tpl-burger-label">Menu</div>';
+ if (!nav || nav.querySelector('.tpl-burger')) return; var tplName = tpl.getAttribute('data-tpl'); var html = PAGE_MODE_TOGGLE_HTML + '<div class="tpl-burger-label">Menu</div>';
    var srcLinks = nav.querySelectorAll('.nav-links a[data-overlay]');
    srcLinks.forEach(function(a){
     html += '<a href="#" data-overlay="' + a.getAttribute('data-overlay') + '">' + a.textContent.trim() + '</a>';
@@ -4016,8 +4106,100 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
     '</button>' +
     '<div class="tpl-burger-panel">' + html + '</div>';
    nav.appendChild(burger);
+   var ddPanel = nav.querySelector('.tpl-switch-panel');
+   if (ddPanel && !ddPanel.querySelector('[data-page-mode-toggle]')){
+    var _t = document.createElement('div'); _t.innerHTML = PAGE_MODE_TOGGLE_HTML;
+    ddPanel.insertBefore(_t.firstChild, ddPanel.firstChild);
+   }
   });
  })();
+
+ // ===== Page-mode state, toggle handler, and per-overlay decoration =====
+ function setPageMode(on){
+  document.body.classList.toggle('page-mode', on);
+  try { localStorage.setItem('pageMode', on ? '1' : '0'); } catch(_){}
+  document.querySelectorAll('.scene-overlay').forEach(function(ov){
+   if (ov.style.display && ov.style.display !== 'none') window.decoratePage(ov, on);
+  });
+ }
+ (function _initPageMode(){
+  try { if (localStorage.getItem('pageMode') === '1') document.body.classList.add('page-mode'); } catch(_){}
+ })();
+ document.addEventListener('click', function(e){
+  var t = e.target.closest('[data-page-mode-toggle]'); if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  setPageMode(!document.body.classList.contains('page-mode'));
+ });
+
+ function _activeTplName(){
+  var TPL = ['aurora','noir','forge','terra','slate','ivy','halo','manor'];
+  for (var i=0;i<TPL.length;i++) if (document.body.classList.contains('tpl-active-'+TPL[i])) return TPL[i];
+  return null;
+ }
+ function _siblingPages(ov){
+  var tplName = _activeTplName(); if (!tplName) return [];
+  var navLinks = document.querySelectorAll('.tpl-' + tplName + ' .nav-links a[data-overlay]');
+  var out = [];
+  navLinks.forEach(function(a){
+   var oid = a.getAttribute('data-overlay');
+   if (oid === ov.id) return;
+   out.push({ overlayId: oid, label: a.textContent.trim() });
+  });
+  return out;
+ }
+ function _renderExtras(ov){
+  var container = ov.querySelector('.overlay-container'); if (!container) return;
+  var header = ov.querySelector('.resume-header');
+  if (header && !header.querySelector('.page-extra-eyebrow')){
+   var eyebrow = document.createElement('span'); eyebrow.className = 'page-eyebrow page-extra page-extra-eyebrow';
+   var tplName = _activeTplName(); eyebrow.textContent = tplName ? (tplName.toUpperCase() + ' PAGE') : 'PAGE';
+   header.insertBefore(eyebrow, header.firstChild);
+  }
+  if (container.id !== 'askJohnContainer' && container.id !== 'galleryContainer'){
+   if (!container.querySelector(':scope > .page-inner')){
+    var inner = document.createElement('div'); inner.className = 'page-inner page-extra';
+    while (container.firstChild) inner.appendChild(container.firstChild);
+    container.appendChild(inner);
+   }
+  }
+  var bodyHost = container.querySelector(':scope > .page-inner') || container;
+  bodyHost.querySelectorAll('.page-extra-related, .page-extra-footer').forEach(function(n){ n.remove(); });
+  var siblings = _siblingPages(ov);
+  if (siblings.length){
+   var related = document.createElement('div'); related.className = 'page-related page-extra page-extra-related';
+   var html = '<h3>More Pages</h3><div class="page-related-grid">';
+   siblings.forEach(function(s){
+    var sub = s.overlayId.replace('Overlay','').replace(/([A-Z])/g,' $1').trim().toLowerCase();
+    html += '<a href="#" data-overlay="' + s.overlayId + '">' + s.label + '<small>' + sub + '</small></a>';
+   });
+   html += '</div>';
+   related.innerHTML = html; bodyHost.appendChild(related);
+  }
+  var footer = document.createElement('div'); footer.className = 'page-footer page-extra page-extra-footer';
+  footer.innerHTML = '<div><span class="pf-mark">John Gresh</span> &middot; (336) 995-4119</div><div>johngresh.usa@gmail.com</div>';
+  bodyHost.appendChild(footer);
+ }
+ function _stripExtras(ov){
+  ov.querySelectorAll('.page-extra-eyebrow, .page-extra-related, .page-extra-footer').forEach(function(n){ n.remove(); });
+  var inner = ov.querySelector('.overlay-container > .page-inner');
+  if (inner){
+   while (inner.firstChild) inner.parentNode.insertBefore(inner.firstChild, inner);
+   inner.remove();
+  }
+ }
+ window.decoratePage = function(ov, on){
+  if (on && document.body.classList.contains('template-active')) _renderExtras(ov);
+  else _stripExtras(ov);
+ };
+ var _origShowOverlay = window.showOverlay;
+ if (typeof _origShowOverlay === 'function'){
+  window.showOverlay = function(id){
+   var r = _origShowOverlay.apply(this, arguments);
+   var ov = document.getElementById(id);
+   if (ov && document.body.classList.contains('page-mode')) setTimeout(function(){ window.decoratePage(ov, true); }, 0);
+   return r;
+  };
+ }
 
  const TPL_NAMES = ['aurora','noir','forge','terra','slate','ivy','halo','manor'];
 
@@ -4034,6 +4216,7 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   if (name === 'default' || !name){
    host.classList.remove('active');
  document.body.classList.remove('template-active'); clearTemplateBodyClasses();
+ try { document.documentElement.style.background = ''; document.body.style.background = ''; } catch(_){}
    // Restore the pixel-game scene: it owns touch + drag again.
    if (typeof isSceneActive !== 'undefined'){
     window.isSceneActive = true;
@@ -4126,6 +4309,8 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   if (name === 'ivy' && typeof window.__ivyInit === 'function') { try { window.__ivyInit(); } catch(_){} }
   clearTemplateBodyClasses();
  document.body.classList.add('tpl-active-' + name); setActiveSwitchLinks(name);
+ var _TPL_BG = {aurora:'#07091a',noir:'#0c0c0c',forge:'#0e0e10',terra:'#f7f1e8',slate:'#fff',ivy:'#f5efde',halo:'#0a0a0a',manor:'#0f0e0c'};
+ if (_TPL_BG[name]){ try { document.documentElement.style.background = _TPL_BG[name]; document.body.style.background = _TPL_BG[name]; } catch(_){} }
   // Pause the pixel-game scene so its global touch handlers stop preventDefault'ing
   // every touchmove (which was blocking scroll inside the template).
   if (typeof isSceneActive !== 'undefined'){

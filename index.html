@@ -1,21 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" style="background:#0a0a14">
+<html lang="en" style="background:#1a053a">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><meta name="theme-color" content="#1a053a"><style>html,body{background:#0a0a14}</style><title>John Gresh : Portfolio Web Game (V2 + Templates)</title><link rel="preconnect" href="https://cdn.pixabay.com" crossorigin><link rel="dns-prefetch" href="https://cdn.pixabay.com"><link rel="preconnect" href="https://images.unsplash.com" crossorigin><link rel="dns-prefetch" href="https://images.unsplash.com"><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap"></noscript>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><meta name="theme-color" content="#1a053a"><style>html,body{background:#1a053a}</style><title>John Gresh : Portfolio Web Game (V2 + Templates)</title><link rel="preconnect" href="https://cdn.pixabay.com" crossorigin><link rel="dns-prefetch" href="https://cdn.pixabay.com"><link rel="preconnect" href="https://images.unsplash.com" crossorigin><link rel="dns-prefetch" href="https://images.unsplash.com"><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap"></noscript>
 <link id="tpl-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap" media="print"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap"></noscript>
 <style>
-html{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;background-color:#0a0a14}body{margin:0;padding:0;overflow:hidden;background-color:#0a0a14;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;height:100%;width:100%;position:fixed;top:0;left:0;right:0;bottom:0}
-/* Per-template html/body background: any thin strip iOS Safari leaves between the rendered
-   surface and the visible viewport should blend into the active template, not flash purple.
-   :has() handles html-level so iOS overscroll/rubber-band shows the right color too. */
-body.tpl-active-aurora,html:has(body.tpl-active-aurora){background:#07091a!important}
-body.tpl-active-noir,html:has(body.tpl-active-noir){background:#0c0c0c!important}
-body.tpl-active-forge,html:has(body.tpl-active-forge){background:#0e0e10!important}
-body.tpl-active-terra,html:has(body.tpl-active-terra){background:#f7f1e8!important}
-body.tpl-active-slate,html:has(body.tpl-active-slate){background:#fff!important}
-body.tpl-active-ivy,html:has(body.tpl-active-ivy){background:#f5efde!important}
-body.tpl-active-halo,html:has(body.tpl-active-halo){background:#0a0a0a!important}
-body.tpl-active-manor,html:has(body.tpl-active-manor){background:#0f0e0c!important}
+html{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;background-color:#1a053a}body{margin:0;padding:0;overflow:hidden;background-color:#1a053a;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;height:100%;width:100%;position:fixed;top:0;left:0;right:0;bottom:0}
 .emoji-icon{display:inline-block;width:1em;height:1em;vertical-align:-0.15em;stroke-width:2;flex-shrink:0}
 
 /* --- Loading screen --- */
@@ -1067,83 +1056,339 @@ body.tpl-active-forge #galleryOverlay .gallery-grid .gallery-cell,body.tpl-activ
 .tpl-aurora .tpl-map iframe,.tpl-noir .tpl-map iframe,.tpl-forge .tpl-map iframe,.tpl-terra .tpl-map iframe,.tpl-slate .tpl-map iframe,.tpl-ivy .tpl-map iframe,.tpl-halo .tpl-map iframe,.tpl-manor .tpl-map iframe{height:260px}
 }
 
-/* ============================================================
-   PAGE MODE — turns the modal-style overlays into full scrollable
-   pages that feel native to whichever template is active. Toggle is
-   in the templates menu (burger + dropdown). State persists via
-   localStorage. When body.page-mode is on:
-   - .scene-overlay loses its backdrop/blur and centering, becomes a
-     full-viewport scroll surface
-   - .overlay-container drops the card chrome (border, radius, shadow,
-     fixed height) and becomes a normal page section
-   - close-btn moves to a top corner and styles like a "Back" link
-   - page-extras (top breadcrumb + bottom related-pages strip + footer
-     mirroring the template) get inserted into each open overlay
-   ============================================================ */
-.page-mode-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:600;color:inherit;cursor:pointer;user-select:none;margin:0 0 8px}
-.page-mode-toggle .pmt-label{font-size:11px;letter-spacing:1.2px}
-.page-mode-toggle .pmt-switch{position:relative;width:36px;height:20px;border-radius:999px;background:rgba(255,255,255,.18);transition:background .2s;flex-shrink:0}
-.page-mode-toggle .pmt-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.2,.8,.3,1);box-shadow:0 1px 3px rgba(0,0,0,.3)}
-body.page-mode .page-mode-toggle .pmt-switch{background:var(--ov-accent,#a78bfa)}
-body.page-mode .page-mode-toggle .pmt-switch::after{transform:translateX(16px)}
-/* Per-template tinting of the toggle pill so it matches the template chrome */
-.tpl-noir .page-mode-toggle,.tpl-manor .page-mode-toggle{background:transparent;border:1px solid rgba(212,175,55,.35);border-radius:0}
-.tpl-forge .page-mode-toggle{background:transparent;border:2px solid #ff6b00;border-radius:0;color:#ff6b00}
-.tpl-terra .page-mode-toggle{background:#f7f1e8;border:1px solid rgba(192,87,59,.25);color:#2c2419}
-.tpl-slate .page-mode-toggle{background:#fafbfd;border:1px solid #eef0f6;color:#0f1e3a}
-.tpl-ivy .page-mode-toggle{background:#faf6eb;border:1px solid rgba(184,147,90,.3);color:#2a3a30;border-radius:0}
-.tpl-halo .page-mode-toggle{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);font-family:'JetBrains Mono',monospace;font-size:11px}
+/* ========================================================================
+   MPA (Multi-Page) MODE - V15
+   Toggle in drawer flips template tabs from modal overlays into full pages.
+   ======================================================================== */
+/* ---- MPA toggle (universal) ---- */
+.mpa-mode-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;text-decoration:none}
+.mpa-toggle-pill{position:relative;display:inline-block;width:42px;height:22px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);flex-shrink:0;transition:background-color .25s ease,border-color .25s ease}
+.mpa-toggle-knob{position:absolute;top:1px;left:1px;width:16px;height:16px;background:#fafafa;border-radius:50%;transition:transform .25s cubic-bezier(.2,.8,.3,1),background-color .25s ease;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+body.mpa-mode .mpa-toggle-knob{transform:translateX(20px)}
 
-/* === The big switch: turn overlays into pages === */
-body.page-mode.template-active .scene-overlay{background:var(--ov-card,#0f1230)!important;backdrop-filter:none!important;display:block!important;align-items:stretch!important;justify-content:stretch!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch;padding:0!important}
-body.page-mode.template-active .overlay-container{width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;min-height:100vh!important;min-height:100dvh!important;border:none!important;border-radius:0!important;box-shadow:none!important;background:var(--ov-card,#0f1230)!important;display:block!important;animation:none!important;padding:0!important;overflow:visible!important}
-/* Inner page wrapper (created by JS) gives consistent gutters per template */
-body.page-mode.template-active .overlay-container .page-inner{display:block;max-width:1200px;margin:0 auto;padding:120px 6vw 60px;width:100%;box-sizing:border-box}
-body.page-mode.template-active .overlay-container .resume-header{padding:0 0 32px!important;margin-bottom:42px!important;border-bottom:1px solid var(--ov-border,rgba(255,255,255,.1))!important;text-align:left!important;width:100%!important}
-body.page-mode.template-active .overlay-container .resume-header h1{font-size:64px!important;line-height:1.05!important;margin:0 0 12px!important;text-align:left!important}
-body.page-mode.template-active .overlay-container .resume-header > p{font-size:18px!important;text-align:left!important;color:var(--ov-muted,#9ca0c0)!important}
+/* ---- Drawer submenu instance (lives inside the TEMPLATES submenu) ---- */
+#menu-drawer .submenu-divider{height:0;border-top:2px dashed #6c6383;margin:8px 14px 6px;background:transparent}
+#menu-drawer .submenu-label{padding:6px 25px 4px 45px;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#ffd700;font-family:'VT323',monospace}
+#menu-drawer .submenu-toggle a.mpa-mode-toggle{padding:12px 25px 12px 45px;font-size:20px;color:#cfd0e8;border-left:4px solid #2a9d8f;font-family:'VT323',monospace}
+#menu-drawer .submenu-toggle a.mpa-mode-toggle:hover{background:#2a1a3d;color:#ffd700}
+#menu-drawer .submenu-toggle .mpa-toggle-pill{background:#2a1a3d;border:3px solid #000;box-shadow:2px 2px 0 rgba(0,0,0,.6);width:46px;height:24px}
+#menu-drawer .submenu-toggle .mpa-toggle-knob{top:1px;left:1px;width:16px;height:16px;background:#ffd700;border:2px solid #000;box-shadow:none}
+body.mpa-mode #menu-drawer .submenu-toggle .mpa-toggle-pill{background:#2a9d8f}
+body.mpa-mode #menu-drawer .submenu-toggle .mpa-toggle-knob{background:#fff;transform:translateX(22px)}
+
+/* ---- tpl-switch-panel (desktop) and tpl-burger-panel (mobile) instance ---- */
+#template-host .tpl-switch-divider,#template-host .tpl-switch-panel .tpl-switch-divider{height:1px;background:currentColor;opacity:.14;margin:8px 6px}
+#template-host .tpl-switch-label{padding:6px 14px 4px;font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:.55;font-weight:700}
+#template-host .tpl-switch-panel a.mpa-mode-toggle,#template-host .tpl-burger-panel a.mpa-mode-toggle{display:flex;justify-content:space-between;align-items:center}
+#template-host .mpa-toggle-burger-label{font:inherit}
+
+/* Per-template themed toggle (lives inside .tpl-switch-panel + .tpl-burger-panel) */
+/* AURORA */
+body.tpl-active-aurora .tpl-mpa-toggle .mpa-toggle-pill{background:rgba(167,139,250,.18);border:1px solid rgba(167,139,250,.3)}
+body.tpl-active-aurora .tpl-mpa-toggle .mpa-toggle-knob{background:#a78bfa;box-shadow:0 0 8px rgba(167,139,250,.4)}
+body.tpl-active-aurora.mpa-mode .tpl-mpa-toggle .mpa-toggle-pill{background:linear-gradient(135deg,#6366f1,#ec4899);border-color:transparent}
+body.tpl-active-aurora.mpa-mode .tpl-mpa-toggle .mpa-toggle-knob{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.5)}
+
+/* NOIR -- gold sharp-edged */
+body.tpl-active-noir .tpl-mpa-toggle .mpa-toggle-pill{background:transparent;border:1px solid rgba(212,175,55,.5);border-radius:0;width:46px;height:18px}
+body.tpl-active-noir .tpl-mpa-toggle .mpa-toggle-knob{background:#d4af37;border-radius:0;width:14px;height:14px;top:1px;left:1px;box-shadow:none}
+body.tpl-active-noir.mpa-mode .tpl-mpa-toggle .mpa-toggle-pill{background:rgba(212,175,55,.15);border-color:#d4af37}
+body.tpl-active-noir.mpa-mode .tpl-mpa-toggle .mpa-toggle-knob{background:#d4af37;transform:translateX(28px)}
+
+/* FORGE -- orange brutalist */
+body.tpl-active-forge .tpl-mpa-toggle{font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:2px}
+body.tpl-active-forge .tpl-mpa-toggle .mpa-toggle-pill{background:#0e0e10;border:2px solid #ff6b00;border-radius:0;width:46px;height:20px}
+body.tpl-active-forge .tpl-mpa-toggle .mpa-toggle-knob{background:#ff6b00;border-radius:0;width:14px;height:14px;top:1px;left:1px;box-shadow:none}
+body.tpl-active-forge.mpa-mode .tpl-mpa-toggle .mpa-toggle-pill{background:#ff6b00;border-color:#ff6b00}
+body.tpl-active-forge.mpa-mode .tpl-mpa-toggle .mpa-toggle-knob{background:#0e0e10;transform:translateX(28px)}
+
+/* TERRA -- warm cream/terracotta */
+body.tpl-active-terra .tpl-mpa-toggle .mpa-toggle-pill{background:rgba(192,87,59,.12);border:1px solid rgba(192,87,59,.3)}
+body.tpl-active-terra .tpl-mpa-toggle .mpa-toggle-knob{background:#c0573b;box-shadow:0 1px 3px rgba(192,87,59,.3)}
+body.tpl-active-terra.mpa-mode .tpl-mpa-toggle .mpa-toggle-pill{background:#c0573b;border-color:#c0573b}
+body.tpl-active-terra.mpa-mode .tpl-mpa-toggle .mpa-toggle-knob{background:#fff}
+
+/* SLATE -- minimal blue */
+body.tpl-active-slate .tpl-mpa-toggle .mpa-toggle-pill{background:#eef0f6;border:1px solid #d8dde8}
+body.tpl-active-slate .tpl-mpa-toggle .mpa-toggle-knob{background:#fff;box-shadow:0 1px 3px rgba(15,30,58,.3)}
+body.tpl-active-slate.mpa-mode .tpl-mpa-toggle .mpa-toggle-pill{background:#5b8def;border-color:#5b8def}
+body.tpl-active-slate.mpa-mode .tpl-mpa-toggle .mpa-toggle-knob{background:#fff;box-shadow:0 1px 4px rgba(91,141,239,.5)}
+
+/* IVY -- earthy gold square */
+body.tpl-active-ivy .tpl-mpa-toggle{font-family:'EB Garamond',serif;letter-spacing:.14em;text-transform:uppercase;font-size:13px}
+body.tpl-active-ivy .tpl-mpa-toggle .mpa-toggle-pill{background:transparent;border:1px solid rgba(184,147,90,.5);border-radius:0;width:46px;height:18px}
+body.tpl-active-ivy .tpl-mpa-toggle .mpa-toggle-knob{background:#b8935a;border-radius:0;width:14px;height:14px;top:1px;left:1px;box-shadow:none}
+body.tpl-active-ivy.mpa-mode .tpl-mpa-toggle .mpa-toggle-pill{background:rgba(184,147,90,.18);border-color:#b8935a}
+body.tpl-active-ivy.mpa-mode .tpl-mpa-toggle .mpa-toggle-knob{background:#1e3a2e;transform:translateX(28px)}
+
+/* HALO -- mono blue */
+body.tpl-active-halo .tpl-mpa-toggle{font-family:'JetBrains Mono',monospace;font-size:13px}
+body.tpl-active-halo .tpl-mpa-toggle .mpa-toggle-pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+body.tpl-active-halo .tpl-mpa-toggle .mpa-toggle-knob{background:#a3a3a3}
+body.tpl-active-halo.mpa-mode .tpl-mpa-toggle .mpa-toggle-pill{background:rgba(59,130,246,.2);border-color:#3b82f6}
+body.tpl-active-halo.mpa-mode .tpl-mpa-toggle .mpa-toggle-knob{background:#3b82f6;box-shadow:0 0 8px rgba(59,130,246,.6)}
+
+/* MANOR -- gold serif */
+body.tpl-active-manor .tpl-mpa-toggle{font-family:'EB Garamond',serif;font-style:italic;letter-spacing:.18em;text-transform:uppercase;font-size:12px}
+body.tpl-active-manor .tpl-mpa-toggle .mpa-toggle-pill{background:transparent;border:1px solid rgba(201,169,97,.5);border-radius:0;width:46px;height:18px}
+body.tpl-active-manor .tpl-mpa-toggle .mpa-toggle-knob{background:#c9a961;border-radius:0;width:14px;height:14px;top:1px;left:1px;box-shadow:none}
+body.tpl-active-manor.mpa-mode .tpl-mpa-toggle .mpa-toggle-pill{background:rgba(201,169,97,.18);border-color:#c9a961}
+body.tpl-active-manor.mpa-mode .tpl-mpa-toggle .mpa-toggle-knob{background:#0f0e0c;transform:translateX(28px)}
+
+
+/* Page-mode wrap (lives inside each template panel, replaces home content when active) */
+.mpa-page-wrap{display:none;flex-direction:column;width:100%;font-family:var(--ov-font,'Inter',sans-serif);color:var(--ov-text,#e6e8f5);animation:mpaPageEnter .45s cubic-bezier(.2,.8,.3,1)}
+.mpa-page-wrap.mpa-active{display:flex}
+@keyframes mpaPageEnter{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+/* Page hero (top banner) */
+.mpa-page-hero{position:relative;padding:120px 6vw 60px;background:linear-gradient(180deg,var(--ov-card,#0f1230) 0%,var(--ov-card-2,#1a1d3d) 100%);border-bottom:1px solid var(--ov-border,rgba(255,255,255,.10));overflow:hidden}
+.mpa-page-hero::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent 0%,var(--ov-accent,#a78bfa) 50%,transparent 100%);opacity:.5}
+.mpa-hero-inner{max-width:1180px;margin:0 auto;position:relative;z-index:2}
+.mpa-back-bar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:36px;flex-wrap:wrap}
+.mpa-back-link{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ov-accent,#a78bfa);text-decoration:none;border:1px solid var(--ov-border,rgba(255,255,255,.10));border-radius:999px;background:var(--ov-soft,rgba(255,255,255,.06));transition:background-color .2s,color .2s,border-color .2s,transform .2s;cursor:pointer}
+.mpa-back-link:hover{background:var(--ov-accent,#a78bfa);color:var(--ov-card,#0f1230);border-color:var(--ov-accent,#a78bfa);transform:translateX(-2px)}
+.mpa-breadcrumb{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--ov-muted,#9ca0c0);font-weight:500}
+.mpa-breadcrumb a{color:inherit;text-decoration:none;cursor:pointer}
+.mpa-breadcrumb a:hover{color:var(--ov-accent,#a78bfa)}
+.mpa-eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--ov-accent,#a78bfa);font-weight:700;margin-bottom:14px;display:inline-block}
+.mpa-page-title{font-family:var(--ov-heading,'Inter',sans-serif);font-style:var(--ov-heading-style,normal);font-size:clamp(40px,7vw,80px);line-height:1.02;margin:0 0 18px;color:var(--ov-text,#e6e8f5);font-weight:700;letter-spacing:-1.5px}
+.mpa-page-sub{font-size:clamp(16px,2.2vw,21px);color:var(--ov-muted,#9ca0c0);max-width:640px;line-height:1.55;margin:0 0 20px}
+.mpa-page-meta{display:flex;flex-wrap:wrap;gap:24px;margin-top:28px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ov-muted,#9ca0c0)}
+.mpa-page-meta > span{display:inline-flex;align-items:center;gap:8px}
+.mpa-page-meta > span::before{content:'';width:6px;height:6px;background:var(--ov-accent,#a78bfa);border-radius:50%;display:inline-block}
+
+/* Page body (host for the moved overlay-container) */
+.mpa-page-body{padding:60px 6vw;max-width:1280px;margin:0 auto;width:100%;box-sizing:border-box}
+body.mpa-page-active .mpa-page-body .overlay-container{width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;border:none!important;box-shadow:none!important;background:transparent!important;padding:0!important;animation:none!important;overflow:visible!important}
+body.mpa-page-active .mpa-page-body #askJohnContainer{height:auto!important;min-height:520px!important;max-height:none!important;overflow:visible!important;padding:0!important;display:flex!important;flex-direction:column!important;gap:18px}
+body.mpa-page-active .mpa-page-body #askJohnContainer #chat-window{min-height:380px!important;max-height:540px!important;flex-grow:0!important}
+body.mpa-page-active .mpa-page-body #tshirtsContainer{padding:0!important;align-items:stretch!important}
+body.mpa-page-active .mpa-page-body #miniGamesContainer{padding:0!important}
+body.mpa-page-active .mpa-page-body .resume-header{display:none!important}
+body.mpa-page-active .mpa-page-body #john-only-toggle{position:relative!important;top:auto!important;right:auto!important;left:auto!important;margin:0 0 14px auto!important;width:fit-content!important}
+
+/* Related-pages section */
+.mpa-related{padding:80px 6vw 60px;background:var(--ov-card,#0f1230);border-top:1px solid var(--ov-border,rgba(255,255,255,.10))}
+.mpa-related-inner{max-width:1180px;margin:0 auto}
+.mpa-related-eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--ov-accent,#a78bfa);font-weight:700;margin-bottom:10px}
+.mpa-related-title{font-family:var(--ov-heading,'Inter',sans-serif);font-style:var(--ov-heading-style,normal);font-size:clamp(28px,4vw,42px);margin:0 0 38px;color:var(--ov-text,#e6e8f5);font-weight:600;letter-spacing:-.5px}
+.mpa-related-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.mpa-related-card{display:flex;flex-direction:column;justify-content:space-between;padding:28px 26px;border:1px solid var(--ov-border,rgba(255,255,255,.10));border-radius:var(--ov-radius-sm,10px);background:var(--ov-card-2,#1a1d3d);color:var(--ov-text,#e6e8f5);text-decoration:none;min-height:170px;transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease,background-color .25s ease;cursor:pointer}
+.mpa-related-card:hover{transform:translateY(-4px);border-color:var(--ov-accent,#a78bfa);box-shadow:0 18px 40px -16px rgba(0,0,0,.5)}
+.mpa-related-card .rel-num{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ov-accent,#a78bfa);font-weight:700;margin-bottom:14px}
+.mpa-related-card .rel-title{font-family:var(--ov-heading,'Inter',sans-serif);font-style:var(--ov-heading-style,normal);font-size:24px;margin:0 0 8px;font-weight:600;letter-spacing:-.3px;color:var(--ov-text,#e6e8f5)}
+.mpa-related-card .rel-desc{font-size:14px;color:var(--ov-muted,#9ca0c0);line-height:1.5;margin:0 0 18px}
+.mpa-related-card .rel-arrow{font-size:13px;color:var(--ov-accent,#a78bfa);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+
+/* Page-level CTA */
+.mpa-cta{padding:90px 6vw;background:linear-gradient(135deg,var(--ov-card-2,#1a1d3d) 0%,var(--ov-card,#0f1230) 100%);text-align:center;position:relative;overflow:hidden}
+.mpa-cta::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,var(--ov-accent,#a78bfa) 50%,transparent 100%);opacity:.4}
+.mpa-cta-inner{max-width:680px;margin:0 auto;position:relative;z-index:2}
+.mpa-cta-eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--ov-accent,#a78bfa);font-weight:700;margin-bottom:14px}
+.mpa-cta-title{font-family:var(--ov-heading,'Inter',sans-serif);font-style:var(--ov-heading-style,normal);font-size:clamp(30px,5vw,52px);margin:0 0 16px;color:var(--ov-text,#e6e8f5);font-weight:600;letter-spacing:-.5px;line-height:1.1}
+.mpa-cta-sub{font-size:17px;color:var(--ov-muted,#9ca0c0);margin:0 0 30px;line-height:1.55}
+.mpa-cta-actions{display:inline-flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.mpa-cta-btn{display:inline-block;padding:15px 30px;font-size:14px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;border-radius:var(--ov-radius-sm,8px);background:var(--ov-accent,#a78bfa);color:var(--ov-card,#0f1230);border:1px solid var(--ov-accent,#a78bfa);transition:transform .2s,filter .2s,box-shadow .2s;cursor:pointer}
+.mpa-cta-btn:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 14px 32px -8px var(--ov-accent,#a78bfa)}
+.mpa-cta-btn.mpa-cta-secondary{background:transparent;color:var(--ov-accent,#a78bfa)}
+.mpa-cta-btn.mpa-cta-secondary:hover{background:var(--ov-accent,#a78bfa);color:var(--ov-card,#0f1230)}
+
+/* Page footer */
+.mpa-page-footer{padding:42px 6vw;background:var(--ov-card,#0f1230);border-top:1px solid var(--ov-border,rgba(255,255,255,.10));display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;font-size:13px;color:var(--ov-muted,#9ca0c0)}
+.mpa-page-footer .mpa-foot-left{display:flex;flex-direction:column;gap:4px}
+.mpa-page-footer .mpa-foot-mark{font-family:var(--ov-heading,'Inter',sans-serif);font-style:var(--ov-heading-style,normal);font-size:18px;color:var(--ov-text,#e6e8f5);font-weight:600;letter-spacing:.5px}
+.mpa-page-footer .mpa-foot-links{display:flex;gap:18px;flex-wrap:wrap}
+.mpa-page-footer .mpa-foot-links a{color:var(--ov-muted,#9ca0c0);text-decoration:none;letter-spacing:1px;text-transform:uppercase;font-size:12px;transition:color .2s;cursor:pointer}
+.mpa-page-footer .mpa-foot-links a:hover{color:var(--ov-accent,#a78bfa)}
+
+/* Hide template's home content while a page is active. Keep nav + page wrap visible. */
+body.mpa-page-active #template-host [data-tpl] > *:not(nav):not(.mpa-page-wrap):not(.contact-modal-bg){display:none!important}
+body.mpa-page-active #template-host [data-tpl] > nav{position:sticky;top:0;z-index:50;background:var(--ov-card,#0f1230)}
+
+/* Hide modal close button on overlays whose container has been moved into a page */
+body.mpa-page-active .scene-overlay > .close-btn{display:none!important}
+
+/* ========== PER-TEMPLATE PAGE TWEAKS ========== */
+/* Aurora */
+body.tpl-active-aurora .mpa-page-title{background:linear-gradient(90deg,#a78bfa,#ec4899);-webkit-background-clip:text;background-clip:text;color:transparent}
+body.tpl-active-aurora .mpa-related-card:hover{box-shadow:0 18px 40px -16px rgba(167,139,250,.45)}
+body.tpl-active-aurora .mpa-cta-btn{background:linear-gradient(135deg,#6366f1,#ec4899);color:#fff;border-color:transparent}
+body.tpl-active-aurora .mpa-cta-btn.mpa-cta-secondary{background:transparent;color:#a78bfa;border-color:rgba(167,139,250,.3)}
+body.tpl-active-aurora .mpa-cta-btn.mpa-cta-secondary:hover{background:rgba(167,139,250,.12);color:#a78bfa}
+
+/* Noir */
+body.tpl-active-noir .mpa-page-hero{background:#0c0c0c;border-bottom-color:rgba(212,175,55,.4)}
+body.tpl-active-noir .mpa-page-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;letter-spacing:-1px}
+body.tpl-active-noir .mpa-back-link{border-radius:0;background:transparent;border-color:#d4af37;color:#d4af37;font-family:'Inter',sans-serif;letter-spacing:2px;font-size:11px}
+body.tpl-active-noir .mpa-back-link:hover{background:#d4af37;color:#0c0c0c}
+body.tpl-active-noir .mpa-related-card{border-radius:0;background:#141412}
+body.tpl-active-noir .mpa-related-card .rel-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300}
+body.tpl-active-noir .mpa-cta{background:#0c0c0c}
+body.tpl-active-noir .mpa-cta-btn{border-radius:0;background:transparent;color:#d4af37;border:1px solid #d4af37;font-family:'Inter',sans-serif}
+body.tpl-active-noir .mpa-cta-btn:hover{background:#d4af37;color:#0c0c0c}
+body.tpl-active-noir .mpa-cta-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300}
+body.tpl-active-noir .mpa-page-footer .mpa-foot-mark{font-family:'Cormorant Garamond',serif;font-style:italic}
+
+/* Forge */
+body.tpl-active-forge .mpa-page-hero{background:#0e0e10;border-bottom:4px solid #ff6b00}
+body.tpl-active-forge .mpa-page-title{font-family:'Bebas Neue',Impact,sans-serif;text-transform:uppercase;font-weight:400;letter-spacing:-1px}
+body.tpl-active-forge .mpa-eyebrow{font-family:'Bebas Neue',Impact,sans-serif;font-size:18px;letter-spacing:4px}
+body.tpl-active-forge .mpa-back-link{border-radius:0;background:#16161a;color:#ff6b00;border:2px solid #ff6b00;font-weight:800;font-size:12px;letter-spacing:2px;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+body.tpl-active-forge .mpa-back-link:hover{background:#ff6b00;color:#0e0e10}
+body.tpl-active-forge .mpa-related-card{border-radius:0;border-left:5px solid #ff6b00;background:#16161a}
+body.tpl-active-forge .mpa-related-card .rel-title{font-family:'Bebas Neue',Impact,sans-serif;text-transform:uppercase;letter-spacing:1px;font-weight:400}
+body.tpl-active-forge .mpa-cta-title{font-family:'Bebas Neue',Impact,sans-serif;text-transform:uppercase;letter-spacing:-1px}
+body.tpl-active-forge .mpa-cta-btn{border-radius:0;font-weight:800;letter-spacing:2px;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);background:#ff6b00;color:#0e0e10;border-color:#ff6b00}
+body.tpl-active-forge .mpa-cta-btn.mpa-cta-secondary{background:transparent;color:#ff6b00;border:2px solid #ff6b00}
+body.tpl-active-forge .mpa-cta-btn.mpa-cta-secondary:hover{background:#ff6b00;color:#0e0e10}
+body.tpl-active-forge .mpa-page-footer{background:#0e0e10;border-top:2px solid #ff6b00}
+body.tpl-active-forge .mpa-page-footer .mpa-foot-mark{font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:2px;color:#ff6b00}
+
+/* Terra */
+body.tpl-active-terra .mpa-page-hero{background:linear-gradient(180deg,#fff 0%,#f7f1e8 100%);border-bottom-color:rgba(192,87,59,.2)}
+body.tpl-active-terra .mpa-page-title{color:#c0573b;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500}
+body.tpl-active-terra .mpa-eyebrow{color:#5a6b3f;font-family:'Inter',sans-serif}
+body.tpl-active-terra .mpa-page-sub{color:#5a4a35}
+body.tpl-active-terra .mpa-back-link{color:#c0573b;border-color:rgba(192,87,59,.3);background:rgba(192,87,59,.06)}
+body.tpl-active-terra .mpa-back-link:hover{background:#c0573b;color:#fff;border-color:#c0573b}
+body.tpl-active-terra .mpa-related{background:#f7f1e8;border-top-color:rgba(192,87,59,.18)}
+body.tpl-active-terra .mpa-related-title{color:#c0573b;font-style:italic}
+body.tpl-active-terra .mpa-related-card{background:#fff;border-color:rgba(192,87,59,.18)}
+body.tpl-active-terra .mpa-related-card .rel-title{color:#c0573b;font-style:italic}
+body.tpl-active-terra .mpa-related-card .rel-desc{color:#5a4a35}
+body.tpl-active-terra .mpa-cta{background:linear-gradient(135deg,#fff,#f7f1e8)}
+body.tpl-active-terra .mpa-cta-title{color:#c0573b;font-style:italic;font-family:'Cormorant Garamond',serif}
+body.tpl-active-terra .mpa-cta-sub{color:#5a4a35}
+body.tpl-active-terra .mpa-cta-btn{background:#c0573b;color:#fff;border-color:#c0573b}
+body.tpl-active-terra .mpa-cta-btn.mpa-cta-secondary{background:transparent;color:#c0573b}
+body.tpl-active-terra .mpa-cta-btn.mpa-cta-secondary:hover{background:#c0573b;color:#fff}
+body.tpl-active-terra .mpa-page-footer{background:#fff;border-top-color:rgba(192,87,59,.18);color:#5a4a35}
+body.tpl-active-terra .mpa-page-footer .mpa-foot-mark{color:#c0573b;font-style:italic;font-family:'Cormorant Garamond',serif}
+body.tpl-active-terra .mpa-page-footer .mpa-foot-links a{color:#5a4a35}
+
+/* Slate */
+body.tpl-active-slate .mpa-page-hero{background:linear-gradient(180deg,#fff 0%,#fafbfd 100%);border-bottom-color:#eef0f6}
+body.tpl-active-slate .mpa-page-title{color:#0f1e3a;font-weight:500;letter-spacing:-1.5px}
+body.tpl-active-slate .mpa-eyebrow{color:#5b8def}
+body.tpl-active-slate .mpa-page-sub{color:#48557a}
+body.tpl-active-slate .mpa-back-link{color:#5b8def;background:#fafbfd;border-color:#eef0f6;border-radius:8px}
+body.tpl-active-slate .mpa-back-link:hover{background:#5b8def;color:#fff;border-color:#5b8def}
+body.tpl-active-slate .mpa-related{background:#fafbfd;border-top-color:#eef0f6}
+body.tpl-active-slate .mpa-related-title{color:#0f1e3a}
+body.tpl-active-slate .mpa-related-card{background:#fff;border-color:#eef0f6;border-radius:8px}
+body.tpl-active-slate .mpa-related-card .rel-title{color:#0f1e3a;font-weight:500}
+body.tpl-active-slate .mpa-related-card .rel-desc{color:#48557a}
+body.tpl-active-slate .mpa-cta{background:linear-gradient(135deg,#fafbfd,#fff)}
+body.tpl-active-slate .mpa-cta-title{color:#0f1e3a;font-weight:500}
+body.tpl-active-slate .mpa-cta-sub{color:#48557a}
+body.tpl-active-slate .mpa-cta-btn{background:#0f1e3a;color:#fff;border-color:#0f1e3a;border-radius:8px}
+body.tpl-active-slate .mpa-cta-btn:hover{background:#5b8def;border-color:#5b8def}
+body.tpl-active-slate .mpa-cta-btn.mpa-cta-secondary{background:transparent;color:#0f1e3a;border-color:#eef0f6}
+body.tpl-active-slate .mpa-cta-btn.mpa-cta-secondary:hover{background:#0f1e3a;color:#fff;border-color:#0f1e3a}
+body.tpl-active-slate .mpa-page-footer{background:#fff;color:#48557a;border-top-color:#eef0f6}
+body.tpl-active-slate .mpa-page-footer .mpa-foot-mark{color:#0f1e3a}
+body.tpl-active-slate .mpa-page-footer .mpa-foot-links a{color:#48557a}
+
+/* Ivy */
+body.tpl-active-ivy .mpa-page-hero{background:linear-gradient(180deg,#faf6eb 0%,#f5efde 100%);border-bottom-color:rgba(184,147,90,.45)}
+body.tpl-active-ivy .mpa-page-title{color:#1e3a2e;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:400}
+body.tpl-active-ivy .mpa-eyebrow{color:#b8935a;font-family:'EB Garamond',serif;letter-spacing:.24em}
+body.tpl-active-ivy .mpa-page-sub{color:#4a5f53;font-family:'EB Garamond',serif;font-size:18px;line-height:1.6}
+body.tpl-active-ivy .mpa-back-link{color:#1e3a2e;background:rgba(184,147,90,.08);border-color:rgba(184,147,90,.3);border-radius:0;font-family:'EB Garamond',serif;letter-spacing:.18em;font-size:12px;text-transform:uppercase}
+body.tpl-active-ivy .mpa-back-link:hover{background:#1e3a2e;color:#f5efde;border-color:#1e3a2e}
+body.tpl-active-ivy .mpa-related{background:#f5efde;border-top-color:rgba(184,147,90,.3)}
+body.tpl-active-ivy .mpa-related-title{color:#1e3a2e;font-style:italic}
+body.tpl-active-ivy .mpa-related-card{background:#faf6eb;border-color:rgba(184,147,90,.3);border-radius:0}
+body.tpl-active-ivy .mpa-related-card .rel-title{color:#1e3a2e;font-style:italic}
+body.tpl-active-ivy .mpa-related-card .rel-desc{color:#4a5f53;font-family:'EB Garamond',serif}
+body.tpl-active-ivy .mpa-cta{background:linear-gradient(135deg,#faf6eb,#f5efde)}
+body.tpl-active-ivy .mpa-cta-title{color:#1e3a2e;font-style:italic;font-family:'Cormorant Garamond',serif}
+body.tpl-active-ivy .mpa-cta-sub{color:#4a5f53;font-family:'EB Garamond',serif}
+body.tpl-active-ivy .mpa-cta-btn{background:#b8935a;color:#1e3a2e;border-color:#b8935a;border-radius:0;font-family:'EB Garamond',serif;letter-spacing:.18em}
+body.tpl-active-ivy .mpa-cta-btn.mpa-cta-secondary{background:transparent;color:#1e3a2e;border-color:rgba(184,147,90,.5)}
+body.tpl-active-ivy .mpa-cta-btn.mpa-cta-secondary:hover{background:#1e3a2e;color:#f5efde;border-color:#1e3a2e}
+body.tpl-active-ivy .mpa-page-footer{background:#faf6eb;color:#4a5f53;border-top-color:rgba(184,147,90,.3);font-family:'EB Garamond',serif}
+body.tpl-active-ivy .mpa-page-footer .mpa-foot-mark{color:#1e3a2e;font-family:'Cormorant Garamond',serif;font-style:italic}
+body.tpl-active-ivy .mpa-page-footer .mpa-foot-links a{color:#4a5f53;font-family:'EB Garamond',serif;letter-spacing:.18em}
+
+/* Halo */
+body.tpl-active-halo .mpa-page-hero{background:linear-gradient(180deg,#0a0a0a 0%,#111 100%);border-bottom-color:rgba(255,255,255,.08)}
+body.tpl-active-halo .mpa-page-title{background:linear-gradient(90deg,#3b82f6,#a78bfa,#ec4899);-webkit-background-clip:text;background-clip:text;color:transparent;font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:-1.5px}
+body.tpl-active-halo .mpa-eyebrow{font-family:'JetBrains Mono',monospace;letter-spacing:1.5px;font-size:11px}
+body.tpl-active-halo .mpa-page-sub{font-family:'Inter',sans-serif;color:#a3a3a3}
+body.tpl-active-halo .mpa-back-link{background:rgba(255,255,255,.04);color:#fafafa;border-color:rgba(255,255,255,.08);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px;border-radius:6px}
+body.tpl-active-halo .mpa-back-link:hover{background:#fafafa;color:#0a0a0a;border-color:#fafafa}
+body.tpl-active-halo .mpa-related{background:#0a0a0a;border-top-color:rgba(255,255,255,.08)}
+body.tpl-active-halo .mpa-related-title{font-family:'Space Grotesk',sans-serif;color:#fafafa;font-weight:600}
+body.tpl-active-halo .mpa-related-card{background:#111;border-color:rgba(255,255,255,.08);border-radius:8px}
+body.tpl-active-halo .mpa-related-card .rel-title{font-family:'Space Grotesk',sans-serif;color:#fafafa;font-weight:600}
+body.tpl-active-halo .mpa-related-card .rel-desc{color:#a3a3a3}
+body.tpl-active-halo .mpa-cta{background:linear-gradient(135deg,#111,#0a0a0a)}
+body.tpl-active-halo .mpa-cta-title{font-family:'Space Grotesk',sans-serif;color:#fafafa;font-weight:600}
+body.tpl-active-halo .mpa-cta-sub{color:#a3a3a3}
+body.tpl-active-halo .mpa-cta-btn{background:#fafafa;color:#0a0a0a;border-color:#fafafa;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:1px}
+body.tpl-active-halo .mpa-cta-btn:hover{background:#fff}
+body.tpl-active-halo .mpa-cta-btn.mpa-cta-secondary{background:transparent;color:#3b82f6;border-color:rgba(59,130,246,.3)}
+body.tpl-active-halo .mpa-cta-btn.mpa-cta-secondary:hover{background:rgba(59,130,246,.12);color:#3b82f6}
+body.tpl-active-halo .mpa-page-footer{background:#0a0a0a;color:#a3a3a3;border-top-color:rgba(255,255,255,.08);font-family:'JetBrains Mono',monospace}
+body.tpl-active-halo .mpa-page-footer .mpa-foot-mark{color:#fafafa;font-family:'Space Grotesk',sans-serif}
+body.tpl-active-halo .mpa-page-footer .mpa-foot-links a{font-family:'JetBrains Mono',monospace;font-size:11px}
+
+/* Manor */
+body.tpl-active-manor .mpa-page-hero{background:linear-gradient(180deg,#0f0e0c 0%,#1a1816 100%);border-bottom-color:rgba(201,169,97,.3)}
+body.tpl-active-manor .mpa-page-title{color:#c9a961;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;letter-spacing:-.5px}
+body.tpl-active-manor .mpa-eyebrow{color:#c9a961;font-family:'EB Garamond',serif;letter-spacing:.28em;font-size:11px}
+body.tpl-active-manor .mpa-page-sub{font-family:'EB Garamond',serif;font-style:italic;color:#a39e92;font-size:18px}
+body.tpl-active-manor .mpa-back-link{background:transparent;color:#c9a961;border-color:#c9a961;border-radius:0;font-family:'EB Garamond',serif;font-style:italic;letter-spacing:.18em;font-size:11px}
+body.tpl-active-manor .mpa-back-link:hover{background:#c9a961;color:#0f0e0c}
+body.tpl-active-manor .mpa-related{background:#0f0e0c;border-top-color:rgba(201,169,97,.3)}
+body.tpl-active-manor .mpa-related-title{color:#c9a961;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300}
+body.tpl-active-manor .mpa-related-card{background:rgba(201,169,97,.04);border-color:rgba(201,169,97,.18);border-radius:0}
+body.tpl-active-manor .mpa-related-card .rel-title{font-family:'Cormorant Garamond',serif;font-style:italic;color:#f5f1ea;font-weight:400}
+body.tpl-active-manor .mpa-related-card .rel-desc{font-family:'EB Garamond',serif;color:#a39e92}
+body.tpl-active-manor .mpa-cta{background:linear-gradient(135deg,#1a1816,#0f0e0c)}
+body.tpl-active-manor .mpa-cta-title{color:#c9a961;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300}
+body.tpl-active-manor .mpa-cta-sub{font-family:'EB Garamond',serif;color:#a39e92}
+body.tpl-active-manor .mpa-cta-btn{background:transparent;color:#c9a961;border:1px solid #c9a961;border-radius:0;font-family:'EB Garamond',serif;font-style:italic;letter-spacing:.28em}
+body.tpl-active-manor .mpa-cta-btn:hover{background:#c9a961;color:#0f0e0c}
+body.tpl-active-manor .mpa-cta-btn.mpa-cta-secondary{background:transparent;color:#c9a961;border-color:#c9a961}
+body.tpl-active-manor .mpa-cta-btn.mpa-cta-secondary:hover{background:#c9a961;color:#0f0e0c}
+body.tpl-active-manor .mpa-page-footer{background:#0f0e0c;color:#a39e92;border-top-color:rgba(201,169,97,.3);font-family:'EB Garamond',serif;font-style:italic}
+body.tpl-active-manor .mpa-page-footer .mpa-foot-mark{color:#c9a961;font-family:'Cormorant Garamond',serif;font-style:italic}
+body.tpl-active-manor .mpa-page-footer .mpa-foot-links a{color:#a39e92;font-family:'EB Garamond',serif;letter-spacing:.18em}
+
+/* Mobile / responsive */
 @media(max-width:800px){
-body.page-mode.template-active .overlay-container .page-inner{padding:88px 6vw 40px}
-body.page-mode.template-active .overlay-container .resume-header h1{font-size:38px!important}
+.mpa-page-hero{padding:80px 5vw 40px}
+.mpa-back-bar{margin-bottom:24px}
+.mpa-page-body{padding:40px 5vw}
+.mpa-related{padding:50px 5vw 40px}
+.mpa-related-title{margin-bottom:24px}
+.mpa-related-grid{grid-template-columns:1fr;gap:14px}
+.mpa-related-card{min-height:140px;padding:22px 20px}
+.mpa-cta{padding:60px 5vw}
+.mpa-cta-actions{flex-direction:column;width:100%;align-items:stretch}
+.mpa-cta-btn{text-align:center}
+.mpa-page-footer{padding:30px 5vw;flex-direction:column;align-items:flex-start;gap:18px}
+body.mpa-page-active body.mpa-page-active .mpa-page-body #askJohnContainer{min-height:480px!important}
+body.mpa-page-active body.mpa-page-active .mpa-page-body #askJohnContainer #chat-window{min-height:300px!important;max-height:420px!important}
 }
 
-/* Special-case the askJohn (chat) page so it actually fills the viewport (chat needs height) */
-body.page-mode.template-active #askJohnContainer{padding:0!important;height:auto!important;max-height:none!important;display:flex!important;flex-direction:column!important;min-height:100vh!important;min-height:100dvh!important;box-shadow:none!important}
-body.page-mode.template-active #askJohnContainer > .resume-header{padding:80px 6vw 24px!important;border-bottom:1px solid var(--ov-border)!important;margin-bottom:0!important}
-body.page-mode.template-active #askJohnContainer > #chat-container{flex:1 1 auto;min-height:0;padding:24px 6vw}
-body.page-mode.template-active #askJohnContainer > #chat-input-area{padding:16px 6vw 28px;border-top:1px solid var(--ov-border)}
 
-/* Special-case gallery so the inner grid still scrolls within the page */
-body.page-mode.template-active #galleryContainer{display:block!important;overflow:visible!important;min-height:100vh!important;min-height:100dvh!important}
-body.page-mode.template-active #galleryContainer .gallery-grid{overflow:visible!important;flex:initial!important;min-height:0!important;padding:0!important;max-width:1200px;margin:0 auto}
-body.page-mode.template-active #galleryContainer > .resume-header{max-width:1200px;margin:0 auto 28px!important}
+/* In page mode, the original #aboutOverlay/#faqOverlay ancestor disappears
+   because we move the inner container into .mpa-page-body. Re-apply per-tpl
+   visibility on the moved content so only the active template's variant shows. */
+body.mpa-page-active .mpa-page-body .tpl-content{display:none}
+body.mpa-page-active.tpl-active-aurora .mpa-page-body .about-aurora,body.mpa-page-active.tpl-active-aurora .mpa-page-body .faq-aurora,
+body.mpa-page-active.tpl-active-noir .mpa-page-body .about-noir,body.mpa-page-active.tpl-active-noir .mpa-page-body .faq-noir,
+body.mpa-page-active.tpl-active-forge .mpa-page-body .about-forge,body.mpa-page-active.tpl-active-forge .mpa-page-body .faq-forge,
+body.mpa-page-active.tpl-active-terra .mpa-page-body .about-terra,body.mpa-page-active.tpl-active-terra .mpa-page-body .faq-terra,
+body.mpa-page-active.tpl-active-slate .mpa-page-body .about-slate,body.mpa-page-active.tpl-active-slate .mpa-page-body .faq-slate,
+body.mpa-page-active.tpl-active-ivy .mpa-page-body .about-ivy,body.mpa-page-active.tpl-active-ivy .mpa-page-body .faq-ivy,
+body.mpa-page-active.tpl-active-halo .mpa-page-body .about-halo,body.mpa-page-active.tpl-active-halo .mpa-page-body .faq-halo,
+body.mpa-page-active.tpl-active-manor .mpa-page-body .about-manor,body.mpa-page-active.tpl-active-manor .mpa-page-body .faq-manor{display:block}
 
-/* Close button: become a top-left "← Back" link that sits over the page */
-body.page-mode .scene-overlay .close-btn{position:fixed!important;top:18px!important;left:18px!important;right:auto!important;z-index:1900!important;padding:10px 18px!important;font-size:12px!important;letter-spacing:1.5px!important;border-radius:999px!important;background:var(--ov-card-2,rgba(255,255,255,.1))!important;color:var(--ov-text,#fff)!important;border:1px solid var(--ov-border,rgba(255,255,255,.18))!important;box-shadow:0 6px 20px -8px rgba(0,0,0,.5)!important;font-weight:600!important;text-transform:uppercase!important}
-body.page-mode .scene-overlay .close-btn::before{content:'\2190  '}
-body.page-mode .scene-overlay .close-btn:hover{background:var(--ov-accent,#a78bfa)!important;color:var(--ov-card,#fff)!important}
-
-/* Page extras (injected by JS): a small top eyebrow and a "more pages" strip + footer */
-.page-eyebrow{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ov-muted,#9ca0c0);margin-bottom:14px;font-weight:600}
-.page-related{margin-top:64px;padding-top:36px;border-top:1px solid var(--ov-border,rgba(255,255,255,.1));max-width:1200px;margin-left:auto;margin-right:auto}
-.page-related h3{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--ov-muted,#9ca0c0);margin:0 0 18px;font-weight:600}
-.page-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
-.page-related-grid a{display:block;padding:18px 20px;border:1px solid var(--ov-border,rgba(255,255,255,.10));border-radius:var(--ov-radius-sm,8px);background:var(--ov-soft,rgba(255,255,255,.04));text-decoration:none;color:var(--ov-text,#fff);font-size:15px;font-weight:600;transition:transform .2s ease,border-color .2s ease,background .2s ease}
-.page-related-grid a:hover{transform:translateY(-2px);border-color:var(--ov-accent,#a78bfa);background:var(--ov-card-2,rgba(255,255,255,.06))}
-.page-related-grid a small{display:block;font-weight:400;color:var(--ov-muted,#9ca0c0);font-size:12px;margin-top:4px;letter-spacing:.3px}
-.page-footer{margin-top:80px;padding:36px 0 24px;border-top:1px solid var(--ov-border,rgba(255,255,255,.1));font-size:13px;color:var(--ov-muted,#9ca0c0);max-width:1200px;margin-left:auto;margin-right:auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
-.page-footer .pf-mark{font-weight:600;color:var(--ov-accent,#a78bfa)}
-.tpl-noir .page-related,.tpl-noir .page-footer,.tpl-manor .page-related,.tpl-manor .page-footer,.tpl-ivy .page-related,.tpl-ivy .page-footer{border-radius:0}
-.tpl-forge .page-related h3{font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:3px}
-@media(max-width:800px){
-.page-related{margin-top:42px}
-.page-footer{margin-top:48px;flex-direction:column;align-items:flex-start}
-}
-
-/* When NOT in template-active (i.e. retro), keep page mode subtle so the retro chrome
-   still works — only adjust the overlay-container's height to be full so it scrolls. */
-body.page-mode:not(.template-active) .overlay-container{height:auto!important;min-height:90vh!important;max-height:none!important}
-body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!important;padding-top:30px!important;padding-bottom:30px!important;overflow-y:auto!important}
 </style>
 </head>
 <body>
@@ -1173,9 +1418,9 @@ body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!impor
         <li><a href="#" data-template="slate">> Slate <span class="tpl-tag">STUDIO</span></a></li>
         <li><a href="#" data-template="ivy">> Ivy <span class="tpl-tag">CLUB</span></a></li>
         <li><a href="#" data-template="halo">> Halo <span class="tpl-tag">ELITE</span></a></li>
-        <li><a href="#" data-template="manor">> Manor <span class="tpl-tag">MAISON</span></a></li>
-      </ul>
-</li></ul></div>
+        <li><a href="#" data-template="manor">> Manor <span class="tpl-tag">MAISON</span></a></li><li class="submenu-divider" aria-hidden="true"></li><li class="submenu-label">Display</li><li class="submenu-toggle"><a href="#" class="mpa-mode-toggle" role="switch" aria-checked="false"><span class="mpa-toggle-label">&gt; Page Mode</span><span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></li>
+      </ul></li>
+</ul></div>
 
 
 <div id="instructions">WASD/Arrows: Move | Space: Jump | Drag: Look<br>Click the store signs. Find the hidden coins!</div>
@@ -1283,7 +1528,7 @@ body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!impor
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
 <a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
-<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a></div></div></nav><section class="hero">
+<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
       <video class="hero-video-bg" autoplay muted loop playsinline preload="none" data-rate="0.7"><source src="https://cdn.pixabay.com/video/2017/11/02/12716-241674181_large.mp4" type="video/mp4"></video>
 <div class="hero-video-overlay"></div>
       <div class="pill"><svg class="emoji-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Websites &middot; Web Apps &middot; Automation</div>
@@ -1332,7 +1577,7 @@ body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!impor
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
 <a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
-<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a></div></div></nav><section class="hero">
+<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
       <video class="hero-video-bg" autoplay muted loop playsinline preload="none" data-rate="0.85"><source src="https://cdn.pixabay.com/video/2023/11/13/189018-884234917_large.mp4" type="video/mp4"></video>
 <div class="hero-video-overlay"></div><div class="hero-inner">
         <div class="ornament">&mdash; &diams; &mdash;</div>
@@ -1367,7 +1612,7 @@ body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!impor
           <a href="#" data-template="forge" class="active">FORGE<span class="tag-mini">STEEL</span></a>
 <a href="#" data-template="terra">TERRA<span class="tag-mini">TABLE</span></a><a href="#" data-template="slate">SLATE<span class="tag-mini">STUDIO</span></a>
           <a href="#" data-template="ivy">IVY<span class="tag-mini">CLUB</span></a>
-<a href="#" data-template="halo">HALO<span class="tag-mini">ELITE</span></a><a href="#" data-template="manor">MANOR<span class="tag-mini">MAISON</span></a></div></div></nav><section class="hero">
+<a href="#" data-template="halo">HALO<span class="tag-mini">ELITE</span></a><a href="#" data-template="manor">MANOR<span class="tag-mini">MAISON</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">PAGE MODE<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
       <video class="hero-video-bg" autoplay muted loop playsinline preload="none" data-rate="0.85"><source src="https://cdn.pixabay.com/video/2017/10/21/12543-239934681_large.mp4" type="video/mp4"></video>
 <div class="hero-video-overlay"></div><div class="hero-grid"><div>
           <span class="tag"><svg class="emoji-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> WEBSITES &middot; WEB APPS &middot; AUTOMATION</span>
@@ -1415,7 +1660,7 @@ body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!impor
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
 <a href="#" data-template="terra" class="active">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
-<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a></div></div></nav><section class="hero">
+<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
       <video class="hero-video-bg" autoplay muted loop playsinline preload="none" data-rate="0.85"><source src="https://cdn.pixabay.com/video/2016/05/12/3152-166336023_large.mp4" type="video/mp4"></video>
 <div class="hero-video-overlay"></div><div><div class="label">&mdash; Winston-Salem, NC</div>
         <h1>A table for <em>every story.</em></h1>
@@ -1752,7 +1997,7 @@ body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!impor
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
 <a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate" class="active">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
-<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a></div></div></nav><section class="hero">
+<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
       <video class="hero-video-bg" autoplay muted loop playsinline preload="none" data-rate="0.85"><source src="https://cdn.pixabay.com/video/2021/10/12/91744-636709154_large.mp4" type="video/mp4"></video>
 <div class="hero-video-overlay"></div><div class="eyebrow">Website &amp; Software Studio</div>
       <h1>Quiet studio.<br><em>Shipped work.</em></h1>
@@ -1851,7 +2096,7 @@ body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!impor
           <a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a>
 <a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a><a href="#" data-template="ivy" class="active">Ivy<span class="tag-mini">Club</span></a>
           <a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a>
-<a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a></div></div></nav><section class="hero-photo ivy-hero-clean">
+<a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero-photo ivy-hero-clean">
       <video class="bg ivy-hero-playlist" autoplay muted playsinline preload="none" data-rate="0.85" poster="https://images.unsplash.com/photo-1592919505780-303950717480?w=1800&amp;q=80&amp;auto=format&amp;fit=crop" data-playlist='["https://cdn.pixabay.com/video/2020/07/22/45301-442657794_medium.mp4","https://cdn.pixabay.com/video/2025/03/26/267909_medium.mp4","https://cdn.pixabay.com/video/2023/11/19/189741-886572557_large.mp4","https://cdn.pixabay.com/video/2024/05/29/214267_medium.mp4"]'>
         <source src="https://cdn.pixabay.com/video/2020/07/22/45301-442657794_large.mp4" type="video/mp4">
 </video><a class="ivy-hero-scroll" href="#intro" aria-label="Scroll down"><span class="ivy-hero-scroll-line"></span><span class="ivy-hero-scroll-arrow">&#8675;</span></a></section>
@@ -1986,7 +2231,7 @@ body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!impor
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
 <a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
-<a href="#" data-template="halo" class="active">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a></div></div></nav><section class="hero">
+<a href="#" data-template="halo" class="active">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">page mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
       <video class="hero-video-bg" autoplay muted loop playsinline preload="none" data-rate="0.85"><source src="https://cdn.pixabay.com/video/2023/08/15/176072-854875280_large.mp4" type="video/mp4"></video>
 <div class="hero-video-overlay"></div>
       <div class="hero-bg"><canvas data-halo-gradient></canvas></div>
@@ -2046,7 +2291,7 @@ body.page-mode:not(.template-active) .scene-overlay{align-items:flex-start!impor
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
 <a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
-<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor" class="active">Manor<span class="tag-mini">Maison</span></a></div></div></nav><section class="hero">
+<a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor" class="active">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
       <video class="hero-video-bg" autoplay muted loop playsinline preload="none" data-rate="0.85"><source src="https://cdn.pixabay.com/video/2022/12/22/143861-784164182_large.mp4" type="video/mp4"></video>
 <div class="hero-video-overlay"></div>
       
@@ -4080,7 +4325,6 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
  // Inject a per-template hamburger into each template's <nav>. The burger
  // contains the same overlay links as .nav-links plus the templates list, so
  // mobile users get one tidy menu instead of a crowded chip strip + dropdown.
- var PAGE_MODE_TOGGLE_HTML = '<div class="page-mode-toggle" data-page-mode-toggle><span class="pmt-label">Page Mode</span><span class="pmt-switch" aria-hidden="true"></span></div>';
  (function buildBurgers(){
   var TPL_LIST = [
    ['default','Default','Game'],['aurora','Aurora','Lift'],['noir','Noir','Luxe'],
@@ -4089,7 +4333,7 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   ];
   host.querySelectorAll('[data-tpl]').forEach(function(tpl){
    var nav = tpl.querySelector('nav.nav');
- if (!nav || nav.querySelector('.tpl-burger')) return; var tplName = tpl.getAttribute('data-tpl'); var html = PAGE_MODE_TOGGLE_HTML + '<div class="tpl-burger-label">Menu</div>';
+ if (!nav || nav.querySelector('.tpl-burger')) return; var tplName = tpl.getAttribute('data-tpl'); var html = '<div class="tpl-burger-label">Menu</div>';
    var srcLinks = nav.querySelectorAll('.nav-links a[data-overlay]');
    srcLinks.forEach(function(a){
     html += '<a href="#" data-overlay="' + a.getAttribute('data-overlay') + '">' + a.textContent.trim() + '</a>';
@@ -4099,6 +4343,11 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
     var active = (t[0] === tplName) ? ' class="active"' : '';
  html += '<a href="#" data-template="' + t[0] + '"' + active + '>' + t[1] + '<span class="tag-mini">' + t[2] + '</span></a>';
    });
+   html += '<div class="tpl-burger-divider"></div><div class="tpl-burger-label">Display</div>';
+   html += '<a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">' +
+           '<span class="mpa-toggle-burger-label">Page Mode</span>' +
+           '<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span>' +
+           '</a>';
  var burger = document.createElement('div'); burger.className = 'tpl-burger';
    burger.innerHTML =
     '<button type="button" class="tpl-burger-btn" aria-label="Open menu">' +
@@ -4106,100 +4355,8 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
     '</button>' +
     '<div class="tpl-burger-panel">' + html + '</div>';
    nav.appendChild(burger);
-   var ddPanel = nav.querySelector('.tpl-switch-panel');
-   if (ddPanel && !ddPanel.querySelector('[data-page-mode-toggle]')){
-    var _t = document.createElement('div'); _t.innerHTML = PAGE_MODE_TOGGLE_HTML;
-    ddPanel.insertBefore(_t.firstChild, ddPanel.firstChild);
-   }
   });
  })();
-
- // ===== Page-mode state, toggle handler, and per-overlay decoration =====
- function setPageMode(on){
-  document.body.classList.toggle('page-mode', on);
-  try { localStorage.setItem('pageMode', on ? '1' : '0'); } catch(_){}
-  document.querySelectorAll('.scene-overlay').forEach(function(ov){
-   if (ov.style.display && ov.style.display !== 'none') window.decoratePage(ov, on);
-  });
- }
- (function _initPageMode(){
-  try { if (localStorage.getItem('pageMode') === '1') document.body.classList.add('page-mode'); } catch(_){}
- })();
- document.addEventListener('click', function(e){
-  var t = e.target.closest('[data-page-mode-toggle]'); if (!t) return;
-  e.preventDefault(); e.stopPropagation();
-  setPageMode(!document.body.classList.contains('page-mode'));
- });
-
- function _activeTplName(){
-  var TPL = ['aurora','noir','forge','terra','slate','ivy','halo','manor'];
-  for (var i=0;i<TPL.length;i++) if (document.body.classList.contains('tpl-active-'+TPL[i])) return TPL[i];
-  return null;
- }
- function _siblingPages(ov){
-  var tplName = _activeTplName(); if (!tplName) return [];
-  var navLinks = document.querySelectorAll('.tpl-' + tplName + ' .nav-links a[data-overlay]');
-  var out = [];
-  navLinks.forEach(function(a){
-   var oid = a.getAttribute('data-overlay');
-   if (oid === ov.id) return;
-   out.push({ overlayId: oid, label: a.textContent.trim() });
-  });
-  return out;
- }
- function _renderExtras(ov){
-  var container = ov.querySelector('.overlay-container'); if (!container) return;
-  var header = ov.querySelector('.resume-header');
-  if (header && !header.querySelector('.page-extra-eyebrow')){
-   var eyebrow = document.createElement('span'); eyebrow.className = 'page-eyebrow page-extra page-extra-eyebrow';
-   var tplName = _activeTplName(); eyebrow.textContent = tplName ? (tplName.toUpperCase() + ' PAGE') : 'PAGE';
-   header.insertBefore(eyebrow, header.firstChild);
-  }
-  if (container.id !== 'askJohnContainer' && container.id !== 'galleryContainer'){
-   if (!container.querySelector(':scope > .page-inner')){
-    var inner = document.createElement('div'); inner.className = 'page-inner page-extra';
-    while (container.firstChild) inner.appendChild(container.firstChild);
-    container.appendChild(inner);
-   }
-  }
-  var bodyHost = container.querySelector(':scope > .page-inner') || container;
-  bodyHost.querySelectorAll('.page-extra-related, .page-extra-footer').forEach(function(n){ n.remove(); });
-  var siblings = _siblingPages(ov);
-  if (siblings.length){
-   var related = document.createElement('div'); related.className = 'page-related page-extra page-extra-related';
-   var html = '<h3>More Pages</h3><div class="page-related-grid">';
-   siblings.forEach(function(s){
-    var sub = s.overlayId.replace('Overlay','').replace(/([A-Z])/g,' $1').trim().toLowerCase();
-    html += '<a href="#" data-overlay="' + s.overlayId + '">' + s.label + '<small>' + sub + '</small></a>';
-   });
-   html += '</div>';
-   related.innerHTML = html; bodyHost.appendChild(related);
-  }
-  var footer = document.createElement('div'); footer.className = 'page-footer page-extra page-extra-footer';
-  footer.innerHTML = '<div><span class="pf-mark">John Gresh</span> &middot; (336) 995-4119</div><div>johngresh.usa@gmail.com</div>';
-  bodyHost.appendChild(footer);
- }
- function _stripExtras(ov){
-  ov.querySelectorAll('.page-extra-eyebrow, .page-extra-related, .page-extra-footer').forEach(function(n){ n.remove(); });
-  var inner = ov.querySelector('.overlay-container > .page-inner');
-  if (inner){
-   while (inner.firstChild) inner.parentNode.insertBefore(inner.firstChild, inner);
-   inner.remove();
-  }
- }
- window.decoratePage = function(ov, on){
-  if (on && document.body.classList.contains('template-active')) _renderExtras(ov);
-  else _stripExtras(ov);
- };
- var _origShowOverlay = window.showOverlay;
- if (typeof _origShowOverlay === 'function'){
-  window.showOverlay = function(id){
-   var r = _origShowOverlay.apply(this, arguments);
-   var ov = document.getElementById(id);
-   if (ov && document.body.classList.contains('page-mode')) setTimeout(function(){ window.decoratePage(ov, true); }, 0);
-   return r;
-  };
- }
 
  const TPL_NAMES = ['aurora','noir','forge','terra','slate','ivy','halo','manor'];
 
@@ -4216,7 +4373,6 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   if (name === 'default' || !name){
    host.classList.remove('active');
  document.body.classList.remove('template-active'); clearTemplateBodyClasses();
- try { document.documentElement.style.background = ''; document.body.style.background = ''; } catch(_){}
    // Restore the pixel-game scene: it owns touch + drag again.
    if (typeof isSceneActive !== 'undefined'){
     window.isSceneActive = true;
@@ -4309,8 +4465,6 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   if (name === 'ivy' && typeof window.__ivyInit === 'function') { try { window.__ivyInit(); } catch(_){} }
   clearTemplateBodyClasses();
  document.body.classList.add('tpl-active-' + name); setActiveSwitchLinks(name);
- var _TPL_BG = {aurora:'#07091a',noir:'#0c0c0c',forge:'#0e0e10',terra:'#f7f1e8',slate:'#fff',ivy:'#f5efde',halo:'#0a0a0a',manor:'#0f0e0c'};
- if (_TPL_BG[name]){ try { document.documentElement.style.background = _TPL_BG[name]; document.body.style.background = _TPL_BG[name]; } catch(_){} }
   // Pause the pixel-game scene so its global touch handlers stop preventDefault'ing
   // every touchmove (which was blocking scroll inside the template).
   if (typeof isSceneActive !== 'undefined'){
@@ -5191,6 +5345,392 @@ document.fonts.ready.then(() => { init(); }).catch((error) => { init(); });
   }
 
   window.__templateVideoPrefetch = { kick: kick, priority: priority };
+ })();
+
+
+ // ============================================================
+ // MPA (Multi-Page) MODE -- V15 addition
+ // Toggle in drawer flips template tabs from modal overlays
+ // into full scrollable pages embedded inside the active template.
+ // ============================================================
+ (function(){
+  var MPA_KEY = 'webcode-mpa-mode';
+  var mpaMode = false;
+  try { mpaMode = localStorage.getItem(MPA_KEY) === '1'; } catch(_){}
+  if (mpaMode) document.body.classList.add('mpa-mode');
+
+  // Tabs that participate in MPA / page mode (matches the global overlays)
+  var PAGE_TABS = ['aboutOverlay','projectsOverlay','galleryOverlay','tshirtsOverlay','askJohnOverlay','miniGamesOverlay','faqOverlay','resumeOverlay'];
+
+  // Per-template label/eyebrow/sub for each overlay -- gives every page a hero that matches the template's voice.
+  var PAGE_META = {
+   resumeOverlay: {
+    aurora:{eye:'PROFILE',title:'Resume',sub:'Experience, education, and the toolset I lean on day to day.'},
+    noir:  {eye:'— Curriculum Vitæ',title:'Resume',sub:'A short record of work to date.'},
+    forge: {eye:'PROFILE',title:'RESUME',sub:'WORK HISTORY. CERTIFICATIONS. SKILLS THAT SHIP.'},
+    terra: {eye:'— The Maker',title:'Our Story',sub:'A few words on the people behind the kitchen.'},
+    slate: {eye:'PROFILE',title:'Resume',sub:'A summary of experience, training, and capabilities.'},
+    ivy:   {eye:'— Of the House',title:'Curriculum',sub:'A short biography in the manner of the Club.'},
+    halo:  {eye:'PROFILE.MD',title:'resume',sub:'experience / education / stack -- the long-form version.'},
+    manor: {eye:'— The Maker',title:'Curriculum',sub:'A measured account of training and practice to date.'}
+   },
+   projectsOverlay: {
+    aurora:{eye:'WORK',title:'Selected Work',sub:'A growing catalogue of shipped sites and apps.'},
+    noir:  {eye:'— Selected Commissions',title:'Work',sub:'A small portfolio of recent projects.'},
+    forge: {eye:'WORK',title:'PROJECTS',sub:'BUILDS THAT WENT LIVE. NUMBERS, NOT POETRY.'},
+    terra: {eye:'— The Menu of Work',title:'Selected Work',sub:'Recent projects from the kitchen.'},
+    slate: {eye:'WORK',title:'Engagements',sub:'Recent client engagements and the outcomes that mattered.'},
+    ivy:   {eye:'— The Records',title:'Selected Works',sub:'A short list of recent commissions.'},
+    halo:  {eye:'WORK.LOG',title:'projects',sub:'recent shipped work with stack and outcome notes.'},
+    manor: {eye:'— The Atelier',title:'Selected Works',sub:'A short list of works completed in season.'}
+   },
+   galleryOverlay: {
+    aurora:{eye:'SHOWCASE',title:'Showcase',sub:'Visual references and supporting work for current builds.'},
+    noir:  {eye:'— Lookbook',title:'Lookbook',sub:'A small collection of visual references.'},
+    forge: {eye:'JOBS',title:'JOBS GALLERY',sub:'WORK ON THE FLOOR. PHOTOGRAPHED ON SITE.'},
+    terra: {eye:'— From the Kitchen',title:'Plates',sub:'A small album from recent service.'},
+    slate: {eye:'SHOWCASE',title:'Showcase',sub:'Selected images from recent engagements.'},
+    ivy:   {eye:'— The Album',title:'Album',sub:'Scenes from the Club, in season.'},
+    halo:  {eye:'/SHOTS',title:'shots',sub:'snapshots from the studio and shipped builds.'},
+    manor: {eye:'— The Atelier',title:'Atelier',sub:'A small selection of work in progress.'}
+   },
+   tshirtsOverlay: {
+    aurora:{eye:'SHOP',title:'Shop',sub:'Wearables for the people who keep small studios alive.'},
+    noir:  {eye:'— The Boutique',title:'Shop',sub:'A small line of considered apparel.'},
+    forge: {eye:'SHOP',title:'SHOP',sub:'TEES BUILT FOR THE FLOOR. PRINTED ON DEMAND.'},
+    terra: {eye:'— The Pantry',title:'Pantry',sub:'House goods to take a little of the table home.'},
+    slate: {eye:'SHOP',title:'Shop',sub:'A short line of branded apparel.'},
+    ivy:   {eye:'— Of the House',title:'Outfitter',sub:'Small goods bearing the colours of the House.'},
+    halo:  {eye:'/SHOP',title:'shop',sub:'low-volume merch. printed on demand. ships globally.'},
+    manor: {eye:'— The Outfitter',title:'Outfitter',sub:'Limited apparel from the Atelier.'}
+   },
+   askJohnOverlay: {
+    aurora:{eye:'AI LAB',title:'Ask the AI',sub:'Chat with an AI trained on John’s background, work, and stack.'},
+    noir:  {eye:'— Concierge',title:'AI Concierge',sub:'A discreet AI to answer questions about the practice.'},
+    forge: {eye:'AI ASSIST',title:'AI ASSIST',sub:'STRAIGHT ANSWERS. NO PR. ASK AND IT REPLIES.'},
+    terra: {eye:'— The Maitre d’',title:'Concierge',sub:'A friendly AI to help with menus, bookings, and questions.'},
+    slate: {eye:'AI',title:'AI Assistant',sub:'Ask questions about engagements, services, and stack.'},
+    ivy:   {eye:'— The Steward',title:'Steward',sub:'A helpful steward, in the manner of the House.'},
+    halo:  {eye:'/AGENT',title:'AI agent',sub:'a small agent trained on the studio’s public material.'},
+    manor: {eye:'— The Steward',title:'Steward',sub:'A measured steward to answer questions on the Atelier.'}
+   },
+   miniGamesOverlay: {
+    aurora:{eye:'DEMO',title:'Quick Game',sub:'A small demo to show how interactive systems get built.'},
+    noir:  {eye:'— The Salon',title:'A Diversion',sub:'A small game for the patient guest.'},
+    forge: {eye:'PLAY',title:'BREAK ROOM',sub:'TAKE FIVE. THE AI WILL ADAPT BETWEEN ROUNDS.'},
+    terra: {eye:'— At the Bar',title:'A Diversion',sub:'A short game while you wait for your seat.'},
+    slate: {eye:'DEMO',title:'Live Demo',sub:'A small example of an interactive web canvas.'},
+    ivy:   {eye:'— At the Lawn',title:'Pavilion Pong',sub:'A short pastime for members.'},
+    halo:  {eye:'/PLAY',title:'pong',sub:'a small canvas demo. adaptive AI between rounds.'},
+    manor: {eye:'— The Lawn',title:'Pastime',sub:'A short pastime for the patient visitor.'}
+   },
+   aboutOverlay: {
+    aurora:{eye:'ABOUT',title:'About',sub:'A short note on what I do and how I work.'},
+    noir:  {eye:'— The House',title:'About',sub:'A short note on the practice.'},
+    forge: {eye:'ABOUT',title:'ABOUT',sub:'WHAT WE DO. HOW WE QUOTE. WHO WE ARE.'},
+    terra: {eye:'— The House',title:'About',sub:'A short note on the kitchen and the table.'},
+    slate: {eye:'ABOUT',title:'About',sub:'About the practice and how engagements are run.'},
+    ivy:   {eye:'— The Club',title:'About',sub:'A short note on the Club and its way of working.'},
+    halo:  {eye:'/ABOUT',title:'about',sub:'a short note on the studio and how it operates.'},
+    manor: {eye:'— The Atelier',title:'About',sub:'A short note on the Manor.'}
+   },
+   faqOverlay: {
+    aurora:{eye:'HELP',title:'FAQ',sub:'Common questions, short answers.'},
+    noir:  {eye:'— Inquiries',title:'Frequently Asked',sub:'A few questions answered in advance.'},
+    forge: {eye:'HELP',title:'FAQ',sub:'COMMON QUESTIONS. STRAIGHT ANSWERS.'},
+    terra: {eye:'— Helpful Notes',title:'Visiting',sub:'A few notes for guests planning to visit.'},
+    slate: {eye:'HELP',title:'FAQ',sub:'Common questions about scope, timing, and process.'},
+    ivy:   {eye:'— Inquiries',title:'Of Common Questions',sub:'A few short answers to questions often raised.'},
+    halo:  {eye:'/FAQ',title:'faq',sub:'common questions about the studio and its work.'},
+    manor: {eye:'— Inquiries',title:'Frequently Asked',sub:'A few questions answered in the manner of the House.'}
+   }
+  };
+  // Generic page meta -- used for default templates not specified above
+  function getPageMeta(overlayId, tplName){
+   var m = PAGE_META[overlayId]; if (!m) return {eye:'PAGE',title:overlayId.replace('Overlay',''),sub:''};
+   return m[tplName] || m.aurora || {eye:'PAGE',title:overlayId.replace('Overlay',''),sub:''};
+  }
+
+  // Footer content per template (mark + links)
+  var FOOTER_CONFIG = {
+   aurora:{mark:'JG · Aurora',links:[['Email','mailto:johngresh.usa@gmail.com'],['(336) 995-4119','tel:3369954119']]},
+   noir:  {mark:'J · G',links:[['By Appointment','mailto:johngresh.usa@gmail.com'],['(336) 995-4119','tel:3369954119']]},
+   forge: {mark:'GRESH WORKS',links:[['QUOTE','mailto:johngresh.usa@gmail.com'],['(336) 995-4119','tel:3369954119']]},
+   terra: {mark:'Terra & Gresh',links:[['Reservations','mailto:johngresh.usa@gmail.com'],['(336) 995-4119','tel:3369954119']]},
+   slate: {mark:'Gresh & Co.',links:[['Initial Call','mailto:johngresh.usa@gmail.com'],['(336) 995-4119','tel:3369954119']]},
+   ivy:   {mark:'The Greshwood Club',links:[['By Introduction','mailto:johngresh.usa@gmail.com'],['(336) 995-4119','tel:3369954119']]},
+   halo:  {mark:'halo.studio',links:[['hello@','mailto:johngresh.usa@gmail.com'],['+1 336 995 4119','tel:3369954119']]},
+   manor: {mark:'The Manor',links:[['Inquiries','mailto:johngresh.usa@gmail.com'],['(336) 995-4119','tel:3369954119']]}
+  };
+
+  // CTA copy per template
+  var CTA_CONFIG = {
+   aurora:{eye:'GET IN TOUCH',title:'Have a project in mind?',sub:'Tell me what you need. I’ll quote by morning.',primary:['Book a 30-min call','mailto:johngresh.usa@gmail.com'],secondary:['(336) 995-4119','tel:3369954119']},
+   noir:  {eye:'— By Appointment',title:'Make an inquiry.',sub:'Bespoke work, by appointment. We accept a small number of clients each year.',primary:['Send a Note','mailto:johngresh.usa@gmail.com'],secondary:[null,null]},
+   forge: {eye:'QUOTE',title:'NEED IT BUILT?',sub:'CALL OR EMAIL. WE QUOTE BY MORNING. WE BUILD IN TWO WEEKS.',primary:['REQUEST A QUOTE','mailto:johngresh.usa@gmail.com'],secondary:['CALL (336) 995-4119','tel:3369954119']},
+   terra: {eye:'— Visit',title:'Reserve a table.',sub:'We’d love to feed you. Friday and Saturday seats fill quickly — call ahead.',primary:['Reserve','mailto:johngresh.usa@gmail.com'],secondary:['(336) 995-4119','tel:3369954119']},
+   slate: {eye:'CONTACT',title:'Have a project to scope?',sub:'Initial calls are free. Quotes are project-based and delivered within a day.',primary:['Schedule a Call','mailto:johngresh.usa@gmail.com'],secondary:['(336) 995-4119','tel:3369954119']},
+   ivy:   {eye:'— Correspondence',title:'A note may be sent.',sub:'Inquiries are welcomed. Correspondence is answered within the day.',primary:['Send a Letter','mailto:johngresh.usa@gmail.com'],secondary:[null,null]},
+   halo:  {eye:'/CONTACT',title:'ship a thing?',sub:'short brief, fixed quote, two-week launch. drop a line and we’ll reply.',primary:['hello@halo.studio','mailto:johngresh.usa@gmail.com'],secondary:['+1 336 995 4119','tel:3369954119']},
+   manor: {eye:'— Inquiries',title:'A correspondence may begin.',sub:'A short note opens the conversation. Replies arrive within the day.',primary:['Make an Inquiry','mailto:johngresh.usa@gmail.com'],secondary:[null,null]}
+  };
+
+  // Related-pages list per template -- used to fill the "More from this site" section
+  function buildRelated(currentOverlay, tplName){
+   var allTabs = ['aboutOverlay','projectsOverlay','galleryOverlay','tshirtsOverlay','askJohnOverlay','miniGamesOverlay','faqOverlay'];
+   var related = allTabs.filter(function(t){ return t !== currentOverlay; }).slice(0,4);
+   var html = '';
+   for (var i=0; i<related.length; i++){
+    var t = related[i]; var meta = getPageMeta(t, tplName);
+    var num = String(i+1).padStart(2,'0');
+    html += '<a class="mpa-related-card" href="#" data-overlay="' + t + '">' +
+            '<div class="rel-num">No. ' + num + '</div>' +
+            '<div><div class="rel-title">' + meta.title + '</div>' +
+            '<div class="rel-desc">' + (meta.sub||'') + '</div></div>' +
+            '<div class="rel-arrow">Explore →</div>' +
+            '</a>';
+   }
+   return html;
+  }
+
+  function buildPageHTML(overlayId, tplName){
+   var meta = getPageMeta(overlayId, tplName);
+   var cta = CTA_CONFIG[tplName] || CTA_CONFIG.aurora;
+   var foot = FOOTER_CONFIG[tplName] || FOOTER_CONFIG.aurora;
+   var ctaSecondary = '';
+   if (cta.secondary && cta.secondary[0]) {
+    ctaSecondary = '<a class="mpa-cta-btn mpa-cta-secondary" href="' + cta.secondary[1] + '">' + cta.secondary[0] + '</a>';
+   }
+   var footLinks = '';
+   for (var i=0; i<foot.links.length; i++){
+    footLinks += '<a href="' + foot.links[i][1] + '">' + foot.links[i][0] + '</a>';
+   }
+   var related = buildRelated(overlayId, tplName);
+   return (
+    '<header class="mpa-page-hero">' +
+     '<div class="mpa-hero-inner">' +
+      '<div class="mpa-back-bar">' +
+       '<a class="mpa-back-link" href="#" data-mpa-back="1">← Home</a>' +
+       '<div class="mpa-breadcrumb"><a href="#" data-mpa-back="1">Home</a> &nbsp;/&nbsp; ' + meta.title + '</div>' +
+      '</div>' +
+      '<div class="mpa-eyebrow">' + meta.eye + '</div>' +
+      '<h1 class="mpa-page-title">' + meta.title + '</h1>' +
+      (meta.sub ? '<p class="mpa-page-sub">' + meta.sub + '</p>' : '') +
+      '<div class="mpa-page-meta"><span>Winston-Salem, NC</span><span>By John Gresh</span><span>Updated 2026</span></div>' +
+     '</div>' +
+    '</header>' +
+    '<main class="mpa-page-body" data-mpa-body="1"></main>' +
+    '<section class="mpa-related"><div class="mpa-related-inner">' +
+     '<div class="mpa-related-eyebrow">More from this site</div>' +
+     '<h2 class="mpa-related-title">Keep exploring</h2>' +
+     '<div class="mpa-related-grid">' + related + '</div>' +
+    '</div></section>' +
+    '<section class="mpa-cta"><div class="mpa-cta-inner">' +
+     '<div class="mpa-cta-eyebrow">' + cta.eye + '</div>' +
+     '<h2 class="mpa-cta-title">' + cta.title + '</h2>' +
+     '<p class="mpa-cta-sub">' + cta.sub + '</p>' +
+     '<div class="mpa-cta-actions">' +
+      '<a class="mpa-cta-btn" href="' + cta.primary[1] + '">' + cta.primary[0] + '</a>' +
+      ctaSecondary +
+     '</div>' +
+    '</div></section>' +
+    '<footer class="mpa-page-footer">' +
+     '<div class="mpa-foot-left">' +
+      '<div class="mpa-foot-mark">' + foot.mark + '</div>' +
+      '<div>Winston-Salem, NC · © ' + (new Date().getFullYear()) + ' John Gresh</div>' +
+     '</div>' +
+     '<div class="mpa-foot-links">' + footLinks + '</div>' +
+    '</footer>'
+   );
+  }
+
+  function getActiveTplName(){
+   for (var i=0; i<TPL_NAMES.length; i++){
+    if (document.body.classList.contains('tpl-active-' + TPL_NAMES[i])) return TPL_NAMES[i];
+   }
+   return null;
+  }
+
+  // Track currently-mounted page (so we can return its container) and its host wrap.
+  var currentPage = null; // overlayId
+  var currentPageWrap = null; // .mpa-page-wrap node
+
+  function ensurePageWrap(tplPanel){
+   var wrap = tplPanel.querySelector(':scope > .mpa-page-wrap');
+   if (!wrap){
+    wrap = document.createElement('div');
+    wrap.className = 'mpa-page-wrap';
+    tplPanel.appendChild(wrap);
+   }
+   return wrap;
+  }
+
+  function showAsPage(overlayId){
+   var tplName = getActiveTplName();
+   if (!tplName) return false;
+   var tplPanel = host.querySelector('[data-tpl="' + tplName + '"]');
+   var overlay = document.getElementById(overlayId);
+   if (!tplPanel || !overlay) return false;
+
+   // If a page is already open in some template, return its container first.
+   if (currentPage) returnContainerToOverlay();
+
+   // Hide drawer/menu if open (mirrors original showOverlay behaviour)
+   if (typeof isMenuOpen !== 'undefined' && isMenuOpen) {
+    try { toggleMenu(); } catch(_){}
+   }
+
+   var wrap = ensurePageWrap(tplPanel);
+   wrap.innerHTML = buildPageHTML(overlayId, tplName);
+   wrap.classList.add('mpa-active');
+   document.body.classList.add('mpa-page-active');
+
+   // Move the overlay's inner container into the page body (preserves listeners).
+   var ovContainer = overlay.querySelector(':scope > .overlay-container');
+   var pageBody = wrap.querySelector('[data-mpa-body="1"]');
+   if (ovContainer && pageBody){
+    pageBody.appendChild(ovContainer);
+    // Mark the overlay itself as moved-out so we can restore correctly.
+    overlay.dataset.mpaMounted = '1';
+   }
+
+   currentPage = overlayId;
+   currentPageWrap = wrap;
+
+   // Run the same per-overlay initializers that the modal path uses.
+   try {
+    if (overlayId === 'galleryOverlay' && typeof populateGallery === 'function') populateGallery();
+    if (overlayId === 'miniGamesOverlay'){
+     if (typeof PongGame === 'function'){
+      if (!window.pongGame) window.pongGame = new PongGame('pong-canvas');
+      window.pongGame.resetGame();
+      setTimeout(function(){ try { window.pongGame.start(); window.pongGame.resizeCanvas && window.pongGame.resizeCanvas(); } catch(_){} }, 120);
+     }
+    }
+    if (overlayId === 'askJohnOverlay'){
+     if (typeof initChat === 'function') initChat();
+     if (typeof updatePremiumUIState === 'function') updatePremiumUIState();
+     setTimeout(function(){
+      var ci = document.getElementById('chat-input'); if (ci) ci.focus();
+      var cw = document.getElementById('chat-window'); if (cw) cw.scrollTop = cw.scrollHeight;
+     }, 120);
+    }
+   } catch(e){ /* swallow init errors so page still shows */ }
+
+   // Scroll to top of template-host (the scroll container)
+   try { host.scrollTop = 0; window.scrollTo(0,0); } catch(_){}
+
+   return true;
+  }
+
+  function returnContainerToOverlay(){
+   if (!currentPage || !currentPageWrap) return;
+   var overlay = document.getElementById(currentPage);
+   var ovContainer = currentPageWrap.querySelector('.overlay-container');
+   if (overlay && ovContainer){
+    overlay.appendChild(ovContainer);
+    delete overlay.dataset.mpaMounted;
+   }
+   // Stop pong if the page being returned is mini-games
+   if (currentPage === 'miniGamesOverlay' && window.pongGame && window.pongGame.stop){
+    try { window.pongGame.stop(); } catch(_){}
+   }
+   currentPageWrap.classList.remove('mpa-active');
+   currentPageWrap.innerHTML = '';
+   currentPage = null;
+   currentPageWrap = null;
+  }
+
+  function hideAsPage(){
+   returnContainerToOverlay();
+   document.body.classList.remove('mpa-page-active');
+   try { host.scrollTop = 0; window.scrollTo(0,0); } catch(_){}
+  }
+
+  // ---- Public hooks --------------------------------------------------
+  // Patch window.showOverlay to route to page-mode when active.
+  var origShowOverlay = window.showOverlay;
+  if (typeof origShowOverlay === 'function'){
+   window.showOverlay = function(id){
+    if (mpaMode && getActiveTplName() && PAGE_TABS.indexOf(id) !== -1){
+     if (showAsPage(id)) return;
+    }
+    return origShowOverlay.apply(this, arguments);
+   };
+  }
+
+  // Patch window.hideAllOverlays so close-button clicks (the modal back btn) and
+  // any other call clean up an open page too. The original function lives in
+  // the global scope, so we just wrap window.hideAllOverlays.
+  var origHideAll = window.hideAllOverlays;
+  if (typeof origHideAll === 'function'){
+   window.hideAllOverlays = function(){
+    hideAsPage();
+    return origHideAll.apply(this, arguments);
+   };
+  }
+
+  // Capture-phase listener inside template-host: clicks on a [data-template]
+  // (template switcher) should restore the page first so showTemplate() runs
+  // against a clean home, and clicks on the page's BACK link / data-mpa-back
+  // should call hideAsPage(). data-overlay clicks are already handled via
+  // the patched showOverlay (called by the existing host listener).
+  host.addEventListener('click', function(e){
+   var back = e.target.closest('[data-mpa-back]');
+   if (back){
+    e.preventDefault(); e.stopPropagation();
+    hideAsPage();
+    return;
+   }
+   var tplLink = e.target.closest('[data-template]');
+   if (tplLink){
+    // Don't preventDefault here -- let the existing handler call showTemplate.
+    // Just clean up so showTemplate starts on a fresh state.
+    hideAsPage();
+   }
+  }, true);
+
+  // ---- Toggle UI handler ---------------------------------------------
+  function syncTogglesUI(){
+   var nodes = document.querySelectorAll('.mpa-mode-toggle');
+   nodes.forEach(function(n){ n.setAttribute('aria-checked', mpaMode ? 'true' : 'false'); });
+  }
+  function setMpaMode(on){
+   mpaMode = !!on;
+   document.body.classList.toggle('mpa-mode', mpaMode);
+   try { localStorage.setItem(MPA_KEY, mpaMode ? '1' : '0'); } catch(_){}
+   syncTogglesUI();
+   if (currentPage) hideAsPage();
+   if (typeof origHideAll === 'function') {
+    var anyOpen = false;
+    document.querySelectorAll('.scene-overlay').forEach(function(o){ if (o.style.display && o.style.display !== 'none') anyOpen = true; });
+    if (anyOpen) origHideAll();
+   }
+  }
+
+  function initToggle(){
+   syncTogglesUI();
+   // Document-level capture handler catches all .mpa-mode-toggle clicks,
+   // including dynamically-rendered ones inside .tpl-burger-panel.
+   document.addEventListener('click', function(e){
+    var t = e.target.closest && e.target.closest('.mpa-mode-toggle');
+    if (!t) return;
+    e.preventDefault(); e.stopPropagation();
+    setMpaMode(!mpaMode);
+   }, true);
+   // Re-sync UI whenever a tpl-switch / tpl-burger panel opens (the burger
+   // panel HTML is rebuilt dynamically, so its aria-checked needs syncing).
+   var mo = new MutationObserver(syncTogglesUI);
+   mo.observe(document.body, { subtree:true, childList:true, attributes:false });
+  }
+  if (document.readyState === 'loading'){
+   document.addEventListener('DOMContentLoaded', initToggle);
+  } else {
+   initToggle();
+  }
+
+  // Expose for debugging
+  window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hideAsPage, isOn: function(){ return mpaMode; } };
  })();
 
 })();

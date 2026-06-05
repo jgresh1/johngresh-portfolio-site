@@ -2648,4 +2648,27 @@ document.querySelectorAll('.scene-overlay').forEach(function(o){ if (o.style.dis
 function initToggle(){ syncTogglesUI(); document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('.mpa-mode-toggle'); if (!t) return; e.preventDefault(); e.stopPropagation(); setMpaMode(!mpaMode);
 }, true); var mo = new MutationObserver(syncTogglesUI); mo.observe(document.body, { subtree:true, childList:true, attributes:false }); }
 if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', initToggle); } else { initToggle(); }
-window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hideAsPage, isOn: function(){ return mpaMode; } }; })(); })();</script></body></html>
+window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hideAsPage, isOn: function(){ return mpaMode; } }; })(); })();</script>
+<script>
+/* WFBMI: inject the "W Firm Biology" lab page as an option in the template switcher dropdowns */
+(function(){
+  function addBio(){
+    var panels = document.querySelectorAll('.tpl-switch-panel, .tpl-burger-panel');
+    for (var i=0;i<panels.length;i++){
+      var p = panels[i];
+      if (p.querySelector('a[data-bio-lab]')) continue;
+      var a = document.createElement('a');
+      a.href = 'biology-lab.html';
+      a.setAttribute('data-bio-lab','1');
+      a.innerHTML = 'W Firm Biology<span class="tag-mini">Lab</span>';
+      var div = p.querySelector('.tpl-switch-divider, .tpl-burger-divider');
+      if (div) { p.insertBefore(a, div); } else { p.appendChild(a); }
+    }
+  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', addBio); } else { addBio(); }
+  document.addEventListener('click', function(e){
+    if (e.target.closest('.tpl-burger, .tpl-burger-btn, [class*="burger"], .tpl-switch, [class*="switch-toggle"], [class*="switch-btn"]')) { setTimeout(addBio, 0); }
+  }, true);
+})();
+</script>
+</body></html>

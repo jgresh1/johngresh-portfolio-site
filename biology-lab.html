@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>W Firm Biology Mass Intelligence</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070b10; --bg2:#0b121a; --card:#0f1822; --card2:#131f2b;
+    --border:#1d2c3a; --border2:#26394b;
+    --text:#e8f0f6; --muted:#8aa0b2; --faint:#5c7286;
+    --accent:#f1c34e; --accent2:#caa12f; --accent-d:#5a4717;
+    --user:#16324a; --user-border:#1f4a6b;
+    --danger:#ff5a6a; --warn:#ffb454;
+    --radius:16px; --radius-sm:10px;
+    --shadow:0 24px 60px -24px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(241,195,78,.10), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(241,195,78,.06), transparent 55%),
+      var(--bg);
+    color:var(--text); font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  button{font-family:inherit; cursor:pointer}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+
+  /* ============ SIGN-ON ============ */
+  #signon{position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:24px;
+    background:radial-gradient(900px 600px at 50% 30%, rgba(241,195,78,.10), transparent 60%), var(--bg);}
+  .signon-card{width:100%; max-width:420px; background:linear-gradient(180deg,var(--card),var(--bg2));
+    border:1px solid var(--border); border-radius:var(--radius); padding:34px 30px; box-shadow:var(--shadow); text-align:center}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .signon-card h1{font-size:23px; font-weight:800; margin:6px 0 4px; letter-spacing:-.3px}
+  .signon-card p{color:var(--muted); font-size:14px; margin:0 0 22px}
+  .field{position:relative; margin-bottom:14px}
+  .field input{width:100%; padding:14px 16px; background:var(--bg2); border:1px solid var(--border2); color:var(--text);
+    border-radius:var(--radius-sm); font-size:16px; outline:none; transition:border-color .15s, box-shadow .15s}
+  .field input:focus{border-color:var(--accent2); box-shadow:0 0 0 3px rgba(241,195,78,.12)}
+  .btn{width:100%; padding:14px; border:none; border-radius:var(--radius-sm); font-weight:700; font-size:15px;
+    background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#022; transition:filter .15s, transform .05s}
+  .btn:hover{filter:brightness(1.07)} .btn:active{transform:translateY(1px)}
+  .err{color:var(--danger); font-size:13px; min-height:18px; margin-top:6px; text-align:left}
+  .signon-foot{margin-top:18px; color:var(--faint); font-size:12px}
+
+  /* ============ APP ============ */
+  #app{display:none; height:100vh; flex-direction:column}
+  header.appbar{display:flex; align-items:center; gap:14px; padding:12px 20px; border-bottom:1px solid var(--border);
+    background:rgba(11,18,26,.7); backdrop-filter:blur(10px); position:sticky; top:0; z-index:10}
+  .brandmark{width:38px;height:38px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--accent),#b8860b); color:#021; font-weight:800; font-size:17px;
+    box-shadow:0 6px 18px -6px rgba(241,195,78,.5)}
+  .brandtxt{display:flex; flex-direction:column; line-height:1.15}
+  .brandtxt b{font-size:15px; letter-spacing:-.2px}
+  .brandtxt span{font-size:11px; color:var(--muted)}
+  .appbar .spacer{flex:1}
+  .pill{font-size:11px; color:var(--muted); border:1px solid var(--border2); border-radius:999px; padding:5px 11px; display:flex; align-items:center; gap:7px}
+  .pill .dot{width:6px;height:6px}
+  .ghost{background:transparent; color:var(--muted); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:7px 12px; font-size:13px; font-weight:500; transition:.15s}
+  .ghost:hover{color:var(--text); border-color:var(--accent2)}
+
+  .layout{flex:1; display:grid; grid-template-columns:1fr 340px; min-height:0}
+
+  /* chat column */
+  .chatcol{display:flex; flex-direction:column; min-height:0}
+  .messages{flex:1; overflow-y:auto; padding:24px 20px 8px; display:flex; flex-direction:column; gap:16px}
+  .messages::-webkit-scrollbar{width:10px} .messages::-webkit-scrollbar-thumb{background:var(--border2); border-radius:10px}
+  .row{display:flex; gap:12px; max-width:780px; width:100%; margin:0 auto}
+  .row.user{flex-direction:row-reverse}
+  .av{width:32px;height:32px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;font-size:13px;font-weight:700}
+  .av.ai{background:linear-gradient(135deg,var(--accent),#b8860b);color:#021}
+  .av.user{background:var(--user);color:var(--text);border:1px solid var(--border2)}
+  .bubble{padding:13px 16px;border-radius:14px;font-size:14.5px;max-width:calc(100% - 46px);overflow-wrap:anywhere}
+  .row.ai .bubble{background:var(--card);border:1px solid var(--border)}
+  .row.user .bubble{background:var(--user);border:1px solid var(--border2)}
+  .bubble p{margin:0 0 8px} .bubble p:last-child{margin:0}
+  .bubble strong{color:#fff} .bubble code{font-family:'JetBrains Mono',monospace; background:#0a1218; padding:1px 5px; border-radius:5px; font-size:12.5px}
+  .bubble ul{margin:6px 0; padding-left:18px} .bubble li{margin:3px 0}
+  .bubble .cite{color:var(--accent); font-weight:600}
+  .bubble img.recall{max-width:240px; border-radius:10px; border:1px solid var(--border2); margin-top:8px; cursor:zoom-in; display:block}
+  .imgcap{font-size:11px;color:var(--muted);margin-top:4px}
+  .thinking{display:inline-flex; gap:4px; align-items:center}
+  .thinking i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bln 1.2s infinite}
+  .thinking i:nth-child(2){animation-delay:.2s} .thinking i:nth-child(3){animation-delay:.4s}
+  @keyframes bln{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+  .welcome{max-width:780px;margin:8px auto;width:100%}
+  .welcome h2{font-size:20px;margin:0 0 6px}
+  .welcome p{color:var(--muted);font-size:14px;margin:0 0 16px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--card);border:1px solid var(--border2);color:var(--text);border-radius:999px;padding:8px 14px;font-size:13px;transition:.15s}
+  .chip:hover{border-color:var(--accent2);color:var(--accent)}
+  .chip.primary{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#022;border:none;font-weight:700}
+
+  /* composer */
+  .composer{border-top:1px solid var(--border); padding:14px 20px; background:rgba(11,18,26,.6)}
+  .composer-inner{max-width:780px;margin:0 auto}
+  .attach-preview{display:none; align-items:center; gap:10px; background:var(--card); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:8px; margin-bottom:8px}
+  .attach-preview img{width:42px;height:42px;object-fit:cover;border-radius:7px}
+  .attach-preview .x{margin-left:auto;color:var(--muted);background:none;border:none;font-size:18px}
+  .inputbar{display:flex; align-items:flex-end; gap:10px; background:var(--card); border:1px solid var(--border2); border-radius:14px; padding:8px 8px 8px 12px}
+  .inputbar:focus-within{border-color:var(--accent2); box-shadow:0 0 0 3px rgba(241,195,78,.10)}
+  .inputbar textarea{flex:1; resize:none; border:none; outline:none; background:transparent; color:var(--text); font-size:15px; font-family:inherit; max-height:160px; padding:6px 0; line-height:1.45}
+  .iconbtn{width:38px;height:38px;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);color:var(--muted);font-size:17px;display:grid;place-items:center;flex:0 0 auto;transition:.15s}
+  .iconbtn:hover{color:var(--accent);border-color:var(--accent2)}
+  .sendbtn{width:38px;height:38px;border-radius:10px;border:none;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#022;font-size:17px;display:grid;place-items:center;flex:0 0 auto}
+  .sendbtn:disabled{opacity:.4;cursor:not-allowed}
+  .composer .hint{color:var(--faint);font-size:11px;margin-top:7px;text-align:center}
+
+  /* memory panel */
+  .memory{border-left:1px solid var(--border); background:var(--bg2); display:flex; flex-direction:column; min-height:0}
+  .mem-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+  .mem-head b{font-size:13px;letter-spacing:.3px} .mem-head .spacer{flex:1}
+  .mem-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+  .mem-body::-webkit-scrollbar{width:8px}.mem-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:8px}
+  .student-row{display:flex;align-items:center;gap:8px}
+  .student-row select{flex:1;background:var(--card);color:var(--text);border:1px solid var(--border2);border-radius:9px;padding:9px 10px;font-size:13px;font-family:inherit}
+  .minibtn{background:var(--card);border:1px solid var(--border2);color:var(--muted);border-radius:9px;padding:9px 11px;font-size:13px;transition:.15s}
+  .minibtn:hover{color:var(--accent);border-color:var(--accent2)}
+  .mem-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--faint);margin:2px 0}
+  .sess{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px}
+  .sess h4{margin:0 0 6px;font-size:13.5px;display:flex;align-items:center;gap:8px}
+  .status{font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:2px 8px;border-radius:999px}
+  .status.inprogress{color:var(--warn);background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.25)}
+  .status.done{color:var(--accent);background:rgba(241,195,78,.1);border:1px solid var(--accent-d)}
+  .result{font-size:12.5px;color:var(--muted);padding:5px 0;border-top:1px dashed var(--border2)}
+  .result:first-of-type{border-top:none}
+  .result b{color:var(--text);font-weight:600}
+  .thumbs{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+  .thumbs img{width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--border2);cursor:zoom-in;transition:.15s}
+  .thumbs img:hover{border-color:var(--accent2);transform:scale(1.04)}
+  .emptymem{color:var(--faint);font-size:13px;text-align:center;padding:30px 10px;line-height:1.6}
+
+  /* lightbox */
+  #lightbox{position:fixed;inset:0;z-index:60;background:rgba(2,5,8,.9);display:none;align-items:center;justify-content:center;padding:30px;cursor:zoom-out}
+  #lightbox img{max-width:92vw;max-height:82vh;border-radius:12px;border:1px solid var(--border2)}
+  #lightbox .cap{position:absolute;bottom:24px;left:0;right:0;text-align:center;color:var(--muted);font-size:13px}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border2);
+    color:var(--text);padding:11px 18px;border-radius:10px;font-size:13px;z-index:70;box-shadow:var(--shadow);display:none}
+
+  /* ===== responsive (kept last so these overrides win by source order) ===== */
+  #toggle-mem-btn{display:none}
+  @media(max-width:900px){
+    .layout{grid-template-columns:1fr}
+    .memory{display:none}
+    .memory.open{display:flex; position:fixed; inset:56px 0 0 0; z-index:20; width:100%}
+    #toggle-mem-btn{display:inline-block}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= SIGN-ON ================= -->
+<div id="signon">
+  <div class="signon-card">
+    <h1>W Firm Biology<br>Mass Intelligence</h1>
+    <p>Personal sign-on required. This is a private lab-assistant demo.</p>
+    <form id="signon-form" autocomplete="off">
+      <div class="field">
+        <input id="passcode" type="password" placeholder="Enter personal sign-on" autocomplete="off" />
+      </div>
+      <div class="err" id="signon-err"></div>
+      <button class="btn" type="submit">Sign On →</button>
+    </form>
+    <div class="signon-foot mono">WFBMI · local lab memory · gpt-5.4-mini</div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <header class="appbar">
+    <div class="brandmark">W</div>
+    <div class="brandtxt">
+      <b>W Firm Biology Mass Intelligence</b>
+      <span>Lab walkthrough &amp; cohort memory bank</span>
+    </div>
+    <div class="spacer"></div>
+    <a class="ghost" href="index.html" style="text-decoration:none" title="Back to portfolio">← Portfolio</a>
+    <div class="pill"><span class="dot"></span> <span class="mono">gpt-5.4-mini</span></div>
+    <button class="ghost" id="toggle-mem-btn">Memory</button>
+    <button class="ghost" id="signout-btn">Sign out</button>
+  </header>
+
+  <div class="layout">
+    <!-- chat -->
+    <div class="chatcol">
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+          <h2>Welcome to the lab 🧪</h2>
+          <p>I'm WFBMI. I walk students through labs step by step, save every result to the cohort memory bank, and can recall photos you upload. The demo lab loaded is <b>Aspirin Synthesis</b>.</p>
+          <div class="chips">
+            <button class="chip primary" data-send="Let's start the Aspirin Synthesis lab. Walk me through it step by step, beginning with safety and step A.">▶ Start Aspirin Lab walkthrough</button>
+            <button class="chip" data-send="What safety equipment and hazards should I know before starting?">Safety briefing</button>
+            <button class="chip" data-send="Explain the reaction mechanism in simple terms.">Reaction mechanism</button>
+            <button class="chip" data-send="What yield and melting point should I expect, and how do I test purity?">Expected results</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="composer-inner">
+          <div class="attach-preview" id="attach-preview">
+            <img id="attach-thumb" alt="" />
+            <div style="font-size:12.5px;color:var(--muted)">Image attached — it will be saved to the memory bank.</div>
+            <button class="x" id="attach-remove" title="Remove">×</button>
+          </div>
+          <div class="inputbar">
+            <button class="iconbtn" id="upload-btn" title="Upload a photo">📷</button>
+            <input type="file" id="file-input" accept="image/*" style="display:none" />
+            <textarea id="chat-input" rows="1" placeholder="Message WFBMI — ask about the lab, report a result, or upload a photo…"></textarea>
+            <button class="sendbtn" id="send-btn" title="Send">↑</button>
+          </div>
+          <div class="hint">Results you report are saved to the memory bank automatically · Uploaded photos can be recalled later by asking</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- memory bank -->
+    <aside class="memory" id="memory">
+      <div class="mem-head">
+        <span class="dot" style="background:var(--accent);box-shadow:0 0 8px var(--accent)"></span>
+        <b>Memory Bank</b>
+        <div class="spacer"></div>
+        <span class="mono" style="font-size:11px;color:var(--faint)" id="mem-count">0 records</span>
+      </div>
+      <div class="mem-body" id="mem-body">
+        <div>
+          <div class="mem-section-title">Current student</div>
+          <div class="student-row" style="margin-top:7px">
+            <select id="student-select"></select>
+            <button class="minibtn" id="add-student-btn" title="Add a student">+</button>
+          </div>
+        </div>
+        <div id="sessions-wrap"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="lightbox"><img id="lightbox-img" alt="" /><div class="cap mono" id="lightbox-cap"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ===================== CONFIG =====================
+  var WORKER_BASE = "https://serverbackend.johngresh-usa.workers.dev";
+  var BIO_ENDPOINT = WORKER_BASE + "/bio-chat";
+  var ACCESS_CODE = "ROSEBUD";          // same personal sign-on as the main site
+  var MEM_KEY = "wfbmi_memory_v1";
+  var AUTH_KEY = "wfbmi_auth";
+
+  // ===================== MEMORY BANK (localStorage) =====================
+  function defaultMem(){ return { currentUser:null, people:{} }; }
+  function loadMem(){
+    try { var m = JSON.parse(localStorage.getItem(MEM_KEY)); return (m && m.people) ? m : defaultMem(); }
+    catch(e){ return defaultMem(); }
+  }
+  function saveMem(){
+    try { localStorage.setItem(MEM_KEY, JSON.stringify(mem)); }
+    catch(e){ toast("⚠️ Memory full — older images may not save."); }
+    renderMemory();
+  }
+  var mem = loadMem();
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function ensurePerson(name){
+    name = (name||"").trim(); if(!name) return null;
+    if(!mem.people[name]) mem.people[name] = { createdAt:Date.now(), sessions:[] };
+    mem.currentUser = name; return mem.people[name];
+  }
+  function currentPerson(){ return mem.currentUser ? mem.people[mem.currentUser] : null; }
+
+  function currentSession(create){
+    var p = currentPerson(); if(!p) return null;
+    var open = null;
+    for(var i=p.sessions.length-1;i>=0;i--){ if(p.sessions[i].status!=="done"){ open=p.sessions[i]; break; } }
+    if(!open && create){
+      open = { id:uid(), lab:"Aspirin Synthesis", startedAt:Date.now(), status:"inprogress", results:[], images:[] };
+      p.sessions.push(open);
+    }
+    return open;
+  }
+  function addResult(text){
+    var s = currentSession(true); if(!s) return;
+    s.results.push({ text:text, at:Date.now() }); saveMem();
+  }
+  function addImage(caption, dataUrl){
+    var s = currentSession(true); if(!s) return null;
+    var img = { id:uid(), caption:caption||"untitled photo", dataUrl:dataUrl, at:Date.now() };
+    s.images.push(img); saveMem(); return img;
+  }
+  function allImagesFor(name){
+    var p = name ? mem.people[name] : currentPerson(); var out=[];
+    if(!p) return out;
+    p.sessions.forEach(function(s){ s.images.forEach(function(im){ out.push({img:im, lab:s.lab}); }); });
+    return out;
+  }
+  function recordCount(){
+    var n=0; Object.keys(mem.people).forEach(function(k){
+      mem.people[k].sessions.forEach(function(s){ n += s.results.length + s.images.length; });
+    }); return n;
+  }
+
+  // Compact context string handed to the AI each turn
+  function buildMemoryContext(){
+    var lines = [];
+    lines.push("Current student: " + (mem.currentUser || "(not set yet — ask their name)"));
+    Object.keys(mem.people).forEach(function(name){
+      var p = mem.people[name];
+      lines.push("PERSON: " + name);
+      if(!p.sessions.length){ lines.push("  (no labs yet)"); }
+      p.sessions.forEach(function(s){
+        lines.push("  LAB: " + s.lab + " [" + s.status + "]");
+        s.results.forEach(function(r){ lines.push("    - result: " + r.text); });
+        s.images.forEach(function(im){ lines.push("    - image(id=" + im.id + "): " + im.caption); });
+      });
+    });
+    return lines.join("\n");
+  }
+
+  // ===================== SIGN-ON =====================
+  var signon = document.getElementById("signon");
+  var app = document.getElementById("app");
+  function unlock(){
+    signon.style.display="none"; app.style.display="flex";
+    sessionStorage.setItem(AUTH_KEY,"1");
+    if(!mem.currentUser){ setTimeout(promptForStudent, 350); }
+    renderMemory(); autosize();
+  }
+  document.getElementById("signon-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var v = document.getElementById("passcode").value.trim().toUpperCase();
+    var err = document.getElementById("signon-err");
+    if(v === ACCESS_CODE){ err.textContent=""; unlock(); }
+    else { err.textContent = "Access denied. Check your personal sign-on."; }
+  });
+  if(sessionStorage.getItem(AUTH_KEY)==="1"){ unlock(); }
+  document.getElementById("signout-btn").addEventListener("click", function(){
+    sessionStorage.removeItem(AUTH_KEY); location.reload();
+  });
+
+  function promptForStudent(){
+    var name = window.prompt("Who's running this lab? (your name — results are saved under it)", "");
+    if(name && name.trim()){ ensurePerson(name.trim()); saveMem(); greetStudent(name.trim()); }
+    else { ensurePerson("Guest"); saveMem(); }
+  }
+
+  // ===================== CHAT =====================
+  var messagesEl = document.getElementById("messages");
+  var inputEl = document.getElementById("chat-input");
+  var sendBtn = document.getElementById("send-btn");
+  var chatHistory = [];   // [{role, content}]
+  var pendingImage = null; // {dataUrl, caption}
+  var busy = false;
+
+  function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  // light markdown: **bold**, `code`, [n] citations, bullet lines, paragraphs
+  function mdLite(t){
+    t = esc(t);
+    t = t.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
+    t = t.replace(/`([^`]+)`/g,"<code>$1</code>");
+    t = t.replace(/\[(\d)\]/g,'<span class="cite">[$1]</span>');
+    var blocks = t.split(/\n{2,}/).map(function(b){
+      var lines = b.split(/\n/);
+      var isList = lines.every(function(l){ return /^\s*[-*]\s+/.test(l) || l.trim()===""; }) && /[-*]\s+/.test(b);
+      if(isList){
+        var items = lines.filter(function(l){return l.trim();}).map(function(l){ return "<li>"+l.replace(/^\s*[-*]\s+/,"")+"</li>"; }).join("");
+        return "<ul>"+items+"</ul>";
+      }
+      return "<p>"+b.replace(/\n/g,"<br>")+"</p>";
+    });
+    return blocks.join("");
+  }
+
+  function rowEl(role){
+    var row=document.createElement("div"); row.className="row "+role;
+    var av=document.createElement("div"); av.className="av "+(role==="ai"?"ai":"user"); av.textContent= role==="ai"?"W":"You";
+    var bub=document.createElement("div"); bub.className="bubble";
+    row.appendChild(av); row.appendChild(bub); messagesEl.appendChild(row);
+    return bub;
+  }
+  function scrollDown(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+  function addUserMessage(text, imgDataUrl){
+    var w=document.getElementById("welcome"); if(w) w.remove();
+    var bub=rowEl("user");
+    var html = text ? mdLite(text) : "";
+    if(imgDataUrl){ html += '<img class="recall" src="'+imgDataUrl+'" alt="upload">'; }
+    bub.innerHTML = html; scrollDown();
+  }
+  function addThinking(){
+    var w=document.getElementById("welcome"); if(w) w.remove();
+    var bub=rowEl("ai");
+    bub.innerHTML='<span class="thinking"><i></i><i></i><i></i></span>';
+    scrollDown(); return bub;
+  }
+
+  // parse [[SHOW_IMAGE: query]] markers → render stored images
+  function renderAssistant(bub, text){
+    var markers=[]; var re=/\[\[SHOW_IMAGE:\s*([^\]]+)\]\]/gi; var m;
+    while((m=re.exec(text))!==null){ markers.push(m[1].trim()); }
+    var clean = text.replace(re,"").replace(/\n{3,}/g,"\n\n").trim();
+    bub.innerHTML = mdLite(clean || "…");
+    markers.forEach(function(q){
+      var hit = findImage(q);
+      if(hit){
+        var img=document.createElement("img"); img.className="recall"; img.src=hit.img.dataUrl;
+        img.addEventListener("click",function(){ openLightbox(hit.img.dataUrl, hit.img.caption); });
+        var cap=document.createElement("div"); cap.className="imgcap"; cap.textContent="🖼 recalled: "+hit.img.caption;
+        bub.appendChild(img); bub.appendChild(cap);
+      } else {
+        var note=document.createElement("div"); note.className="imgcap"; note.textContent='No stored image matched "'+q+'".';
+        bub.appendChild(note);
+      }
+    });
+    scrollDown();
+  }
+  function findImage(query){
+    var imgs = allImagesFor(null); if(!imgs.length) return null;
+    var qt = query.toLowerCase().split(/\s+/).filter(Boolean);
+    var best=null, bestScore=0;
+    imgs.forEach(function(rec){
+      var hay=(rec.img.caption+" "+rec.lab).toLowerCase();
+      var score=0; qt.forEach(function(t){ if(hay.indexOf(t)>=0) score++; });
+      if(score>bestScore){ bestScore=score; best=rec; }
+    });
+    return bestScore>0 ? best : (imgs.length?imgs[imgs.length-1]:null);
+  }
+
+  // naive client-side result capture: if the user clearly reports a measurement, also save it
+  function maybeCaptureResult(text){
+    var t=(text||"").trim();
+    // don't log questions or commands as "results"
+    if(/\?\s*$/.test(t)) return;
+    if(/^(what|how|why|when|where|which|who|show|explain|can|could|should|would|is|are|do|does|tell|give|walk|start|begin|help|please)\b/i.test(t)) return;
+    var hasMeasurement=/\b\d+(\.\d+)?\s?(%|percent|g|grams|mg|ml|°?c|degrees)\b/i.test(t);
+    var hasReportWord=/\b(yield|melting point|\bmp\b|fecl3|purple|no color change|crystals|cloudy|precipitate|filtered|recrystalliz|observed|recorded|measured|got|weighed)\b/i.test(t);
+    if(hasMeasurement || hasReportWord){
+      addResult(t.length>160 ? t.slice(0,157)+"…" : t);
+    }
+  }
+
+  function sendMessage(text){
+    if(busy) return;
+    text=(text||"").trim();
+    var img = pendingImage;
+    if(!text && !img) return;
+    if(!mem.currentUser) ensurePerson("Guest");
+    // starting the walkthrough opens an in-progress lab session in the memory bank
+    if(/\b(start|begin)\b.*\b(aspirin|lab)\b/i.test(text)){ currentSession(true); saveMem(); }
+
+    addUserMessage(text || "(photo)", img ? img.dataUrl : null);
+    chatHistory.push({ role:"user", content: text || "(uploaded a photo: "+(img?img.caption:"")+")" });
+    if(text) maybeCaptureResult(text);
+
+    // clear composer + attachment
+    inputEl.value=""; autosize();
+    var sendImage = img ? img.dataUrl : null;
+    clearAttachment();
+
+    var bub = addThinking();
+    busy=true; sendBtn.disabled=true;
+
+    fetch(BIO_ENDPOINT, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ history: chatHistory, memoryContext: buildMemoryContext(), image: sendImage })
+    }).then(function(r){
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      return r.json();
+    }).then(function(data){
+      if(data && data.success){
+        chatHistory.push({ role:"assistant", content: data.response });
+        renderAssistant(bub, data.response);
+      } else {
+        renderAssistant(bub, "⚠️ "+((data&&data.error)||"The assistant could not respond."));
+      }
+    }).catch(function(err){
+      bub.innerHTML = mdLite(
+        "⚠️ **Backend not reachable** ("+esc(err.message)+").\n\n"+
+        "The `/bio-chat` worker endpoint may not be deployed yet. **Everything else works offline** — your sign-on, the saved results, image storage, and recall. Deploy the worker (`wrangler deploy`) to enable AI replies."
+      );
+      scrollDown();
+    }).then(function(){
+      busy=false; sendBtn.disabled=false; inputEl.focus();
+    });
+  }
+
+  function greetStudent(name){
+    var w=document.getElementById("welcome");
+    if(w){ var h=w.querySelector("h2"); if(h) h.textContent = "Welcome, "+name+" 🧪"; }
+  }
+
+  // ===================== IMAGE UPLOAD =====================
+  var fileInput=document.getElementById("file-input");
+  document.getElementById("upload-btn").addEventListener("click", function(){ fileInput.click(); });
+  fileInput.addEventListener("change", function(e){
+    var f=e.target.files && e.target.files[0]; if(!f) return;
+    downscale(f, 1024, 0.85).then(function(dataUrl){
+      var caption = window.prompt("Short caption for this photo (used to recall it later):",
+        f.name.replace(/\.[^.]+$/,"")) || "lab photo";
+      var saved = addImage(caption, dataUrl);   // persist to memory bank immediately
+      pendingImage = { dataUrl:dataUrl, caption:caption };
+      showAttachment(dataUrl);
+      toast("📷 Saved to memory bank: "+caption);
+      if(saved){ /* stored */ }
+    }).catch(function(){ toast("Could not read that image."); });
+    fileInput.value="";
+  });
+  function showAttachment(dataUrl){
+    document.getElementById("attach-thumb").src=dataUrl;
+    document.getElementById("attach-preview").style.display="flex";
+  }
+  function clearAttachment(){
+    pendingImage=null;
+    document.getElementById("attach-preview").style.display="none";
+    document.getElementById("attach-thumb").src="";
+  }
+  document.getElementById("attach-remove").addEventListener("click", clearAttachment);
+
+  function downscale(file, maxDim, quality){
+    return new Promise(function(resolve,reject){
+      var fr=new FileReader();
+      fr.onload=function(){
+        var img=new Image();
+        img.onload=function(){
+          var w=img.width,h=img.height; var scale=Math.min(1, maxDim/Math.max(w,h));
+          var nw=Math.round(w*scale), nh=Math.round(h*scale);
+          var c=document.createElement("canvas"); c.width=nw; c.height=nh;
+          c.getContext("2d").drawImage(img,0,0,nw,nh);
+          try { resolve(c.toDataURL("image/jpeg", quality)); } catch(e){ resolve(fr.result); }
+        };
+        img.onerror=reject; img.src=fr.result;
+      };
+      fr.onerror=reject; fr.readAsDataURL(file);
+    });
+  }
+
+  // ===================== MEMORY PANEL RENDER =====================
+  var sessionsWrap=document.getElementById("sessions-wrap");
+  var studentSelect=document.getElementById("student-select");
+  function renderMemory(){
+    document.getElementById("mem-count").textContent = recordCount()+" records";
+    // student dropdown
+    var names=Object.keys(mem.people);
+    studentSelect.innerHTML="";
+    if(!names.length){ var o=document.createElement("option"); o.textContent="(no students yet)"; studentSelect.appendChild(o); }
+    names.forEach(function(n){
+      var o=document.createElement("option"); o.value=n; o.textContent=n;
+      if(n===mem.currentUser) o.selected=true; studentSelect.appendChild(o);
+    });
+    // sessions for current user
+    sessionsWrap.innerHTML="";
+    var p=currentPerson();
+    if(!p || !p.sessions.length){
+      var e=document.createElement("div"); e.className="emptymem";
+      e.innerHTML="No lab records yet.<br>Start a lab and report results —<br>they'll be saved here.";
+      sessionsWrap.appendChild(e); return;
+    }
+    var title=document.createElement("div"); title.className="mem-section-title"; title.textContent="Lab sessions";
+    sessionsWrap.appendChild(title);
+    p.sessions.slice().reverse().forEach(function(s){
+      var card=document.createElement("div"); card.className="sess";
+      var statusCls = s.status==="done"?"done":"inprogress";
+      var statusTxt = s.status==="done"?"done":"in progress";
+      var html='<h4>'+esc(s.lab)+' <span class="status '+statusCls+'">'+statusTxt+'</span></h4>';
+      if(s.results.length){ s.results.forEach(function(r){ html+='<div class="result">'+mdLite(r.text)+'</div>'; }); }
+      else { html+='<div class="result" style="color:var(--faint)">No results logged yet.</div>'; }
+      card.innerHTML=html;
+      if(s.images.length){
+        var th=document.createElement("div"); th.className="thumbs";
+        s.images.forEach(function(im){
+          var i=document.createElement("img"); i.src=im.dataUrl; i.title=im.caption;
+          i.addEventListener("click",function(){ openLightbox(im.dataUrl, im.caption); });
+          th.appendChild(i);
+        });
+        card.appendChild(th);
+      }
+      // mark-done control
+      if(s.status!=="done"){
+        var b=document.createElement("button"); b.className="minibtn"; b.style.marginTop="10px"; b.textContent="Mark lab complete";
+        b.addEventListener("click",function(){ s.status="done"; saveMem(); });
+        card.appendChild(b);
+      }
+      sessionsWrap.appendChild(card);
+    });
+  }
+  studentSelect.addEventListener("change", function(){
+    if(mem.people[this.value]){ mem.currentUser=this.value; saveMem(); }
+  });
+  document.getElementById("add-student-btn").addEventListener("click", function(){
+    var n=window.prompt("New student name:",""); if(n && n.trim()){ ensurePerson(n.trim()); saveMem(); }
+  });
+
+  // ===================== LIGHTBOX + TOAST =====================
+  var lb=document.getElementById("lightbox");
+  function openLightbox(src,cap){ document.getElementById("lightbox-img").src=src; document.getElementById("lightbox-cap").textContent=cap||""; lb.style.display="flex"; }
+  lb.addEventListener("click", function(){ lb.style.display="none"; });
+  var toastTimer;
+  function toast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.style.display="block"; clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.style.display="none"; }, 2600); }
+
+  // ===================== COMPOSER WIRING =====================
+  function autosize(){ inputEl.style.height="auto"; inputEl.style.height=Math.min(inputEl.scrollHeight,160)+"px"; }
+  inputEl.addEventListener("input", autosize);
+  inputEl.addEventListener("keydown", function(e){
+    if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMessage(inputEl.value); }
+  });
+  sendBtn.addEventListener("click", function(){ sendMessage(inputEl.value); });
+  messagesEl.addEventListener("click", function(e){
+    var c=e.target.closest("[data-send]"); if(c){ sendMessage(c.getAttribute("data-send")); }
+    var im=e.target.closest("img.recall"); if(im && im.src){ openLightbox(im.src, ""); }
+  });
+  // mobile memory toggle
+  var memToggle=document.getElementById("toggle-mem-btn");
+  memToggle.addEventListener("click", function(){ document.getElementById("memory").classList.toggle("open"); });
+
+  renderMemory();
+})();
+</script>
+</body>
+</html>

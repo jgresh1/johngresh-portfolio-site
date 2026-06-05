@@ -2675,6 +2675,9 @@ window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hid
       var la = document.createElement('a');
       la.href = 'biology-lab.html'; la.setAttribute('data-bio-lab','1');
       la.innerHTML = '&gt; W Firm Biology <span class="tpl-tag">LAB</span>';
+      // the drawer attaches a preventDefault handler to every .drawer-nav a (it only routes
+      // data-overlay / data-template links), which swallows this link — so navigate explicitly.
+      la.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); window.location.href = 'biology-lab.html'; });
       li.appendChild(la);
       var sd = s.querySelector('.submenu-divider');
       if (sd) { s.insertBefore(li, sd); } else { s.appendChild(li); }

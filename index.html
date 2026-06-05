@@ -2665,9 +2665,17 @@ window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hid
       if (div) { p.insertBefore(a, div); } else { p.appendChild(a); }
     }
   }
-  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', addBio); } else { addBio(); }
+  var t=null;
+  function schedule(){ if(t) return; t=setTimeout(function(){ t=null; addBio(); }, 150); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule); else schedule();
+  window.addEventListener('load', schedule);
+  // template panels hydrate lazily — retry across the hydration window and watch for new panels
+  [400,1200,2600,5200].forEach(function(ms){ setTimeout(schedule, ms); });
+  var mo=null;
+  try { mo=new MutationObserver(schedule); mo.observe(document.documentElement,{childList:true,subtree:true}); } catch(e){}
+  setTimeout(function(){ if(mo) mo.disconnect(); }, 60000); // stop broad observing once settled; clicks still re-inject
   document.addEventListener('click', function(e){
-    if (e.target.closest('.tpl-burger, .tpl-burger-btn, [class*="burger"], .tpl-switch, [class*="switch-toggle"], [class*="switch-btn"]')) { setTimeout(addBio, 0); }
+    if (e.target.closest('.tpl-burger, .tpl-burger-btn, [class*="burger"], .tpl-switch, [class*="switch-toggle"], [class*="switch-btn"]')) schedule();
   }, true);
 })();
 </script>

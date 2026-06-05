@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>W Firm Biology Mass Intelligence</title>
 <meta name="robots" content="noindex" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,13 +27,13 @@
       radial-gradient(900px 600px at -10% 110%, rgba(241,195,78,.06), transparent 55%),
       var(--bg);
     color:var(--text); font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    -webkit-font-smoothing:antialiased; line-height:1.5;
+    -webkit-font-smoothing:antialiased; line-height:1.5; overflow-x:hidden;
   }
   button{font-family:inherit; cursor:pointer}
   .mono{font-family:'JetBrains Mono',ui-monospace,monospace}
 
   /* ============ SIGN-ON ============ */
-  #signon{position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:24px;
+  #signon{position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:24px; overflow-y:auto;
     background:radial-gradient(900px 600px at 50% 30%, rgba(241,195,78,.10), transparent 60%), var(--bg);}
   .signon-card{width:100%; max-width:420px; background:linear-gradient(180deg,var(--card),var(--bg2));
     border:1px solid var(--border); border-radius:var(--radius); padding:34px 30px; box-shadow:var(--shadow); text-align:center}
@@ -51,7 +51,7 @@
   .signon-foot{margin-top:18px; color:var(--faint); font-size:12px}
 
   /* ============ APP ============ */
-  #app{display:none; height:100vh; flex-direction:column}
+  #app{display:none; height:100vh; height:100dvh; flex-direction:column}
   header.appbar{display:flex; align-items:center; gap:14px; padding:12px 20px; border-bottom:1px solid var(--border);
     background:rgba(11,18,26,.7); backdrop-filter:blur(10px); position:sticky; top:0; z-index:10}
   .brandmark{width:38px;height:38px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;
@@ -148,11 +148,45 @@
 
   /* ===== responsive (kept last so these overrides win by source order) ===== */
   #toggle-mem-btn{display:none}
+  .mem-close{display:none; width:32px;height:32px;border-radius:9px;border:1px solid var(--border2);background:var(--bg2);color:var(--muted);font-size:20px;line-height:1;align-items:center;justify-content:center;flex:0 0 auto}
+  .mem-close:hover{color:var(--accent);border-color:var(--accent2)}
+
   @media(max-width:900px){
     .layout{grid-template-columns:1fr}
     .memory{display:none}
-    .memory.open{display:flex; position:fixed; inset:56px 0 0 0; z-index:20; width:100%}
+    .memory.open{display:flex; position:fixed; inset:0; z-index:40; width:100%}
     #toggle-mem-btn{display:inline-block}
+    .mem-close{display:flex}
+  }
+
+  /* phones */
+  @media(max-width:560px){
+    header.appbar{gap:9px; padding:10px 13px}
+    .brandmark{width:32px;height:32px;font-size:15px;border-radius:9px}
+    .brandtxt{min-width:0}
+    .brandtxt b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
+    .brandtxt span{display:none}
+    .pill{display:none}
+    .ghost{padding:7px 9px;font-size:12px}
+    .messages{padding:16px 12px 6px}
+    .row{gap:9px}
+    .composer{padding:10px 12px}
+    .welcome h2{font-size:18px}
+    .signon-card{padding:28px 22px}
+    .signon-card h1{font-size:21px}
+  }
+
+  /* short landscape (phones turned sideways) */
+  @media (max-height:500px) and (orientation:landscape){
+    header.appbar{padding:7px 13px}
+    .brandtxt span{display:none}
+    .messages{padding:12px 16px 4px}
+    .composer{padding:8px 16px}
+    .composer .hint{display:none}
+    #signon{align-items:flex-start}
+    .signon-card{padding:18px 22px}
+    .signon-card h1{font-size:20px;margin-bottom:2px}
+    .signon-card p{margin-bottom:14px}
   }
 </style>
 </head>
@@ -230,6 +264,7 @@
         <b>Memory Bank</b>
         <div class="spacer"></div>
         <span class="mono" style="font-size:11px;color:var(--faint)" id="mem-count">0 records</span>
+        <button class="mem-close" id="mem-close-btn" title="Close" aria-label="Close">×</button>
       </div>
       <div class="mem-body" id="mem-body">
         <div>
@@ -345,7 +380,6 @@
     if(v === ACCESS_CODE){ err.textContent=""; unlock(); }
     else { err.textContent = "Access denied. Check your personal sign-on."; }
   });
-  if(sessionStorage.getItem(AUTH_KEY)==="1"){ unlock(); }
   document.getElementById("signout-btn").addEventListener("click", function(){
     sessionStorage.removeItem(AUTH_KEY); location.reload();
   });
@@ -623,8 +657,12 @@
   // mobile memory toggle
   var memToggle=document.getElementById("toggle-mem-btn");
   memToggle.addEventListener("click", function(){ document.getElementById("memory").classList.toggle("open"); });
+  var memClose=document.getElementById("mem-close-btn");
+  if(memClose) memClose.addEventListener("click", function(){ document.getElementById("memory").classList.remove("open"); });
 
   renderMemory();
+  // auto-unlock if already signed in this tab — runs LAST, after all elements + handlers are initialized
+  if(sessionStorage.getItem(AUTH_KEY)==="1"){ unlock(); }
 })();
 </script>
 </body>

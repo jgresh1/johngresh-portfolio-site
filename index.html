@@ -2653,16 +2653,31 @@ window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hid
 /* WFBMI: inject the "W Firm Biology" lab page as an option in the template switcher dropdowns */
 (function(){
   function addBio(){
+    // (1) template-view dropdowns: plain <a> inserted before the divider
     var panels = document.querySelectorAll('.tpl-switch-panel, .tpl-burger-panel');
     for (var i=0;i<panels.length;i++){
       var p = panels[i];
-      if (p.querySelector('a[data-bio-lab]')) continue;
-      var a = document.createElement('a');
-      a.href = 'biology-lab.html';
-      a.setAttribute('data-bio-lab','1');
-      a.innerHTML = 'W Firm Biology<span class="tag-mini">Lab</span>';
-      var div = p.querySelector('.tpl-switch-divider, .tpl-burger-divider');
-      if (div) { p.insertBefore(a, div); } else { p.appendChild(a); }
+      if (!p.querySelector('a[data-bio-lab]')){
+        var a = document.createElement('a');
+        a.href = 'biology-lab.html'; a.setAttribute('data-bio-lab','1');
+        a.innerHTML = 'W Firm Biology<span class="tag-mini">Lab</span>';
+        var div = p.querySelector('.tpl-switch-divider, .tpl-burger-divider');
+        if (div) { p.insertBefore(a, div); } else { p.appendChild(a); }
+      }
+    }
+    // (2) default game's main menu drawer: <li><a> inside the TEMPLATES submenu
+    var subs = document.querySelectorAll('ul.submenu');
+    for (var j=0;j<subs.length;j++){
+      var s = subs[j];
+      if (!s.querySelector('a[data-template]')) continue;   // only the templates submenu
+      if (s.querySelector('a[data-bio-lab]')) continue;
+      var li = document.createElement('li');
+      var la = document.createElement('a');
+      la.href = 'biology-lab.html'; la.setAttribute('data-bio-lab','1');
+      la.innerHTML = '&gt; W Firm Biology <span class="tpl-tag">LAB</span>';
+      li.appendChild(la);
+      var sd = s.querySelector('.submenu-divider');
+      if (sd) { s.insertBefore(li, sd); } else { s.appendChild(li); }
     }
   }
   var t=null;
@@ -2675,7 +2690,7 @@ window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hid
   try { mo=new MutationObserver(schedule); mo.observe(document.documentElement,{childList:true,subtree:true}); } catch(e){}
   setTimeout(function(){ if(mo) mo.disconnect(); }, 60000); // stop broad observing once settled; clicks still re-inject
   document.addEventListener('click', function(e){
-    if (e.target.closest('.tpl-burger, .tpl-burger-btn, [class*="burger"], .tpl-switch, [class*="switch-toggle"], [class*="switch-btn"]')) schedule();
+    if (e.target.closest('.tpl-burger, .tpl-burger-btn, [class*="burger"], .tpl-switch, [class*="switch-toggle"], [class*="switch-btn"], #menu-btn, #templates-toggle, .has-submenu')) schedule();
   }, true);
 })();
 </script>

@@ -35,17 +35,30 @@
   /* ============ SIGN-ON ============ */
   #signon{position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:24px; overflow-y:auto;
     background:radial-gradient(900px 600px at 50% 30%, rgba(241,195,78,.10), transparent 60%), var(--bg);}
-  .signon-card{width:100%; max-width:420px; background:linear-gradient(180deg,var(--card),var(--bg2));
-    border:1px solid var(--border); border-radius:var(--radius); padding:34px 30px; box-shadow:var(--shadow); text-align:center}
+  .signon-card{width:100%; max-width:560px; background:linear-gradient(180deg,var(--card),var(--bg2));
+    border:1px solid var(--border); border-radius:22px; padding:44px 40px 32px; box-shadow:var(--shadow); text-align:center; position:relative; overflow:hidden}
+  .signon-card::before{content:""; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, transparent, var(--accent), #b8860b, transparent)}
   .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
-  .signon-card h1{font-size:23px; font-weight:800; margin:6px 0 4px; letter-spacing:-.3px}
-  .signon-card p{color:var(--muted); font-size:14px; margin:0 0 22px}
+  .signon-emblem{width:84px;height:84px;margin:0 auto 18px;border-radius:22px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--accent),#b8860b); box-shadow:0 12px 40px -8px rgba(241,195,78,.5), inset 0 1px 0 rgba(255,255,255,.28); animation:embGlow 3.6s ease-in-out infinite}
+  @keyframes embGlow{0%,100%{box-shadow:0 12px 38px -10px rgba(241,195,78,.42), inset 0 1px 0 rgba(255,255,255,.28)} 50%{box-shadow:0 18px 56px -6px rgba(241,195,78,.72), inset 0 1px 0 rgba(255,255,255,.34)}}
+  .signon-emblem-mark{font-size:40px;font-weight:800;color:#1a1305;line-height:1}
+  .signon-kicker{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:8px}
+  .signon-card h1{font-size:34px; font-weight:800; margin:0 0 12px; letter-spacing:-.5px; line-height:1.08}
+  .signon-card h1 .grad{background:linear-gradient(90deg,var(--accent),#f6d98a,#b8860b);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .signon-tag{color:var(--text); font-size:16px; font-weight:600; margin:0 0 10px}
+  .signon-desc{color:var(--muted); font-size:14px; line-height:1.6; margin:0 auto 24px; max-width:440px}
+  .signon-features{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:0 0 26px; text-align:left}
+  .feat{background:var(--bg2); border:1px solid var(--border2); border-radius:14px; padding:14px 13px}
+  .feat-ico{font-size:22px; display:block; margin-bottom:8px}
+  .feat-t{font-size:13px; font-weight:700; color:var(--text)}
+  .feat-d{font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.35}
   .field{position:relative; margin-bottom:14px}
   .field input{width:100%; padding:14px 16px; background:var(--bg2); border:1px solid var(--border2); color:var(--text);
     border-radius:var(--radius-sm); font-size:16px; outline:none; transition:border-color .15s, box-shadow .15s}
   .field input:focus{border-color:var(--accent2); box-shadow:0 0 0 3px rgba(241,195,78,.12)}
-  .btn{width:100%; padding:14px; border:none; border-radius:var(--radius-sm); font-weight:700; font-size:15px;
-    background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#022; transition:filter .15s, transform .05s}
+  .btn{width:100%; padding:16px; border:none; border-radius:12px; font-weight:800; font-size:16px; letter-spacing:.3px;
+    background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#1a1305; transition:filter .15s, transform .05s; box-shadow:0 10px 30px -10px rgba(241,195,78,.5)}
   .btn:hover{filter:brightness(1.07)} .btn:active{transform:translateY(1px)}
   .err{color:var(--danger); font-size:13px; min-height:18px; margin-top:6px; text-align:left}
   .signon-foot{margin-top:18px; color:var(--faint); font-size:12px}
@@ -172,8 +185,12 @@
     .row{gap:9px}
     .composer{padding:10px 12px}
     .welcome h2{font-size:18px}
-    .signon-card{padding:28px 22px}
-    .signon-card h1{font-size:21px}
+    .signon-card{padding:30px 20px 24px; max-width:none}
+    .signon-card h1{font-size:26px}
+    .signon-emblem{width:72px;height:72px;border-radius:18px;margin-bottom:14px}
+    .signon-emblem-mark{font-size:34px}
+    .signon-desc{font-size:13.5px}
+    .signon-features{grid-template-columns:1fr; gap:9px}
   }
 
   /* short landscape (phones turned sideways) */
@@ -184,9 +201,14 @@
     .composer{padding:8px 16px}
     .composer .hint{display:none}
     #signon{align-items:flex-start}
-    .signon-card{padding:18px 22px}
-    .signon-card h1{font-size:20px;margin-bottom:2px}
-    .signon-card p{margin-bottom:14px}
+    .signon-card{padding:20px 24px; max-width:520px}
+    .signon-emblem{width:54px;height:54px;border-radius:14px;margin-bottom:9px}
+    .signon-emblem-mark{font-size:26px}
+    .signon-kicker{margin-bottom:4px}
+    .signon-card h1{font-size:23px;margin-bottom:6px}
+    .signon-tag{margin-bottom:10px}
+    .signon-desc{display:none}
+    .signon-features{display:none}
   }
 </style>
 </head>
@@ -195,16 +217,24 @@
 <!-- ================= SIGN-ON ================= -->
 <div id="signon">
   <div class="signon-card">
-    <h1>W Firm Biology<br>Mass Intelligence</h1>
-    <p>Personal sign-on required. This is a private lab-assistant demo.</p>
+    <div class="signon-emblem" aria-hidden="true"><span class="signon-emblem-mark">W</span></div>
+    <div class="signon-kicker">Campus Lab Intelligence</div>
+    <h1>W&nbsp;Firm Biology<br><span class="grad">Mass Intelligence</span></h1>
+    <p class="signon-tag">The teaching lab's collective AI memory.</p>
+    <p class="signon-desc">Sign on to be walked through labs step-by-step, log every result to the shared cohort memory bank, and instantly recall any photo or finding from past runs — answered by the local biology model.</p>
+    <div class="signon-features">
+      <div class="feat"><span class="feat-ico">🧪</span><div class="feat-t">Guided labs</div><div class="feat-d">Step-by-step, source-cited walkthroughs</div></div>
+      <div class="feat"><span class="feat-ico">🧠</span><div class="feat-t">Memory bank</div><div class="feat-d">Every cohort's results, saved</div></div>
+      <div class="feat"><span class="feat-ico">🖼️</span><div class="feat-t">Total recall</div><div class="feat-d">Upload &amp; retrieve lab photos</div></div>
+    </div>
     <form id="signon-form" autocomplete="off">
       <div class="field">
-        <input id="passcode" type="password" placeholder="Enter personal sign-on" autocomplete="off" />
+        <input id="passcode" type="password" placeholder="Enter your personal sign-on" autocomplete="off" />
       </div>
       <div class="err" id="signon-err"></div>
-      <button class="btn" type="submit">Sign On →</button>
+      <button class="btn" type="submit">Enter the Lab →</button>
     </form>
-    <div class="signon-foot mono">WFBMI · local lab memory · gpt-5.4-mini</div>
+    <div class="signon-foot mono">🔒 Secure sign-on · Runs on-campus, fully local · gpt-5.4-mini</div>
   </div>
 </div>
 

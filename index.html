@@ -2681,14 +2681,13 @@ window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hid
     }
   }
   var t=null;
-  function schedule(){ if(t) return; t=setTimeout(function(){ t=null; addBio(); }, 150); }
+  function schedule(){ if(t) return; t=setTimeout(function(){ t=null; addBio(); }, 120); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule); else schedule();
   window.addEventListener('load', schedule);
-  // template panels hydrate lazily — retry across the hydration window and watch for new panels
-  [400,1200,2600,5200].forEach(function(ms){ setTimeout(schedule, ms); });
-  var mo=null;
-  try { mo=new MutationObserver(schedule); mo.observe(document.documentElement,{childList:true,subtree:true}); } catch(e){}
-  setTimeout(function(){ if(mo) mo.disconnect(); }, 60000); // stop broad observing once settled; clicks still re-inject
+  // All switcher markup (default menu submenu + the template panels) is static, so a few light
+  // retries cover any late hydration. Intentionally NO continuous MutationObserver — observing the
+  // whole document subtree starves the pixel game / animated templates' frame rate on desktop.
+  [300,1200,3000].forEach(function(ms){ setTimeout(schedule, ms); });
   document.addEventListener('click', function(e){
     if (e.target.closest('.tpl-burger, .tpl-burger-btn, [class*="burger"], .tpl-switch, [class*="switch-toggle"], [class*="switch-btn"], #menu-btn, #templates-toggle, .has-submenu')) schedule();
   }, true);

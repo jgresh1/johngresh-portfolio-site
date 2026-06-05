@@ -221,7 +221,7 @@
     <div class="signon-kicker">Campus Lab Intelligence</div>
     <h1>W&nbsp;Firm Biology<br><span class="grad">Mass Intelligence</span></h1>
     <p class="signon-tag">The teaching lab's collective AI memory.</p>
-    <p class="signon-desc">Sign on to be walked through labs step-by-step, log every result to the shared cohort memory bank, and instantly recall any photo or finding from past runs — answered by the local biology model.</p>
+    <p class="signon-desc">Sign on to be walked through labs step-by-step, log every result to the shared cohort memory bank, and instantly recall any photo or finding from past runs — answered by a dedicated biology AI.</p>
     <div class="signon-features">
       <div class="feat"><span class="feat-ico">🧪</span><div class="feat-t">Guided labs</div><div class="feat-d">Step-by-step, source-cited walkthroughs</div></div>
       <div class="feat"><span class="feat-ico">🧠</span><div class="feat-t">Memory bank</div><div class="feat-d">Every cohort's results, saved</div></div>
@@ -234,7 +234,7 @@
       <div class="err" id="signon-err"></div>
       <button class="btn" type="submit">Enter the Lab →</button>
     </form>
-    <div class="signon-foot mono">🔒 Secure sign-on · Runs on-campus, fully local · gpt-5.4-mini</div>
+    <div class="signon-foot mono">🔒 Secure, access-controlled sign-on · Private cohort memory · gpt-5.4-mini</div>
   </div>
 </div>
 
@@ -320,7 +320,10 @@
   // ===================== CONFIG =====================
   var WORKER_BASE = "https://serverbackend.johngresh-usa.workers.dev";
   var BIO_ENDPOINT = WORKER_BASE + "/bio-chat";
-  var ACCESS_CODE = "ROSEBUD";          // same personal sign-on as the main site
+  var BIO_LOAD  = WORKER_BASE + "/bio-load";
+  var BIO_SAVE  = WORKER_BASE + "/bio-save";
+  var BIO_IMG   = WORKER_BASE + "/bio-image";
+  var ACCESS_CODE = "ROSEBUD";          // sign-on passcode + the server gate
   var MEM_KEY = "wfbmi_memory_v1";
   var AUTH_KEY = "wfbmi_auth";
 
@@ -334,6 +337,7 @@
     try { localStorage.setItem(MEM_KEY, JSON.stringify(mem)); }
     catch(e){ toast("⚠️ Memory full — older images may not save."); }
     renderMemory();
+    scheduleServerSync();
   }
   var mem = loadMem();
 
@@ -394,14 +398,62 @@
     return lines.join("\n");
   }
 
+  // ===================== SERVER SYNC (D1 text + R2 images) =====================
+  // Cross-device persistence. Degrades silently to localStorage-only if the backend
+  // (/bio-load, /bio-save, /bio-image) isn't deployed/configured yet.
+  function imgSrc(im){ return im.url || im.dataUrl || ""; }
+  var syncTimer = null;
+  function unsyncedImages(){
+    var out=[];
+    Object.keys(mem.people).forEach(function(name){
+      mem.people[name].sessions.forEach(function(s){
+        s.images.forEach(function(im){ if(im.dataUrl && !im.url){ out.push(im); } });
+      });
+    });
+    return out;
+  }
+  function loadFromServer(){
+    return fetch(BIO_LOAD, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ code:ACCESS_CODE }) })
+      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+      .then(function(data){
+        if(data && data.success && data.memory && data.memory.people){
+          mem = data.memory;
+          try { localStorage.setItem(MEM_KEY, JSON.stringify(mem)); } catch(e){}
+          renderMemory();
+        }
+        return true;
+      })
+      .catch(function(){ return false; });
+  }
+  function scheduleServerSync(){
+    if(syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(pushToServer, 800);
+  }
+  function pushToServer(){
+    syncTimer = null;
+    var chain = Promise.resolve();
+    unsyncedImages().forEach(function(im){
+      chain = chain.then(function(){
+        return fetch(BIO_IMG, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ code:ACCESS_CODE, id:im.id, dataUrl:im.dataUrl }) })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(res){ if(res && res.success){ im.url = BIO_IMG + "/" + im.id; delete im.dataUrl; try{ localStorage.setItem(MEM_KEY, JSON.stringify(mem)); }catch(e){} } });
+      });
+    });
+    chain.then(function(){
+      return fetch(BIO_SAVE, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ code:ACCESS_CODE, memory:mem }) })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(res){ if(res && res.success){ try{ localStorage.setItem(MEM_KEY, JSON.stringify(mem)); }catch(e){} renderMemory(); } });
+    }).catch(function(){ /* offline — keep localStorage, retry on next change */ });
+  }
+
   // ===================== SIGN-ON =====================
   var signon = document.getElementById("signon");
   var app = document.getElementById("app");
   function unlock(){
     signon.style.display="none"; app.style.display="flex";
     sessionStorage.setItem(AUTH_KEY,"1");
-    if(!mem.currentUser){ setTimeout(promptForStudent, 350); }
     renderMemory(); autosize();
+    loadFromServer().then(function(){ if(!mem.currentUser){ setTimeout(promptForStudent, 350); } });
   }
   document.getElementById("signon-form").addEventListener("submit", function(e){
     e.preventDefault();
@@ -479,8 +531,8 @@
     markers.forEach(function(q){
       var hit = findImage(q);
       if(hit){
-        var img=document.createElement("img"); img.className="recall"; img.src=hit.img.dataUrl;
-        img.addEventListener("click",function(){ openLightbox(hit.img.dataUrl, hit.img.caption); });
+        var img=document.createElement("img"); img.className="recall"; img.src=imgSrc(hit.img);
+        img.addEventListener("click",function(){ openLightbox(imgSrc(hit.img), hit.img.caption); });
         var cap=document.createElement("div"); cap.className="imgcap"; cap.textContent="🖼 recalled: "+hit.img.caption;
         bub.appendChild(img); bub.appendChild(cap);
       } else {
@@ -644,8 +696,8 @@
       if(s.images.length){
         var th=document.createElement("div"); th.className="thumbs";
         s.images.forEach(function(im){
-          var i=document.createElement("img"); i.src=im.dataUrl; i.title=im.caption;
-          i.addEventListener("click",function(){ openLightbox(im.dataUrl, im.caption); });
+          var i=document.createElement("img"); i.src=imgSrc(im); i.title=im.caption;
+          i.addEventListener("click",function(){ openLightbox(imgSrc(im), im.caption); });
           th.appendChild(i);
         });
         card.appendChild(th);

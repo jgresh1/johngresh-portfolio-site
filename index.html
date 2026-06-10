@@ -1,4 +1,10 @@
-<!DOCTYPE html><html lang="en" style="background:#1a053a"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><meta name="theme-color" content="#1a053a"><style>html,body{background:#1a053a}</style><title>John Gresh : Portfolio Web Game (V2 + Templates)</title><link rel="preconnect" href="https://cdn.pixabay.com" crossorigin><link rel="dns-prefetch" href="https://cdn.pixabay.com"><link rel="preconnect" href="https://images.unsplash.com" crossorigin><link rel="dns-prefetch" href="https://images.unsplash.com"><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap"></noscript>
+<!DOCTYPE html><html lang="en" style="background:#1a053a"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><meta name="theme-color" content="#1a053a"><script>/* Gresh International airport is the landing experience; ?mall=1 (or a same-session return) goes straight to the Sunset Mall pixel game */
+(function(){try{
+  if(/[?&](mall|home|portfolio)=/.test(window.location.search))return;
+  if(sessionStorage.getItem('sm_direct')==='1')return;
+  sessionStorage.setItem('sm_direct','1');
+  window.location.replace('airport.html');
+}catch(_){}})();</script><style>html,body{background:#1a053a}</style><title>John Gresh : Portfolio Web Game (V2 + Templates)</title><link rel="preconnect" href="https://cdn.pixabay.com" crossorigin><link rel="dns-prefetch" href="https://cdn.pixabay.com"><link rel="preconnect" href="https://images.unsplash.com" crossorigin><link rel="dns-prefetch" href="https://images.unsplash.com"><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap"></noscript>
 <link id="tpl-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap" media="print"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Italiana&display=swap"></noscript><style>html{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;background-color:#1a053a}body{margin:0;padding:0;overflow:hidden;background-color:#1a053a;cursor:grab;-webkit-overflow-scrolling:touch;overscroll-behavior:none;font-family:'VT323', monospace;height:100%;width:100%;position:fixed;top:0;left:0;right:0;bottom:0}
 .emoji-icon{display:inline-block;width:1em;height:1em;vertical-align:-0.15em;stroke-width:2;flex-shrink:0}
 #site-loader{position:fixed;inset:0;z-index:3000;display:flex;flex-direction:column;justify-content:center;align-items:center;background:radial-gradient(ellipse at 50% 40%,#2a1a3d 0%,#1a053a 55%,#0a0020 100%);color:#ffa700;font-family:'VT323',monospace;transition:opacity .6s ease,visibility .6s ease}
@@ -1208,7 +1214,7 @@ body.tpl-active-manor #template-host::-webkit-scrollbar-thumb:hover,body.tpl-act
 #menu-drawer::-webkit-scrollbar-thumb{background:#ff7d5c;border-radius:0;border:2px solid transparent;background-clip:content-box} #menu-drawer::-webkit-scrollbar-thumb:hover{background:#ffa700;background-clip:content-box}</style></head><body><div id="site-loader" role="status" aria-live="polite"><p class="site-loader-sub">LOADING</p><div class="site-loader-bar" aria-hidden="true"></div><div class="site-loader-dots" aria-hidden="true">...</div></div><button id="menu-btn" aria-label="Open Navigation Menu">
 <div class="menu-bar"></div><div class="menu-bar"></div><div class="menu-bar"></div></button><div id="menu-drawer"><div class="drawer-header"><h2>MENU</h2></div><ul class="drawer-nav"><li><a href="#" data-overlay="resumeOverlay">> RESUME</a></li>
     <li><a href="#" data-overlay="projectsOverlay">> PROJECTS</a></li><li><a href="#" data-overlay="tshirtsOverlay">> SHIRTS</a></li><li><a href="#" data-overlay="askJohnOverlay">> ASK</a></li><li><a href="#" data-overlay="miniGamesOverlay">> GAMES</a></li>
-    <li class="has-submenu" id="templates-dropdown"><a href="#" id="templates-toggle">> TEMPLATES</a><ul class="submenu"><li><a href="#" data-template="default">> Default (Pixel Game)</a></li><li><a href="#" data-template="aurora">> Aurora <span class="tpl-tag">LIFT</span></a></li>
+    <li class="has-submenu" id="templates-dropdown"><a href="#" id="templates-toggle">> TEMPLATES</a><ul class="submenu"><li><a href="#" data-template="default">> Sunset Mall (Pixel Game)</a></li><li><a href="#" data-template="aurora">> Aurora <span class="tpl-tag">LIFT</span></a></li>
         <li><a href="#" data-template="noir">> Noir <span class="tpl-tag">LUXE</span></a></li><li><a href="#" data-template="forge">> Forge <span class="tpl-tag">STEEL</span></a></li><li><a href="#" data-template="terra">> Terra <span class="tpl-tag">TABLE</span></a></li>
         <li><a href="#" data-template="slate">> Slate <span class="tpl-tag">STUDIO</span></a></li><li><a href="#" data-template="ivy">> Ivy <span class="tpl-tag">CLUB</span></a></li><li><a href="#" data-template="halo">> Halo <span class="tpl-tag">ELITE</span></a></li>
         <li><a href="#" data-template="manor">> Manor <span class="tpl-tag">MAISON</span></a></li><li class="submenu-divider" aria-hidden="true"></li><li class="submenu-label">Display</li><li class="submenu-toggle"><a href="#" class="mpa-mode-toggle" role="switch" aria-checked="false"><span class="mpa-toggle-label">&gt; Page Mode</span><span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></li>
@@ -1264,7 +1270,7 @@ body.tpl-active-manor #template-host::-webkit-scrollbar-thumb:hover,body.tpl-act
 </div></div><div id="pong-round-message"></div><div id="mobile-controls"><div id="joystick-zone"></div><div id="action-buttons"><div id="jump-btn" class="action-btn">JUMP</div></div></div><div id="template-host"><div class="tpl-aurora" data-tpl="aurora" style="display:none;">
 <nav class="nav"><div class="nav-logo">JG / Aurora</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="galleryOverlay">Showcase</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a>
         <a href="#" data-overlay="askJohnOverlay">AI Lab</a><a href="#" data-overlay="miniGamesOverlay">Demo</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel">
-          <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora" class="active">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
+          <a href="#" data-template="default">Sunset Mall<span class="tag-mini">Game</span></a><a href="#" data-template="aurora" class="active">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a><a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
 <a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
@@ -1293,7 +1299,7 @@ body.tpl-active-manor #template-host::-webkit-scrollbar-thumb:hover,body.tpl-act
   <div class="tpl-noir" data-tpl="noir" style="display:none;">
 <nav class="nav"><div class="nav-logo">J &middot; G</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="galleryOverlay">Lookbook</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a>
         <a href="#" data-overlay="askJohnOverlay">AI Concierge</a><a href="#" data-overlay="miniGamesOverlay">Play</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel">
-          <a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir" class="active">Noir<span class="tag-mini">Luxe</span></a>
+          <a href="#" data-template="default">Sunset Mall<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir" class="active">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a><a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
 <a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
@@ -1315,7 +1321,7 @@ body.tpl-active-manor #template-host::-webkit-scrollbar-thumb:hover,body.tpl-act
 <nav class="nav"><div class="nav-logo">GRESH<span>.</span>WORKS</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">ABOUT</a><a href="#" data-overlay="projectsOverlay">WORK</a><a href="#" data-overlay="faqOverlay">FAQ</a>
         <a href="#" data-overlay="galleryOverlay">JOBS</a><a href="#" data-overlay="tshirtsOverlay">SHOP</a>
 <a href="#" data-overlay="askJohnOverlay">AI ASSIST</a><a href="#" data-overlay="miniGamesOverlay">PLAY</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">TEMPLATES &#9662;</button><div class="tpl-switch-panel">
-          <a href="#" data-template="default">DEFAULT<span class="tag-mini">GAME</span></a><a href="#" data-template="aurora">AURORA<span class="tag-mini">LIFT</span></a><a href="#" data-template="noir">NOIR<span class="tag-mini">LUXE</span></a>
+          <a href="#" data-template="default">SUNSET MALL<span class="tag-mini">GAME</span></a><a href="#" data-template="aurora">AURORA<span class="tag-mini">LIFT</span></a><a href="#" data-template="noir">NOIR<span class="tag-mini">LUXE</span></a>
           <a href="#" data-template="forge" class="active">FORGE<span class="tag-mini">STEEL</span></a><a href="#" data-template="terra">TERRA<span class="tag-mini">TABLE</span></a><a href="#" data-template="slate">SLATE<span class="tag-mini">STUDIO</span></a>
           <a href="#" data-template="ivy">IVY<span class="tag-mini">CLUB</span></a>
 <a href="#" data-template="halo">HALO<span class="tag-mini">ELITE</span></a><a href="#" data-template="manor">MANOR<span class="tag-mini">MAISON</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">PAGE MODE<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
@@ -1347,7 +1353,7 @@ body.tpl-active-manor #template-host::-webkit-scrollbar-thumb:hover,body.tpl-act
   <div class="tpl-terra" data-tpl="terra" style="display:none;"><nav class="nav"><div class="nav-logo">Terra &amp; Gresh</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Press</a><a href="#" data-overlay="faqOverlay">FAQ</a>
         <a href="#" data-overlay="galleryOverlay">Plates</a><a href="#" data-overlay="tshirtsOverlay">Shop</a>
 <a href="#" data-overlay="askJohnOverlay">AI Sommelier</a><a href="#" data-overlay="miniGamesOverlay">Late Night</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel">
-<a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
+<a href="#" data-template="default">Sunset Mall<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a><a href="#" data-template="terra" class="active">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
 <a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
@@ -1449,7 +1455,7 @@ body.tpl-active-manor #template-host::-webkit-scrollbar-thumb:hover,body.tpl-act
 <nav class="nav"><div class="nav-logo"><span class="dot"></span> Gresh &amp; Co.</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Projects</a><a href="#" data-overlay="faqOverlay">FAQ</a>
         <a href="#" data-overlay="galleryOverlay">Showcase</a><a href="#" data-overlay="tshirtsOverlay">Shop</a>
 <a href="#" data-overlay="askJohnOverlay">AI Advisor</a><a href="#" data-overlay="miniGamesOverlay">Sandbox</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel">
-<a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
+<a href="#" data-template="default">Sunset Mall<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a><a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate" class="active">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
 <a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
@@ -1502,7 +1508,7 @@ body.tpl-active-manor #template-host::-webkit-scrollbar-thumb:hover,body.tpl-act
         The Greshwood Club
       </div>
 <div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="galleryOverlay">Album</a><a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="faqOverlay">FAQ</a><a href="#" data-overlay="askJohnOverlay">AI Counsel</a>
-        <a href="#" data-overlay="miniGamesOverlay">Lawn Games</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel"><a href="#" data-template="default">Default<span class="tag-mini">Game</span></a>
+        <a href="#" data-overlay="miniGamesOverlay">Lawn Games</a></div><div class="tpl-switch"><button class="tpl-switch-btn" type="button">Templates &#9662;</button><div class="tpl-switch-panel"><a href="#" data-template="default">Sunset Mall<span class="tag-mini">Game</span></a>
           <a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a><a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a>
           <a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a><a href="#" data-template="ivy" class="active">Ivy<span class="tag-mini">Club</span></a>
           <a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a>
@@ -1556,7 +1562,7 @@ v.addEventListener('ended', onEnd); v.addEventListener('error', onEnd); b.addEve
 kick(); v.addEventListener('loadeddata', kick, {once:true}); v.addEventListener('canplay', kick, {once:true}); preloadBack(); }); }; })();</script>  </div><div class="tpl-halo" data-tpl="halo" style="display:none;">
 <nav class="nav"><div class="nav-logo"><span class="ring"></span> Halo</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">about</a><a href="#" data-overlay="projectsOverlay">work</a><a href="#" data-overlay="galleryOverlay">shots</a><a href="#" data-overlay="faqOverlay">faq</a>
         <a href="#" data-overlay="tshirtsOverlay">shop</a><a href="#" data-overlay="askJohnOverlay">halo ai</a><a href="#" data-overlay="miniGamesOverlay">demo</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
-        <div class="tpl-switch-panel"><a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
+        <div class="tpl-switch-panel"><a href="#" data-template="default">Sunset Mall<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a><a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
 <a href="#" data-template="halo" class="active">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">page mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
@@ -1596,7 +1602,7 @@ kick(); v.addEventListener('loadeddata', kick, {once:true}); v.addEventListener(
         <div class="status"><span class="dot"></span> All systems operational</div></div></footer></div><div class="tpl-manor" data-tpl="manor" style="display:none;">
 <nav class="nav"><div class="nav-logo">M&nbsp;A&nbsp;N&nbsp;O&nbsp;R</div><div class="nav-links"><a href="#" data-overlay="aboutOverlay">About</a><a href="#" data-overlay="projectsOverlay">Work</a><a href="#" data-overlay="galleryOverlay">Atelier</a><a href="#" data-overlay="faqOverlay">FAQ</a>
         <a href="#" data-overlay="tshirtsOverlay">Shop</a><a href="#" data-overlay="askJohnOverlay">AI Ma&icirc;tre</a><a href="#" data-overlay="miniGamesOverlay">Play</a></div><div class="tpl-switch"><button class="tpl-switch-btn magnetic" type="button">Templates &#9662;</button>
-        <div class="tpl-switch-panel"><a href="#" data-template="default">Default<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
+        <div class="tpl-switch-panel"><a href="#" data-template="default">Sunset Mall<span class="tag-mini">Game</span></a><a href="#" data-template="aurora">Aurora<span class="tag-mini">Lift</span></a><a href="#" data-template="noir">Noir<span class="tag-mini">Luxe</span></a>
           <a href="#" data-template="forge">Forge<span class="tag-mini">Steel</span></a><a href="#" data-template="terra">Terra<span class="tag-mini">Table</span></a><a href="#" data-template="slate">Slate<span class="tag-mini">Studio</span></a>
           <a href="#" data-template="ivy">Ivy<span class="tag-mini">Club</span></a>
 <a href="#" data-template="halo">Halo<span class="tag-mini">Elite</span></a><a href="#" data-template="manor" class="active">Manor<span class="tag-mini">Maison</span></a><div class="tpl-switch-divider" aria-hidden="true"></div><div class="tpl-switch-label">Display</div><a href="#" class="mpa-mode-toggle tpl-mpa-toggle" role="switch" aria-checked="false">Page Mode<span class="mpa-toggle-pill" aria-hidden="true"><span class="mpa-toggle-knob"></span></span></a></div></div></nav><section class="hero">
@@ -2269,7 +2275,7 @@ function closeAllSwitchPanels(){ host.querySelectorAll('.tpl-switch.open').forEa
 function closeAllBurgerPanels(){ host.querySelectorAll('.tpl-burger.open').forEach(function(s){ s.classList.remove('open'); }); }
 function setActiveSwitchLinks(name){ host.querySelectorAll('.tpl-switch-panel a, .tpl-burger-panel a[data-template]').forEach(function(a){ a.classList.toggle('active', a.getAttribute('data-template') === name); }); }
 (function buildBurgers(){ var TPL_LIST = [
-['default','Default','Game'],['aurora','Aurora','Lift'],['noir','Noir','Luxe'], ['forge','Forge','Steel'],['terra','Terra','Table'],['slate','Slate','Studio'], ['ivy','Ivy','Club'],['halo','Halo','Elite'],['manor','Manor','Maison']
+['default','Sunset Mall','Game'],['aurora','Aurora','Lift'],['noir','Noir','Luxe'], ['forge','Forge','Steel'],['terra','Terra','Table'],['slate','Slate','Studio'], ['ivy','Ivy','Club'],['halo','Halo','Elite'],['manor','Manor','Maison']
 ]; host.querySelectorAll('[data-tpl]').forEach(function(tpl){ var nav = tpl.querySelector('nav.nav');
 if (!nav || nav.querySelector('.tpl-burger')) return; var tplName = tpl.getAttribute('data-tpl'); var html = '<div class="tpl-burger-label">Menu</div>'; var srcLinks = nav.querySelectorAll('.nav-links a[data-overlay]');
 srcLinks.forEach(function(a){ html += '<a href="#" data-overlay="' + a.getAttribute('data-overlay') + '">' + a.textContent.trim() + '</a>'; }); html += '<div class="tpl-burger-divider"></div><div class="tpl-burger-label">Templates</div>';
@@ -2691,6 +2697,54 @@ window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hid
   // retries cover any late hydration. Intentionally NO continuous MutationObserver — observing the
   // whole document subtree starves the pixel game / animated templates' frame rate on desktop.
   [300,1200,3000].forEach(function(ms){ setTimeout(schedule, ms); });
+  document.addEventListener('click', function(e){
+    if (e.target.closest('.tpl-burger, .tpl-burger-btn, [class*="burger"], .tpl-switch, [class*="switch-toggle"], [class*="switch-btn"], #menu-btn, #templates-toggle, .has-submenu')) schedule();
+  }, true);
+})();
+</script>
+<script>
+/* GIA: inject the "Gresh Intl Airport" 3D experience as an option in the template switchers */
+(function(){
+  function addAirport(){
+    // (1) template-view dropdowns: plain <a> inserted after the bio-lab link (or before the divider)
+    var panels = document.querySelectorAll('.tpl-switch-panel, .tpl-burger-panel');
+    for (var i=0;i<panels.length;i++){
+      var p = panels[i];
+      if (!p.querySelector('a[data-airport]')){
+        var a = document.createElement('a');
+        a.href = 'airport.html'; a.setAttribute('data-airport','1');
+        a.innerHTML = 'Gresh Intl Airport<span class="tag-mini">Fly</span>';
+        var bio = p.querySelector('a[data-bio-lab]');
+        var div = p.querySelector('.tpl-switch-divider, .tpl-burger-divider');
+        if (bio && bio.nextSibling) { p.insertBefore(a, bio.nextSibling); }
+        else if (div) { p.insertBefore(a, div); } else { p.appendChild(a); }
+      }
+    }
+    // (2) default game's main menu drawer: <li><a> inside the TEMPLATES submenu
+    var subs = document.querySelectorAll('ul.submenu');
+    for (var j=0;j<subs.length;j++){
+      var s = subs[j];
+      if (!s.querySelector('a[data-template]')) continue;   // only the templates submenu
+      if (s.querySelector('a[data-airport]')) continue;
+      var li = document.createElement('li');
+      var la = document.createElement('a');
+      la.href = 'airport.html'; la.setAttribute('data-airport','1');
+      la.innerHTML = '&gt; Gresh Intl Airport <span class="tpl-tag">FLY</span>';
+      // same caveat as the bio link: the drawer swallows plain links, so navigate explicitly.
+      la.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); window.location.href = 'airport.html'; });
+      li.appendChild(la);
+      var bioLi = s.querySelector('a[data-bio-lab]');
+      var sd = s.querySelector('.submenu-divider');
+      if (bioLi && bioLi.parentNode && bioLi.parentNode.nextSibling) { s.insertBefore(li, bioLi.parentNode.nextSibling); }
+      else if (sd) { s.insertBefore(li, sd); } else { s.appendChild(li); }
+    }
+  }
+  var t=null;
+  function schedule(){ if(t) return; t=setTimeout(function(){ t=null; addAirport(); }, 160); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule); else schedule();
+  window.addEventListener('load', schedule);
+  // run slightly after the bio injector's retries so the airport link lands right under it
+  [400,1400,3200].forEach(function(ms){ setTimeout(schedule, ms); });
   document.addEventListener('click', function(e){
     if (e.target.closest('.tpl-burger, .tpl-burger-btn, [class*="burger"], .tpl-switch, [class*="switch-toggle"], [class*="switch-btn"], #menu-btn, #templates-toggle, .has-submenu')) schedule();
   }, true);

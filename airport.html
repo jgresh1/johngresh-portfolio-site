@@ -868,11 +868,14 @@ function buildAirfield(){
   for(var cc=0;cc<conePos.length;cc++){m4.makeTranslation(conePos[cc][0],.45,conePos[cc][1]);cones2.setMatrixAt(cc,m4)}
   g.add(cones2);
 
-  // puddles
+  // puddles — re-roll any that would land inside the terminal footprint or under the canopy
   var pudGeo=new THREE.CircleGeometry(1,10);pudGeo.rotateX(-Math.PI/2);
   var puddles=new THREE.InstancedMesh(pudGeo,MATS.puddle,18);
   for(var pu=0;pu<18;pu++){
-    var px=(hash2(pu,3)*2-1)*420,pz=hash2(pu,11)*380-110;
+    var px,pz,salt=pu;
+    do{
+      px=(hash2(salt,3)*2-1)*420;pz=hash2(salt,11)*380-110;salt+=31;
+    }while(px>-99&&px<99&&pz>-68&&pz<49&&salt<pu+311);
     var sc=2+hash2(pu,17)*5;
     m4.makeScale(sc,1,sc*(0.6+hash2(pu,23)*.8));m4.setPosition(px,.09,pz);
     puddles.setMatrixAt(pu,m4);
@@ -894,6 +897,9 @@ function buildLandside(g){
   });
   var bigSign=makeSign('GRESH INTERNATIONAL',{w:1024,h:128,fs:84,bg:'#141a26',color:'#ff7d5c',mw:38,mh:4.4,glow:1,back:true});
   bigSign.position.set(0,9.4,-50.6);bigSign.rotation.y=Math.PI;g.add(bigSign);
+  // entrance sign over the sliding doors — the roof sign hides behind the canopy at eye level on the approach
+  var entrSign=makeSign('GRESH INTERNATIONAL ✈',{w:1024,h:96,fs:64,bg:'#141a26',color:'#ff7d5c',mw:13,mh:1,glow:1,back:true});
+  entrSign.position.set(0,5.15,-50.7);entrSign.rotation.y=Math.PI;g.add(entrSign);
   // under-canopy lighting (emissive only — the entrance pointlight cost more than it showed)
   var canStripMat=new THREE.MeshStandardMaterial({color:0xe8e2d2,emissive:0xc9b888,emissiveIntensity:.8});
   addBox(can,36,.1,.5,canStripMat,0,5.65,-57);
@@ -1100,7 +1106,7 @@ function buildTerminal(){
   wf1.position.set(0,5.4,-20);wf1.rotation.y=Math.PI;T.add(wf1);
   var wf1b=wf1.clone();wf1b.rotation.y=0;wf1b.position.z=-20.05;T.add(wf1b);
   var wf2=makeSign('BAGGAGE CLAIM ↓   (it all fell in a puddle)',{w:1024,h:80,fs:44,bg:'#1d2430',color:'#9fc4d8',mw:18,mh:1.5,glow:.7});
-  wf2.position.set(-45,5.2,10);wf2.rotation.y=Math.PI;T.add(wf2);
+  wf2.position.set(-58,5.2,10);wf2.rotation.y=Math.PI;T.add(wf2);
   var wfRest=makeSign('RESTROOMS · WATER',{w:512,h:64,fs:42,bg:'#1d2430',color:'#7dffb0',mw:9,mh:1.2,glow:.8});
   wfRest.position.set(85,4.6,-40);wfRest.rotation.y=-Math.PI/2;T.add(wfRest);
 

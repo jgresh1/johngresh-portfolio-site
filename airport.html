@@ -39,11 +39,33 @@ canvas{display:block;touch-action:none}
 @media(max-width:600px){.intro-title{font-size:32px}.intro-controls{font-size:15px;grid-template-columns:1fr}.intro-card{padding:18px 16px}}
 
 /* ---------- Exit button ---------- */
-#exit-btn{position:fixed;top:18px;left:18px;z-index:2200;font-family:'VT323',monospace;font-size:18px;background:#e63946;color:#fff;border:3px solid #000;box-shadow:4px 4px 0 rgba(0,0,0,.8);padding:7px 13px;cursor:pointer;text-decoration:none;transition:background .1s,transform .1s,box-shadow .1s}
-#exit-btn:hover{background:#ff5a5f}
-#exit-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 rgba(0,0,0,.8)}
 #mute-btn{position:fixed;top:18px;right:18px;z-index:2200;font-family:'VT323',monospace;font-size:18px;background:#1f2740;color:#9fc4d8;border:3px solid #000;box-shadow:4px 4px 0 rgba(0,0,0,.8);padding:7px 13px;cursor:pointer}
-@media(max-width:800px){#exit-btn{font-size:15px;padding:5px 9px}#mute-btn{font-size:15px;padding:5px 9px}}
+@media(max-width:800px){#mute-btn{font-size:15px;padding:5px 9px}}
+
+/* ---------- terminal menu (blue hamburger + drawer) ---------- */
+#air-menu-btn{position:fixed;top:18px;left:18px;width:56px;height:50px;background:#1d6fd8;border:4px solid #000;z-index:2380;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;box-shadow:5px 5px 0 rgba(0,0,0,.8);transition:background .1s,transform .1s,box-shadow .1s;padding:0}
+#air-menu-btn:hover{background:#3585e8}
+#air-menu-btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 rgba(0,0,0,.8)}
+#air-menu-btn .bar{width:62%;height:5px;background:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.5);transition:transform .3s,opacity .3s}
+#air-menu-btn.open .bar:nth-child(1){transform:translateY(12px) rotate(45deg)}
+#air-menu-btn.open .bar:nth-child(2){opacity:0}
+#air-menu-btn.open .bar:nth-child(3){transform:translateY(-12px) rotate(-45deg)}
+#air-drawer{position:fixed;top:0;left:0;width:300px;height:100%;background:#12161d;border-right:4px solid #000;z-index:2370;transform:translateX(-105%);transition:transform .3s ease-in-out;box-shadow:10px 0 30px rgba(0,0,0,.7);overflow-y:auto;font-family:'VT323',monospace}
+#air-drawer.open{transform:translateX(0)}
+.air-drawer-head{background:#1d2430;padding:26px 20px;border-bottom:4px dashed #2c3540;text-align:center}
+.air-drawer-head h2{margin:0;font-size:34px;color:#ffc233;text-shadow:3px 3px 0 rgba(0,0,0,.5)}
+.air-drawer-head p{margin:4px 0 0;font-size:15px;color:#8a97a8;letter-spacing:2px}
+#air-drawer ul{list-style:none;margin:18px 0;padding:0}
+#air-drawer a{display:block;padding:13px 24px;color:#fff;text-decoration:none;font-size:25px;transition:background .2s,color .2s}
+#air-drawer a:hover{background:#1d4e89;color:#ffc233}
+#air-drawer .air-sub > a::after{content:' \25BE';color:#ffc233}
+#air-drawer .air-sub.open > a::after{content:' \25B4'}
+#air-drawer .air-sub ul{max-height:0;overflow:hidden;margin:0;background:#0c1016;transition:max-height .35s ease}
+#air-drawer .air-sub.open ul{max-height:680px}
+#air-drawer .air-sub ul a{padding:11px 24px 11px 42px;font-size:19px;color:#cfd6df;border-left:4px solid #ffc233}
+#air-drawer .tag{display:inline-block;font-size:11px;padding:2px 6px;margin-left:8px;background:#ffc233;color:#12161d;vertical-align:middle;letter-spacing:1px}
+#air-drawer a.here{color:#7dffb0}
+@media(max-width:800px){#air-menu-btn{width:46px;height:42px;gap:5px;border-width:3px}#air-menu-btn .bar{height:4px}#air-drawer{width:260px}}
 canvas{cursor:grab}canvas.dragging{cursor:grabbing}
 
 /* ---------- in-world shop overlays ---------- */
@@ -181,7 +203,31 @@ canvas{cursor:grab}canvas.dragging{cursor:grabbing}
   <p class="pong-tip">Move: mouse over the court (or drag on touch).</p>
 </div></div>
 
-<a id="exit-btn" href="index.html?mall=1">&#10005; EXIT TO SUNSET MALL</a>
+<button id="air-menu-btn" aria-label="Open Menu"><span class="bar"></span><span class="bar"></span><span class="bar"></span></button>
+<nav id="air-drawer">
+  <div class="air-drawer-head"><h2>GRESH INTL</h2><p>STORM TERMINAL MENU</p></div>
+  <ul>
+    <li><a href="#" data-ov="resume">&gt; RESUME</a></li>
+    <li><a href="#" data-ov="shirts">&gt; SHIRTS</a></li>
+    <li><a href="#" data-ov="ask">&gt; ASK</a></li>
+    <li><a href="#" data-ov="arcade">&gt; GAMES</a></li>
+    <li class="air-sub"><a href="#" id="air-tpl-toggle">&gt; TEMPLATES</a>
+      <ul>
+        <li><a href="index.html?mall=1">&gt; Sunset Mall <span class="tag">GAME</span></a></li>
+        <li><a href="index.html?mall=1&amp;tpl=aurora">&gt; Aurora <span class="tag">LIFT</span></a></li>
+        <li><a href="index.html?mall=1&amp;tpl=noir">&gt; Noir <span class="tag">LUXE</span></a></li>
+        <li><a href="index.html?mall=1&amp;tpl=forge">&gt; Forge <span class="tag">STEEL</span></a></li>
+        <li><a href="index.html?mall=1&amp;tpl=terra">&gt; Terra <span class="tag">TABLE</span></a></li>
+        <li><a href="index.html?mall=1&amp;tpl=slate">&gt; Slate <span class="tag">STUDIO</span></a></li>
+        <li><a href="index.html?mall=1&amp;tpl=ivy">&gt; Ivy <span class="tag">CLUB</span></a></li>
+        <li><a href="index.html?mall=1&amp;tpl=halo">&gt; Halo <span class="tag">ELITE</span></a></li>
+        <li><a href="index.html?mall=1&amp;tpl=manor">&gt; Manor <span class="tag">MAISON</span></a></li>
+        <li><a href="biology-lab.html">&gt; W Firm Biology <span class="tag">LAB</span></a></li>
+        <li><a href="#" class="here" data-noop="1">&gt; Gresh Intl Airport <span class="tag">HERE</span></a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
 <button id="mute-btn" type="button">&#9836; SOUND: ON</button>
 
 <div id="crosshair" style="display:none"></div>
@@ -1413,58 +1459,9 @@ function buildBaggageClaim(T){
 // ---------------------------------------------------------------- static plane at stand 5 + airstairs
 function buildStaticPlane(){
   var P=new THREE.Group();P.position.set(-45,4.6,90);P.rotation.y=Math.PI/2;scene.add(P);
-  function tube(rT,rB,len,segs,mat){var g=new THREE.CylinderGeometry(rT,rB,len,segs,1,true);g.rotateX(Math.PI/2);return new THREE.Mesh(g,mat)}
-  var fus=tube(2.4,2.4,30,16,MATS.fuselage);fus.position.z=1;if(!MOBILE)fus.castShadow=true;P.add(fus);
-  var nose=tube(1.1,2.4,4,16,MATS.fuselage);nose.position.z=18;P.add(nose);
-  var tip=new THREE.Mesh(new THREE.SphereGeometry(1.1,12,8),MATS.glassDark);tip.position.z=20;P.add(tip);
-  var tail=tube(2.4,.8,6,14,MATS.fuselage);tail.position.set(0,.2,-17);tail.rotation.x=.06;P.add(tail);
-  var cap=new THREE.Mesh(new THREE.SphereGeometry(.8,10,7),MATS.fuselage);cap.position.set(0,.45,-19.85);P.add(cap);
-  [[2.41],[-2.41]].forEach(function(s){addBox(P,.06,.55,30,MATS.teal,s[0],-.35,1)});
-  addPlaneDetails(P);
-  var winGeo=new THREE.BoxGeometry(.07,.5,.36);
-  var winMat=new THREE.MeshStandardMaterial({color:0x101826,roughness:.2,metalness:.4});
-  var wins=new THREE.InstancedMesh(winGeo,winMat,46);
-  var m4=new THREE.Matrix4(),wi=0;
-  for(var wz=-12;wz<=10.5&&wi<46;wz+=1.05){
-    m4.makeTranslation(2.38,.55,wz);wins.setMatrixAt(wi++,m4);
-    m4.makeTranslation(-2.38,.55,wz);wins.setMatrixAt(wi++,m4);
-  }
-  wins.count=wi;P.add(wins);
-  var t2=makeSign('GRESH AIR',{w:512,h:72,fs:58,bg:'#dde3ea',color:'#2a9d8f',border:false,glow:.12,mw:7,mh:.95});
-  t2.position.set(2.16,1.38,6);t2.rotation.y=Math.PI/2;P.add(t2);
-  var t3=t2.clone();t3.position.x=-2.16;t3.rotation.y=-Math.PI/2;P.add(t3);
-  var reg2=makeSign('N-GR204',{w:256,h:56,fs:42,bg:'#dde3ea',color:'#3a4048',border:false,glow:.08,mw:2.3,mh:.45});
-  reg2.position.set(2.3,.95,-12.8);reg2.rotation.y=Math.PI/2;P.add(reg2);
-  var reg3=reg2.clone();reg3.position.x=-2.3;reg3.rotation.y=-Math.PI/2;P.add(reg3);
-  addBox(P,2.6,1,7.5,MATS.fuselageBelly,0,-2.05,.8);
-  [[1,.42],[-1,-.42]].forEach(function(wd){
-    var wing=addBox(P,14,.35,3.8,MATS.fuselageBelly,wd[0]*8.6,-1,.4,0,true);
-    wing.rotation.y=wd[1];wing.rotation.z=wd[0]*.05;
-  });
-  [[4.6],[-4.6]].forEach(function(ex){
-    var nac=tube(.95,.95,2.8,12,MATS.metal);nac.position.set(ex[0],-1.7,3.4);P.add(nac);
-    addBox(P,.3,.9,1.6,MATS.metalDark,ex[0],-.85,3.2);
-    addEngineDetail(P,ex[0]);
-  });
-  var fin=addBox(P,.42,5,2.8,MATS.fuselage,0,3.1,-17.6,0,true);fin.rotation.x=-.45;
-  [[1,.5],[-1,-.5]].forEach(function(sd){
-    var stab=addBox(P,4.6,.22,1.9,MATS.fuselageBelly,sd[0]*2.6,.9,-18);stab.rotation.y=sd[1];
-  });
-  var bMat=new THREE.MeshStandardMaterial({color:0xff5555,emissive:0xff2233,emissiveIntensity:2});
-  staticBeacons.push(bMat);
-  var bea=new THREE.Mesh(new THREE.SphereGeometry(.18,6,5),bMat);bea.position.set(0,2.55,0);P.add(bea);
-  function gear(x,z,double){
-    var strut=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,2.1,8),MATS.metal);strut.position.set(x,-3.3,z);P.add(strut);
-    (double?[.28,-.28]:[0]).forEach(function(o){
-      var wh=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.34,10),MATS.tire);
-      wh.rotation.z=Math.PI/2;wh.position.set(x+o,-4.15,z);P.add(wh);
-      var hub=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.4,8),MATS.metal);
-      hub.rotation.z=Math.PI/2;hub.position.set(x+o,-4.15,z);P.add(hub);
-    });
-  }
-  gear(0,13,false);gear(1.7,-1,true);gear(-1.7,-1,true);
-  // closed front-left door outline (meets the airstairs platform) — held proud of the hull
-  addBox(P,.05,2.1,1.05,new THREE.MeshStandardMaterial({color:0xc4ccd6,roughness:.5}),2.47,-.4,12.5);
+  // shared photo-real exterior; door panel swung open at the airstairs platform
+  var ext2=buildJetExterior(P,{accent:0x2a9d8f,titleColor:'#2a9d8f',reg:'N-GR204',glow:false,doorPanel:true});
+  staticBeacons.push(ext2.beacon.material);
   // gear colliders (world)
   addCollider(-32.6,-31.4,89.4,90.6,-1,4);
   addCollider(-46.6,-45.4,87.6,88.9,-1,4);
@@ -1509,11 +1506,11 @@ function buildAirstairs(){
   addCollider(-33.9,-33.42,78.8,88.5,-2,8);
   addCollider(-31.58,-31.1,78.8,88.5,-2,8);
   addCollider(-34,-31,88.35,88.6,2,7);
-  interactions.push({x:-32.5,z:87.7,y:3.2,r:2.2,label:'[E] Knock on GA-204\'s door',fn:function(){
+  interactions.push({x:-32.5,z:87.7,y:3.2,r:2.2,label:'[E] Peek inside GA-204',fn:function(){
     AudioSys.blip(220,.12,'square',.06);
-    toast(['Locked. This one really IS going to Winston-Salem.',
-           'A muffled voice: "Wrong plane, captain. Yours is at Gate 7."',
-           'No answer. The rain answers instead.'][Math.floor(Math.random()*3)]);
+    toast(['Door\'s open, cabin\'s dark. Crew is on storm break.',
+           'A flight attendant waves you off: "Yours is at Gate 7, captain."',
+           'Smells like coffee and ozone in there. Tempting. But no.'][Math.floor(Math.random()*3)]);
   }});
 }
 
@@ -1567,6 +1564,25 @@ function handleSceneClick(cx,cy){
     e.stopPropagation();
   });
   document.getElementById('air-send').addEventListener('click',function(){AirChat.send()});
+})();
+
+// terminal menu drawer (the airport's take on the mall's hamburger menu)
+(function wireDrawer(){
+  var btn=document.getElementById('air-menu-btn'),dr=document.getElementById('air-drawer');
+  function setOpen(o){btn.classList.toggle('open',o);dr.classList.toggle('open',o)}
+  window.__airMenu={close:function(){setOpen(false)},isOpen:function(){return dr.classList.contains('open')}};
+  btn.addEventListener('click',function(e){e.stopPropagation();setOpen(!dr.classList.contains('open'))});
+  dr.addEventListener('click',function(e){
+    var t=e.target.closest('a');if(!t)return;
+    if(t.id==='air-tpl-toggle'){e.preventDefault();t.parentNode.classList.toggle('open');return}
+    if(t.getAttribute('data-noop')){e.preventDefault();setOpen(false);toast('You are already at Gresh International. Enjoy the storm.');return}
+    var ov=t.getAttribute('data-ov');
+    if(ov){e.preventDefault();setOpen(false);openOverlay(ov);AudioSys.blip(620,.1,'triangle',.06);return}
+    // template / lab links navigate normally
+  });
+  document.addEventListener('click',function(e){
+    if(dr.classList.contains('open')&&!e.target.closest('#air-drawer,#air-menu-btn'))setOpen(false);
+  });
 })();
 
 // Ask John chat — same Cloudflare Worker backend as the main site
@@ -1729,32 +1745,154 @@ function makeNPC(parent,x,z,ry,opts){
   return {grp:N,base:ry||0,track:!!opts.track};
 }
 
-// ---------------------------------------------------------------- shared jet detail kit
-function addPlaneDetails(P){
-  // wraparound cockpit visor (replaces the old floating window slabs)
-  var vg=new THREE.CylinderGeometry(2.07,2.34,1.1,16,1,true,Math.PI-1.15,2.3);
+// ---------------------------------------------------------------- shared photo-real jet exterior
+// One smooth lathe-turned fuselage (upswept tail), extruded tapered wings/fin,
+// lathe nacelles with intake lips, glossy clearcoat skin, open boarding door.
+function buildJetExterior(P,opts){
+  opts=opts||{};
+  var skin=new THREE.MeshPhysicalMaterial({color:0xeaeef3,metalness:.4,roughness:.28,clearcoat:.6,clearcoatRoughness:.35});
+  var skinGrey=new THREE.MeshPhysicalMaterial({color:0x97a1ae,metalness:.55,roughness:.34,clearcoat:.35,clearcoatRoughness:.4,side:THREE.DoubleSide});
+  var engMat=new THREE.MeshPhysicalMaterial({color:0xb9c1cc,metalness:.72,roughness:.24,clearcoat:.4,clearcoatRoughness:.3});
+  var accentMat=new THREE.MeshStandardMaterial({color:opts.accent||0x1d4e89,roughness:.35,metalness:.5});
+
+  // fuselage
+  var prof=[[.16,-20],[.5,-19.5],[1,-18.5],[1.6,-17.2],[2.1,-15.3],[2.4,-12.5],[2.4,13.5],[2.33,14.7],[2.05,16],[1.62,17.3],[1.05,18.6],[.5,19.6],[.14,20]];
+  var lathe=new THREE.LatheGeometry(prof.map(function(p){return new THREE.Vector2(p[0],p[1])}),28);
+  lathe.rotateX(Math.PI/2);
+  var lpos=lathe.attributes.position;
+  for(var li=0;li<lpos.count;li++){
+    var lz=lpos.getZ(li);
+    if(lz<-12.5){var lt=(-12.5-lz)/7.5;lpos.setY(li,lpos.getY(li)+lt*lt*1.1)}
+  }
+  lathe.computeVertexNormals();
+  var fus=new THREE.Mesh(lathe,skin);
+  if(!MOBILE)fus.castShadow=true;
+  P.add(fus);
+  var radome=new THREE.Mesh(new THREE.SphereGeometry(.6,14,10),MATS.glassDark);
+  radome.scale.set(1,1,1.6);radome.position.z=19.4;P.add(radome);
+
+  // cheat-line, titles, registration
+  [[2.41],[-2.41]].forEach(function(s){addBox(P,.05,.5,25.5,accentMat,s[0],-.3,.8)});
+  var ttl=makeSign('GRESH AIR',{w:512,h:72,fs:58,bg:'#eaeef3',color:opts.titleColor||'#1d4e89',border:false,glow:.1,mw:7,mh:.95});
+  ttl.position.set(2.16,1.38,6);ttl.rotation.y=Math.PI/2;P.add(ttl);
+  var ttl2=ttl.clone();ttl2.position.x=-2.16;ttl2.rotation.y=-Math.PI/2;P.add(ttl2);
+  var reg=makeSign(opts.reg||'N-GR3SH',{w:256,h:56,fs:42,bg:'#eaeef3',color:'#3a4048',border:false,glow:.08,mw:2.3,mh:.45});
+  reg.position.set(2.28,.95,-11);reg.rotation.y=Math.PI/2;P.add(reg);
+  var reg2=reg.clone();reg2.position.x=-2.28;reg2.rotation.y=-Math.PI/2;P.add(reg2);
+
+  // cabin windows
+  var winGeo=new THREE.BoxGeometry(.06,.42,.3);
+  var winMat=new THREE.MeshStandardMaterial({color:0x0e141f,roughness:.15,metalness:.6,emissive:0x223349,emissiveIntensity:.4});
+  var wins=new THREE.InstancedMesh(winGeo,winMat,46);
+  var wm4=new THREE.Matrix4(),wi=0;
+  for(var wz=-11.5;wz<=10.5&&wi<46;wz+=1.0){
+    wm4.makeTranslation(2.385,.55,wz);wins.setMatrixAt(wi++,wm4);
+    wm4.makeTranslation(-2.385,.55,wz);wins.setMatrixAt(wi++,wm4);
+  }
+  wins.count=wi;P.add(wins);
+
+  // wraparound cockpit visor
+  var vg=new THREE.CylinderGeometry(1.66,2.01,1.15,18,1,true,Math.PI-1.2,2.4);
   vg.rotateX(Math.PI/2);
   var visor=new THREE.Mesh(vg,MATS.glassDark);
-  visor.position.z=16.9;P.add(visor);
-  // winglets
-  [[1,.42],[-1,-.42]].forEach(function(wd){
-    var wl=addBox(P,.14,1.5,1.15,MATS.planeBlue,wd[0]*14.9,.2,-5.7);
-    wl.rotation.y=wd[1];wl.rotation.z=wd[0]*-.18;
+  visor.position.z=16.85;P.add(visor);
+
+  // wings — tapered + swept, extruded plan shape, slight dihedral
+  function shapeFrom(pts){var s=new THREE.Shape();s.moveTo(pts[0][0],pts[0][1]);for(var i=1;i<pts.length;i++)s.lineTo(pts[i][0],pts[i][1]);s.closePath();return s}
+  var wingGeo=new THREE.ExtrudeGeometry(shapeFrom([[0,2.5],[0,-2.3],[13,-4.9],[13,-3.4]]),{depth:.3,bevelEnabled:false});
+  [[1],[-1]].forEach(function(sd){
+    var grp=new THREE.Group();P.add(grp);
+    grp.position.set(sd[0]*1.8,-1.05,0);grp.rotation.z=sd[0]*.06;
+    var wing=new THREE.Mesh(wingGeo,skinGrey);
+    wing.rotation.x=Math.PI/2;
+    if(sd[0]<0)wing.scale.x=-1;
+    if(!MOBILE)wing.castShadow=true;
+    grp.add(wing);
+    // winglet + nav light
+    var wl=addBox(P,.12,1.6,1.2,accentMat,sd[0]*14.75,-.3,-4.15);
+    wl.rotation.y=sd[0]*.2;wl.rotation.z=sd[0]*-.16;
+    var tipLight=new THREE.Mesh(new THREE.SphereGeometry(.14,6,5),sd[0]>0?MATS.emissiveRed:MATS.emissiveGreen);
+    tipLight.position.set(sd[0]*14.85,-.5,-4.6);P.add(tipLight);
   });
-  // antennas
-  addBox(P,.08,.4,.55,MATS.white,0,2.55,8);
-  addBox(P,.08,.32,.5,MATS.white,0,2.52,-6);
-  // rear-left + front-right door outlines, held proud of the hull
-  if(!addPlaneDetails._doorMat)addPlaneDetails._doorMat=new THREE.MeshStandardMaterial({color:0xc4ccd6,roughness:.5});
-  addBox(P,.05,2,1,addPlaneDetails._doorMat,2.47,-.35,-12.6);
-  addBox(P,.05,2,1,addPlaneDetails._doorMat,-2.47,-.35,12.5);
-}
-function addEngineDetail(P,ex){
-  if(!addEngineDetail._fanMat)addEngineDetail._fanMat=new THREE.MeshStandardMaterial({color:0x161a21,roughness:.45,metalness:.75});
-  var fan=new THREE.Mesh(new THREE.CircleGeometry(.8,14),addEngineDetail._fanMat);
-  fan.position.set(ex,-1.7,4.86);P.add(fan);
-  var spin=new THREE.Mesh(new THREE.ConeGeometry(.2,.45,8),MATS.metal);
-  spin.rotation.x=Math.PI/2;spin.position.set(ex,-1.7,5.0);P.add(spin);
+
+  // engines — lathe nacelles with intake lip
+  var eprof=[[.48,-1.55],[.85,-1.25],[.98,-.55],[.96,.55],[1.02,1.2],[1.06,1.42],[.8,1.55]];
+  var eGeo=new THREE.LatheGeometry(eprof.map(function(p){return new THREE.Vector2(p[0],p[1])}),20);
+  eGeo.rotateX(Math.PI/2);
+  [[4.6],[-4.6]].forEach(function(ex){
+    var nac=new THREE.Mesh(eGeo,engMat);nac.position.set(ex[0],-1.78,3.1);P.add(nac);
+    var fan=new THREE.Mesh(new THREE.CircleGeometry(.72,16),new THREE.MeshStandardMaterial({color:0x14181f,roughness:.4,metalness:.75}));
+    fan.position.set(ex[0],-1.78,4.35);P.add(fan);
+    var spin=new THREE.Mesh(new THREE.ConeGeometry(.18,.42,10),MATS.metal);
+    spin.rotation.x=Math.PI/2;spin.position.set(ex[0],-1.78,4.52);P.add(spin);
+    var exCone=new THREE.Mesh(new THREE.ConeGeometry(.34,.7,12),MATS.metalDark);
+    exCone.rotation.x=-Math.PI/2;exCone.position.set(ex[0],-1.78,1.45);P.add(exCone);
+    if(opts.glow){
+      var glow=new THREE.MeshStandardMaterial({color:0x331505,emissive:0xff6a2a,emissiveIntensity:.15});
+      engineGlowMats.push(glow);
+      var exhaust=new THREE.Mesh(new THREE.CircleGeometry(.52,12),glow);
+      exhaust.position.set(ex[0],-1.78,1.52);exhaust.rotation.y=Math.PI;P.add(exhaust);
+    }
+    var pyl=addBox(P,.24,.95,2.2,MATS.metalDark,ex[0],-.92,2.6);pyl.rotation.x=.3;
+  });
+
+  // tail fin + stabilizers (extruded, tapered)
+  var finGeo=new THREE.ExtrudeGeometry(shapeFrom([[0,0],[3.3,0],[1.9,4.4],[.45,4.4]]),{depth:.26,bevelEnabled:false});
+  var fin=new THREE.Mesh(finGeo,skin);
+  fin.rotation.y=-Math.PI/2;fin.position.set(.13,1.85,-19.4);
+  if(!MOBILE)fin.castShadow=true;
+  P.add(fin);
+  var finLogo=makeSign('G',{w:128,h:128,fs:96,bg:'#1d4e89',color:'#ff7d5c',border:false,glow:.5,mw:1.5,mh:1.5});
+  finLogo.position.set(.16,4.5,-18.1);finLogo.rotation.y=Math.PI/2;P.add(finLogo);
+  var finLogo2=finLogo.clone();finLogo2.position.x=-.16;finLogo2.rotation.y=-Math.PI/2;P.add(finLogo2);
+  var strobe=new THREE.Mesh(new THREE.SphereGeometry(.13,6,5),MATS.emissiveWhite);
+  strobe.position.set(0,6.35,-18.2);P.add(strobe);
+  var stabGeo=new THREE.ExtrudeGeometry(shapeFrom([[0,1.05],[0,-1.05],[4.4,-1.75],[4.4,-.95]]),{depth:.22,bevelEnabled:false});
+  [[1],[-1]].forEach(function(sd){
+    var grp=new THREE.Group();P.add(grp);
+    grp.position.set(sd[0]*.4,1.05,-17.6);grp.rotation.z=sd[0]*.08;
+    var stab=new THREE.Mesh(stabGeo,skinGrey);
+    stab.rotation.x=Math.PI/2;
+    if(sd[0]<0)stab.scale.x=-1;
+    grp.add(stab);
+  });
+
+  // beacon + antennas + smooth belly fairing
+  var beacon=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),new THREE.MeshStandardMaterial({color:0xff5555,emissive:0xff2233,emissiveIntensity:2}));
+  beacon.position.set(0,2.5,0);P.add(beacon);
+  addBox(P,.07,.38,.55,MATS.white,0,2.55,8);
+  addBox(P,.07,.3,.5,MATS.white,0,2.5,-6);
+  var fair=new THREE.Mesh(new THREE.SphereGeometry(1,14,10),skinGrey);
+  fair.scale.set(1.55,.75,4.2);fair.position.set(0,-2,.7);P.add(fair);
+
+  // landing gear
+  function gear(x,z,double){
+    var strut=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,2.1,8),MATS.metal);
+    strut.position.set(x,-3.3,z);P.add(strut);
+    (double?[.28,-.28]:[0]).forEach(function(o){
+      var wh=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.34,12),MATS.tire);
+      wh.rotation.z=Math.PI/2;wh.position.set(x+o,-4.15,z);P.add(wh);
+      var hub=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.4,8),MATS.metal);
+      hub.rotation.z=Math.PI/2;hub.position.set(x+o,-4.15,z);P.add(hub);
+    });
+  }
+  gear(0,13,false);gear(1.7,-1,true);gear(-1.7,-1,true);
+
+  // front-left boarding door: OPEN while parked — warm-lit recess + (optionally) the swung-out panel
+  var recess=new THREE.Mesh(new THREE.BoxGeometry(.1,2.05,1.08),
+    new THREE.MeshStandardMaterial({color:0x06080c,roughness:.95,emissive:0x241809,emissiveIntensity:.4}));
+  recess.position.set(2.36,-.35,12.5);P.add(recess);
+  if(opts.doorPanel){
+    var dg=new THREE.Group();dg.position.set(2.38,-.35,13.1);dg.rotation.y=-1.9;P.add(dg);
+    addBox(dg,.06,2,1,skin,0,0,-.5);
+    addBox(dg,.08,.34,.26,MATS.glassDark,0,.45,-.5);
+  }
+  // closed service-door outlines
+  if(!buildJetExterior._doorMat)buildJetExterior._doorMat=new THREE.MeshStandardMaterial({color:0xc4ccd6,roughness:.5});
+  addBox(P,.04,1.9,.95,buildJetExterior._doorMat,2.42,-.3,-11.5);
+  addBox(P,.04,1.9,.95,buildJetExterior._doorMat,-2.42,-.3,12.5);
+
+  return {beacon:beacon};
 }
 
 // ---------------------------------------------------------------- the plane
@@ -1771,94 +1909,10 @@ function buildPlane(){
   scene.add(planeG);
   var P=planeG;
 
-  function tube(rTop,rBot,len,segs,mat){
-    // open-ended: end caps otherwise show up as discs inside the cabin/cockpit
-    var geo=new THREE.CylinderGeometry(rTop,rBot,len,segs,1,true);
-    geo.rotateX(Math.PI/2);   // axis -> z
-    return new THREE.Mesh(geo,mat);
-  }
-
-  // ===== exterior
-  // note: after rotateX, radiusTop ends up at the +z (nose) end
-  var fus=tube(2.4,2.4,30,16,MATS.fuselage);fus.position.z=1;if(!MOBILE)fus.castShadow=true;P.add(fus);
-  var nose=tube(1.1,2.4,4,16,MATS.fuselage);nose.position.z=18;P.add(nose);
-  var noseTip=new THREE.Mesh(new THREE.SphereGeometry(1.1,12,8),MATS.glassDark);noseTip.position.z=20;P.add(noseTip);
-  var tail=tube(2.4,.8,6,14,MATS.fuselage);tail.position.set(0,.2,-17);tail.rotation.x=.06;P.add(tail);
-  var tailCap=new THREE.Mesh(new THREE.SphereGeometry(.8,10,7),MATS.fuselage);tailCap.position.set(0,.45,-19.85);P.add(tailCap);
-  // belly + cheat-line stripes
-  [[2.41,0],[-2.41,0]].forEach(function(s){
-    addBox(P,.06,.55,30,MATS.planeBlue,s[0],-.35,1);
-  });
-  addPlaneDetails(P);
-  // cabin windows (instanced dark dots both sides)
-  var winGeo=new THREE.BoxGeometry(.07,.5,.36);
-  var winMat=new THREE.MeshStandardMaterial({color:0x101826,roughness:.2,metalness:.4,emissive:0x2c3550,emissiveIntensity:.35});
-  var wins=new THREE.InstancedMesh(winGeo,winMat,46);
-  var m4=new THREE.Matrix4(),wi=0;
-  for(var wz=-12;wz<=10.5&&wi<46;wz+=1.05){
-    m4.makeTranslation(2.38,.55,wz);wins.setMatrixAt(wi++,m4);
-    m4.makeTranslation(-2.38,.55,wz);wins.setMatrixAt(wi++,m4);
-  }
-  wins.count=wi;P.add(wins);
-  // titles — riding the upper fuselage, clear of the window line
-  var titleL=makeSign('GRESH AIR',{w:512,h:72,fs:58,bg:'#dde3ea',color:'#1d4e89',border:false,glow:.12,mw:7,mh:.95});
-  titleL.position.set(2.16,1.38,6);titleL.rotation.y=Math.PI/2;P.add(titleL);
-  var titleR=makeSign('GRESH AIR',{w:512,h:72,fs:58,bg:'#dde3ea',color:'#1d4e89',border:false,glow:.12,mw:7,mh:.95});
-  titleR.position.set(-2.16,1.38,6);titleR.rotation.y=-Math.PI/2;P.add(titleR);
-  // registration near the tail
-  var regL=makeSign('N-GR3SH',{w:256,h:56,fs:42,bg:'#dde3ea',color:'#3a4048',border:false,glow:.08,mw:2.3,mh:.45});
-  regL.position.set(2.3,.95,-12.8);regL.rotation.y=Math.PI/2;P.add(regL);
-  var regR=regL.clone();regR.position.x=-2.3;regR.rotation.y=-Math.PI/2;P.add(regR);
-  // wing-to-body fairing
-  addBox(P,2.6,1,7.5,MATS.fuselageBelly,0,-2.05,.8);
-
-  // wings (swept)
-  [[1,.42],[-1,-.42]].forEach(function(wd){
-    var wing=addBox(P,14,.35,3.8,MATS.fuselageBelly,wd[0]*8.6,-1,.4,0,true);
-    wing.rotation.y=wd[1];wing.rotation.z=wd[0]*.05;
-    var tipLight=new THREE.Mesh(new THREE.SphereGeometry(.16,6,5),wd[0]>0?MATS.emissiveRed:MATS.emissiveGreen);
-    tipLight.position.set(wd[0]*15.1,-.45,.4-Math.abs(wd[0]*15.1)*Math.tan(Math.abs(wd[1]))*.92);
-    P.add(tipLight);
-  });
-  // engines
-  [[4.6],[-4.6]].forEach(function(ex){
-    var nac=tube(.95,.95,2.8,12,MATS.metal);nac.position.set(ex[0],-1.7,3.4);P.add(nac);
-    var intake=tube(1,.95,.4,12,MATS.metalDark);intake.position.set(ex[0],-1.7,4.9);P.add(intake);
-    var glow=new THREE.MeshStandardMaterial({color:0x331505,emissive:0xff6a2a,emissiveIntensity:.15});
-    engineGlowMats.push(glow);
-    var exhaust=new THREE.Mesh(new THREE.CircleGeometry(.8,12),glow);
-    exhaust.position.set(ex[0],-1.7,1.95);exhaust.rotation.y=Math.PI;P.add(exhaust);
-    addBox(P,.3,.9,1.6,MATS.metalDark,ex[0],-.85,3.2);
-    addEngineDetail(P,ex[0]);
-  });
-  // tail fin + stabilizers
-  var fin=addBox(P,.42,5,2.8,MATS.fuselage,0,3.1,-17.6,0,true);fin.rotation.x=-.45;
-  var tailLight=new THREE.Mesh(new THREE.SphereGeometry(.14,6,5),MATS.emissiveWhite);
-  tailLight.position.set(0,5.35,-18.7);P.add(tailLight);
-  var finLogo=makeSign('G',{w:128,h:128,fs:100,bg:'#1d4e89',color:'#ff7d5c',border:false,glow:.5,mw:1.7,mh:1.7});
-  finLogo.position.set(.18,3.6,-17.3);finLogo.rotation.y=Math.PI/2;finLogo.rotation.x=0;P.add(finLogo);
-  var finLogo2=finLogo.clone();finLogo2.position.x=-.18;finLogo2.rotation.y=-Math.PI/2;P.add(finLogo2);
-  [[1,.5],[-1,-.5]].forEach(function(sd){
-    var stab=addBox(P,4.6,.22,1.9,MATS.fuselageBelly,sd[0]*2.6,.9,-18);
-    stab.rotation.y=sd[1];
-  });
-  // beacon
-  planeBeacon=new THREE.Mesh(new THREE.SphereGeometry(.18,6,5),new THREE.MeshStandardMaterial({color:0xff5555,emissive:0xff2233,emissiveIntensity:2}));
-  planeBeacon.position.set(0,2.55,0);P.add(planeBeacon);
-
-  // landing gear
-  function gear(x,z,double){
-    var strut=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,2.1,8),MATS.metal);
-    strut.position.set(x,-3.3,z);P.add(strut);
-    var off=double?[.28,-.28]:[0];
-    off.forEach(function(o){
-      var wh=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.34,10),MATS.tire);
-      wh.rotation.z=Math.PI/2;wh.position.set(x+o,-4.15,z);P.add(wh);
-      var hub=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.4,8),MATS.metal);
-      hub.rotation.z=Math.PI/2;hub.position.set(x+o,-4.15,z);P.add(hub);
-    });
-  }
-  gear(0,13,false);gear(1.7,-1,true);gear(-1.7,-1,true);
+  // ===== exterior (shared photo-real builder; GA-001's door hides under the jetway hood)
+  var ext=buildJetExterior(P,{accent:0x1d4e89,titleColor:'#1d4e89',reg:'N-GR3SH',glow:true});
+  planeBeacon=ext.beacon;
+  var m4=new THREE.Matrix4();
 
   // ===== interior
   planeInterior=new THREE.Group();P.add(planeInterior);
@@ -2007,7 +2061,10 @@ function setHint(txt){if(hintBar.__last!==txt){hintBar.textContent=txt;hintBar._
 var keys={};
 var mobileInput={move:{x:0,y:0},look:null,thrUp:false,thrDn:false,brake:false,jump:false,act:false};
 function onKey(e,down){
-  if(e.key==='Escape'&&down&&GameState.uiOpen){closeOverlay();return}
+  if(e.key==='Escape'&&down){
+    if(GameState.uiOpen){closeOverlay();return}
+    if(window.__airMenu&&window.__airMenu.isOpen()){window.__airMenu.close();return}
+  }
   var t=e.target;
   if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return;   // typing in chat
   if(GameState.uiOpen)return;                                    // shop open: game keys paused

@@ -2750,4 +2750,21 @@ window.__mpa = { setMpaMode: setMpaMode, showAsPage: showAsPage, hideAsPage: hid
   }, true);
 })();
 </script>
+<script>
+/* deep link: index.html?mall=1&tpl=aurora opens that template once the page is up
+   (used by the airport's TEMPLATES drawer) */
+(function(){
+  var m = /[?&]tpl=([a-z]+)/i.exec(window.location.search);
+  if (!m) return;
+  var name = m[1].toLowerCase(), done = false;
+  function attempt(){
+    if (done) return;
+    if (document.body.classList.contains('template-active')) { done = true; return; }
+    var a = document.querySelector('.drawer-nav a[data-template="' + name + '"]') ||
+            document.querySelector('a[data-template="' + name + '"]');
+    if (a) a.click();
+  }
+  [600,1500,3000,5000].forEach(function(ms){ setTimeout(attempt, ms); });
+})();
+</script>
 </body></html>

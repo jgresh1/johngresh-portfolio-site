@@ -313,6 +313,7 @@ function makeSign(text,opts){
 // ---------------------------------------------------------------- audio (all synthesized — no assets)
 var AudioSys=(function(){
   var ctx=null,master=null,muted=false,rainGain=null,rainFilter=null,engine=null;
+  var thunderBuf=null,rainState='',engT=0;
   function ensure(){
     if(ctx)return true;
     try{
@@ -325,22 +326,29 @@ var AudioSys=(function(){
       rainFilter=ctx.createBiquadFilter();rainFilter.type='lowpass';rainFilter.frequency.value=2600;
       rainGain=ctx.createGain();rainGain.gain.value=0;
       src.connect(rainFilter);rainFilter.connect(rainGain);rainGain.connect(master);src.start();
+      // thunder: synthesized ONCE here, reused with varied playback rate
+      // (per-strike synthesis caused a main-thread hitch on every strike)
+      var tlen=Math.floor(ctx.sampleRate*3.2);
+      thunderBuf=ctx.createBuffer(1,tlen,ctx.sampleRate);
+      var td=thunderBuf.getChannelData(0),last=0;
+      for(var t=0;t<tlen;t++){var w=Math.random()*2-1;last=(last+.02*w)/1.02;td[t]=last*Math.pow(1-t/tlen,1.6)*3}
       return true;
     }catch(e){return false}
   }
   function setRain(indoor,flying){
     if(!ctx)return;
+    var key=(indoor?'i':'o')+(flying?'f':'g')+(muted?'m':'s');
+    if(key===rainState)return;          // only reschedule on a state change
+    rainState=key;
     var g=flying?.018:(indoor?.022:.062);
     var f=flying?900:(indoor?420:2600);
     rainGain.gain.setTargetAtTime(muted?0:g,ctx.currentTime,.4);
     rainFilter.frequency.setTargetAtTime(f,ctx.currentTime,.4);
   }
   function thunder(distance){
-    if(!ctx||muted)return;
-    var dur=2.2+Math.random()*1.6,len=ctx.sampleRate*dur,buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0);
-    var last=0;
-    for(var i=0;i<len;i++){var w=Math.random()*2-1;last=(last+.02*w)/1.02;d[i]=last*Math.pow(1-i/len,1.6)*3}
-    var src=ctx.createBufferSource();src.buffer=buf;
+    if(!ctx||muted||!thunderBuf)return;
+    var src=ctx.createBufferSource();src.buffer=thunderBuf;
+    src.playbackRate.value=.72+Math.random()*.5;
     var f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=180+Math.random()*160;
     var g=ctx.createGain();var v=clamp(1.4-distance/2600,.12,.9);g.gain.value=v;
     src.connect(f);f.connect(g);g.connect(master);src.start();
@@ -370,6 +378,8 @@ var AudioSys=(function(){
   function setEngine(throttle,speed){
     if(!ctx||!engine)return;
     var t=ctx.currentTime;
+    if(t-engT<.12)return;               // ~8 Hz is plenty for engine param ramps
+    engT=t;
     engine.g.gain.setTargetAtTime(muted?0:(.02+throttle*.13),t,.25);
     engine.o1.frequency.setTargetAtTime(48+throttle*70+speed*.18,t,.3);
     engine.o2.frequency.setTargetAtTime(51+throttle*74+speed*.18,t,.3);
@@ -510,7 +520,7 @@ function buildSky(){
 
 // ---------------------------------------------------------------- rain
 function buildRain(){
-  var count=MOBILE?500:1500;
+  var count=MOBILE?450:1200;
   var positions=new Float32Array(count*2*3);
   var drops=[];
   var EX=60,EY=38,EZ=60;
@@ -603,11 +613,11 @@ function buildLights(){
   dirLight.position.set(-300,500,-200);
   if(!MOBILE){
     dirLight.castShadow=true;
-    dirLight.shadow.mapSize.set(2048,2048);
-    dirLight.shadow.camera.left=-300;dirLight.shadow.camera.right=300;
-    dirLight.shadow.camera.top=300;dirLight.shadow.camera.bottom=-300;
-    dirLight.shadow.camera.far=1200;
-    dirLight.shadow.bias=-0.0008;
+    dirLight.shadow.mapSize.set(1024,1024);
+    dirLight.shadow.camera.left=-220;dirLight.shadow.camera.right=220;
+    dirLight.shadow.camera.top=220;dirLight.shadow.camera.bottom=-220;
+    dirLight.shadow.camera.far=950;
+    dirLight.shadow.bias=-0.0011;
   }
   scene.add(dirLight);
   lightningLight=new THREE.DirectionalLight(0xbfd0ff,0);
@@ -811,16 +821,19 @@ function buildAirfield(){
   windsock.rotation.z=Math.PI/2;windsock.position.set(1.8,6.6,0);
   ws.add(windsock);
 
-  // floodlight towers over apron
-  [[-150,170],[150,170]].forEach(function(fp){
+  // floodlight towers over apron (one real spotlight is enough — every extra
+  // dynamic light costs the whole scene per-pixel work)
+  [[-150,170],[150,170]].forEach(function(fp,fi){
     var ft=new THREE.Group();g.add(ft);ft.position.set(fp[0],0,fp[1]);
     addBox(ft,1,18,1,MATS.metalDark,0,9,0,0,true);
     addBox(ft,6,.6,1.2,MATS.metalDark,0,18.2,0);
     for(var fl2=0;fl2<3;fl2++)addBox(ft,1.4,1,.6,MATS.emissiveWhite,-2+fl2*2,18.9,0);
-    var spot=new THREE.SpotLight(0xbfd0ee,.9,260,Math.PI/3.6,.5,1);
-    spot.position.set(fp[0],19,fp[1]);
-    spot.target.position.set(fp[0]*.25,0,105);
-    scene.add(spot);scene.add(spot.target);
+    if(fi===0){
+      var spot=new THREE.SpotLight(0xbfd0ee,1,320,Math.PI/3,.55,1);
+      spot.position.set(fp[0],19,fp[1]);
+      spot.target.position.set(20,0,100);
+      scene.add(spot);scene.add(spot.target);
+    }
     addCollider(fp[0]-1,fp[0]+1,fp[1]-1,fp[1]+1,-2,18);
   });
 
@@ -881,11 +894,9 @@ function buildLandside(g){
   });
   var bigSign=makeSign('GRESH INTERNATIONAL',{w:1024,h:128,fs:84,bg:'#141a26',color:'#ff7d5c',mw:38,mh:4.4,glow:1,back:true});
   bigSign.position.set(0,9.4,-50.6);bigSign.rotation.y=Math.PI;g.add(bigSign);
-  // under-canopy lighting
-  var canStripMat=new THREE.MeshStandardMaterial({color:0xe8e2d2,emissive:0xc9b888,emissiveIntensity:.55});
+  // under-canopy lighting (emissive only — the entrance pointlight cost more than it showed)
+  var canStripMat=new THREE.MeshStandardMaterial({color:0xe8e2d2,emissive:0xc9b888,emissiveIntensity:.8});
   addBox(can,36,.1,.5,canStripMat,0,5.65,-57);
-  var canLight=new THREE.PointLight(0xffe2bb,.55,42,1.8);
-  canLight.position.set(0,5.2,-58);scene.add(canLight);
   var planeIcon=makeSign('✈',{w:128,h:128,fs:96,bg:'#141a26',color:'#9fc4d8',border:false,mw:4.4,mh:4.4,glow:1,back:true});
   planeIcon.position.set(-23,9.4,-50.6);planeIcon.rotation.y=Math.PI;g.add(planeIcon);
 
@@ -1183,7 +1194,7 @@ function buildDepartBoard(T){
       ctx.fillStyle='#9fc4d8';ctx.textAlign='right';
       ctx.fillText('LOCAL  '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),1000,34);
       ctx.textAlign='left';
-      var blink=Math.floor(time*2)%2===0;
+      var blink=Math.floor(time/4)%2===0;
       for(var i=0;i<rows.length;i++){
         var y=100+i*52,r=rows[i];
         ctx.fillStyle='#e8ecf2';ctx.fillText(r[0],24,y);
@@ -2014,9 +2025,8 @@ function buildPlane(){
     addBox(I,.14,.3,.5,MATS.seatLeather,px[0]-.36,-.7,14.9);
     addBox(I,.14,.3,.5,MATS.seatLeather,px[0]+.36,-.7,14.9);
   });
-  // cabin lights
-  var cl1=new THREE.PointLight(0xffeedd,.7,16,1.6);cl1.position.set(0,1,2);I.add(cl1);
-  var cl2=new THREE.PointLight(0xffeedd,.6,12,1.6);cl2.position.set(0,.8,14);I.add(cl2);
+  // cabin light (one, centered — covers cabin and cockpit)
+  var cl1=new THREE.PointLight(0xffeedd,.85,26,1.5);cl1.position.set(0,1,7);I.add(cl1);
 
   // ===== walk-mode colliders for the PARKED plane (world coords; disabled at departure)
   planeColliders.push(addCollider(26.8,50.6,82.3,83.62,2,4.6));   // left seat block
@@ -2211,8 +2221,8 @@ function tryInteract(){
 
 // ---------------------------------------------------------------- flight mode
 var flight={throttle:0,speed:0,pitchUp:0,roll:0,yaw:Math.PI/2,onGround:true,lastY:4.6,vs:0,ceilingWarned:false,boundaryWarned:false};
-var camPos=new THREE.Vector3(),_pf=new THREE.Vector3(),_lookTarget=new THREE.Vector3();
-var fadeEl,crashEl;
+var camPos=new THREE.Vector3(),_pf=new THREE.Vector3(),_lookTarget=new THREE.Vector3(),_camDesired=new THREE.Vector3();
+var fadeEl,crashEl,FPEls=null;
 
 function setMode(mode){
   GameState.mode=mode;
@@ -2328,12 +2338,13 @@ function updateFlight(dt){
   _pf.set(0,0,1).applyEuler(planeG.rotation);
   planeG.position.addScaledVector(_pf,f.speed*dt);
   // stall sink
+  var stalling=false;
   if(!f.onGround&&f.speed<48){
     var st=(48-f.speed)/48;
     planeG.position.y-=st*16*dt;
     f.pitchUp-=st*.4*dt;
-    document.getElementById('fp-stall').style.display='block';
-  }else document.getElementById('fp-stall').style.display='none';
+    stalling=true;
+  }
   // ceiling + boundary
   if(planeG.position.y>1500){
     planeG.position.y=1500;f.pitchUp=Math.min(f.pitchUp,0);
@@ -2365,10 +2376,12 @@ function updateFlight(dt){
     if(!onRunway)f.speed*=.75;
   }
   applyPlaneTransform();
-  // chase camera
+  // chase camera (no per-frame allocations)
   var dist=f.onGround?19:26,h=f.onGround?6.5:9;
   _lookTarget.copy(planeG.position).addScaledVector(_pf,14);
-  camPos.lerp(new THREE.Vector3().copy(planeG.position).addScaledVector(_pf,-dist).add(new THREE.Vector3(0,h,0)),1-Math.exp(-4.5*dt));
+  _camDesired.copy(planeG.position).addScaledVector(_pf,-dist);
+  _camDesired.y+=h;
+  camPos.lerp(_camDesired,1-Math.exp(-4.5*dt));
   camera.position.copy(camPos);
   camera.lookAt(_lookTarget);
   camera.fov=62+f.speed*.05;
@@ -2377,15 +2390,22 @@ function updateFlight(dt){
   // engine sound + glow
   AudioSys.setEngine(f.throttle,f.speed);
   for(var eg=0;eg<engineGlowMats.length;eg++)engineGlowMats[eg].emissiveIntensity=.15+f.throttle*1.5;
-  // HUD
-  document.getElementById('fp-spd').textContent=Math.round(f.speed*1.944)+' KT';
-  document.getElementById('fp-alt').textContent=Math.max(0,Math.round((planeG.position.y-4.6)*3.281))+' FT';
+  // HUD (cached elements)
+  if(!FPEls)FPEls={
+    spd:document.getElementById('fp-spd'),alt:document.getElementById('fp-alt'),
+    hdg:document.getElementById('fp-hdg'),vs:document.getElementById('fp-vs'),
+    thr:document.getElementById('fp-thr'),fill:document.getElementById('throttle-fill'),
+    stall:document.getElementById('fp-stall')
+  };
+  FPEls.spd.textContent=Math.round(f.speed*1.944)+' KT';
+  FPEls.alt.textContent=Math.max(0,Math.round((planeG.position.y-4.6)*3.281))+' FT';
   var hdg=(Math.atan2(_pf.x,-_pf.z)*180/Math.PI+360)%360;
-  document.getElementById('fp-hdg').textContent=('00'+Math.round(hdg)).slice(-3)+'°';
+  FPEls.hdg.textContent=('00'+Math.round(hdg)).slice(-3)+'°';
   var vsf=Math.round(f.vs*196.85/50)*50;
-  document.getElementById('fp-vs').textContent=(vsf>0?'+':'')+vsf;
-  document.getElementById('fp-thr').textContent=Math.round(f.throttle*100)+'%';
-  document.getElementById('throttle-fill').style.width=(f.throttle*100)+'%';
+  FPEls.vs.textContent=(vsf>0?'+':'')+vsf;
+  FPEls.thr.textContent=Math.round(f.throttle*100)+'%';
+  FPEls.fill.style.width=(f.throttle*100)+'%';
+  FPEls.stall.style.display=stalling?'block':'none';
 }
 
 // ---------------------------------------------------------------- mobile controls
@@ -2461,9 +2481,9 @@ function setupMobile(){
 var boardTimer=0,gameT=0;
 function updateAmbient(dt){
   gameT+=dt;
-  // departures board
+  // departures board (canvas->GPU upload is costly: refresh sparsely)
   boardTimer-=dt;
-  if(boardTimer<=0&&departBoard){boardTimer=.5;departBoard.redraw(gameT)}
+  if(boardTimer<=0&&departBoard){boardTimer=4;departBoard.redraw(gameT)}
   // strobes run toward the threshold
   var phase=(gameT*2.6)%(approachStrobes.length+2);
   for(var i=0;i<approachStrobes.length;i++){
@@ -2532,10 +2552,10 @@ function init(){
   pitchObj.add(camera);rig.add(pitchObj);scene.add(rig);
   renderer=new THREE.WebGLRenderer({antialias:!MOBILE});
   renderer.setSize(window.innerWidth,window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,MOBILE?1.3:1.75));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,MOBILE?1.25:1.5));
   renderer.setClearColor(0x10141c);
   renderer.shadowMap.enabled=!MOBILE;
-  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type=THREE.PCFShadowMap;
   document.body.appendChild(renderer.domElement);
   clock=new THREE.Clock();
 

@@ -1912,6 +1912,314 @@ function buildJetExterior(P,opts){
   return {beacon:beacon};
 }
 
+// ---------------------------------------------------------------- new Gresh jet
+// Ported from the standalone Realistic-Plane-3D studio model (built for THREE 0.160)
+// into this scene's r128 + dim-night lighting. Built nose +x natively, then rotated so
+// the nose faces +z and scaled to match the old jet's footprint. Gear/beacon/nav-lights
+// are added in the parent (planeG) frame using this scene's conventions (gear bottom ~ y-4.55).
+function buildGreshJet(P,opts){
+  opts=opts||{};
+  const M={
+    paint:        new THREE.MeshPhysicalMaterial({color:0xeaeef3,metalness:.35,roughness:.32,clearcoat:.5,clearcoatRoughness:.35}),
+    accent:       new THREE.MeshStandardMaterial({color:opts.accent||0x1d4e89,roughness:.35,metalness:.5,side:THREE.DoubleSide}),
+    wing:         new THREE.MeshPhysicalMaterial({color:0x9aa4b1,metalness:.5,roughness:.36,clearcoat:.3,clearcoatRoughness:.4,side:THREE.DoubleSide}),
+    cowl:         new THREE.MeshPhysicalMaterial({color:0xeaeef3,metalness:.35,roughness:.34,clearcoat:.4,clearcoatRoughness:.3,side:THREE.DoubleSide}),
+    metal:        new THREE.MeshStandardMaterial({color:0xc2c9d2,metalness:.6,roughness:.3}),
+    intake:       new THREE.MeshStandardMaterial({color:0xb9bfc6,metalness:.55,roughness:.34,side:THREE.DoubleSide}),
+    blade:        new THREE.MeshStandardMaterial({color:0x2b2f36,metalness:.55,roughness:.42}),
+    dark:         new THREE.MeshStandardMaterial({color:0x14181f,metalness:.4,roughness:.5,side:THREE.DoubleSide}),
+    exhaust:      new THREE.MeshStandardMaterial({color:0x6e7278,metalness:.55,roughness:.45,side:THREE.DoubleSide}),
+    glass:        new THREE.MeshStandardMaterial({color:0x0e141f,roughness:.15,metalness:.6,emissive:0x223349,emissiveIntensity:.45}),
+    cockpitGlass: new THREE.MeshPhysicalMaterial({color:0x0a1a29,metalness:.1,roughness:.12,clearcoat:1,clearcoatRoughness:.06,side:THREE.DoubleSide}),
+    cockpitFrame: new THREE.MeshStandardMaterial({color:0x8c939c,metalness:.6,roughness:.4,side:THREE.DoubleSide})
+  };
+  const g=new THREE.Group();
+  g.rotation.y=-Math.PI/2;            // native nose +x -> world +z (matches flight forward)
+  const S=1.05; g.scale.set(S,S,S);   // match the old jet's ~40-unit length
+  P.add(g);
+
+  // ---- profile + loft helpers (pure math, version-agnostic) ----
+  const HALF=19,LEN=38;
+  const radiusCtrl=[
+    {t:0.00,v:0.00},{t:0.015,v:0.42},{t:0.05,v:1.05},{t:0.10,v:1.55},{t:0.16,v:1.80},
+    {t:0.22,v:1.88},{t:0.30,v:1.90},{t:0.62,v:1.90},{t:0.78,v:1.89},{t:0.85,v:1.86},
+    {t:0.90,v:1.83},{t:0.94,v:1.76},{t:0.965,v:1.62},{t:0.982,v:1.34},{t:0.991,v:0.96},{t:0.997,v:0.52},{t:1.0,v:0.0}
+  ];
+  function catmull(pts,t){
+    if(t<=pts[0].t)return pts[0].v;
+    if(t>=pts[pts.length-1].t)return pts[pts.length-1].v;
+    let i=0; while(pts[i+1].t<t)i++;
+    const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
+    const tt=(t-p1.t)/(p2.t-p1.t);
+    const a=2*p1.v,b=p2.v-p0.v,c=2*p0.v-5*p1.v+4*p2.v-p3.v,d=-p0.v+3*p1.v-3*p2.v+p3.v;
+    return 0.5*(a+b*tt+c*tt*tt+d*tt*tt*tt);
+  }
+  const rAt=x=>Math.max(0,catmull(radiusCtrl,(x+HALF)/LEN));
+  const ycAt=x=>{
+    const t=(x+HALF)/LEN;
+    if(t<=0.30){const f=(0.30-t)/0.30; return 1.85*Math.pow(f,1.7);}   // aft upsweep
+    if(t>=0.89){const f=(t-0.89)/0.11; return -0.32*Math.pow(f,1.8);}  // nose droop
+    return 0;
+  };
+  function buildLoft(rings,capStart,capEnd){
+    if(capStart===undefined)capStart=true; if(capEnd===undefined)capEnd=true;
+    const N=rings[0].length,verts=[],idx=[];
+    for(const ring of rings)for(const v of ring)verts.push(v);
+    const vi=(r,i)=>r*N+i;
+    for(let r=0;r<rings.length-1;r++)for(let i=0;i<N;i++){
+      const j=(i+1)%N,a=vi(r,i),b=vi(r,j),c=vi(r+1,i),d=vi(r+1,j);
+      idx.push(a,c,b,b,c,d);
+    }
+    const cap=(r,rev)=>{
+      let cx=0,cy=0,cz=0; for(const v of rings[r]){cx+=v[0];cy+=v[1];cz+=v[2];}
+      cx/=N;cy/=N;cz/=N; const ci=verts.length; verts.push([cx,cy,cz]);
+      for(let i=0;i<N;i++){const j=(i+1)%N,a=vi(r,i),b=vi(r,j); if(rev)idx.push(ci,b,a); else idx.push(ci,a,b);}
+    };
+    if(capStart)cap(0,false);
+    if(capEnd)cap(rings.length-1,true);
+    const gg=new THREE.BufferGeometry(),fa=new Float32Array(verts.length*3);
+    for(let i=0;i<verts.length;i++){fa[3*i]=verts[i][0];fa[3*i+1]=verts[i][1];fa[3*i+2]=verts[i][2];}
+    gg.setAttribute('position',new THREE.BufferAttribute(fa,3));
+    gg.setIndex(idx); gg.computeVertexNormals();
+    return gg;
+  }
+
+  // ---- fuselage skin (windings flipped so normals face out) ----
+  (function(){
+    const STN=176,SEG=46,rings=[];
+    for(let s=0;s<=STN;s++){
+      const t=s/STN,x=-HALF+t*LEN,r=rAt(x),yc=ycAt(x),ring=[];
+      for(let i=0;i<SEG;i++){const a=(i/SEG)*Math.PI*2; ring.push([x,yc+r*Math.cos(a),r*Math.sin(a)]);}
+      rings.push(ring);
+    }
+    const geo=buildLoft(rings,true,true);
+    const ix=geo.index.array;
+    for(let i=0;i<ix.length;i+=3){const t=ix[i+1];ix[i+1]=ix[i+2];ix[i+2]=t;}
+    geo.index.needsUpdate=true; geo.computeVertexNormals();
+    const m=new THREE.Mesh(geo,M.paint); if(!MOBILE)m.castShadow=true; g.add(m);
+  })();
+
+  // ---- lifting surfaces (wings, stabs, fin) ----
+  function airfoil(n,th,m,p){
+    n=n||22;th=th||0.12;m=(m===undefined)?0.02:m;p=p||0.4;
+    const xs=[]; for(let i=0;i<=n;i++){const b=Math.PI*i/n; xs.push(0.5*(1-Math.cos(b)));}
+    const yt=x=>5*th*(0.2969*Math.sqrt(x)-0.1260*x-0.3516*x*x+0.2843*x*x*x-0.1015*x*x*x*x);
+    const yc=x=> x<p ? m/(p*p)*(2*p*x-x*x) : m/((1-p)*(1-p))*((1-2*p)+2*p*x-x*x);
+    const up=[],lo=[]; for(const x of xs){up.push([x,yc(x)+yt(x)]);lo.push([x,yc(x)-yt(x)]);}
+    const pts=[]; for(let i=up.length-1;i>=0;i--)pts.push(up[i]); for(let i=1;i<lo.length;i++)pts.push(lo[i]);
+    return pts;
+  }
+  const AF=airfoil();
+  function buildSurface(stations,base,orient,mirror){
+    const rings=stations.map(st=>{
+      const ring=[];
+      for(const pair of AF){
+        const ax=pair[0],ay=pair[1];
+        let cx=st.le-ax*st.chord, th=ay*st.chord;
+        if(st.twist){const c=Math.cos(st.twist),s2=Math.sin(st.twist);const nx=cx*c-th*s2,ny=cx*s2+th*c;cx=nx;th=ny;}
+        let x,y,z;
+        if(orient==='wing'){x=base.x+cx;y=base.y+st.span_off+th;z=base.z+(mirror?-st.span:st.span);}
+        else{x=base.x+cx;y=base.y+st.span;z=base.z+(mirror?-th:th)+(mirror?-st.span_off:st.span_off);}
+        ring.push([x,y,z]);
+      }
+      return ring;
+    });
+    const m=new THREE.Mesh(buildLoft(rings,true,true),orient==='wing'?M.wing:M.accent);
+    if(!MOBILE)m.castShadow=true; return m;
+  }
+  const WS=1.10;
+  const wingStations=[
+    {span:0.0,le:0.0,chord:6.6,span_off:0.0,twist:0.02},
+    {span:2.2,le:-1.0,chord:5.7,span_off:0.18,twist:0.01},
+    {span:5.0,le:-2.6,chord:4.6,span_off:0.55,twist:0.0},
+    {span:8.5,le:-4.5,chord:3.4,span_off:1.0,twist:-0.02},
+    {span:12.0,le:-6.4,chord:2.4,span_off:1.5,twist:-0.03},
+    {span:14.6,le:-7.8,chord:1.8,span_off:2.0,twist:-0.04},
+    {span:15.6,le:-8.4,chord:1.55,span_off:2.7,twist:-0.04},
+    {span:16.0,le:-8.8,chord:1.25,span_off:3.7,twist:-0.03},
+    {span:16.2,le:-9.0,chord:0.9,span_off:4.7,twist:-0.02}
+  ].map(st=>({span:st.span*WS,le:st.le*WS,chord:st.chord*WS,span_off:st.span_off*WS,twist:st.twist}));
+  const wingBase={x:2.0,y:-0.75,z:0.0};
+  g.add(buildSurface(wingStations,wingBase,'wing',false));
+  g.add(buildSurface(wingStations,wingBase,'wing',true));
+  const stabStations=[
+    {span:0.0,le:0.0,chord:3.0,span_off:0.0,twist:0},
+    {span:2.3,le:-1.0,chord:2.1,span_off:0.06,twist:0},
+    {span:4.6,le:-2.0,chord:1.3,span_off:0.14,twist:0},
+    {span:5.6,le:-2.6,chord:0.6,span_off:0.20,twist:0}
+  ];
+  g.add(buildSurface(stabStations,{x:-13.4,y:0.5,z:0.0},'wing',false));
+  g.add(buildSurface(stabStations,{x:-13.4,y:0.5,z:0.0},'wing',true));
+  const finStations=[
+    {span:0.0,le:0.0,chord:5.4,span_off:0.0,twist:0},
+    {span:2.0,le:-1.2,chord:4.4,span_off:0.0,twist:0},
+    {span:4.2,le:-2.6,chord:3.3,span_off:0.0,twist:0},
+    {span:6.0,le:-3.9,chord:2.2,span_off:0.0,twist:0},
+    {span:6.9,le:-4.6,chord:1.2,span_off:0.0,twist:0}
+  ];
+  g.add(buildSurface(finStations,{x:-13.3,y:2.1,z:0.0},'fin',false));
+
+  // ---- engines (high-bypass turbofan) ----
+  function lathe(pts,mat){
+    const v=pts.map(p=>new THREE.Vector2(p[0],p[1]));
+    const m=new THREE.Mesh(new THREE.LatheGeometry(v,44),mat); m.rotation.z=-Math.PI/2; return m;
+  }
+  function buildEngine(side){
+    const e=new THREE.Group();
+    e.add(lathe([[1.10,0.30],[1.06,1.20],[1.02,2.00],[1.04,2.30],[1.10,2.46],[1.18,2.55],[1.27,2.50],[1.33,2.40]],M.intake));
+    e.add(lathe([[1.33,2.40],[1.38,2.10],[1.42,1.50],[1.41,0.80],[1.35,0.00],[1.26,-0.90],[1.14,-1.70],[1.02,-2.30]],M.cowl));
+    e.add(lathe([[1.435,2.02],[1.44,1.62]],M.accent));
+    const disk=new THREE.Mesh(new THREE.CircleGeometry(1.07,36),M.dark); disk.rotation.y=Math.PI/2; disk.position.x=0.24; e.add(disk);
+    const bladeGeo=new THREE.BoxGeometry(0.05,0.80,0.15),Nb=20;
+    for(let i=0;i<Nb;i++){const pv=new THREE.Group();const b=new THREE.Mesh(bladeGeo,M.blade);b.position.y=0.66;b.rotation.y=0.5;pv.add(b);pv.rotation.x=i/Nb*Math.PI*2;pv.position.x=0.34;e.add(pv);}
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.30,0.30,0.2,18),M.metal); hub.rotation.z=Math.PI/2; hub.position.x=0.34; e.add(hub);
+    const spin=new THREE.Mesh(new THREE.ConeGeometry(0.28,0.8,18),M.metal); spin.rotation.z=-Math.PI/2; spin.position.x=0.74; e.add(spin);
+    e.add(lathe([[0.66,0.18],[0.68,-0.4],[0.66,-1.0],[0.60,-1.6],[0.54,-2.05],[0.50,-2.2]],M.exhaust));
+    const byp=new THREE.Mesh(new THREE.TorusGeometry(1.0,0.045,10,40),M.intake); byp.rotation.y=Math.PI/2; byp.position.x=-2.30; e.add(byp);
+    const plug=new THREE.Mesh(new THREE.ConeGeometry(0.5,1.15,24),M.metal); plug.rotation.z=Math.PI/2; plug.position.x=-2.78; e.add(plug);
+    const glowMat=new THREE.MeshStandardMaterial({color:0x331505,emissive:0xff6a2a,emissiveIntensity:.15});
+    engineGlowMats.push(glowMat);
+    const ex=new THREE.Mesh(new THREE.CircleGeometry(0.52,16),glowMat); ex.position.x=-2.24; ex.rotation.y=-Math.PI/2; e.add(ex);
+    (function(){
+      const smooth=v=>v*v*(3-2*v);
+      const tprof=s=>(0.2969*Math.sqrt(s)-0.1260*s-0.3516*s*s+0.2843*s*s*s-0.1036*s*s*s*s)/0.1015;
+      const xLE=v=>0.95-2.00*smooth(v), xTE=v=>-1.05-1.55*smooth(v), half=v=>0.15+0.10*(1-smooth(v));
+      const yBot=0.95,yTop=2.35,ROWS=14,K=16,rings=[];
+      for(let r=0;r<=ROWS;r++){
+        const v=r/ROWS,y=yBot+(yTop-yBot)*v,le=xLE(v),chord=le-xTE(v),h=half(v),ring=[];
+        for(let i=0;i<=K;i++){const s=i/K;ring.push([le-s*chord,y,h*tprof(s)]);}
+        for(let i=K-1;i>=1;i--){const s=i/K;ring.push([le-s*chord,y,-h*tprof(s)]);}
+        rings.push(ring);
+      }
+      e.add(new THREE.Mesh(buildLoft(rings,true,true),M.cowl));
+    })();
+    e.position.set(-1.2,-2.3,side*6.6);
+    return e;
+  }
+  g.add(buildEngine(1)); g.add(buildEngine(-1));
+
+  // ---- cabin windows (emissive — glow at night) ----
+  (function(){
+    const geo=new THREE.PlaneGeometry(0.46,0.34),list=[];
+    for(let x=13.0;x>=-11.0;x-=0.62){
+      if(x>12.0&&x<12.9)continue;
+      const r=rAt(x),yc=ycAt(x),wy=yc+0.55,half=Math.sqrt(Math.max(r*r-0.55*0.55,0.01));
+      for(const sgn of [1,-1]){
+        const n=new THREE.Vector3(0,0.55,sgn*half).normalize();
+        const pos=new THREE.Vector3(x,wy,sgn*half).addScaledVector(n,0.03);
+        list.push({pos:pos,n:n});
+      }
+    }
+    const inst=new THREE.InstancedMesh(geo,M.glass,list.length);
+    const q=new THREE.Quaternion(),up=new THREE.Vector3(0,0,1),mtx=new THREE.Matrix4(),sc=new THREE.Vector3(1,1,1);
+    list.forEach((w,i)=>{q.setFromUnitVectors(up,w.n);mtx.compose(w.pos,q,sc);inst.setMatrixAt(i,mtx);});
+    inst.instanceMatrix.needsUpdate=true; g.add(inst);
+  })();
+
+  // ---- cockpit windows (737-style: two raked windscreens meeting at a centre post, + 2 side windows) ----
+  (function(){
+    const grp=new THREE.Group();
+    const lerp=(a,b,t)=>a+(b-a)*t, clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+    function patch(c,side,push,NU,NV){
+      NU=NU||18;NV=NV||14; const verts=[],idx=[];
+      for(let iu=0;iu<=NU;iu++){
+        const u=iu/NU;
+        const xt=lerp(c.ti[0],c.to[0],u),yt=lerp(c.ti[1],c.to[1],u);
+        const xb=lerp(c.bi[0],c.bo[0],u),yb=lerp(c.bi[1],c.bo[1],u);
+        for(let iv=0;iv<=NV;iv++){
+          const v=iv/NV,x=lerp(xt,xb,v),y=lerp(yt,yb,v);
+          const R=rAt(x),yc=ycAt(x),a=Math.acos(clamp((y-yc)/Math.max(R,1e-3),-1,1)),Rp=R*push;
+          verts.push([x,yc+Rp*Math.cos(a),side*Rp*Math.sin(a)]);
+        }
+      }
+      const W=NV+1;
+      for(let iu=0;iu<NU;iu++)for(let iv=0;iv<NV;iv++){
+        const p=iu*W+iv,q=p+W,r2=p+1,s2=q+1;
+        if(side>0)idx.push(p,q,r2,r2,q,s2); else idx.push(p,r2,q,q,r2,s2);
+      }
+      const gg=new THREE.BufferGeometry(),fa=new Float32Array(verts.length*3);
+      verts.forEach((p,i)=>{fa[3*i]=p[0];fa[3*i+1]=p[1];fa[3*i+2]=p[2];});
+      gg.setAttribute('position',new THREE.BufferAttribute(fa,3)); gg.setIndex(idx); gg.computeVertexNormals();
+      return gg;
+    }
+    function inset(c,mI,mO,mT,mB){
+      const bl=(u,v)=>{
+        const tx=lerp(c.ti[0],c.to[0],u),ty=lerp(c.ti[1],c.to[1],u);
+        const bx=lerp(c.bi[0],c.bo[0],u),by=lerp(c.bi[1],c.bo[1],u);
+        return [lerp(tx,bx,v),lerp(ty,by,v)];
+      };
+      return {ti:bl(mI,mT),to:bl(1-mO,mT),bi:bl(mI,1-mB),bo:bl(1-mO,1-mB)};
+    }
+    const yT=0.92,yB=0.40;
+    const WIN=[
+      {ti:[18.50,0.90],bi:[18.70,0.62],to:[16.35,yT],bo:[16.35,yB]},
+      {ti:[16.35,yT],bi:[16.35,yB],to:[15.55,yT],bo:[15.55,yB]},
+      {ti:[15.55,yT],bi:[15.55,yB],to:[14.65,yT],bo:[14.70,yB]}
+    ];
+    for(const side of [1,-1])WIN.forEach((w,i)=>{
+      grp.add(new THREE.Mesh(patch(w,side,1.010),M.cockpitFrame));
+      const gg=(i===0)?inset(w,0.00,0.06,0.09,0.09):inset(w,0.13,0.13,0.13,0.13);
+      grp.add(new THREE.Mesh(patch(gg,side,1.026),M.cockpitGlass));
+    });
+    (function(){
+      const xs=[18.02,18.16,18.30,18.44,18.56,18.66,18.73],w=0.185,verts=[],idx=[];
+      xs.forEach(x=>{const R=rAt(x)*1.030,yc=ycAt(x),yy=yc+Math.sqrt(Math.max(R*R-w*w,1e-4));verts.push([x,yy,-w],[x,yy,w]);});
+      for(let i=0;i<xs.length-1;i++){const a=2*i;idx.push(a,a+2,a+1,a+1,a+2,a+3);}
+      const gg=new THREE.BufferGeometry(),fa=new Float32Array(verts.length*3);
+      verts.forEach((p,k)=>{fa[3*k]=p[0];fa[3*k+1]=p[1];fa[3*k+2]=p[2];});
+      gg.setAttribute('position',new THREE.BufferAttribute(fa,3)); gg.setIndex(idx); gg.computeVertexNormals();
+      grp.add(new THREE.Mesh(gg,M.paint));
+    })();
+    g.add(grp);
+  })();
+
+  // ---- cheatline ----
+  (function(){
+    const verts=[],idx=[],y1=0.05,y2=-0.55; let col=0;
+    for(let x=16.2;x>=-15.5;x-=0.3){
+      const r=rAt(x),yc=ycAt(x);
+      const w1=Math.sqrt(Math.max(r*r-y1*y1,0)),w2=Math.sqrt(Math.max(r*r-y2*y2,0)),s1=(r+0.05)/r;
+      for(const sgn of [1,-1])verts.push([x,yc+y1*s1,sgn*w1*s1],[x,yc+y2*s1,sgn*w2*s1]);
+      col++;
+    }
+    const per=4;
+    for(let c=0;c<col-1;c++){const a=c*per,b=(c+1)*per;idx.push(a+0,a+1,b+0,b+0,a+1,b+1);idx.push(a+2,b+2,a+3,a+3,b+2,b+3);}
+    const gg=new THREE.BufferGeometry(),fa=new Float32Array(verts.length*3);
+    for(let i=0;i<verts.length;i++){fa[3*i]=verts[i][0];fa[3*i+1]=verts[i][1];fa[3*i+2]=verts[i][2];}
+    gg.setAttribute('position',new THREE.BufferAttribute(fa,3)); gg.setIndex(idx); gg.computeVertexNormals();
+    g.add(new THREE.Mesh(gg,M.accent));
+  })();
+
+  // ---- APU tailcone ----
+  const apu=new THREE.Mesh(new THREE.ConeGeometry(0.32,0.9,16),M.dark);
+  apu.rotation.z=Math.PI/2; apu.position.set(-19.1,ycAt(-19),0); g.add(apu);
+
+  // ---- nav + strobe lights (emissive spheres, native frame) ----
+  const tip=wingStations[wingStations.length-1];
+  const tipPt=mir=>new THREE.Vector3(wingBase.x+tip.le-0.04*tip.chord,wingBase.y+tip.span_off,(mir?-1:1)*(wingBase.z+tip.span));
+  const navR=new THREE.Mesh(new THREE.SphereGeometry(.16,7,6),MATS.emissiveRed); navR.position.copy(tipPt(true)); g.add(navR);
+  const navG=new THREE.Mesh(new THREE.SphereGeometry(.16,7,6),MATS.emissiveGreen); navG.position.copy(tipPt(false)); g.add(navG);
+  const strobe=new THREE.Mesh(new THREE.SphereGeometry(.14,7,6),MATS.emissiveWhite); strobe.position.set(-18.0,ycAt(-18.6)+rAt(-18.6)+0.2,0); g.add(strobe);
+
+  // ---- landing gear + anti-collision beacon (parent frame; gear bottom ~ y-4.55) ----
+  function gear(x,z,dbl){
+    const strut=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,2.0,8),MATS.metal);
+    strut.position.set(x,-3.2,z); P.add(strut);
+    (dbl?[.30,-.30]:[0]).forEach(o=>{
+      const wh=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.36,12),MATS.tire);
+      wh.rotation.z=Math.PI/2; wh.position.set(x+o,-4.05,z); P.add(wh);
+      const hub=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.4,8),MATS.metal);
+      hub.rotation.z=Math.PI/2; hub.position.set(x+o,-4.05,z); P.add(hub);
+    });
+  }
+  gear(0,11,false); gear(2.3,-1,true); gear(-2.3,-1,true);
+
+  const beacon=new THREE.Mesh(new THREE.SphereGeometry(.18,8,6),new THREE.MeshStandardMaterial({color:0xff5555,emissive:0xff2233,emissiveIntensity:2}));
+  beacon.position.set(0,rAt(0)*S+0.15,0); P.add(beacon);
+
+  return {beacon:beacon};
+}
+
 // ---------------------------------------------------------------- the plane
 // Local frame: nose +z, fuselage centerline y=0, cabin floor y=-1.5.
 // Parked at gate: group at (40, 4.6, 84), yaw +PI/2 -> nose east (+x world).
@@ -1927,7 +2235,7 @@ function buildPlane(){
   var P=planeG;
 
   // ===== exterior (shared photo-real builder; GA-001's door hides under the jetway hood)
-  var ext=buildJetExterior(P,{accent:0x1d4e89,titleColor:'#1d4e89',reg:'N-GR3SH',glow:true});
+  var ext=buildGreshJet(P,{accent:0x1d4e89});
   planeBeacon=ext.beacon;
   var m4=new THREE.Matrix4();
 
@@ -2629,10 +2937,10 @@ function init(){
     AudioSys.setRain(false,false);
     GameState.started=true;
     document.getElementById('intro').style.display='none';
-    document.getElementById('crosshair').style.display='block';
-    if(!MOBILE)setHint('Drag to look · WASD move · E interact · SPACE jump · Board at GATE 7');
-    toast('Welcome to Gresh International. Flight GA-001 "THE STORM" is boarding.');
     AudioSys.chime();
+    // Start already in the captain's seat: spawn in the plane at the Runway 09 threshold,
+    // 3rd-person chase view, ready to fly. (Walk mode is still reachable after landing.)
+    startFlight(false);
   });
   document.getElementById('mute-btn').addEventListener('click',function(){
     var m=AudioSys.toggleMute();

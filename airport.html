@@ -394,7 +394,8 @@ var AudioSys=(function(){
     setTimeout(function(){try{e.o1.stop();e.o2.stop();e.w.stop()}catch(_){}},1200);
   }
   function toggleMute(){muted=!muted;if(ctx){master.gain.setTargetAtTime(muted?0:.9,ctx.currentTime,.05)}return muted}
-  return {ensure:ensure,setRain:setRain,thunder:thunder,blip:blip,chime:chime,slurp:slurp,
+  function resume(){if(ctx&&ctx.state==='suspended')ctx.resume()}
+  return {ensure:ensure,resume:resume,setRain:setRain,thunder:thunder,blip:blip,chime:chime,slurp:slurp,
           startEngine:startEngine,setEngine:setEngine,stopEngine:stopEngine,toggleMute:toggleMute,
           isMuted:function(){return muted}};
 })();
@@ -2565,7 +2566,7 @@ function startFlight(fromLanding){
     applyPlaneTransform();
     scene.add(camera);
     _pf.set(0,0,1).applyEuler(planeG.rotation);
-    camPos.copy(planeG.position).addScaledVector(_pf,-24).add(new THREE.Vector3(0,8,0));
+    camPos.copy(planeG.position).addScaledVector(_pf,-26).add(new THREE.Vector3(0,12,0));
     camera.position.copy(camPos);
     flight.lastY=planeG.position.y;
     AudioSys.startEngine();
@@ -2691,8 +2692,9 @@ function updateFlight(dt){
   }
   applyPlaneTransform();
   // chase camera (no per-frame allocations)
-  var dist=f.onGround?19:26,h=f.onGround?6.5:9;
+  var dist=26,h=f.onGround?12:9;
   _lookTarget.copy(planeG.position).addScaledVector(_pf,14);
+  if(f.onGround)_lookTarget.y+=8;        // aim over the tall tail fin during the takeoff roll
   _camDesired.copy(planeG.position).addScaledVector(_pf,-dist);
   _camDesired.y+=h;
   camPos.lerp(_camDesired,1-Math.exp(-4.5*dt));
@@ -2950,7 +2952,17 @@ function init(){
   setMode('walk');
 
   document.getElementById('site-loader').classList.add('hidden');
-  document.getElementById('intro').style.display='flex';
+  // Boot straight into the captain's seat on Runway 09 — no intro gate.
+  GameState.started=true;
+  startFlight(false);
+  // Audio is gated behind a user gesture; unlock engine + rain on first input.
+  var unlockAudio=function(){
+    AudioSys.ensure();AudioSys.resume();AudioSys.startEngine();
+    window.removeEventListener('pointerdown',unlockAudio);
+    window.removeEventListener('keydown',unlockAudio);
+  };
+  window.addEventListener('pointerdown',unlockAudio);
+  window.addEventListener('keydown',unlockAudio);
   animate();
 }
 function animate(){

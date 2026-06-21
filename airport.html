@@ -2521,7 +2521,7 @@ function updatePrompt(){
       if(ddx*ddx+ddz*ddz<81){reboardPrompt=true;label='[E] Climb back in & fly ✈'}
     }
   }else if(GameState.mode==='fly'){
-    if(flight.onGround&&flight.speed<.6&&flight.throttle<.06){exitPrompt=true;label='[E] Shut down & climb out'}
+    if(flight.onGround&&flight.speed<.6&&flight.throttle<.06&&flight.everThrottled){exitPrompt=true;label='[E] Shut down & climb out'}
   }
   if(MOBILE)label=label.replace('[E]','[USE]');
   if(label){promptEl.textContent=label;promptEl.style.display='block'}
@@ -2535,7 +2535,7 @@ function tryInteract(){
 }
 
 // ---------------------------------------------------------------- flight mode
-var flight={throttle:0,speed:0,pitchUp:0,roll:0,yaw:Math.PI/2,onGround:true,lastY:4.6,vs:0,ceilingWarned:false,boundaryWarned:false};
+var flight={throttle:0,speed:0,pitchUp:0,roll:0,yaw:Math.PI/2,onGround:true,lastY:4.6,vs:0,ceilingWarned:false,boundaryWarned:false,everThrottled:false};
 var camPos=new THREE.Vector3(),_pf=new THREE.Vector3(),_lookTarget=new THREE.Vector3(),_camDesired=new THREE.Vector3();
 var fadeEl,crashEl,FPEls=null;
 
@@ -2551,6 +2551,7 @@ function startFlight(fromLanding){
   setTimeout(function(){
     setMode('fly');
     GameState.planeAtGate=false;
+    flight.everThrottled=false;   // don't show "climb out" until they've actually flown
     planeColliders.forEach(function(c){c.enabled=false});
     if(gateBarrier){gateBarrier.mesh.visible=true;gateBarrier.sign.visible=true;gateBarrier.collider.enabled=true}
     planeInterior.visible=false;
@@ -2618,6 +2619,7 @@ function updateFlight(dt){
   var thrU=keys['w']||mobileInput.thrUp,thrD=keys['s']||mobileInput.thrDn;
   if(thrU)f.throttle=clamp(f.throttle+.4*dt,0,1);
   if(thrD)f.throttle=clamp(f.throttle-.5*dt,0,1);
+  if(f.throttle>.06)f.everThrottled=true;
   // attitude inputs
   var pitchIn=(keys['ArrowUp']?1:0)-(keys['ArrowDown']?1:0);
   var rollIn=(keys['ArrowRight']?1:0)-(keys['ArrowLeft']?1:0);
@@ -2866,7 +2868,7 @@ function init(){
   camera=new THREE.PerspectiveCamera(70,window.innerWidth/window.innerHeight,.1,7000);
   rig=new THREE.Object3D();pitchObj=new THREE.Object3D();
   pitchObj.add(camera);rig.add(pitchObj);scene.add(rig);
-  renderer=new THREE.WebGLRenderer({antialias:!MOBILE});
+  renderer=new THREE.WebGLRenderer({antialias:!MOBILE,logarithmicDepthBuffer:true});
   renderer.setSize(window.innerWidth,window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,MOBILE?1.25:1.5));
   renderer.setClearColor(0x10141c);

@@ -2202,29 +2202,34 @@ function buildGreshJet(P,opts){
   const navG=new THREE.Mesh(new THREE.SphereGeometry(.16,7,6),MATS.emissiveGreen); navG.position.copy(tipPt(false)); g.add(navG);
   const strobe=new THREE.Mesh(new THREE.SphereGeometry(.14,7,6),MATS.emissiveWhite); strobe.position.set(-18.0,ycAt(-18.6)+rAt(-18.6)+0.2,0); g.add(strobe);
 
-  // ---- landing gear + anti-collision beacon (parent frame; gear bottom ~ y-4.55) ----
-  function gear(x,z,dbl){
-    const strut=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,2.0,8),MATS.metal);
-    strut.position.set(x,-3.2,z); P.add(strut);
+  // ---- landing gear (pivoted leg groups so they connect to the belly AND retract; bottom ~ y-4.55) ----
+  const gearLegs=[];
+  function gear(x,z,dbl,upAngle){
+    const attachY=(ycAt(z/S)-rAt(z/S))*S+0.05;       // belly surface at this fuselage station -> pivot point
+    const wheelY=-4.05, localWheelY=wheelY-attachY;   // wheel centre relative to the belly pivot
+    const leg=new THREE.Group(); leg.position.set(x,attachY,z); P.add(leg);
+    const strut=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,-localWheelY+0.5,8),MATS.metal);
+    strut.position.y=localWheelY/2; leg.add(strut);   // top embeds into the belly so it reads as attached
     (dbl?[.30,-.30]:[0]).forEach(o=>{
       const wh=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.36,12),MATS.tire);
-      wh.rotation.z=Math.PI/2; wh.position.set(x+o,-4.05,z); P.add(wh);
+      wh.rotation.z=Math.PI/2; wh.position.set(o,localWheelY,0); leg.add(wh);
       const hub=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.4,8),MATS.metal);
-      hub.rotation.z=Math.PI/2; hub.position.set(x+o,-4.05,z); P.add(hub);
+      hub.rotation.z=Math.PI/2; hub.position.set(o,localWheelY,0); leg.add(hub);
     });
+    gearLegs.push({leg:leg,up:upAngle});
   }
-  gear(0,11,false); gear(2.3,-1,true); gear(-2.3,-1,true);
+  gear(0,11,false,-1.45); gear(2.3,-1,true,1.45); gear(-2.3,-1,true,1.45);  // nose folds forward, mains fold aft
 
   const beacon=new THREE.Mesh(new THREE.SphereGeometry(.18,8,6),new THREE.MeshStandardMaterial({color:0xff5555,emissive:0xff2233,emissiveIntensity:2}));
   beacon.position.set(0,rAt(0)*S+0.15,0); P.add(beacon);
 
-  return {beacon:beacon};
+  return {beacon:beacon,gear:gearLegs};
 }
 
 // ---------------------------------------------------------------- the plane
 // Local frame: nose +z, fuselage centerline y=0, cabin floor y=-1.5.
 // Parked at gate: group at (40, 4.6, 84), yaw +PI/2 -> nose east (+x world).
-var planeG=null,planeInterior=null,planeBeacon=null,planeColliders=[],engineGlowMats=[];
+var planeG=null,planeInterior=null,planeBeacon=null,planeColliders=[],engineGlowMats=[],planeGear=[];
 var PLANE_GATE={x:40,y:4.6,z:84,yaw:Math.PI/2};
 
 function buildPlane(){
@@ -2238,6 +2243,7 @@ function buildPlane(){
   // ===== exterior (shared photo-real builder; GA-001's door hides under the jetway hood)
   var ext=buildGreshJet(P,{accent:0x1d4e89});
   planeBeacon=ext.beacon;
+  planeGear=ext.gear;
   var m4=new THREE.Matrix4();
 
   // ===== interior
@@ -2535,7 +2541,7 @@ function tryInteract(){
 }
 
 // ---------------------------------------------------------------- flight mode
-var flight={throttle:0,speed:0,pitchUp:0,roll:0,yaw:Math.PI/2,onGround:true,lastY:4.6,vs:0,ceilingWarned:false,boundaryWarned:false,everThrottled:false};
+var flight={throttle:0,speed:0,pitchUp:0,roll:0,yaw:Math.PI/2,onGround:true,lastY:4.6,vs:0,ceilingWarned:false,boundaryWarned:false,everThrottled:false,gear:1};
 var camPos=new THREE.Vector3(),_pf=new THREE.Vector3(),_lookTarget=new THREE.Vector3(),_camDesired=new THREE.Vector3();
 var fadeEl,crashEl,FPEls=null;
 
@@ -2552,6 +2558,7 @@ function startFlight(fromLanding){
     setMode('fly');
     GameState.planeAtGate=false;
     flight.everThrottled=false;   // don't show "climb out" until they've actually flown
+    flight.gear=1;                // start with gear down/extended
     planeColliders.forEach(function(c){c.enabled=false});
     if(gateBarrier){gateBarrier.mesh.visible=true;gateBarrier.sign.visible=true;gateBarrier.collider.enabled=true}
     planeInterior.visible=false;
@@ -2637,7 +2644,7 @@ function updateFlight(dt){
     f.yaw+=rudIn*.55*dt*clamp(f.speed/25,0,1);
     if(f.speed>62&&pitchIn>0)f.pitchUp+=pitchIn*.8*dt;
     else f.pitchUp-=f.pitchUp*3*dt;
-    if(f.pitchUp>.07&&f.speed>66){f.onGround=false;toast('Positive rate. Gear stays down — style points.')}
+    if(f.pitchUp>.07&&f.speed>66){f.onGround=false;toast('Positive rate, gear up.')}
   }
   f.pitchUp=clamp(f.pitchUp,-.85,.85);
   f.roll=clamp(f.roll,-1.05,1.05);
@@ -2693,6 +2700,16 @@ function updateFlight(dt){
     if(!onRunway)f.speed*=.75;
   }
   applyPlaneTransform();
+  // landing gear: auto-retract climbing out, auto-extend on approach (~2.4s travel)
+  var aglH=planeG.position.y-terrainHeight(planeG.position.x,planeG.position.z);
+  var wantGear=(f.onGround||aglH<22)?1:0,gspd=dt/2.4;
+  if(f.gear<wantGear)f.gear=Math.min(wantGear,f.gear+gspd);
+  else if(f.gear>wantGear)f.gear=Math.max(wantGear,f.gear-gspd);
+  for(var gi=0;gi<planeGear.length;gi++){
+    var lg=planeGear[gi];
+    lg.leg.rotation.x=lg.up*(1-f.gear);   // 1=down (0 rot) -> 0=up (folded)
+    lg.leg.visible=f.gear>0.02;           // tuck out of sight once fully stowed
+  }
   // chase camera (no per-frame allocations)
   var dist=26,h=f.onGround?12:9;
   _lookTarget.copy(planeG.position).addScaledVector(_pf,14);

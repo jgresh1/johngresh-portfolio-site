@@ -129,6 +129,15 @@ canvas{cursor:grab}canvas.dragging{cursor:grabbing}
 #throttle-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(90deg,#2a9d8f,#ffd24a)}
 @media(max-width:800px){#flight-panel{left:10px;top:auto;bottom:230px;transform:none;font-size:17px;padding:8px 10px;min-width:118px}}
 
+/* ---------- Runway aircraft selector ---------- */
+#plane-switch-btn{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:1000;display:none;
+  font-family:'VT323',monospace;font-size:18px;letter-spacing:1px;background:rgba(8,12,18,.82);color:#7dffb0;
+  border:2px solid #000;box-shadow:3px 3px 0 rgba(0,0,0,.6);padding:6px 15px;cursor:pointer;
+  text-shadow:0 0 6px rgba(125,255,176,.4);transition:background .12s,transform .12s,box-shadow .12s}
+#plane-switch-btn:hover{background:rgba(22,32,46,.92)}
+#plane-switch-btn:active{transform:translateX(-50%) translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,.6)}
+@media(max-width:800px){#plane-switch-btn{top:12px;font-size:15px;padding:5px 11px}}
+
 /* ---------- Fade / vignette / flash ---------- */
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:2400;transition:opacity .5s ease}
 #vignette{position:fixed;inset:0;pointer-events:none;z-index:850;background:radial-gradient(ellipse at center,transparent 55%,rgba(4,6,10,.55) 100%)}
@@ -245,6 +254,8 @@ canvas{cursor:grab}canvas.dragging{cursor:grabbing}
   <div id="throttle-bar"><div id="throttle-fill"></div></div></div>
   <div class="fp-warn" id="fp-stall">! STALL !</div>
 </div>
+
+<button id="plane-switch-btn" type="button">&#9992; GRESH JET &#9656; SWAP</button>
 
 <div id="vignette"></div>
 <div id="fade"></div>
@@ -557,36 +568,50 @@ function updateRain(dt,center){
 }
 
 // ---------------------------------------------------------------- lightning
-var lightning={flash:0,next:4,boltTTL:0};
+var lightning={flash:0,next:2,boltTTL:0};
 function makeBolt(){
   if(boltGroup){scene.remove(boltGroup);boltGroup=null}
   boltGroup=new THREE.Group();
-  var a=Math.random()*Math.PI*2,dist=1400+Math.random()*1100;
-  var sx=Math.cos(a)*dist,sz=Math.sin(a)*dist;
-  var topY=700+Math.random()*250;
-  var mat=new THREE.LineBasicMaterial({color:0xdfe9ff,transparent:true,opacity:.95,fog:false});
+  // bright white core + a soft additive halo line (fakes a glowing channel)
+  var core=new THREE.LineBasicMaterial({color:0xf2f6ff,transparent:true,opacity:1,fog:false,depthWrite:false});
+  var glow=new THREE.LineBasicMaterial({color:0x9fc1ff,transparent:true,opacity:.4,fog:false,depthWrite:false,blending:THREE.AdditiveBlending});
   function jag(x0,y0,z0,y1,spread){
-    var pts=[],x=x0,z=z0,y=y0;
+    var pts=[],x=x0,z=z0,y=y0,nodes=[];
     pts.push(new THREE.Vector3(x,y,z));
-    var steps=8+Math.floor(Math.random()*5);
+    var steps=10+Math.floor(Math.random()*6);
     for(var i=1;i<=steps;i++){
       y=lerp(y0,y1,i/steps);
       x+=(Math.random()*2-1)*spread;z+=(Math.random()*2-1)*spread;
-      pts.push(new THREE.Vector3(x,y,z));
+      var p=new THREE.Vector3(x,y,z); pts.push(p); nodes.push(p);
     }
-    return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),mat);
+    var geo=new THREE.BufferGeometry().setFromPoints(pts);
+    boltGroup.add(new THREE.Line(geo,core));
+    boltGroup.add(new THREE.Line(geo,glow));
+    return nodes;
   }
-  var groundY=terrainHeight(sx,sz);
-  boltGroup.add(jag(sx,topY,sz,groundY,42));
-  if(Math.random()<.7)boltGroup.add(jag(sx+20,topY*.62,sz-15,groundY+120,30));
+  function strike(sx,sz){
+    var topY=720+Math.random()*260,gY=terrainHeight(sx,sz);
+    var main=jag(sx,topY,sz,gY,44);
+    var nf=2+Math.floor(Math.random()*3);              // 2-4 branching forks per channel
+    for(var k=0;k<nf;k++){
+      var n=main[Math.floor(main.length*(0.2+Math.random()*0.6))];
+      jag(n.x,n.y,n.z,gY+Math.random()*220,30);
+    }
+  }
+  var a=Math.random()*Math.PI*2,dist=700+Math.random()*1700;  // some strike dramatically close now
+  strike(Math.cos(a)*dist,Math.sin(a)*dist);
+  if(Math.random()<.45){                                // frequent twin strike on a nearby bearing
+    var a2=a+(Math.random()*1.4-0.7),d2=900+Math.random()*1500;
+    strike(Math.cos(a2)*d2,Math.sin(a2)*d2);
+  }
   scene.add(boltGroup);
-  lightning.boltTTL=.14+Math.random()*.08;
+  lightning.boltTTL=.16+Math.random()*.10;
   return dist;
 }
 function updateLightning(dt){
   lightning.next-=dt;
   if(lightning.next<=0){
-    lightning.next=5+Math.random()*11;
+    lightning.next=2.4+Math.random()*4.6;
     lightning.flash=1;
     var dist=makeBolt();
     var delay=dist/340*1000;
@@ -602,7 +627,7 @@ function updateLightning(dt){
     if(lightning.boltTTL<=0&&boltGroup){scene.remove(boltGroup);boltGroup=null}
   }
   if(skyMat)skyMat.uniforms.uFlash.value=lightning.flash;
-  if(lightningLight)lightningLight.intensity=lightning.flash*2.6;
+  if(lightningLight)lightningLight.intensity=lightning.flash*3.4;
 }
 
 // ---------------------------------------------------------------- lights
@@ -1986,6 +2011,7 @@ function buildGreshJet(P,opts){
   }
 
   // ---- fuselage skin (windings flipped so normals face out) ----
+  let fuseMesh=null;
   (function(){
     const STN=176,SEG=46,rings=[];
     for(let s=0;s<=STN;s++){
@@ -1997,7 +2023,7 @@ function buildGreshJet(P,opts){
     const ix=geo.index.array;
     for(let i=0;i<ix.length;i+=3){const t=ix[i+1];ix[i+1]=ix[i+2];ix[i+2]=t;}
     geo.index.needsUpdate=true; geo.computeVertexNormals();
-    const m=new THREE.Mesh(geo,M.paint); if(!MOBILE)m.castShadow=true; g.add(m);
+    const m=new THREE.Mesh(geo,M.paint); if(!MOBILE)m.castShadow=true; g.add(m); fuseMesh=m;
   })();
 
   // ---- lifting surfaces (wings, stabs, fin) ----
@@ -2041,16 +2067,16 @@ function buildGreshJet(P,opts){
     {span:16.2,le:-9.0,chord:0.9,span_off:4.7,twist:-0.02}
   ].map(st=>({span:st.span*WS,le:st.le*WS,chord:st.chord*WS,span_off:st.span_off*WS,twist:st.twist}));
   const wingBase={x:2.0,y:-0.75,z:0.0};
-  g.add(buildSurface(wingStations,wingBase,'wing',false));
-  g.add(buildSurface(wingStations,wingBase,'wing',true));
+  const wingR=buildSurface(wingStations,wingBase,'wing',false); g.add(wingR);
+  const wingL=buildSurface(wingStations,wingBase,'wing',true);  g.add(wingL);
   const stabStations=[
     {span:0.0,le:0.0,chord:3.0,span_off:0.0,twist:0},
     {span:2.3,le:-1.0,chord:2.1,span_off:0.06,twist:0},
     {span:4.6,le:-2.0,chord:1.3,span_off:0.14,twist:0},
     {span:5.6,le:-2.6,chord:0.6,span_off:0.20,twist:0}
   ];
-  g.add(buildSurface(stabStations,{x:-13.4,y:0.5,z:0.0},'wing',false));
-  g.add(buildSurface(stabStations,{x:-13.4,y:0.5,z:0.0},'wing',true));
+  const stabR=buildSurface(stabStations,{x:-13.4,y:0.5,z:0.0},'wing',false); g.add(stabR);
+  const stabL=buildSurface(stabStations,{x:-13.4,y:0.5,z:0.0},'wing',true);  g.add(stabL);
   const finStations=[
     {span:0.0,le:0.0,chord:5.4,span_off:0.0,twist:0},
     {span:2.0,le:-1.2,chord:4.4,span_off:0.0,twist:0},
@@ -2058,7 +2084,7 @@ function buildGreshJet(P,opts){
     {span:6.0,le:-3.9,chord:2.2,span_off:0.0,twist:0},
     {span:6.9,le:-4.6,chord:1.2,span_off:0.0,twist:0}
   ];
-  g.add(buildSurface(finStations,{x:-13.3,y:2.1,z:0.0},'fin',false));
+  const finMesh=buildSurface(finStations,{x:-13.3,y:2.1,z:0.0},'fin',false); g.add(finMesh);
 
   // ---- engines (high-bypass turbofan) ----
   function lathe(pts,mat){
@@ -2195,6 +2221,44 @@ function buildGreshJet(P,opts){
   const apu=new THREE.Mesh(new THREE.ConeGeometry(0.32,0.9,16),M.dark);
   apu.rotation.z=Math.PI/2; apu.position.set(-19.1,ycAt(-19),0); g.add(apu);
 
+  // ---- skin texturing: organic per-vertex weathering (replaces the drawn panel lines) ----
+  // Bakes soft, irregular tonal variation into the paint — sun-faded crown, faint lengthwise
+  // flow streaks and a grimier belly/roots — so the surfaces read as worn metal instead of flat
+  // plastic. It's all smooth fractal noise: there are no straight lines anywhere on the airframe.
+  (function(){
+    const fract=v=>v-Math.floor(v);
+    function vnoise(x,y,z){                              // smooth trilinear value noise
+      const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z),xf=x-xi,yf=y-yi,zf=z-zi;
+      const u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=zf*zf*(3-2*zf);
+      const h=(a,b,c)=>fract(Math.sin(a*127.1+b*311.7+c*74.7)*43758.5453);
+      const e=(a,b)=>a+(b-a)*u;
+      const c00=e(h(xi,yi,zi),h(xi+1,yi,zi)),c10=e(h(xi,yi+1,zi),h(xi+1,yi+1,zi));
+      const c01=e(h(xi,yi,zi+1),h(xi+1,yi,zi+1)),c11=e(h(xi,yi+1,zi+1),h(xi+1,yi+1,zi+1));
+      const a0=c00+(c10-c00)*v,a1=c01+(c11-c01)*v; return a0+(a1-a0)*w;
+    }
+    const fbm=(x,y,z)=>{let s=0,a=0.5,f=1;for(let o=0;o<4;o++){s+=a*vnoise(x*f,y*f,z*f);a*=0.5;f*=2.03;}return s;};
+    function weather(mesh,opt){
+      if(!mesh||!mesh.geometry)return; opt=opt||{};
+      const geo=mesh.geometry,pos=geo.attributes.position,N=pos.count,col=new Float32Array(N*3);
+      const floor=opt.floor!==undefined?opt.floor:0.80;
+      for(let i=0;i<N;i++){
+        const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+        let s=1.0;
+        s-=Math.abs(fbm(x*0.45,y*0.7,z*0.45)*2-1)*0.13;   // broad mottled paneling
+        s-=Math.abs(fbm(x*0.10,y*0.5,z*1.5)*2-1)*0.06;    // soft lengthwise flow streaks
+        s+=(y>0?y*0.006:y*0.012);                          // crown a touch brighter, belly grimier
+        s=Math.max(floor,Math.min(1.02,s));
+        col[3*i]=s;col[3*i+1]=s;col[3*i+2]=s;
+      }
+      geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+      const mat=mesh.material.clone(); mat.vertexColors=true; mesh.material=mat;
+    }
+    weather(fuseMesh,{});
+    weather(wingR,{}); weather(wingL,{});
+    weather(stabR,{}); weather(stabL,{});
+    weather(finMesh,{floor:0.86});                         // keep the blue fin a little cleaner
+  })();
+
   // ---- nav + strobe lights (emissive spheres, native frame) ----
   const tip=wingStations[wingStations.length-1];
   const tipPt=mir=>new THREE.Vector3(wingBase.x+tip.le-0.04*tip.chord,wingBase.y+tip.span_off,(mir?-1:1)*(wingBase.z+tip.span));
@@ -2226,11 +2290,545 @@ function buildGreshJet(P,opts){
   return {beacon:beacon,gear:gearLegs};
 }
 
+// ---------------------------------------------------------------- P-51D Mustang
+// Ported verbatim (geometry math is version-agnostic) from the standalone
+// mustang3d studio model into this scene's r128 + dim-night lighting. All names
+// are namespaced inside MustangModel to avoid colliding with airport helpers.
+// MustangModel.build(P,opts) builds the airframe nose->+z, adds taildragger gear
+// (in planeG-local frame so wheels sit at y~-4.05 like the jet) and returns refs
+// for prop spin + ground deck-angle animation. No lights (the original had none).
+var MustangModel=(function(){
+  var clamp=function(v,a,b){return v<a?a:v>b?b:v;};
+  var lerp=function(a,b,t){return a+(b-a)*t;};
+  var smooth=function(v){return v*v*(3-2*v);};
+  var degToRad=function(d){return d*Math.PI/180;};
+
+  // ---- lofting + airfoil helpers ----
+  function loftSections(sections,opt){
+    opt=opt||{};
+    var closed=opt.closed!==undefined?opt.closed:true,capStart=!!opt.capStart,capEnd=!!opt.capEnd,
+        splitTail=opt.splitTail||0,uvTile=opt.uvTile||1.6,skip=opt.skip||null;
+    var Sn=sections.length,N=sections[0].length;
+    var cents=sections.map(centroid);
+    var spanCum=[0];
+    for(var s=1;s<Sn;s++)spanCum[s]=spanCum[s-1]+cents[s].distanceTo(cents[s-1]);
+    var pos=[],uv=[];
+    for(var s2=0;s2<Sn;s2++){
+      var ring=sections[s2];var c=0;
+      for(var i=0;i<N;i++){
+        if(i>0)c+=ring[i].distanceTo(ring[i-1]);
+        pos.push(ring[i].x,ring[i].y,ring[i].z);
+        uv.push(c/uvTile,spanCum[s2]/uvTile);
+      }
+    }
+    var idx=[];
+    var vid=function(s,i){return s*N+i;};
+    var lim=closed?N:N-1;
+    for(var s3=0;s3<Sn-1;s3++)for(var i2=0;i2<lim;i2++){
+      if(skip&&skip(s3,i2))continue;
+      var j=(i2+1)%N;
+      idx.push(vid(s3,i2),vid(s3,j),vid(s3+1,i2),vid(s3,j),vid(s3+1,j),vid(s3+1,i2));
+    }
+    var sideCount=idx.length;
+    var capStartStart=idx.length;
+    if(capStart){
+      var cc=cents[0];pos.push(cc.x,cc.y,cc.z);uv.push(0,0);
+      var ci=pos.length/3-1;
+      for(var i3=0;i3<lim;i3++){var j2=(i3+1)%N;idx.push(vid(0,j2),vid(0,i3),ci);}
+    }
+    var capStartCount=idx.length-capStartStart;
+    var capEndStart=idx.length;
+    if(capEnd){
+      var ce=cents[Sn-1];pos.push(ce.x,ce.y,ce.z);uv.push(0,0);
+      var ci2=pos.length/3-1;
+      for(var i4=0;i4<lim;i4++){var j3=(i4+1)%N;idx.push(vid(Sn-1,i4),vid(Sn-1,j3),ci2);}
+    }
+    var capEndCount=idx.length-capEndStart;
+    var g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    if(splitTail>0){
+      var perBand=lim*6,tailStart=Math.max(0,sideCount-splitTail*perBand);
+      g.addGroup(0,tailStart,0);
+      g.addGroup(tailStart,sideCount-tailStart,1);
+      if(capStartCount)g.addGroup(capStartStart,capStartCount,0);
+      if(capEndCount)g.addGroup(capEndStart,capEndCount,1);
+    }
+    return g;
+  }
+  function centroid(ring){
+    var c=new THREE.Vector3();
+    for(var i=0;i<ring.length;i++)c.add(ring[i]);
+    return c.multiplyScalar(1/ring.length);
+  }
+  function offsetRings(secs,p){return secs.map(function(r){return r.map(function(v){return v.clone().sub(p);});});}
+  function airfoilLoop(thick,n){
+    var yt=function(x){return 5*thick*(0.2969*Math.sqrt(Math.max(0,x))-0.1260*x-0.3516*x*x+0.2843*x*x*x-0.1036*x*x*x*x);};
+    var pts=[];
+    for(var k=0;k<=n;k++){var x=0.5*(1+Math.cos(Math.PI*k/n));pts.push([x,yt(x)]);}
+    for(var k2=1;k2<n;k2++){var x2=0.5*(1-Math.cos(Math.PI*k2/n));pts.push([x2,-yt(x2)]);}
+    return pts;
+  }
+  function airfoilKnots(thick,n,hinge){
+    var yt=function(u){return 5*thick*(0.2969*Math.sqrt(Math.max(0,u))-0.1260*u-0.3516*u*u+0.2843*u*u*u-0.1036*u*u*u*u);};
+    var set={};
+    for(var k=0;k<=n;k++)set[(+(0.5*(1-Math.cos(Math.PI*k/n))).toFixed(5))]=1;
+    set[+hinge.toFixed(5)]=1;
+    var us=Object.keys(set).map(Number).sort(function(a,b){return a-b;});
+    return {us:us,hi:us.indexOf(+hinge.toFixed(5)),yt:yt};
+  }
+  function sampleProfile(ctrl,xN){
+    var i=0;while(i<ctrl.length-2&&ctrl[i+1][0]<xN)i++;
+    var p0=ctrl[Math.max(0,i-1)],p1=ctrl[i],p2=ctrl[Math.min(ctrl.length-1,i+1)],p3=ctrl[Math.min(ctrl.length-1,i+2)];
+    var t=clamp((xN-p1[0])/((p2[0]-p1[0])||1e-6),0,1),t2=t*t,t3=t2*t;
+    var cr=function(a,b,c,d){return 0.5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);};
+    var out=[];
+    for(var ch=1;ch<p1.length;ch++)out.push(cr(p0[ch],p1[ch],p2[ch],p3[ch]));
+    return out;
+  }
+
+  // ---- flying surface (front box + fixed TE fillers + hinged controls) ----
+  function buildFlyingSurface(opt,zSign){
+    zSign=zSign||1;
+    var rootLE_x=opt.rootLE_x,rootY=opt.rootY,rootZ0=opt.rootZ0,span=opt.span,sweepLE=opt.sweepLE,
+        dih=opt.dih||0,rootC=opt.rootC,tipC=opt.tipC,thick=opt.thick,hinge=opt.hinge,
+        controls=opt.controls||[],nspan=opt.nspan||30,tipCut=opt.tipCut!==undefined?opt.tipCut:0.92,axis=opt.axis||'Z';
+    var K=airfoilKnots(thick,22,hinge),US=K.us,hi=K.hi,end=US.length-1;
+    function station(s){
+      var chord=lerp(rootC,tipC,s);
+      if(s>tipCut){var tt=(s-tipCut)/(1-tipCut);chord*=Math.sqrt(Math.max(0,1-tt*tt));}
+      var xLE=rootLE_x-s*sweepLE,up=[],lo=[];
+      if(axis==='Z'){
+        var z=(rootZ0+s*span)*zSign,yB=rootY+s*span*Math.tan(dih);
+        for(var a=0;a<US.length;a++){var u=US[a];var x=xLE-u*chord,th=K.yt(u)*chord;up.push(new THREE.Vector3(x,yB+th,z));lo.push(new THREE.Vector3(x,yB-th,z));}
+      }else{
+        var y=rootY+s*span;
+        for(var a2=0;a2<US.length;a2++){var u2=US[a2];var x2=xLE-u2*chord,th2=K.yt(u2)*chord*zSign;up.push(new THREE.Vector3(x2,y,th2));lo.push(new THREE.Vector3(x2,y,-th2));}
+      }
+      return {up:up,lo:lo};
+    }
+    var frontRing=function(st){var r=[];for(var k=0;k<=hi;k++)r.push(st.up[k]);for(var k2=hi;k2>=1;k2--)r.push(st.lo[k2]);return r;};
+    var backRing=function(st){var r=[];for(var k=hi;k<=end;k++)r.push(st.up[k]);for(var k2=end-1;k2>=hi;k2--)r.push(st.lo[k2]);return r;};
+    var sampleSpan=function(a,b,fn){var n=Math.max(2,Math.ceil((b-a)*nspan));var out=[];for(var i=0;i<=n;i++)out.push(fn(station(a+(b-a)*i/n)));return out;};
+    var frontGeo=loftSections(sampleSpan(0,1,frontRing),{capStart:true,capEnd:true});
+    var SLOT=0.012;
+    var sorted=controls.slice().sort(function(a,b){return a.s0-b.s0;});
+    var gaps=[];var prev=0;
+    for(var ci=0;ci<sorted.length;ci++){gaps.push([prev,sorted[ci].s0-SLOT]);prev=sorted[ci].s1+SLOT;}
+    gaps.push([prev,1.0]);
+    var fixedBackGeos=[];
+    for(var gi=0;gi<gaps.length;gi++){var a=gaps[gi][0],b=gaps[gi][1];if(b-a>0.015)fixedBackGeos.push(loftSections(sampleSpan(a,b,backRing),{capStart:true,capEnd:true}));}
+    var movables=[];
+    for(var ci2=0;ci2<sorted.length;ci2++){
+      var c=sorted[ci2];
+      var mid=station((c.s0+c.s1)/2);
+      var pivot=mid.up[hi].clone().add(mid.lo[hi]).multiplyScalar(0.5);
+      var secs=sampleSpan(c.s0,c.s1,backRing);
+      movables.push({name:c.name,rotAxis:axis==='Z'?'z':'y',pivot:{x:pivot.x,y:pivot.y,z:pivot.z},geo:loftSections(offsetRings(secs,pivot),{capStart:true,capEnd:true})});
+    }
+    return {frontGeo:frontGeo,fixedBackGeos:fixedBackGeos,movables:movables};
+  }
+
+  // ---- materials (tuned: lower metalness for the env-map-less night scene) ----
+  var _mats=null;
+  function makeMaterials(){
+    if(_mats)return _mats;
+    var maps=makeSkinMaps();
+    var skin=new THREE.MeshStandardMaterial({color:0xb7bdc4,map:maps.albedoMap,metalness:0.55,metalnessMap:maps.metalMap,
+      roughness:0.95,roughnessMap:maps.roughMap,normalMap:maps.normalMap,normalScale:new THREE.Vector2(0.42,0.42),
+      vertexColors:true,side:THREE.DoubleSide});
+    var darkMetal=new THREE.MeshStandardMaterial({color:0x35302b,metalness:0.7,roughness:0.55,side:THREE.DoubleSide});
+    var spinnerRed=new THREE.MeshStandardMaterial({color:0x9c1a1a,metalness:0.4,roughness:0.32});
+    var propBlack=new THREE.MeshStandardMaterial({color:0x141414,metalness:0.25,roughness:0.55,side:THREE.DoubleSide});
+    var propTip=new THREE.MeshStandardMaterial({color:0xe6bd17,metalness:0.2,roughness:0.5});
+    var glass=new THREE.MeshPhysicalMaterial({color:0x182024,metalness:0,roughness:0.05,transparent:true,opacity:0.5,clearcoat:1,clearcoatRoughness:0.04,side:THREE.DoubleSide});
+    var antiGlare=new THREE.MeshStandardMaterial({color:0x232a1d,metalness:0.1,roughness:0.7,side:THREE.DoubleSide});
+    var cockpit=new THREE.MeshStandardMaterial({color:0x2e362a,metalness:0.1,roughness:0.85});
+    var seatMat=new THREE.MeshStandardMaterial({color:0x3b3f2e,metalness:0.1,roughness:0.8});
+    var panelBlk=new THREE.MeshStandardMaterial({color:0x111111,metalness:0.3,roughness:0.55});
+    var suit=new THREE.MeshStandardMaterial({color:0x4a4733,metalness:0,roughness:0.95});
+    var helmet=new THREE.MeshStandardMaterial({color:0x5c4d39,metalness:0,roughness:0.85});
+    var gauge=new THREE.MeshStandardMaterial({color:0xc7cbce,metalness:0.2,roughness:0.5});
+    _mats={skin:skin,darkMetal:darkMetal,spinnerRed:spinnerRed,propBlack:propBlack,propTip:propTip,glass:glass,antiGlare:antiGlare,cockpit:cockpit,seatMat:seatMat,panelBlk:panelBlk,suit:suit,helmet:helmet,gauge:gauge};
+    return _mats;
+  }
+  function makeSkinMaps(){
+    var N=1024;
+    var mkC=function(){var c=document.createElement('canvas');c.width=c.height=N;return c;};
+    var hC=mkC(),aC=mkC(),rC=mkC(),mC=mkC();
+    var H=hC.getContext('2d'),A=aC.getContext('2d'),R=rC.getContext('2d'),Mx=mC.getContext('2d');
+    var G=function(v){var k=Math.round(clamp(v,0,1)*255);return 'rgb('+k+','+k+','+k+')';};
+    H.fillStyle='#808080';H.fillRect(0,0,N,N);
+    var vs=[0,0.31,0.66,1].map(function(f){return f*N;});
+    var hs=[0,0.24,0.5,0.76,1].map(function(f){return f*N;});
+    for(var r=0;r<hs.length-1;r++)for(var c=0;c<vs.length-1;c++){
+      var x0=vs[c],y0=hs[r],w=vs[c+1]-x0,h=hs[r+1]-y0;
+      A.fillStyle=G(0.90+Math.random()*0.10);A.fillRect(x0,y0,w,h);
+      R.fillStyle=G(0.24+Math.random()*0.13);R.fillRect(x0,y0,w,h);
+      Mx.fillStyle=G(0.86+Math.random()*0.14);Mx.fillRect(x0,y0,w,h);
+    }
+    for(var i=0;i<60;i++){
+      var x=Math.random()*N,y=Math.random()*N,rad=30+Math.random()*120;
+      var g=A.createRadialGradient(x,y,0,x,y,rad);
+      g.addColorStop(0,'rgba(38,34,28,'+(0.05+Math.random()*0.07)+')');g.addColorStop(1,'rgba(38,34,28,0)');
+      A.fillStyle=g;A.beginPath();A.arc(x,y,rad,0,7);A.fill();
+      g=R.createRadialGradient(x,y,0,x,y,rad);
+      g.addColorStop(0,'rgba(255,255,255,'+(0.04+Math.random()*0.06)+')');g.addColorStop(1,'rgba(255,255,255,0)');
+      R.fillStyle=g;R.beginPath();R.arc(x,y,rad,0,7);R.fill();
+    }
+    for(var i2=0;i2<26;i2++){
+      var x2=Math.random()*N,y2=Math.random()*N,len=60+Math.random()*180,w2=4+Math.random()*10;
+      var g2=A.createLinearGradient(x2,y2,x2,y2+len);
+      g2.addColorStop(0,'rgba(28,24,20,0.10)');g2.addColorStop(1,'rgba(28,24,20,0)');
+      A.fillStyle=g2;A.fillRect(x2-w2/2,y2,w2,len);
+    }
+    var seam=function(x0,y0,x1,y1){
+      H.strokeStyle='#565656';H.lineWidth=3;line(H,x0,y0,x1,y1);
+      A.strokeStyle='rgba(26,23,18,0.55)';A.lineWidth=3.5;line(A,x0,y0,x1,y1);
+      R.strokeStyle='rgba(255,255,255,0.5)';R.lineWidth=3.5;line(R,x0,y0,x1,y1);
+      Mx.strokeStyle='rgba(0,0,0,0.5)';Mx.lineWidth=3.5;line(Mx,x0,y0,x1,y1);
+    };
+    for(var vi=0;vi<vs.length;vi++)seam(vs[vi],0,vs[vi],N);
+    for(var hi2=0;hi2<hs.length;hi2++)seam(0,hs[hi2],N,hs[hi2]);
+    var rivet=function(x,y){
+      var g=H.createRadialGradient(x,y,0,x,y,2.6);
+      g.addColorStop(0,'#cccccc');g.addColorStop(1,'rgba(128,128,128,0)');
+      H.fillStyle=g;H.beginPath();H.arc(x,y,2.6,0,7);H.fill();
+      A.fillStyle='rgba(54,50,42,0.5)';A.beginPath();A.arc(x,y,1.25,0,7);A.fill();
+    };
+    var step=N*0.045;
+    for(var vx=0;vx<vs.length;vx++)for(var yy=step/2;yy<N;yy+=step)rivet(vs[vx],yy);
+    for(var hy=0;hy<hs.length;hy++)for(var xx=step/2;xx<N;xx+=step)rivet(xx,hs[hy]);
+    var src=H.getImageData(0,0,N,N).data;
+    var HH=function(x,y){return src[((((y+N)%N)*N+((x+N)%N))<<2)]/255;};
+    var nC=mkC(),nx=nC.getContext('2d'),nImg=nx.createImageData(N,N),str=2.4;
+    for(var y3=0;y3<N;y3++)for(var x3=0;x3<N;x3++){
+      var gx=(HH(x3+1,y3)-HH(x3-1,y3))*str,gy=(HH(x3,y3+1)-HH(x3,y3-1))*str;
+      var inv=1/Math.sqrt(gx*gx+gy*gy+1),o=(y3*N+x3)<<2;
+      nImg.data[o]=(-gx*inv*0.5+0.5)*255;nImg.data[o+1]=(gy*inv*0.5+0.5)*255;
+      nImg.data[o+2]=inv*255;nImg.data[o+3]=255;
+    }
+    nx.putImageData(nImg,0,0);
+    var mk=function(c){var t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t;};
+    return {normalMap:mk(nC),roughMap:mk(rC),albedoMap:mk(aC),metalMap:mk(mC)};
+  }
+  function line(c,x0,y0,x1,y1){c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();}
+
+  // ---- weathering (per-vertex grime; plane-local coords) ----
+  function hash1(t){var v=Math.sin(t*12.9898)*43758.5453;return v-Math.floor(v);}
+  function weather(x,y,z){
+    var s=1;
+    s-=clamp((-y-0.15)*0.16,0,0.13);
+    if(x<3.2&&x>-1.2&&Math.abs(y-0.05)<0.55){
+      var band=Math.abs(Math.abs(z)-0.36);
+      if(band<0.30){var aft=clamp((3.2-x)/3.8,0,1);s-=aft*(1-0.25*aft)*(1-band/0.30)*0.26*(0.55+0.45*hash1(x*6.1+z*11.7));}
+    }
+    s-=0.045*hash1(x*1.7+z*2.3+y*1.1);
+    return clamp(s,0.6,1);
+  }
+  function whiteColors(g){var n=g.attributes.position.count;g.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(n*3).fill(1),3));}
+  function applyWeather(g){
+    var p=g.attributes.position,n=p.count,c=new Float32Array(n*3);
+    for(var i=0;i<n;i++){var v=weather(p.getX(i),p.getY(i),p.getZ(i));c[i*3]=c[i*3+1]=c[i*3+2]=v;}
+    g.setAttribute('color',new THREE.Float32BufferAttribute(c,3));
+  }
+
+  function buildTailFairing(FU,L,HALF){
+    var xF=-2.55,xB=-4.45,NST=30,K=16,sections=[];
+    for(var i=0;i<=NST;i++){
+      var t=i/NST,x=lerp(xF,xB,t),xN=clamp((x+HALF)/L,0,1);
+      var top=0.285;
+      var bot=x>-4.3?sampleProfile(FU,xN)[1]-0.03:lerp(0.06,0.255,clamp((x+4.3)/-0.15,0,1));
+      if(bot>top-0.01)bot=top-0.01;
+      var vc=(top+bot)/2,vr=(top-bot)/2;
+      var thick=0.085*smooth(clamp((x-xF)/0.5,0,1))*smooth(clamp((xB-x)/0.4,0,1))+0.006;
+      var ring=[];
+      for(var a=0;a<K;a++){var ph=a/K*Math.PI*2;ring.push(new THREE.Vector3(x,vc+vr*Math.cos(ph),thick*Math.sin(ph)));}
+      sections.push(ring);
+    }
+    return loftSections(sections,{closed:true,capStart:true,capEnd:true});
+  }
+
+  // ---- the aircraft (forward=+X, up=+Y, starboard=+Z) ----
+  function buildMustang(M){
+    var group=new THREE.Group();
+    var L=8.6,HALF=L/2;
+    var surfaces={};
+    var meshOf=function(geo,mat){var m=new THREE.Mesh(geo,mat);if(!MOBILE){m.castShadow=true;m.receiveShadow=true;}return m;};
+    var add=function(geo,mat){var m=meshOf(geo,mat);group.add(m);return m;};
+    var FU=[
+      [0.000,0.045,0.090,0.050],[0.060,0.090,0.140,0.095],[0.140,0.150,0.210,0.150],
+      [0.250,0.220,0.290,0.215],[0.380,0.310,0.400,0.300],[0.500,0.380,0.510,0.360],
+      [0.600,0.420,0.520,0.420],[0.700,0.440,0.520,0.470],[0.800,0.430,0.510,0.470],
+      [0.880,0.410,0.500,0.430],[0.950,0.360,0.450,0.380],[1.000,0.300,0.340,0.300]
+    ];
+    var NA=28,RINGS=70,fuse=[];
+    for(var r=0;r<=RINGS;r++){
+      var xN=r/RINGS,prof=sampleProfile(FU,xN),w=prof[0],up=prof[1],dn=prof[2],x=-HALF+xN*L,ring=[];
+      for(var a=0;a<NA;a++){var th=(a/NA)*Math.PI*2,ry=Math.sin(th)>=0?up:dn;ring.push(new THREE.Vector3(x,Math.sin(th)*ry,Math.cos(th)*w));}
+      fuse.push(ring);
+    }
+    var cockpitCut=function(s,i){var x=fuse[s][0].x;return x>-0.13&&x<1.03&&i>=5&&i<=8;};
+    add(loftSections(fuse,{closed:true,capStart:true,capEnd:true,skip:cockpitCut}),M.skin);
+    var wingOpt={rootLE_x:1.55,rootY:-0.34,rootZ0:0.0,span:5.55,sweepLE:0.55,
+      dih:degToRad(5.2),rootC:2.35,tipC:1.12,thick:0.145,nspan:34,axis:'Z',
+      hinge:0.72,controls:[{name:'flap',s0:0.10,s1:0.46},{name:'aileron',s0:0.52,s1:0.90}]};
+    var wR=addSurface(group,wingOpt,1,M.skin,meshOf);
+    var wL=addSurface(group,wingOpt,-1,M.skin,meshOf);
+    surfaces.flapR=wR.flap;surfaces.ailR=wR.aileron;surfaces.flapL=wL.flap;surfaces.ailL=wL.aileron;
+    add(buildRootFillet(FU,L,HALF,1),M.skin);
+    add(buildRootFillet(FU,L,HALF,-1),M.skin);
+    var hOpt={rootLE_x:-2.95,rootY:0.06,rootZ0:0.0,span:1.95,sweepLE:0.55,dih:0,
+      rootC:1.18,tipC:0.55,thick:0.10,nspan:22,axis:'Z',hinge:0.55,controls:[{name:'elevator',s0:0.16,s1:0.95}]};
+    var hR=addSurface(group,hOpt,1,M.skin,meshOf);
+    var hL=addSurface(group,hOpt,-1,M.skin,meshOf);
+    surfaces.elevR=hR.elevator;surfaces.elevL=hL.elevator;
+    var vOpt={rootLE_x:-2.45,rootY:0.28,rootZ0:0,span:1.50,sweepLE:1.00,dih:0,
+      rootC:2.05,tipC:0.92,thick:0.11,nspan:24,axis:'Y',hinge:0.50,controls:[{name:'rudder',s0:0.05,s1:0.94}]};
+    var vF=addSurface(group,vOpt,1,M.skin,meshOf);
+    surfaces.rudder=vF.rudder;
+    add(buildTailFairing(FU,L,HALF),M.skin);
+    group.add(buildCockpit(M));
+    add(buildCanopy(),M.glass);
+    add(buildAntiGlare(FU,L,HALF),M.antiGlare);
+    add(buildScoop(FU,L,HALF),M.skin);
+    for(var side=-1;side<=1;side+=2)for(var i=0;i<6;i++){
+      var st=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.05,0.20,10),M.darkMetal);
+      st.rotation.z=Math.PI/2;st.rotation.y=side*0.25;
+      st.position.set(3.85-i*0.22,-0.02,side*0.42);if(!MOBILE)st.castShadow=true;group.add(st);
+    }
+    var prop=new THREE.Group();prop.position.set(HALF,0,0);
+    var spinPts=[];
+    for(var k=0;k<=12;k++){var t=k/12;spinPts.push(new THREE.Vector2(Math.sqrt(Math.max(0,1-t*t))*0.30*(1-0.15*t),t*0.62));}
+    var spinner=new THREE.Mesh(new THREE.LatheGeometry(spinPts,28),M.spinnerRed);
+    spinner.rotation.z=-Math.PI/2;if(!MOBILE)spinner.castShadow=true;prop.add(spinner);
+    var plate=new THREE.Mesh(new THREE.CylinderGeometry(0.30,0.30,0.06,28),M.darkMetal);
+    plate.rotation.z=Math.PI/2;prop.add(plate);
+    var bladeGeo=buildBlade();
+    for(var b=0;b<4;b++){var blade=new THREE.Mesh(bladeGeo,[M.propBlack,M.propTip]);blade.rotation.x=b*Math.PI/2;blade.position.x=0.20;if(!MOBILE)blade.castShadow=true;prop.add(blade);}
+    group.add(prop);
+    var propDisc=new THREE.Mesh(new THREE.CircleGeometry(1.6,56),new THREE.MeshBasicMaterial({color:0x0a0a0a,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false,alphaMap:discAlpha()}));
+    propDisc.rotation.y=Math.PI/2;propDisc.position.set(HALF+0.12,0,0);group.add(propDisc);
+    var pitot=new THREE.Group();pitot.position.set(1.15,-0.17,2.6);
+    var pmast=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.013,0.18,8),M.darkMetal);pmast.position.y=-0.09;
+    var pprobe=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.007,0.34,10),M.darkMetal);pprobe.rotation.z=Math.PI/2;pprobe.position.set(0.14,-0.17,0);
+    pitot.add(pmast,pprobe);group.add(pitot);
+    group.children.forEach(function(o){if(o.isMesh&&o.material===M.skin&&!o.geometry.attributes.color)applyWeather(o.geometry);});
+    group.traverse(function(o){if(o.isMesh&&o.material===M.skin&&!o.geometry.attributes.color)whiteColors(o.geometry);});
+    group.position.y=0.1;
+    return {group:group,prop:prop,propDisc:propDisc,surfaces:surfaces};
+  }
+  function addSurface(parent,opt,zSign,skin,meshOf){
+    var built=buildFlyingSurface(opt,zSign);
+    parent.add(meshOf(built.frontGeo,skin));
+    for(var i=0;i<built.fixedBackGeos.length;i++)parent.add(meshOf(built.fixedBackGeos[i],skin));
+    var pivots={};
+    for(var j=0;j<built.movables.length;j++){
+      var mv=built.movables[j];
+      var pivot=new THREE.Group();
+      pivot.position.set(mv.pivot.x,mv.pivot.y,mv.pivot.z);
+      pivot.add(meshOf(mv.geo,skin));
+      parent.add(pivot);
+      pivots[mv.name]={group:pivot,axis:mv.rotAxis};
+    }
+    return pivots;
+  }
+  function buildRootFillet(FU,L,HALF,zSign){
+    var pos=[],idx=[],N=14;
+    var x0=-0.9,x1=1.4;
+    for(var i=0;i<=N;i++){
+      var t=i/N,x=lerp(x1,x0,t);
+      var xN=(x+HALF)/L,dn=sampleProfile(FU,xN)[2];
+      var zOut=lerp(0.42,0.30,t);
+      var yTop=lerp(-0.20,-0.05,t);
+      pos.push(x,yTop,zSign*0.18,x,-0.34,zSign*zOut,x,dn*-0.55-0.05,zSign*0.12);
+    }
+    for(var i2=0;i2<N;i2++){var a=i2*3;idx.push(a,a+1,a+3,a+1,a+4,a+3,a+1,a+2,a+4,a+2,a+5,a+4);}
+    var g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+    g.setIndex(idx);g.computeVertexNormals();
+    return g;
+  }
+  function buildCockpit(M){
+    var g=new THREE.Group();
+    var put=function(geo,mat,x,y,z,rz){var m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(rz)m.rotation.z=rz;g.add(m);return m;};
+    var CK=M.cockpit,BK=M.panelBlk,GA=M.gauge,ST=M.seatMat;
+    put(new THREE.BoxGeometry(1.18,0.04,0.34),CK,0.45,0.07,0);
+    put(new THREE.BoxGeometry(1.18,0.42,0.03),CK,0.45,0.28,0.17);
+    put(new THREE.BoxGeometry(1.18,0.42,0.03),CK,0.45,0.28,-0.17);
+    put(new THREE.BoxGeometry(0.04,0.42,0.34),CK,1.04,0.28,0);
+    put(new THREE.BoxGeometry(0.04,0.42,0.34),CK,-0.14,0.28,0);
+    put(new THREE.BoxGeometry(1.30,0.03,0.05),BK,0.45,0.475,0.185);
+    put(new THREE.BoxGeometry(1.30,0.03,0.05),BK,0.45,0.475,-0.185);
+    put(new THREE.BoxGeometry(0.05,0.03,0.42),BK,1.07,0.475,0);
+    put(new THREE.BoxGeometry(0.05,0.03,0.42),BK,-0.17,0.475,0);
+    put(new THREE.BoxGeometry(0.30,0.05,0.30),ST,0.30,0.21,0);
+    put(new THREE.BoxGeometry(0.07,0.40,0.30),ST,0.07,0.42,0,0.12);
+    put(new THREE.BoxGeometry(0.07,0.12,0.15),CK,0.02,0.60,0);
+    put(new THREE.BoxGeometry(0.02,0.44,0.32),BK,-0.01,0.42,0,0.12);
+    put(new THREE.BoxGeometry(0.05,0.22,0.32),BK,0.94,0.37,0,-0.12);
+    put(new THREE.BoxGeometry(0.12,0.04,0.34),CK,0.89,0.47,0);
+    for(var di=0;di<3;di++)for(var dj=0;dj<2;dj++){
+      var dz=[-0.10,0,0.10][di],dy=[0.32,0.42][dj];
+      var d=put(new THREE.CylinderGeometry(0.028,0.028,0.012,14),GA,0.915,dy,dz);d.rotation.z=Math.PI/2;
+    }
+    put(new THREE.BoxGeometry(0.06,0.05,0.07),BK,0.86,0.52,0);
+    put(new THREE.BoxGeometry(0.05,0.07,0.006),BK,0.81,0.56,0,-0.4);
+    put(new THREE.BoxGeometry(0.55,0.10,0.05),CK,0.55,0.23,0.145);
+    put(new THREE.BoxGeometry(0.55,0.10,0.05),CK,0.55,0.23,-0.145);
+    put(new THREE.BoxGeometry(0.14,0.05,0.05),BK,0.74,0.30,-0.145);
+    var lxs=[0.70,0.74,0.78];
+    for(var li=0;li<lxs.length;li++){var l=put(new THREE.CylinderGeometry(0.008,0.008,0.09,6),BK,lxs[li],0.34,-0.145);l.rotation.x=-0.3;}
+    put(new THREE.BoxGeometry(0.06,0.08,0.05),BK,0.86,0.13,0.07,-0.5);
+    put(new THREE.BoxGeometry(0.06,0.08,0.05),BK,0.86,0.13,-0.07,-0.5);
+    put(new THREE.CylinderGeometry(0.013,0.018,0.24,8),BK,0.50,0.33,0);
+    put(new THREE.BoxGeometry(0.035,0.07,0.035),BK,0.50,0.46,0);
+    var torso=put(new THREE.SphereGeometry(0.15,16,12),M.suit,0.28,0.42,0);torso.scale.set(0.85,1.05,1.2);
+    var head=put(new THREE.SphereGeometry(0.088,16,14),M.helmet,0.33,0.61,0);head.scale.set(1,1.12,1);
+    put(new THREE.BoxGeometry(0.05,0.028,0.15),BK,0.39,0.63,0);
+    put(new THREE.BoxGeometry(0.045,0.05,0.09),BK,0.40,0.575,0);
+    g.traverse(function(o){if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});
+    return g;
+  }
+  function buildCanopy(){
+    var cx=0.45,a=0.98,b=0.48,c=0.29,base=0.32,ML=30,MA=20,pos=[],idx=[];
+    for(var i=0;i<=ML;i++){
+      var xf=(i/ML)*2-1,fall=Math.sqrt(Math.max(0,1-xf*xf));
+      for(var j=0;j<=MA;j++){var ang=(j/MA)*Math.PI;pos.push(cx+xf*a,base+b*fall*Math.sin(ang),c*fall*Math.cos(ang));}
+    }
+    var at=function(i,j){return i*(MA+1)+j;};
+    for(var i2=0;i2<ML;i2++)for(var j2=0;j2<MA;j2++)idx.push(at(i2,j2),at(i2,j2+1),at(i2+1,j2),at(i2,j2+1),at(i2+1,j2+1),at(i2+1,j2));
+    var g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();
+    return g;
+  }
+  function buildAntiGlare(FU,L,HALF){
+    var pos=[],idx=[],x0=1.45,x1=4.1,N=18;
+    for(var i=0;i<=N;i++){
+      var t=i/N,x=lerp(x0,x1,t),up=sampleProfile(FU,(x+HALF)/L)[1],w=0.12*(0.7+0.3*(1-t));
+      pos.push(x,up*0.99+0.006,-w,x,up*0.99+0.006,w);
+    }
+    for(var i2=0;i2<N;i2++){var a=i2*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}
+    var g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();
+    return g;
+  }
+  function buildScoop(FU,L,HALF){
+    var ST=[[0.70,0.17,0.06],[0.30,0.25,0.13],[-0.20,0.31,0.19],[-0.70,0.32,0.21],[-1.25,0.29,0.18],[-1.75,0.21,0.12],[-2.10,0.09,0.05]];
+    var Kn=22,sections=[];
+    for(var si=0;si<ST.length;si++){
+      var x=ST[si][0],hw=ST[si][1],hh=ST[si][2];
+      var xN=clamp((x+HALF)/L,0,1);
+      var belly=-sampleProfile(FU,xN)[2];
+      var cy=belly+0.06-hh;
+      var ring=[];
+      for(var a=0;a<Kn;a++){
+        var th=(a/Kn)*Math.PI*2;
+        ring.push(new THREE.Vector3(x,cy+Math.sign(Math.sin(th))*Math.pow(Math.abs(Math.sin(th)),0.6)*hh,Math.sign(Math.cos(th))*Math.pow(Math.abs(Math.cos(th)),0.6)*hw));
+      }
+      sections.push(ring);
+    }
+    return loftSections(sections,{closed:true,capStart:true,capEnd:true});
+  }
+  function buildBlade(){
+    var foil=airfoilLoop(0.12,12),N=18,sections=[];
+    for(var si=0;si<=N;si++){
+      var s=si/N,r=lerp(0.16,1.58,s);
+      var chord=0.34*Math.pow(Math.sin(Math.PI*Math.min(1,s)),0.7);
+      chord=Math.max(chord,lerp(0.14,0.0,Math.min(1,s/0.18)));
+      if(s>0.9){var tt=(s-0.9)/0.1;chord*=Math.sqrt(Math.max(0,1-tt*tt));}
+      var tw=degToRad(lerp(36,8,s)),ring=[];
+      for(var fi=0;fi<foil.length;fi++){var u=foil[fi][0],v=foil[fi][1];var cx=v*chord,cz=(u-0.5)*chord;ring.push(new THREE.Vector3(cx*Math.cos(tw)-cz*Math.sin(tw),r,cx*Math.sin(tw)+cz*Math.cos(tw)));}
+      sections.push(ring);
+    }
+    return loftSections(sections,{closed:true,capStart:true,capEnd:true,splitTail:2});
+  }
+  function discAlpha(){
+    var c=document.createElement('canvas');c.width=c.height=128;
+    var g=c.getContext('2d'),rg=g.createRadialGradient(64,64,4,64,64,64);
+    rg.addColorStop(0.0,'#000');rg.addColorStop(0.45,'#2a2a2a');rg.addColorStop(0.86,'#555');rg.addColorStop(0.96,'#888');rg.addColorStop(1.0,'#000');
+    g.fillStyle=rg;g.fillRect(0,0,128,128);
+    return new THREE.CanvasTexture(c);
+  }
+
+  // ---- scene wrapper: nose->+z, scaled down, taildragger gear (no lights) ----
+  function build(P,opts){
+    opts=opts||{};
+    var M=makeMaterials();
+    var built=buildMustang(M);
+    var pitchGrp=new THREE.Group();          // animated ground deck angle
+    pitchGrp.add(built.group);
+    var m=new THREE.Group();
+    m.add(pitchGrp);
+    m.rotation.y=-Math.PI/2;                  // native nose +x -> world +z
+    var S=1.8; m.scale.set(S,S,S);            // ~15-unit length: a small fighter dwarfed by the jet
+    m.position.set(0,-2.0,0);                 // sit low so the gear stays short (not stilts)
+    P.add(m);
+
+    // landing gear in planeG-local frame (nose +z). The leg group pivots at topY (so the
+    // retract animation folds it up); the wheel sits at world-local y=-4.05 to match the jet.
+    var WHEEL_Y=-4.05, EMBED=0.5;             // strut top reaches EMBED above the pivot, into the belly
+    var gear=[];
+    function legAt(x,z,topY,wheelR,strutR,upAngle){
+      var leg=new THREE.Group(); leg.position.set(x,topY,z); P.add(leg);
+      var wheelLocal=WHEEL_Y-topY;            // wheel centre relative to the pivot
+      var len=EMBED-wheelLocal;               // strut spans embed-top down to the wheel
+      var strut=new THREE.Mesh(new THREE.CylinderGeometry(strutR,strutR,len,8),MATS.metal);
+      strut.position.y=(EMBED+wheelLocal)/2;  // midpoint between embed-top and wheel
+      leg.add(strut);
+      var wh=new THREE.Mesh(new THREE.CylinderGeometry(wheelR,wheelR,wheelR*0.62,16),MATS.tire);
+      wh.rotation.z=Math.PI/2; wh.position.y=wheelLocal; leg.add(wh);
+      var hub=new THREE.Mesh(new THREE.CylinderGeometry(wheelR*0.4,wheelR*0.4,wheelR*0.66,10),MATS.metal);
+      hub.rotation.z=Math.PI/2; hub.position.y=wheelLocal; leg.add(hub);
+      gear.push({leg:leg,up:upAngle});
+    }
+    legAt( 2.5, 1.5,-2.1,0.46,0.12, 1.45);    // main R (folds aft/in)
+    legAt(-2.5, 1.5,-2.1,0.46,0.12, 1.45);    // main L
+    legAt( 0.0,-6.3,-3.0,0.24,0.08,-1.20);    // tailwheel (short; folds fwd)
+
+    // no beacon or nav lights — the standalone Mustang model had none
+    return {beacon:null,gear:gear,props:[built.prop],discs:[built.propDisc],pitch:pitchGrp,surfaces:built.surfaces};
+  }
+
+  return {build:build};
+})();
+
 // ---------------------------------------------------------------- the plane
 // Local frame: nose +z, fuselage centerline y=0, cabin floor y=-1.5.
 // Parked at gate: group at (40, 4.6, 84), yaw +PI/2 -> nose east (+x world).
 var planeG=null,planeInterior=null,planeBeacon=null,planeColliders=[],engineGlowMats=[],planeGear=[];
 var PLANE_GATE={x:40,y:4.6,z:84,yaw:Math.PI/2};
+// ----- swappable airframes: both are built once and toggled by visibility -----
+var PLANE_TYPES=['jet','mustang'],PLANE_LABEL={jet:'GRESH JET',mustang:'P-51 MUSTANG'},PLANE_TYPE='jet';
+var PLANES=null,planePropellers=[],planePropDiscs=[],mustangPitchGroup=null,planeSwitchBtn=null;
+
+function setActivePlane(type){
+  if(!PLANES||!PLANES[type])return;
+  PLANE_TYPE=type;
+  for(var k in PLANES){if(PLANES[k].group)PLANES[k].group.visible=(k===type);}
+  var A=PLANES[type];
+  planeBeacon=A.beacon;
+  planeGear=A.gear||[];
+  engineGlowMats=A.glow||[];
+  planePropellers=A.props||[];
+  planePropDiscs=A.discs||[];
+  mustangPitchGroup=A.pitch||null;
+  updatePlaneButtonLabel();
+}
+function cyclePlane(){
+  if(!PLANES)return;
+  var i=PLANE_TYPES.indexOf(PLANE_TYPE);
+  var next=PLANE_TYPES[(i+1)%PLANE_TYPES.length];
+  setActivePlane(next);
+  toast('Aircraft swapped \u2192 '+PLANE_LABEL[next]);
+  if(window.AudioSys&&AudioSys.blip)AudioSys.blip(520,.09,'triangle',.05);
+}
+function updatePlaneButtonLabel(){
+  if(!planeSwitchBtn)planeSwitchBtn=document.getElementById('plane-switch-btn');
+  if(planeSwitchBtn)planeSwitchBtn.innerHTML='\u2708 '+PLANE_LABEL[PLANE_TYPE]+' \u25B8 SWAP';
+}
 
 function buildPlane(){
   planeG=new THREE.Group();
@@ -2240,10 +2838,18 @@ function buildPlane(){
   scene.add(planeG);
   var P=planeG;
 
-  // ===== exterior (shared photo-real builder; GA-001's door hides under the jetway hood)
-  var ext=buildGreshJet(P,{accent:0x1d4e89});
-  planeBeacon=ext.beacon;
-  planeGear=ext.gear;
+  // ===== exteriors: build both flyable airframes once; switch by toggling visibility.
+  // Each lives in its own group so hiding it also hides its gear/beacon/nav-lights.
+  var jetGroup=new THREE.Group(); P.add(jetGroup);
+  var jetExt=buildGreshJet(jetGroup,{accent:0x1d4e89});   // GA-001's door hides under the jetway hood
+  var jetGlow=engineGlowMats.slice(); engineGlowMats.length=0;   // capture the jet's engine-glow mats
+  var musGroup=new THREE.Group(); P.add(musGroup);
+  var musExt=MustangModel.build(musGroup,{});
+  PLANES={
+    jet:{group:jetGroup,beacon:jetExt.beacon,gear:jetExt.gear,glow:jetGlow,props:[],discs:[],pitch:null},
+    mustang:{group:musGroup,beacon:musExt.beacon,gear:musExt.gear,glow:[],props:musExt.props,discs:musExt.discs,pitch:musExt.pitch}
+  };
+  setActivePlane(PLANE_TYPE);
   var m4=new THREE.Matrix4();
 
   // ===== interior
@@ -2541,7 +3147,7 @@ function tryInteract(){
 }
 
 // ---------------------------------------------------------------- flight mode
-var flight={throttle:0,speed:0,pitchUp:0,roll:0,yaw:Math.PI/2,onGround:true,lastY:4.6,vs:0,ceilingWarned:false,boundaryWarned:false,everThrottled:false,gear:1};
+var flight={throttle:0,speed:0,pitchUp:0,roll:0,yaw:Math.PI/2,onGround:true,lastY:4.6,vs:0,ceilingWarned:false,boundaryWarned:false,everThrottled:false,gear:1,groundBias:1};
 var camPos=new THREE.Vector3(),_pf=new THREE.Vector3(),_lookTarget=new THREE.Vector3(),_camDesired=new THREE.Vector3();
 var fadeEl,crashEl,FPEls=null;
 
@@ -2549,6 +3155,7 @@ function setMode(mode){
   GameState.mode=mode;
   document.getElementById('crosshair').style.display=(mode==='walk'&&GameState.started)?'block':'none';
   document.getElementById('flight-panel').style.display=mode==='fly'?'flex':'none';
+  if(mode!=='fly'){var psb=document.getElementById('plane-switch-btn');if(psb)psb.style.display='none';}
   updateMobileButtons();
 }
 function startFlight(fromLanding){
@@ -2564,11 +3171,11 @@ function startFlight(fromLanding){
     planeInterior.visible=false;
     if(!fromLanding){
       planeG.position.set(-700,4.6,252.5);
-      flight.yaw=Math.PI/2;flight.pitchUp=0;flight.roll=0;flight.speed=0;flight.throttle=0;flight.onGround=true;
+      flight.yaw=Math.PI/2;flight.pitchUp=0;flight.roll=0;flight.speed=0;flight.throttle=0;flight.onGround=true;flight.groundBias=1;
       toast('Runway 09, cleared for takeoff. W = throttle, pull UP (↑) at ~130 KT.');
       toast('Tower: "Mind the mountains. And the lightning. And... everything."');
     }else{
-      flight.pitchUp=0;flight.roll=0;flight.speed=0;flight.throttle=0;flight.onGround=true;
+      flight.pitchUp=0;flight.roll=0;flight.speed=0;flight.throttle=0;flight.onGround=true;flight.groundBias=1;
       toast('Engines relit. The storm missed you.');
     }
     applyPlaneTransform();
@@ -2604,7 +3211,7 @@ function exitFlight(){
 }
 function resetToRunway(msg){
   planeG.position.set(-700,4.6,252.5);
-  flight.yaw=Math.PI/2;flight.pitchUp=0;flight.roll=0;flight.speed=0;flight.throttle=0;flight.onGround=true;
+  flight.yaw=Math.PI/2;flight.pitchUp=0;flight.roll=0;flight.speed=0;flight.throttle=0;flight.onGround=true;flight.groundBias=1;
   applyPlaneTransform();
   if(msg)toast(msg);
 }
@@ -2710,10 +3317,35 @@ function updateFlight(dt){
     lg.leg.rotation.x=lg.up*(1-f.gear);   // 1=down (0 rot) -> 0=up (folded)
     lg.leg.visible=f.gear>0.02;           // tuck out of sight once fully stowed
   }
-  // chase camera (no per-frame allocations)
-  var dist=26,h=f.onGround?12:9;
+  // propeller spin + blur disc (prop-driven airframes like the Mustang)
+  if(planePropellers.length){
+    var omega=(8+f.throttle*70)*dt;
+    for(var pp=0;pp<planePropellers.length;pp++)planePropellers[pp].rotation.x-=omega;
+    var discO=clamp((f.throttle-0.12)*1.6,0,0.9);
+    for(var pd=0;pd<planePropDiscs.length;pd++){
+      planePropDiscs[pd].material.opacity=discO;
+      planePropDiscs[pd].visible=discO>0.02;
+    }
+  }
+  // warbird deck angle: tail-down on the ground, level once airborne
+  if(mustangPitchGroup){
+    var tgtDeck=f.onGround?0.10:0.0;
+    mustangPitchGroup.rotation.z+=(tgtDeck-mustangPitchGroup.rotation.z)*clamp(dt*2.2,0,1);
+  }
+  // runway aircraft selector: only offered while stopped on the runway
+  if(!planeSwitchBtn)planeSwitchBtn=document.getElementById('plane-switch-btn');
+  if(planeSwitchBtn){
+    var onRwy=Math.abs(planeG.position.z-252.5)<26&&Math.abs(planeG.position.x)<820;
+    var disp=(f.onGround&&f.speed<8&&onRwy)?'block':'none';
+    if(planeSwitchBtn.style.display!==disp)planeSwitchBtn.style.display=disp;
+  }
+  // chase camera (no per-frame allocations). Ease the ground->air framing bias so the
+  // view doesn't snap down the instant the wheels leave the runway (was a takeoff jolt).
+  f.groundBias+=((f.onGround?1:0)-f.groundBias)*clamp(dt*2.6,0,1);
+  var gb=f.groundBias;
+  var dist=26,h=9+3*gb;
   _lookTarget.copy(planeG.position).addScaledVector(_pf,14);
-  if(f.onGround)_lookTarget.y+=8;        // aim over the tall tail fin during the takeoff roll
+  _lookTarget.y+=8*gb;                   // aim over the tall tail fin during the takeoff roll
   _camDesired.copy(planeG.position).addScaledVector(_pf,-dist);
   _camDesired.y+=h;
   camPos.lerp(_camDesired,1-Math.exp(-4.5*dt));
@@ -2967,6 +3599,13 @@ function init(){
     var m=AudioSys.toggleMute();
     this.innerHTML='&#9836; SOUND: '+(m?'OFF':'ON');
   });
+  planeSwitchBtn=document.getElementById('plane-switch-btn');
+  if(planeSwitchBtn){
+    var swap=function(e){if(e){e.preventDefault();e.stopPropagation();}cyclePlane();};
+    planeSwitchBtn.addEventListener('click',swap);
+    planeSwitchBtn.addEventListener('touchstart',swap,{passive:false});
+  }
+  updatePlaneButtonLabel();
   setupMobile();
   setMode('walk');
 

@@ -2804,7 +2804,7 @@ function buildF18Hornet(P,opts){
   var group=new THREE.Group();
   P.add(group);
 
-  var glowMats=[];
+  var burners=[];
   var gear=[];
   var marker=null;
   if(typeof makeSign==='function'){
@@ -2813,21 +2813,33 @@ function buildF18Hornet(P,opts){
     group.add(marker);
   }
 
-  function makeGlow(x,z){
-    var mat=new THREE.MeshStandardMaterial({color:0xffb86c,emissive:0xff7a20,emissiveIntensity:.18,transparent:true,opacity:.76});
-    var bulb=new THREE.Mesh(new THREE.SphereGeometry(.42,18,12),mat);
-    bulb.scale.set(.72,.50,1.10);
-    bulb.position.set(x,-.36,z);
-    group.add(bulb);
-    glowMats.push(mat);
+  function makeAfterburner(x){
+    var burner=new THREE.Group();
+    burner.position.set(x,-3.38,-11.18);
+    var haloMat=new THREE.MeshBasicMaterial({
+      color:0xff8a2a,transparent:true,opacity:0,depthWrite:false,
+      blending:THREE.AdditiveBlending,side:THREE.DoubleSide
+    });
+    var coreMat=new THREE.MeshBasicMaterial({
+      color:0xf7fbff,transparent:true,opacity:0,depthWrite:false,
+      blending:THREE.AdditiveBlending,side:THREE.DoubleSide
+    });
+    var halo=new THREE.Mesh(new THREE.ConeGeometry(.42,2.9,28,1,true),haloMat);
+    halo.rotation.x=-Math.PI/2;
+    halo.position.z=-1.45;
+    var core=new THREE.Mesh(new THREE.ConeGeometry(.16,2.35,20,1,true),coreMat);
+    core.rotation.x=-Math.PI/2;
+    core.position.z=-1.175;
+    var plug=new THREE.Mesh(new THREE.SphereGeometry(.16,16,8),coreMat);
+    plug.scale.set(1,.62,.62);
+    plug.position.z=-.08;
+    burner.add(halo,core,plug);
+    burner.visible=false;
+    group.add(burner);
+    burners.push({group:burner,halo:haloMat,core:coreMat,baseZ:burner.position.z});
   }
-  makeGlow(-.88,-11.15);
-  makeGlow(.88,-11.15);
-
-  var beaconMat=new THREE.MeshStandardMaterial({color:0xff4c3e,emissive:0xff2211,emissiveIntensity:.25});
-  var beacon=new THREE.Mesh(new THREE.SphereGeometry(.18,12,8),beaconMat);
-  beacon.position.set(0,1.32,-1.2);
-  group.add(beacon);
+  makeAfterburner(-.93);
+  makeAfterburner(.93);
 
   function tuneMaterial(mat,name){
     if(!mat)return;
@@ -2867,7 +2879,12 @@ function buildF18Hornet(P,opts){
     sceneObj.rotation.y=-Math.PI/2;       // GLB native nose +x -> airport nose +z
     sceneObj.scale.set(1.25,1.25,1.25);
     sceneObj.position.set(0,-3.0,0);      // wheels sit at this game's gear bottom
+    var importedSceneHelpers=[];
     sceneObj.traverse(function(obj){
+      if(obj.isLight||obj.isCamera){
+        importedSceneHelpers.push(obj);
+        return;
+      }
       if(obj.isMesh){
         if(!MOBILE){obj.castShadow=true;obj.receiveShadow=true;}
         if(Array.isArray(obj.material)){
@@ -2878,6 +2895,9 @@ function buildF18Hornet(P,opts){
         if(isGearPart(obj))gear.push({leg:obj,up:0});
       }
     });
+    for(var hi=0;hi<importedSceneHelpers.length;hi++){
+      if(importedSceneHelpers[hi].parent)importedSceneHelpers[hi].parent.remove(importedSceneHelpers[hi]);
+    }
     group.add(sceneObj);
     if(PLANE_TYPE==='f18')planeGear=gear;
   }
@@ -2897,13 +2917,13 @@ function buildF18Hornet(P,opts){
     marker.userData.plane.material.emissiveIntensity=1.4;
   }
 
-  return {beacon:beacon,gear:gear,glow:glowMats,props:[],discs:[],pitch:null};
+  return {beacon:null,gear:gear,glow:[],burners:burners,props:[],discs:[],pitch:null};
 }
 
 // ---------------------------------------------------------------- the plane
 // Local frame: nose +z, fuselage centerline y=0, cabin floor y=-1.5.
 // Parked at gate: group at (40, 4.6, 84), yaw +PI/2 -> nose east (+x world).
-var planeG=null,planeInterior=null,planeBeacon=null,planeColliders=[],engineGlowMats=[],planeGear=[];
+var planeG=null,planeInterior=null,planeBeacon=null,planeColliders=[],engineGlowMats=[],planeGear=[],planeAfterburners=[];
 var PLANE_GATE={x:40,y:4.6,z:84,yaw:Math.PI/2};
 // ----- swappable airframes: both are built once and toggled by visibility -----
 var PLANE_TYPES=['jet','mustang','f18'],PLANE_LABEL={jet:'GRESH JET',mustang:'P-51 MUSTANG',f18:'F/A-18 HORNET'},PLANE_TYPE='jet';
@@ -2917,6 +2937,7 @@ function setActivePlane(type){
   planeBeacon=A.beacon;
   planeGear=A.gear||[];
   engineGlowMats=A.glow||[];
+  planeAfterburners=A.burners||[];
   planePropellers=A.props||[];
   planePropDiscs=A.discs||[];
   mustangPitchGroup=A.pitch||null;
@@ -2955,7 +2976,7 @@ function buildPlane(){
   PLANES={
     jet:{group:jetGroup,beacon:jetExt.beacon,gear:jetExt.gear,glow:jetGlow,props:[],discs:[],pitch:null},
     mustang:{group:musGroup,beacon:musExt.beacon,gear:musExt.gear,glow:[],props:musExt.props,discs:musExt.discs,pitch:musExt.pitch},
-    f18:{group:f18Group,beacon:f18Ext.beacon,gear:f18Ext.gear,glow:f18Ext.glow,props:[],discs:[],pitch:null}
+    f18:{group:f18Group,beacon:f18Ext.beacon,gear:f18Ext.gear,glow:f18Ext.glow,burners:f18Ext.burners,props:[],discs:[],pitch:null}
   };
   setActivePlane(PLANE_TYPE);
   var m4=new THREE.Matrix4();
@@ -3465,6 +3486,17 @@ function updateFlight(dt){
   // engine sound + glow
   AudioSys.setEngine(f.throttle,f.speed);
   for(var eg=0;eg<engineGlowMats.length;eg++)engineGlowMats[eg].emissiveIntensity=.15+f.throttle*1.5;
+  if(planeAfterburners.length){
+    var ab=clamp((f.throttle-.6)/.4,0,1);
+    for(var bi=0;bi<planeAfterburners.length;bi++){
+      var b=planeAfterburners[bi],pulse=.88+.12*Math.sin(gameT*42+bi*1.7);
+      b.group.visible=ab>.02;
+      b.group.scale.set(1+.08*ab,.72+.18*ab,.72+1.0*ab);
+      b.group.position.z=b.baseZ-.28*ab;
+      b.halo.opacity=.10+.44*ab*pulse;
+      b.core.opacity=.12+.68*ab;
+    }
+  }
   // HUD (cached elements)
   if(!FPEls)FPEls={
     spd:document.getElementById('fp-spd'),alt:document.getElementById('fp-alt'),

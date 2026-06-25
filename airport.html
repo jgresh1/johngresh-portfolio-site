@@ -35,12 +35,21 @@ canvas{display:block;touch-action:none}
 .intro-btn{font-family:'VT323',monospace;font-size:26px;background:#2a9d8f;color:#fff;border:4px solid #000;box-shadow:5px 5px 0 rgba(0,0,0,.8);padding:12px 34px;cursor:pointer;transition:background .1s,transform .1s,box-shadow .1s}
 .intro-btn:hover{background:#36c9b4}
 .intro-btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 rgba(0,0,0,.8)}
+.pause-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.pause-actions .intro-btn{min-width:178px}
+#restart-btn{background:#e63946}
+#restart-btn:hover{background:#ff5a5f}
 .intro-tip{font-size:15px;color:#6c7795;margin:12px 0 0}
 @media(max-width:600px){.intro-title{font-size:32px}.intro-controls{font-size:15px;grid-template-columns:1fr}.intro-card{padding:18px 16px}}
 
-/* ---------- Exit button ---------- */
-#mute-btn{position:fixed;top:18px;right:18px;z-index:2200;font-family:'VT323',monospace;font-size:18px;background:#1f2740;color:#9fc4d8;border:3px solid #000;box-shadow:4px 4px 0 rgba(0,0,0,.8);padding:7px 13px;cursor:pointer}
-@media(max-width:800px){#mute-btn{font-size:15px;padding:5px 9px}}
+/* ---------- Top right controls ---------- */
+#top-right-controls{position:fixed;top:18px;right:18px;z-index:2200;display:flex;gap:10px;align-items:flex-start}
+#mute-btn,#pause-btn{font-family:'VT323',monospace;font-size:18px;background:#1f2740;color:#9fc4d8;border:3px solid #000;box-shadow:4px 4px 0 rgba(0,0,0,.8);padding:7px 13px;cursor:pointer;white-space:nowrap}
+#pause-btn{background:#243042;color:#ffd24a}
+#pause-btn[aria-pressed="true"]{background:#ffc233;color:#12161d}
+#mute-btn:hover,#pause-btn:hover{background:#2f3c52}
+#pause-btn[aria-pressed="true"]:hover{background:#ffd96b}
+@media(max-width:800px){#top-right-controls{top:12px;right:10px;gap:7px}#mute-btn,#pause-btn{font-size:15px;padding:5px 9px;border-width:2px;box-shadow:3px 3px 0 rgba(0,0,0,.8)}}
 
 /* ---------- terminal menu (blue hamburger + drawer) ---------- */
 #air-menu-btn{position:fixed;top:18px;left:18px;width:56px;height:50px;background:#1d6fd8;border:4px solid #000;z-index:2380;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;box-shadow:5px 5px 0 rgba(0,0,0,.8);transition:background .1s,transform .1s,box-shadow .1s;padding:0}
@@ -173,6 +182,19 @@ canvas{cursor:grab}canvas.dragging{cursor:grabbing}
     </div>
     <button class="intro-btn" id="enter-btn">ENTER THE TERMINAL</button>
     <p class="intro-tip" id="intro-tip">Headphones recommended — it's raining hard out there.</p>
+</div>
+</div>
+
+<div id="pause-overlay" aria-hidden="true">
+  <div class="intro-card">
+    <p class="intro-kicker">SIMULATION HOLD</p>
+    <h1 class="intro-title">PAUSED</h1>
+    <p class="intro-sub">&#9992; Flight controls are frozen &#9992;</p>
+    <div class="pause-actions">
+      <button class="intro-btn" id="resume-btn" type="button">RESUME FLIGHT</button>
+      <button class="intro-btn" id="restart-btn" type="button">RESTART</button>
+    </div>
+    <p class="intro-tip">Press Escape or use the PAUSE button to resume.</p>
   </div>
 </div>
 
@@ -255,7 +277,10 @@ canvas{cursor:grab}canvas.dragging{cursor:grabbing}
     </li>
   </ul>
 </nav>
-<button id="mute-btn" type="button">&#9836; SOUND: ON</button>
+<div id="top-right-controls">
+  <button id="pause-btn" type="button" aria-pressed="false">PAUSE</button>
+  <button id="mute-btn" type="button">&#9836; SOUND: ON</button>
+</div>
 
 <div id="crosshair" style="display:none"></div>
 <div id="prompt"></div>
@@ -438,7 +463,7 @@ var interactions=[];               // {x,z,y,r,label,fn,cond}
 var dirLight,lightningLight,skyMat;
 var rainObj=null,boltGroup=null;
 var raycaster=null,clickSigns=[],carouselBags=null,radarBar=null,staticBeacons=[];
-var GameState={mode:'walk',started:false,indoor:false,planeAtGate:true,hasPass:false,uiOpen:false};
+var GameState={mode:'walk',started:false,indoor:false,planeAtGate:true,hasPass:false,uiOpen:false,paused:false};
 
 function addCollider(minX,maxX,minZ,maxZ,minY,maxY){
   var c={minX:minX,maxX:maxX,minZ:minZ,maxZ:maxZ,minY:minY==null?-2:minY,maxY:maxY==null?4:maxY,enabled:true};
@@ -1582,7 +1607,7 @@ function openOverlay(name){
   var id=OV_IDS[name];if(!id)return;
   closeOverlay();
   GameState.uiOpen=name;
-  keys={};mobileInput.move.x=0;mobileInput.move.y=0;mobileInput.jump=false;
+  clearInputs();
   if(promptEl)promptEl.style.display='none';
   document.getElementById(id).classList.add('open');
   if(name==='ask')AirChat.open();
@@ -1596,7 +1621,7 @@ function closeOverlay(){
   Pong.stop();
 }
 function handleSceneClick(cx,cy){
-  if(GameState.mode!=='walk'||GameState.uiOpen||!GameState.started||!raycaster)return;
+  if(GameState.mode!=='walk'||GameState.uiOpen||GameState.paused||!GameState.started||!raycaster)return;
   var ndc=new THREE.Vector2((cx/window.innerWidth)*2-1,-(cy/window.innerHeight)*2+1);
   raycaster.setFromCamera(ndc,camera);
   var meshes=[];
@@ -3174,14 +3199,43 @@ function setHint(txt){if(hintBar.__last!==txt){hintBar.textContent=txt;hintBar._
 // ---------------------------------------------------------------- input
 var keys={};
 var mobileInput={move:{x:0,y:0},look:null,thrUp:false,thrDn:false,brake:false,jump:false,act:false};
+function clearInputs(){
+  keys={};
+  mobileInput.move.x=0;mobileInput.move.y=0;
+  mobileInput.thrUp=false;mobileInput.thrDn=false;mobileInput.brake=false;mobileInput.jump=false;mobileInput.act=false;
+}
+function setPaused(paused){
+  if(paused&&(!GameState.started||GameState.uiOpen))return;
+  GameState.paused=paused;
+  clearInputs();
+  var overlay=document.getElementById('pause-overlay');
+  var pauseBtn=document.getElementById('pause-btn');
+  if(overlay){overlay.style.display=paused?'flex':'none';overlay.setAttribute('aria-hidden',paused?'false':'true')}
+  if(pauseBtn){pauseBtn.textContent=paused?'RESUME':'PAUSE';pauseBtn.setAttribute('aria-pressed',paused?'true':'false')}
+  if(paused&&promptEl)promptEl.style.display='none';
+  if(paused){AudioSys.setEngine(0,0);if(renderer)renderer.domElement.classList.remove('dragging')}
+  else{AudioSys.resume();if(GameState.mode==='fly')AudioSys.startEngine()}
+}
+function togglePaused(){setPaused(!GameState.paused)}
+function restartSimulation(){
+  clearInputs();
+  if(window.__airMenu&&window.__airMenu.isOpen())window.__airMenu.close();
+  closeOverlay();
+  setPaused(false);
+  GameState.started=true;
+  startFlight(false);
+}
 function onKey(e,down){
   if(e.key==='Escape'&&down){
     if(GameState.uiOpen){closeOverlay();return}
     if(window.__airMenu&&window.__airMenu.isOpen()){window.__airMenu.close();return}
+    if(GameState.paused){setPaused(false);return}
+    if(GameState.started){setPaused(true);return}
   }
   var t=e.target;
   if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return;   // typing in chat
   if(GameState.uiOpen)return;                                    // shop open: game keys paused
+  if(GameState.paused)return;
   var k=e.key.length===1?e.key.toLowerCase():e.key;
   keys[k]=down;
   if(down&&!e.repeat){
@@ -3317,7 +3371,7 @@ function updatePrompt(){
   else promptEl.style.display='none';
 }
 function tryInteract(){
-  if(GameState.uiOpen)return;
+  if(GameState.uiOpen||GameState.paused)return;
   if(activeInteraction){activeInteraction.fn();return}
   if(reboardPrompt){startFlight(true);return}
   if(exitPrompt){exitFlight();return}
@@ -3607,7 +3661,7 @@ function setupMobile(){
       var t=e.changedTouches[i];
       if(t.identifier===lookId){
         lookMoved+=Math.abs(t.clientX-lx)+Math.abs(t.clientY-ly);
-        if(GameState.mode==='walk'&&!GameState.uiOpen){
+        if(GameState.mode==='walk'&&!GameState.uiOpen&&!GameState.paused){
           player.yaw-=(t.clientX-lx)*.0052;
           player.pitch=clamp(player.pitch-(t.clientY-ly)*.0045,-1.4,1.4);
         }
@@ -3761,7 +3815,7 @@ function init(){
       var dx=e.clientX-drag.lx,dy=e.clientY-drag.ly;
       drag.lx=e.clientX;drag.ly=e.clientY;
       drag.moved+=Math.abs(dx)+Math.abs(dy);
-      if(GameState.mode==='walk'&&!GameState.uiOpen&&GameState.started){
+      if(GameState.mode==='walk'&&!GameState.uiOpen&&!GameState.paused&&GameState.started){
         player.yaw-=dx*.0046;
         player.pitch=clamp(player.pitch-dy*.0042,-1.45,1.45);
       }
@@ -3786,6 +3840,21 @@ function init(){
   document.getElementById('mute-btn').addEventListener('click',function(){
     var m=AudioSys.toggleMute();
     this.innerHTML='&#9836; SOUND: '+(m?'OFF':'ON');
+  });
+  document.getElementById('pause-btn').addEventListener('click',function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    togglePaused();
+  });
+  document.getElementById('resume-btn').addEventListener('click',function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    setPaused(false);
+  });
+  document.getElementById('restart-btn').addEventListener('click',function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    restartSimulation();
   });
   planeSwitchBtn=document.getElementById('plane-switch-btn');
   if(planeSwitchBtn){
@@ -3814,13 +3883,13 @@ function init(){
 function animate(){
   requestAnimationFrame(animate);
   var dt=clamp(clock.getDelta(),0,.05);
-  if(GameState.started&&!GameState.uiOpen){
+  if(GameState.started&&!GameState.uiOpen&&!GameState.paused){
     if(GameState.mode==='walk')updateWalk(dt);
     else updateFlight(dt);
     updatePrompt();
     updateBuffs(dt);
   }
-  updateAmbient(dt);
+  if(!GameState.paused)updateAmbient(dt);
   renderer.render(scene,camera);
 }
 try{init()}catch(err){

@@ -1637,11 +1637,11 @@ kick(); v.addEventListener('loadeddata', kick, {once:true}); v.addEventListener(
 }); if (v.hasAttribute('autoplay')) { v.dataset.autoplay = '1'; v.removeAttribute('autoplay'); }
 try { v.load(); } catch(_){}
 }); })();</script><div id="tpl-contact-modal" role="dialog" aria-modal="true" aria-labelledby="tpl-contact-title"><div class="tpl-contact-card"><button class="tpl-contact-close" data-close type="button" aria-label="Close">&times;</button>
-    <form class="tpl-contact-form" action="https://formsubmit.co/ajax/johngresh.usa@gmail.com" method="POST" novalidate>
-<input type="hidden" name="_subject" value="New inquiry from https://johngresh.org"><input type="hidden" name="_template" value="table"><input type="hidden" name="_captcha" value="false"><input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
+    <form class="tpl-contact-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
+<input type="hidden" name="access_key" value="81438921-d363-4175-b3d7-ffab5afde4c1"><input type="hidden" name="subject" value="New inquiry from https://johngresh.org"><input type="hidden" name="from_name" value="John Gresh Portfolio"><input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
 <div class="tpl-contact-eyebrow" data-eyebrow>Schedule</div><h3 id="tpl-contact-title" class="tpl-contact-title" data-title>Let's begin a conversation.</h3><p class="tpl-contact-sub" data-sub>A few details and I'll be in touch within the day.</p>
 <label><span>Name</span><input type="text" name="name" autocomplete="name" required></label><label><span>Email</span><input type="email" name="email" autocomplete="email" required></label><label><span>Company / Project</span><input type="text" name="company"></label>
-<label><span>What do you need?</span><textarea name="message" rows="4"></textarea></label><p class="tpl-contact-error" data-error hidden>Something went wrong. Try again or email me directly.</p><div class="tpl-contact-actions">
+<label><span>What do you need?</span><textarea name="message" rows="4" required></textarea></label><p class="tpl-contact-error" data-error hidden>Something went wrong. Try again or email me directly.</p><div class="tpl-contact-actions">
 <button type="button" class="tpl-contact-cancel" data-close>Cancel</button><button type="submit" class="tpl-contact-submit">Send &rarr;</button></div></form><div class="tpl-contact-success" hidden>
       <div class="tpl-contact-check"><svg class="emoji-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></div><h3 data-success-title>Got it.</h3>
       <p data-success-sub>I'll reply by end of day.</p><button class="tpl-contact-submit" data-close type="button">Close</button></div></div></div><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script><script id="pixel-vertex-shader" type="x-shader/x-vertex">varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}</script><script id="pixel-fragment-shader" type="x-shader/x-fragment">uniform sampler2D tDiffuse;uniform vec2 resolution;uniform float pixelSize;varying vec2 vUv;void main(){vec2 dxy=pixelSize/resolution;vec2 coord=dxy*floor(vUv/dxy+0.5);gl_FragColor=texture2D(tDiffuse,coord);}</script><script id="sky-vertex-shader" type="x-shader/x-vertex">varying vec3 vWorldPosition;void main(){vec4 worldPosition=modelMatrix*vec4(position,1.0);vWorldPosition=worldPosition.xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}</script><script id="sky-fragment-shader" type="x-shader/x-fragment">uniform vec3 colorZenith;uniform vec3 colorHorizonBright;uniform vec3 colorHorizonDark;uniform vec3 sunDirection;varying vec3 vWorldPosition;
@@ -2351,15 +2351,17 @@ set('[data-eyebrow]',      copy.eyebrow); set('[data-title]',        copy.title)
 function openContactModal(){ if (!contactModal) return; applyContactCopy(); contactForm.hidden = false; contactSuccess.hidden = true; contactForm.reset(); contactModal.classList.add('open'); setTimeout(function(){
 const first = contactForm.querySelector('input[name="name"]'); if (first) first.focus(); }, 120); }
 function closeContactModal(){ if (!contactModal) return; contactModal.classList.remove('open'); }
-const CTA_SELECTOR = 'a.btn-primary, a.btn-secondary, a.btn-fill, a.btn-out, a.btn-light, a.btn-link, a.btn, a.nav-cta, a.cta, .price-card .cta, .by-appt a.btn'; host.addEventListener('click', function(e){
-const link = e.target.closest('a'); if (!link) return; const href = link.getAttribute('href') || ''; if (!href.startsWith('mailto:')) return; if (!link.matches(CTA_SELECTOR)) return; e.preventDefault(); openContactModal(); });
+host.addEventListener('click', function(e){
+const link = e.target.closest('a'); if (!link) return; const href = (link.getAttribute('href') || '').toLowerCase(); if (!href.startsWith('mailto:johngresh.usa@gmail.com')) return; e.preventDefault(); openContactModal(); });
 if (contactModal){ contactModal.addEventListener('click', function(e){ if (e.target === contactModal || e.target.hasAttribute('data-close') || e.target.closest('[data-close]')){ closeContactModal(); }
 }); document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && contactModal.classList.contains('open')) closeContactModal(); }); if (contactForm){ const contactError = contactForm.querySelector('[data-error]');
 const submitBtn = contactForm.querySelector('.tpl-contact-submit'); contactForm.addEventListener('submit', async function(e){ e.preventDefault();
 if (contactError) contactError.hidden = true; if (!contactForm.checkValidity()){ contactForm.reportValidity(); return; } const originalLabel = submitBtn ? submitBtn.textContent : '';
-if (submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Sending…'; }
-try { const res = await fetch(contactForm.action, { method: 'POST', headers: { 'Accept': 'application/json' }, body: new FormData(contactForm)
-}); if (!res.ok) throw new Error('Request failed'); contactForm.hidden = true; contactSuccess.hidden = false; } catch (err){ if (contactError) contactError.hidden = false; } finally {
+if (submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+try { const formData = new FormData(contactForm); const accessKey = String(formData.get('access_key') || '');
+if (!accessKey) throw new Error('Missing Web3Forms access key');
+const res = await fetch(contactForm.action, { method: 'POST', headers: { 'Accept': 'application/json' }, body: formData
+}); const data = await res.json().catch(function(){ return {}; }); if (!res.ok || data.success === false) throw new Error(data.message || 'Request failed'); contactForm.hidden = true; contactSuccess.hidden = false; } catch (err){ if (contactError) contactError.hidden = false; } finally {
 if (submitBtn){ submitBtn.disabled = false; submitBtn.textContent = originalLabel; }
 }
 }); }

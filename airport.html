@@ -270,6 +270,7 @@ canvas{cursor:grab}canvas.dragging{cursor:grabbing}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
 <script>
 /* =====================================================================
@@ -2795,13 +2796,117 @@ var MustangModel=(function(){
   return {build:build};
 })();
 
+// ---------------------------------------------------------------- imported F/A-18 Hornet GLB
+// Uses the exact refined GLB model generated in Codex. The wrapper matches this
+// scene's aircraft frame: nose +z, up +y, local x lateral.
+function buildF18Hornet(P,opts){
+  opts=opts||{};
+  var group=new THREE.Group();
+  P.add(group);
+
+  var glowMats=[];
+  var gear=[];
+  var marker=null;
+  if(typeof makeSign==='function'){
+    marker=makeSign('F/A-18 LOADING',{w:512,h:90,fs:54,bg:'#0d141d',color:'#7dffb0',border:true,mw:5.4,mh:.9,glow:.75});
+    marker.position.set(0,1.5,0);
+    group.add(marker);
+  }
+
+  function makeGlow(x,z){
+    var mat=new THREE.MeshStandardMaterial({color:0xffb86c,emissive:0xff7a20,emissiveIntensity:.18,transparent:true,opacity:.76});
+    var bulb=new THREE.Mesh(new THREE.SphereGeometry(.42,18,12),mat);
+    bulb.scale.set(.72,.50,1.10);
+    bulb.position.set(x,-.36,z);
+    group.add(bulb);
+    glowMats.push(mat);
+  }
+  makeGlow(-.88,-11.15);
+  makeGlow(.88,-11.15);
+
+  var beaconMat=new THREE.MeshStandardMaterial({color:0xff4c3e,emissive:0xff2211,emissiveIntensity:.25});
+  var beacon=new THREE.Mesh(new THREE.SphereGeometry(.18,12,8),beaconMat);
+  beacon.position.set(0,1.32,-1.2);
+  group.add(beacon);
+
+  function tuneMaterial(mat,name){
+    if(!mat)return;
+    if(mat.isMaterial)mat=mat.clone();
+    var n=(name||'').toLowerCase();
+    if('roughness' in mat)mat.roughness=Math.max(mat.roughness||0,.58);
+    if('metalness' in mat&&n.indexOf('glass')<0)mat.metalness=Math.min(mat.metalness||0,.45);
+    if(n.indexOf('glass')>=0||n.indexOf('canopy')>=0){
+      mat.transparent=true;
+      mat.opacity=.72;
+      mat.depthWrite=true;
+    }
+    mat.needsUpdate=true;
+    return mat;
+  }
+  function isGearPart(obj){
+    var n=(obj.name||'').toLowerCase();
+    var role=(obj.userData&&String(obj.userData.sim_role||'').toLowerCase())||'';
+    return role==='gear'
+      || n.indexOf('landing gear')>=0
+      || n.indexOf('nose gear')>=0
+      || n.indexOf('main gear')>=0
+      || n.indexOf('retractable')>=0
+      || n.indexOf('oleo')>=0
+      || n.indexOf('wheel')>=0
+      || n.indexOf('tire')>=0
+      || n.indexOf('gear door')>=0
+      || n.indexOf('drag brace')>=0
+      || n.indexOf('torque link')>=0
+      || n.indexOf('fork arm')>=0
+      || n.indexOf('axle')>=0
+      || n.indexOf('scissor')>=0;
+  }
+  function finishLoaded(sceneObj){
+    if(marker){group.remove(marker);marker=null;}
+    sceneObj.name='F/A-18 Hornet refined GLB airframe';
+    sceneObj.rotation.y=-Math.PI/2;       // GLB native nose +x -> airport nose +z
+    sceneObj.scale.set(1.25,1.25,1.25);
+    sceneObj.position.set(0,-3.0,0);      // wheels sit at this game's gear bottom
+    sceneObj.traverse(function(obj){
+      if(obj.isMesh){
+        if(!MOBILE){obj.castShadow=true;obj.receiveShadow=true;}
+        if(Array.isArray(obj.material)){
+          obj.material=obj.material.map(function(m){return tuneMaterial(m,m&&m.name);});
+        }else{
+          obj.material=tuneMaterial(obj.material,obj.material&&obj.material.name);
+        }
+        if(isGearPart(obj))gear.push({leg:obj,up:0});
+      }
+    });
+    group.add(sceneObj);
+    if(PLANE_TYPE==='f18')planeGear=gear;
+  }
+
+  if(THREE.GLTFLoader){
+    var loader=new THREE.GLTFLoader();
+    loader.load(
+      'assets/F18_Hornet_textured_control_surfaces.glb?v=f18-detail-26',
+      function(gltf){finishLoaded(gltf.scene);},
+      undefined,
+      function(err){
+        console.warn('F/A-18 model failed to load',err);
+        if(marker&&marker.userData&&marker.userData.plane)marker.userData.plane.material.emissiveIntensity=1.4;
+      }
+    );
+  }else if(marker&&marker.userData&&marker.userData.plane){
+    marker.userData.plane.material.emissiveIntensity=1.4;
+  }
+
+  return {beacon:beacon,gear:gear,glow:glowMats,props:[],discs:[],pitch:null};
+}
+
 // ---------------------------------------------------------------- the plane
 // Local frame: nose +z, fuselage centerline y=0, cabin floor y=-1.5.
 // Parked at gate: group at (40, 4.6, 84), yaw +PI/2 -> nose east (+x world).
 var planeG=null,planeInterior=null,planeBeacon=null,planeColliders=[],engineGlowMats=[],planeGear=[];
 var PLANE_GATE={x:40,y:4.6,z:84,yaw:Math.PI/2};
 // ----- swappable airframes: both are built once and toggled by visibility -----
-var PLANE_TYPES=['jet','mustang'],PLANE_LABEL={jet:'GRESH JET',mustang:'P-51 MUSTANG'},PLANE_TYPE='jet';
+var PLANE_TYPES=['jet','mustang','f18'],PLANE_LABEL={jet:'GRESH JET',mustang:'P-51 MUSTANG',f18:'F/A-18 HORNET'},PLANE_TYPE='jet';
 var PLANES=null,planePropellers=[],planePropDiscs=[],mustangPitchGroup=null,planeSwitchBtn=null;
 
 function setActivePlane(type){
@@ -2845,9 +2950,12 @@ function buildPlane(){
   var jetGlow=engineGlowMats.slice(); engineGlowMats.length=0;   // capture the jet's engine-glow mats
   var musGroup=new THREE.Group(); P.add(musGroup);
   var musExt=MustangModel.build(musGroup,{});
+  var f18Group=new THREE.Group(); P.add(f18Group);
+  var f18Ext=buildF18Hornet(f18Group,{});
   PLANES={
     jet:{group:jetGroup,beacon:jetExt.beacon,gear:jetExt.gear,glow:jetGlow,props:[],discs:[],pitch:null},
-    mustang:{group:musGroup,beacon:musExt.beacon,gear:musExt.gear,glow:[],props:musExt.props,discs:musExt.discs,pitch:musExt.pitch}
+    mustang:{group:musGroup,beacon:musExt.beacon,gear:musExt.gear,glow:[],props:musExt.props,discs:musExt.discs,pitch:musExt.pitch},
+    f18:{group:f18Group,beacon:f18Ext.beacon,gear:f18Ext.gear,glow:f18Ext.glow,props:[],discs:[],pitch:null}
   };
   setActivePlane(PLANE_TYPE);
   var m4=new THREE.Matrix4();

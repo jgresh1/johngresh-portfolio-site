@@ -368,7 +368,7 @@ function makeSign(text,opts){
 // ---------------------------------------------------------------- audio (all synthesized — no assets)
 var AudioSys=(function(){
   var ctx=null,master=null,muted=false,rainGain=null,rainFilter=null,engine=null;
-  var thunderBuf=null,rainState='',engT=0;
+  var thunderBuf=null,rainState='',engT=0,noiseBuf=null;
   function ensure(){
     if(ctx)return true;
     try{
@@ -377,6 +377,7 @@ var AudioSys=(function(){
       // rain: looped white noise -> lowpass
       var len=ctx.sampleRate*2,buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0);
       for(var i=0;i<len;i++)d[i]=Math.random()*2-1;
+      noiseBuf=buf;                       // shared white-noise buffer (rain + afterburner roar)
       var src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
       rainFilter=ctx.createBiquadFilter();rainFilter.type='lowpass';rainFilter.frequency.value=2600;
       rainGain=ctx.createGain();rainGain.gain.value=0;
@@ -428,25 +429,58 @@ var AudioSys=(function(){
     var w=ctx.createOscillator(),wg=ctx.createGain();
     w.type='triangle';w.frequency.value=900;wg.gain.value=0;
     w.connect(wg);wg.connect(master);w.start();
-    engine={o1:o1,o2:o2,g:g,f:f,w:w,wg:wg};
+    // afterburner roar layer: broadband noise -> lowpass, silent until the burners light.
+    // a slow LFO summed into the gain gives the burner its uneven throb/crackle.
+    var ab=null,abf=null,abg=null,lfo=null,lfg=null;
+    if(noiseBuf){
+      ab=ctx.createBufferSource();ab.buffer=noiseBuf;ab.loop=true;
+      abf=ctx.createBiquadFilter();abf.type='lowpass';abf.frequency.value=800;
+      abg=ctx.createGain();abg.gain.value=0;
+      ab.connect(abf);abf.connect(abg);abg.connect(master);ab.start();
+      lfo=ctx.createOscillator();lfg=ctx.createGain();
+      lfo.type='sine';lfo.frequency.value=24;lfg.gain.value=0;
+      lfo.connect(lfg);lfg.connect(abg.gain);lfo.start();
+    }
+    engine={o1:o1,o2:o2,g:g,f:f,w:w,wg:wg,ab:ab,abf:abf,abg:abg,lfo:lfo,lfg:lfg};
   }
-  function setEngine(throttle,speed){
+  function setEngine(throttle,speed,type){
     if(!ctx||!engine)return;
     var t=ctx.currentTime;
     if(t-engT<.12)return;               // ~8 Hz is plenty for engine param ramps
     engT=t;
-    engine.g.gain.setTargetAtTime(muted?0:(.02+throttle*.13),t,.25);
-    engine.o1.frequency.setTargetAtTime(48+throttle*70+speed*.18,t,.3);
-    engine.o2.frequency.setTargetAtTime(51+throttle*74+speed*.18,t,.3);
-    engine.f.frequency.setTargetAtTime(300+throttle*1400,t,.3);
-    engine.wg.gain.setTargetAtTime(muted?0:throttle*.022,t,.25);
-    engine.w.frequency.setTargetAtTime(700+throttle*1500,t,.3);
+    if(type==='f18'){
+      // F404-class fighter turbofan: a higher, harder whine than the airliner drone,
+      // with a prominent turbine shriek that climbs steeply with throttle.
+      engine.g.gain.setTargetAtTime(muted?0:(.016+throttle*.09),t,.25);
+      engine.o1.frequency.setTargetAtTime(94+throttle*150+speed*.22,t,.3);
+      engine.o2.frequency.setTargetAtTime(99+throttle*156+speed*.22,t,.3);
+      engine.f.frequency.setTargetAtTime(620+throttle*2600,t,.3);
+      engine.wg.gain.setTargetAtTime(muted?0:(.008+throttle*.04),t,.25);
+      engine.w.frequency.setTargetAtTime(1500+throttle*2600,t,.3);
+    }else{
+      // high-bypass airliner (Gresh Jet) — deep, soft turbofan rumble.
+      engine.g.gain.setTargetAtTime(muted?0:(.02+throttle*.13),t,.25);
+      engine.o1.frequency.setTargetAtTime(48+throttle*70+speed*.18,t,.3);
+      engine.o2.frequency.setTargetAtTime(51+throttle*74+speed*.18,t,.3);
+      engine.f.frequency.setTargetAtTime(300+throttle*1400,t,.3);
+      engine.wg.gain.setTargetAtTime(muted?0:throttle*.022,t,.25);
+      engine.w.frequency.setTargetAtTime(700+throttle*1500,t,.3);
+    }
+    // afterburner roar: only fighters light burners, and only past ~60% throttle
+    // (matches the visual burner threshold in the flight loop).
+    if(engine.abg){
+      var burner=(type==='f18')?clamp((throttle-.6)/.4,0,1):0;
+      engine.abg.gain.setTargetAtTime(muted?0:burner*.14,t,.2);
+      engine.lfg.gain.setTargetAtTime(muted?0:burner*.05,t,.2);   // throb depth
+      engine.abf.frequency.setTargetAtTime(700+burner*1500,t,.3);
+    }
   }
   function stopEngine(){
     if(!ctx||!engine)return;
     var e=engine;engine=null;
     e.g.gain.setTargetAtTime(0,ctx.currentTime,.3);e.wg.gain.setTargetAtTime(0,ctx.currentTime,.3);
-    setTimeout(function(){try{e.o1.stop();e.o2.stop();e.w.stop()}catch(_){}},1200);
+    if(e.abg)e.abg.gain.setTargetAtTime(0,ctx.currentTime,.3);
+    setTimeout(function(){try{e.o1.stop();e.o2.stop();e.w.stop();if(e.ab)e.ab.stop();if(e.lfo)e.lfo.stop();}catch(_){}},1200);
   }
   function toggleMute(){muted=!muted;if(ctx){master.gain.setTargetAtTime(muted?0:.9,ctx.currentTime,.05)}return muted}
   function resume(){if(ctx&&ctx.state==='suspended')ctx.resume()}
@@ -3625,7 +3659,7 @@ function updateFlight(dt){
   camera.updateProjectionMatrix();
   GameState.indoor=false;
   // engine sound + glow
-  AudioSys.setEngine(f.throttle,f.speed);
+  AudioSys.setEngine(f.throttle,f.speed,PLANE_TYPE);
   for(var eg=0;eg<engineGlowMats.length;eg++)engineGlowMats[eg].emissiveIntensity=.15+f.throttle*1.5;
   if(planeAfterburners.length){
     var ab=clamp((f.throttle-.6)/.4,0,1);

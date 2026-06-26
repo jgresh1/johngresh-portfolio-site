@@ -49,7 +49,7 @@ canvas{display:block;touch-action:none}
 #pause-btn[aria-pressed="true"]{background:#ffc233;color:#12161d}
 #mute-btn:hover,#pause-btn:hover{background:#2f3c52}
 #pause-btn[aria-pressed="true"]:hover{background:#ffd96b}
-@media(max-width:800px){#top-right-controls{top:12px;right:10px;gap:7px}#mute-btn,#pause-btn{font-size:15px;padding:5px 9px;border-width:2px;box-shadow:3px 3px 0 rgba(0,0,0,.8)}}
+@media(max-width:800px){#top-right-controls{top:12px;right:10px;gap:7px;flex-direction:column-reverse;align-items:flex-end}#mute-btn,#pause-btn{font-size:15px;padding:5px 9px;border-width:2px;box-shadow:3px 3px 0 rgba(0,0,0,.8)}}
 
 /* ---------- terminal menu (blue hamburger + drawer) ---------- */
 #air-menu-btn{position:fixed;top:18px;left:18px;width:56px;height:50px;background:#1d6fd8;border:4px solid #000;z-index:2380;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;box-shadow:5px 5px 0 rgba(0,0,0,.8);transition:background .1s,transform .1s,box-shadow .1s;padding:0}
@@ -137,7 +137,7 @@ canvas{cursor:grab}canvas.dragging{cursor:grabbing}
 #throttle-wrap{margin-top:4px}
 #throttle-bar{width:100%;height:12px;background:#0e1320;border:2px solid #000;position:relative}
 #throttle-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(90deg,#2a9d8f,#ffd24a)}
-@media(max-width:800px){#flight-panel{left:10px;top:auto;bottom:230px;transform:none;font-size:17px;padding:8px 10px;min-width:118px}}
+@media(max-width:800px){#flight-panel{left:10px;top:66px;bottom:auto;transform:none;font-size:17px;padding:8px 10px;min-width:118px}}
 
 /* ---------- Runway aircraft selector ---------- */
 #plane-switch-btn{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:1000;display:none;

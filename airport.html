@@ -2841,26 +2841,63 @@ var MustangModel=(function(){
     m.position.set(0,-2.0,0);                 // sit low so the gear stays short (not stilts)
     P.add(m);
 
-    // landing gear in planeG-local frame (nose +z). The leg group pivots at topY (so the
-    // retract animation folds it up); the wheel sits at world-local y=-4.05 to match the jet.
-    var WHEEL_Y=-4.05, EMBED=0.5;             // strut top reaches EMBED above the pivot, into the belly
-    var gear=[];
-    function legAt(x,z,topY,wheelR,strutR,upAngle){
-      var leg=new THREE.Group(); leg.position.set(x,topY,z); P.add(leg);
-      var wheelLocal=WHEEL_Y-topY;            // wheel centre relative to the pivot
-      var len=EMBED-wheelLocal;               // strut spans embed-top down to the wheel
-      var strut=new THREE.Mesh(new THREE.CylinderGeometry(strutR,strutR,len,8),MATS.metal);
-      strut.position.y=(EMBED+wheelLocal)/2;  // midpoint between embed-top and wheel
-      leg.add(strut);
-      var wh=new THREE.Mesh(new THREE.CylinderGeometry(wheelR,wheelR,wheelR*0.62,16),MATS.tire);
-      wh.rotation.z=Math.PI/2; wh.position.y=wheelLocal; leg.add(wh);
-      var hub=new THREE.Mesh(new THREE.CylinderGeometry(wheelR*0.4,wheelR*0.4,wheelR*0.66,10),MATS.metal);
-      hub.rotation.z=Math.PI/2; hub.position.y=wheelLocal; leg.add(hub);
-      gear.push({leg:leg,up:upAngle});
+    // Landing gear in planeG-local frame (nose +z). Main pivots now sit just under
+    // the wing skin so the struts no longer poke through the upper surface.
+    var WHEEL_Y=-4.05, gear=[];
+    function gearMesh(parent,mesh){if(!MOBILE){mesh.castShadow=true;mesh.receiveShadow=true;}parent.add(mesh);return mesh;}
+    function cylBetween(parent,a,b,r,mat,seg){
+      var dir=new THREE.Vector3().subVectors(b,a),len=dir.length();
+      var mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,seg||8),mat);
+      mesh.position.copy(a).add(b).multiplyScalar(0.5);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
+      return gearMesh(parent,mesh);
     }
-    legAt( 2.5, 1.5,-2.1,0.46,0.12, 1.45);    // main R (folds aft/in)
-    legAt(-2.5, 1.5,-2.1,0.46,0.12, 1.45);    // main L
-    legAt( 0.0,-6.3,-3.0,0.24,0.08,-1.20);    // tailwheel (short; folds fwd)
+    function makeWheel(parent,r,w,x,y,z){
+      var tire=new THREE.Mesh(new THREE.CylinderGeometry(r,r,w,24),MATS.tire);
+      tire.rotation.z=Math.PI/2;tire.position.set(x,y,z);gearMesh(parent,tire);
+      var hub=new THREE.Mesh(new THREE.CylinderGeometry(r*0.45,r*0.45,w*1.08,16),MATS.metal);
+      hub.rotation.z=Math.PI/2;hub.position.set(x,y,z);gearMesh(parent,hub);
+      var cap=new THREE.Mesh(new THREE.CylinderGeometry(r*0.22,r*0.22,w*1.16,12),MATS.metalDark);
+      cap.rotation.z=Math.PI/2;cap.position.set(x,y,z);gearMesh(parent,cap);
+      return tire;
+    }
+    function mainGear(side){
+      var topY=-2.66,wheelR=0.46,wheelW=0.32,wheelLocal=WHEEL_Y-topY,leg=new THREE.Group();
+      leg.position.set(side*2.42,topY,1.45);P.add(leg);
+      var wheelZ=0.08,top=new THREE.Vector3(-side*0.05,0.20,-0.03),knee=new THREE.Vector3(0,wheelLocal+0.56,0.04),axle=new THREE.Vector3(0,wheelLocal,wheelZ);
+      cylBetween(leg,top,knee,0.115,MATS.metal,10);
+      cylBetween(leg,knee,axle,0.070,MATS.metal,10);
+      cylBetween(leg,new THREE.Vector3(-side*0.24,0.08,-0.34),new THREE.Vector3(0,wheelLocal+0.54,0.08),0.035,MATS.metalDark,8);
+      cylBetween(leg,new THREE.Vector3(side*0.20,0.04,0.26),new THREE.Vector3(0,wheelLocal+0.36,0.08),0.027,MATS.metalDark,8);
+      cylBetween(leg,new THREE.Vector3(-0.23,wheelLocal+0.46,wheelZ),new THREE.Vector3(-0.23,wheelLocal-0.16,wheelZ),0.035,MATS.metalDark,8);
+      cylBetween(leg,new THREE.Vector3(0.23,wheelLocal+0.46,wheelZ),new THREE.Vector3(0.23,wheelLocal-0.16,wheelZ),0.035,MATS.metalDark,8);
+      var axleBar=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.72,10),MATS.metal);
+      axleBar.rotation.z=Math.PI/2;axleBar.position.set(0,wheelLocal,wheelZ);gearMesh(leg,axleBar);
+      makeWheel(leg,wheelR,wheelW,0,wheelLocal,wheelZ);
+      var door=new THREE.Mesh(new THREE.BoxGeometry(0.055,1.08,0.42),M.skin);
+      door.position.set(-side*0.33,wheelLocal+0.60,-0.05);door.rotation.z=side*0.09;door.rotation.x=-0.07;gearMesh(leg,door);
+      var hinge=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.46,8),MATS.metalDark);
+      hinge.rotation.x=Math.PI/2;hinge.position.set(-side*0.36,0.02,-0.08);gearMesh(leg,hinge);
+      gear.push({leg:leg,up:1.45});
+    }
+    function tailGear(){
+      var topY=-2.34,wheelR=0.22,wheelW=0.16,wheelLocal=WHEEL_Y-topY,leg=new THREE.Group();
+      leg.position.set(0,topY,-6.18);P.add(leg);
+      var socket=new THREE.Mesh(new THREE.BoxGeometry(0.44,0.12,0.48),M.skin);
+      socket.position.set(0,0.02,-0.04);gearMesh(leg,socket);
+      var hinge=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,0.42,8),MATS.metal);
+      hinge.rotation.z=Math.PI/2;hinge.position.set(0,-0.04,-0.12);gearMesh(leg,hinge);
+      cylBetween(leg,new THREE.Vector3(0,0.02,-0.10),new THREE.Vector3(0,wheelLocal+0.36,0.02),0.052,MATS.metal,8);
+      cylBetween(leg,new THREE.Vector3(-0.14,wheelLocal+0.40,0.03),new THREE.Vector3(-0.14,wheelLocal-0.06,0.03),0.023,MATS.metalDark,6);
+      cylBetween(leg,new THREE.Vector3(0.14,wheelLocal+0.40,0.03),new THREE.Vector3(0.14,wheelLocal-0.06,0.03),0.023,MATS.metalDark,6);
+      var yoke=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.05,0.08),MATS.metalDark);
+      yoke.position.set(0,wheelLocal+0.19,0.03);gearMesh(leg,yoke);
+      makeWheel(leg,wheelR,wheelW,0,wheelLocal,0.03);
+      gear.push({leg:leg,up:-1.56,hideAt:0.30});
+    }
+    mainGear(1);
+    mainGear(-1);
+    tailGear();
 
     // no beacon or nav lights — the standalone Mustang model had none
     return {beacon:null,gear:gear,props:[built.prop],discs:[built.propDisc],pitch:pitchGrp,surfaces:built.surfaces};
@@ -3546,7 +3583,8 @@ function updateFlight(dt){
   for(var gi=0;gi<planeGear.length;gi++){
     var lg=planeGear[gi];
     lg.leg.rotation.x=lg.up*(1-f.gear);   // 1=down (0 rot) -> 0=up (folded)
-    lg.leg.visible=f.gear>0.02;           // tuck out of sight once fully stowed
+    var hideAt=(lg.hideAt===undefined)?0.02:lg.hideAt;
+    lg.leg.visible=f.gear>hideAt;         // tuck out of sight once stowed
   }
   // propeller spin + blur disc (prop-driven airframes like the Mustang)
   if(planePropellers.length){

@@ -486,7 +486,8 @@ var AudioSys=(function(){
   function resume(){if(ctx&&ctx.state==='suspended')ctx.resume()}
   return {ensure:ensure,resume:resume,setRain:setRain,thunder:thunder,blip:blip,chime:chime,slurp:slurp,
           startEngine:startEngine,setEngine:setEngine,stopEngine:stopEngine,toggleMute:toggleMute,
-          isMuted:function(){return muted}};
+          isMuted:function(){return muted},
+          isRunning:function(){return !!ctx&&ctx.state==='running'}};
 })();
 
 // ---------------------------------------------------------------- scene core
@@ -3944,14 +3945,22 @@ function init(){
   startFlight(false,function(){
     document.getElementById('site-loader').classList.add('hidden');
   });
-  // Audio is gated behind a user gesture; unlock engine + rain on first input.
+  // Audio is gated behind a user gesture. Mobile browsers (esp. iOS) start the
+  // AudioContext suspended and only resume it inside a real touch handler, so we
+  // listen broadly (pointer + touch + key) and keep retrying until the context is
+  // actually running before detaching — a single ignored resume would stay silent.
+  var audioUnlockEvents=['pointerdown','touchstart','touchend','click','keydown'];
   var unlockAudio=function(){
-    AudioSys.ensure();AudioSys.resume();AudioSys.startEngine();
-    window.removeEventListener('pointerdown',unlockAudio);
-    window.removeEventListener('keydown',unlockAudio);
+    AudioSys.ensure();
+    AudioSys.resume();
+    if(GameState.mode==='fly')AudioSys.startEngine();
+    if(AudioSys.isRunning&&AudioSys.isRunning()){
+      audioUnlockEvents.forEach(function(ev){window.removeEventListener(ev,unlockAudio);});
+    }
   };
-  window.addEventListener('pointerdown',unlockAudio);
-  window.addEventListener('keydown',unlockAudio);
+  audioUnlockEvents.forEach(function(ev){window.addEventListener(ev,unlockAudio,{passive:true});});
+  // iOS suspends the context whenever the tab is backgrounded — re-resume on return.
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)AudioSys.resume();});
   animate();
 }
 function animate(){

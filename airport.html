@@ -3426,7 +3426,7 @@ function setMode(mode){
   if(mode!=='fly'){var psb=document.getElementById('plane-switch-btn');if(psb)psb.style.display='none';}
   updateMobileButtons();
 }
-function startFlight(fromLanding){
+function startFlight(fromLanding,onReady){
   AudioSys.ensure();
   fadeEl.style.opacity='1';
   setTimeout(function(){
@@ -3454,6 +3454,7 @@ function startFlight(fromLanding){
     flight.lastY=planeG.position.y;
     AudioSys.startEngine();
     setHint(MOBILE?'':'W/S throttle · ↑↓ pitch · ←→ roll · A/D rudder/steer · SPACE brakes · R reset');
+    if(onReady)onReady();
     fadeEl.style.opacity='0';
   },560);
 }
@@ -3904,10 +3905,11 @@ function init(){
   setupMobile();
   setMode('walk');
 
-  document.getElementById('site-loader').classList.add('hidden');
   // Boot straight into the captain's seat on Runway 09 — no intro gate.
   GameState.started=true;
-  startFlight(false);
+  startFlight(false,function(){
+    document.getElementById('site-loader').classList.add('hidden');
+  });
   // Audio is gated behind a user gesture; unlock engine + rain on first input.
   var unlockAudio=function(){
     AudioSys.ensure();AudioSys.resume();AudioSys.startEngine();

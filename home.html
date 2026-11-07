@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>John Gresh · Projects</title>
+<meta name="description" content="Games, websites and client work by John Gresh in Winston-Salem, NC. Newest first.">
+<meta name="theme-color" content="#1c1d20">
+<meta property="og:title" content="John Gresh · Projects">
+<meta property="og:description" content="Games, websites and client work, newest first.">
+<meta property="og:image" content="https://johngresh.org/assets/home/camp-hero.webp">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a2c30'/%3E%3Cg fill='%23e9ebee'%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2' fill='%23ffb44f'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="preload" as="image" href="assets/home/camp-hero.webp" fetchpriority="high">
+<style>
+/* One committed look: a graphite console menu. Grey does the work; amber marks only what is new or playable. */
+:root {
+  --bg: #1c1d20;
+  --bg-raise: #232428;
+  --card: #26282c;
+  --card-hi: #2e3035;
+  --line: rgba(255, 255, 255, .075);
+  --line-hi: rgba(255, 255, 255, .2);
+  --text: #eceef1;
+  --muted: #a3a7ae;
+  --faint: #73777f;
+  --glass: rgba(22, 23, 26, .72);
+  --amber: #ffb44f;
+  --k-game: #ffb44f;
+  --k-client: #a9c29f;
+  --k-template: #9fb4cc;
+  --k-app: #bcaee6;
+  --font: "Archivo", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --gut: max(16px, env(safe-area-inset-left, 0px));
+  --gut-r: max(16px, env(safe-area-inset-right, 0px));
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); scroll-padding-top: 84px; }
+body {
+  margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+  font: 400 15px/1.5 var(--font); font-stretch: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid #f4f5f7; outline-offset: 3px; }
+.wrap { width: 100%; max-width: 1360px; margin: 0 auto; padding-left: var(--gut); padding-right: var(--gut-r); }
+
+/* Top bar */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: rgba(28, 29, 32, .9); z-index: 30; }
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: rgba(28, 29, 32, .8); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid var(--line);
+}
+.bar .wrap { display: flex; align-items: center; gap: 20px; padding-block: 12px; }
+.brand { display: flex; align-items: center; gap: 11px; text-decoration: none; min-width: 0; }
+.brand .mark { width: 34px; height: 34px; border-radius: 9px; background: #2c2e33; border: 1px solid var(--line-hi); display: grid; place-items: center; flex: none; }
+.brand .mark svg { width: 18px; height: 18px; }
+.brand b { display: block; font: 700 16px/1.1 var(--font); font-stretch: 112%; letter-spacing: .01em; }
+.brand small { display: block; font: 500 11px/1.3 var(--mono); color: var(--faint); letter-spacing: .04em; text-transform: uppercase; margin-top: 2px; white-space: nowrap; }
+.tabs { display: flex; gap: 4px; padding: 4px; margin-left: auto; border-radius: 999px; background: var(--bg-raise); border: 1px solid var(--line); }
+.tabs button {
+  font: 600 13.5px/1 var(--font); color: var(--muted); background: none; border: 0; cursor: pointer;
+  padding: 9px 15px; border-radius: 999px; transition: background .2s, color .2s;
+}
+.tabs button:hover { color: var(--text); }
+.tabs button[aria-pressed="true"] { background: #3a3d43; color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+.tabs .n { font: 500 11px var(--mono); color: var(--faint); margin-left: 5px; }
+.tabs button[aria-pressed="true"] .n { color: var(--muted); }
+.play {
+  display: inline-flex; align-items: center; gap: 9px; flex: none; text-decoration: none;
+  font: 600 13.5px/1 var(--font); padding: 10px 16px 10px 12px; border-radius: 999px;
+  background: #eceef1; color: #17181a; transition: background .2s, transform .2s;
+}
+.play:hover { background: #fff; transform: translateY(-1px); }
+.play i { width: 20px; height: 20px; border-radius: 50%; background: #17181a; display: grid; place-items: center; }
+.play i svg { width: 8px; height: 8px; margin-left: 1px; }
+
+/* Featured game */
+.hero { position: relative; isolation: isolate; padding-top: 28px; }
+.glow { position: absolute; inset: 0 -8% -30%; z-index: -1; pointer-events: none; overflow: hidden; opacity: .32; }
+.glow img { width: 100%; height: 100%; object-fit: cover; filter: blur(70px) saturate(1.3); transform: scale(1.1); }
+.glow::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(28, 29, 32, 0) 40%, var(--bg) 92%); }
+.feature {
+  position: relative; display: block; text-decoration: none; border-radius: 22px; overflow: hidden;
+  border: 1px solid var(--line-hi); background: #2a2c30; aspect-ratio: 16 / 7.2;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.feature img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; transition: transform 1.2s cubic-bezier(.2, .7, .2, 1); }
+.feature:hover img { transform: scale(1.025); }
+.feature::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(16, 17, 19, .88) 0%, rgba(16, 17, 19, .55) 34%, rgba(16, 17, 19, 0) 62%), linear-gradient(0deg, rgba(16, 17, 19, .55) 0%, rgba(16, 17, 19, 0) 40%); }
+.feature .copy { position: absolute; z-index: 1; left: clamp(22px, 4vw, 52px); bottom: clamp(22px, 4vw, 48px); max-width: 470px; display: grid; gap: 14px; }
+.eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.feature h1 { margin: 0; font: 800 clamp(38px, 5.6vw, 76px)/.92 var(--font); font-stretch: 116%; letter-spacing: -.015em; text-wrap: balance; color: #fff; }
+.feature p { margin: 0; font-size: 16.5px; line-height: 1.5; color: #d7dade; text-wrap: pretty; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 4px; }
+.btn { display: inline-flex; align-items: center; gap: 10px; font: 700 15px/1 var(--font); padding: 13px 22px 13px 16px; border-radius: 999px; background: var(--amber); color: #1a1408; box-shadow: 0 8px 24px rgba(255, 180, 79, .25); }
+.btn i { width: 22px; height: 22px; border-radius: 50%; background: #1a1408; display: grid; place-items: center; }
+.btn i svg { width: 9px; height: 9px; margin-left: 1px; }
+.feature:hover .btn { background: #ffc06a; }
+.actions small { font: 500 11.5px/1.4 var(--mono); color: #b9bdc3; letter-spacing: .02em; }
+
+/* Labels */
+.tag {
+  display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 10px 0 9px; border-radius: 999px;
+  font: 500 10.5px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #e3e5e8;
+  background: var(--glass); border: 1px solid rgba(255, 255, 255, .12); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--dot, #fff); }
+.tag[data-k="game"] { --dot: var(--k-game); }
+.tag[data-k="client"] { --dot: var(--k-client); }
+.tag[data-k="template"] { --dot: var(--k-template); }
+.tag[data-k="app"] { --dot: var(--k-app); }
+.new { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; font: 700 10.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; background: var(--amber); color: #1a1408; }
+.when { font: 500 11.5px/1 var(--mono); color: #c9ccd1; letter-spacing: .04em; }
+
+/* Sections */
+main { padding-bottom: 56px; overflow-x: clip; }
+.section { position: relative; padding-top: 54px; }  /* positioned so it paints above the hero's glow */
+.head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; padding-bottom: 18px; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
+.head h2 { margin: 0; font: 750 28px/1 var(--font); font-stretch: 112%; letter-spacing: -.005em; }
+.head .meta { font: 500 12px var(--mono); color: var(--faint); letter-spacing: .04em; }
+.head .meta b { color: var(--muted); font-weight: 500; }
+.group + .group { margin-top: 40px; }
+.ghead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; margin-bottom: 16px; }
+.ghead h3 { margin: 0; font: 650 18px/1.2 var(--font); font-stretch: 106%; display: flex; align-items: center; gap: 10px; }
+.ghead p { margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 64ch; }
+.ghead a.out { font: 500 12px var(--mono); color: var(--muted); text-decoration: none; letter-spacing: .02em; white-space: nowrap; }
+.ghead a.out:hover { color: var(--text); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 18px; }
+.card {
+  position: relative; display: flex; flex-direction: column; text-decoration: none; min-width: 0;
+  padding: 8px; border-radius: 18px; background: var(--card); border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+  transition: transform .25s cubic-bezier(.2, .7, .2, 1), background .25s, border-color .25s, box-shadow .25s;
+}
+.card:hover { transform: translateY(-3px); background: var(--card-hi); border-color: var(--line-hi); box-shadow: 0 18px 40px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .06); }
+.shot { position: relative; aspect-ratio: 16 / 10; border-radius: 11px; overflow: hidden; background: #303237; }
+.shot img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; transition: transform .6s cubic-bezier(.2, .7, .2, 1); }
+.card:hover .shot img { transform: scale(1.04); }
+.shot .tags { position: absolute; left: 9px; top: 9px; display: flex; gap: 6px; }
+.body { display: flex; flex-direction: column; gap: 6px; padding: 13px 8px 6px; flex: 1; }
+.body .row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.body h4 { margin: 0; font: 650 17px/1.25 var(--font); font-stretch: 104%; min-width: 0; }
+.body h4 small { display: block; font: 500 12px/1.3 var(--font); color: var(--faint); font-stretch: 100%; margin-top: 2px; }
+.body time { font: 500 11px var(--mono); color: var(--faint); letter-spacing: .04em; white-space: nowrap; flex: none; }
+.body p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+.go { margin-top: auto; padding-top: 8px; display: flex; align-items: center; gap: 7px; font: 500 11.5px var(--mono); color: var(--faint); letter-spacing: .03em; transition: color .2s; }
+.card:hover .go { color: var(--text); }
+.grid.wide { grid-template-columns: 1fr; }
+.grid.wide .card { flex-direction: row; align-items: stretch; gap: 10px; }
+.grid.wide .shot { flex: 0 0 min(46%, 560px); }
+.grid.wide .body { padding: 14px 16px 10px; justify-content: center; }
+.grid.wide .body h4 { font-size: 21px; }
+.grid.wide .body p { font-size: 15px; max-width: 52ch; }
+.grid.wide .go { margin-top: 6px; }
+.go svg { width: 12px; height: 12px; flex: none; }
+
+/* Footer */
+footer { border-top: 1px solid var(--line); }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; padding-block: 26px calc(26px + env(safe-area-inset-bottom, 0px)); color: var(--faint); font-size: 13.5px; }
+footer p { margin: 0; max-width: 62ch; }
+footer a { color: var(--muted); }
+footer a:hover { color: var(--text); }
+
+[hidden] { display: none !important; }
+
+@media (max-width: 860px) {
+  .bar .wrap { flex-wrap: wrap; gap: 10px 14px; }
+  .tabs { order: 3; margin-left: 0; width: 100%; }
+  .tabs button { flex: 1; }
+  .play { margin-left: auto; }
+  html { scroll-padding-top: 130px; }
+}
+@media (max-width: 700px) {
+  .hero { padding-top: 18px; }
+  .feature { aspect-ratio: auto; display: flex; flex-direction: column; border-radius: 18px; }
+  .feature img { position: relative; aspect-ratio: 16 / 10; height: auto; object-position: 50% 60%; }
+  .feature::after { display: none; }
+  .feature .copy { position: relative; left: 0; bottom: 0; max-width: none; padding: 18px 18px 20px; gap: 12px; }
+  .feature p { font-size: 15px; color: var(--muted); }
+  .section { padding-top: 40px; }
+  .head h2 { font-size: 24px; }
+  .grid { grid-template-columns: 1fr; gap: 14px; }
+  .grid.wide .card { flex-direction: column; }
+  .grid.wide .shot { flex: none; }
+  .grid.wide .body { padding: 13px 8px 6px; }
+  .grid.wide .body h4 { font-size: 17px; }
+}
+@media (max-width: 420px) {
+  .play .lbl-long { display: none; }
+  .brand small { display: none; }
+}
+@media (min-width: 701px) { .play .lbl-short { display: none; } }
+@media (max-width: 700px) { .play .lbl-short { display: inline; } .play .lbl-long { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .card, .shot img, .feature img, .play { transition: none; }
+  .card:hover { transform: none; }
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="home.html" aria-label="John Gresh, all projects">
+      <span class="mark"><svg viewBox="0 0 16 16" aria-hidden="true"><g fill="#e9ebee"><rect x="1" y="1" width="5.5" height="5.5" rx="1.6"/><rect x="9.5" y="1" width="5.5" height="5.5" rx="1.6"/><rect x="1" y="9.5" width="5.5" height="5.5" rx="1.6"/><rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1.6" fill="#ffb44f"/></g></svg></span>
+      <span><b>John Gresh</b><small>Games · Websites · Winston-Salem, NC</small></span>
+    </a>
+    <nav class="tabs" aria-label="Show">
+      <button type="button" data-f="all" aria-pressed="true">All<span class="n" id="nAll"></span></button>
+      <button type="button" data-f="games" aria-pressed="false">Games<span class="n" id="nGames"></span></button>
+      <button type="button" data-f="websites" aria-pressed="false">Websites<span class="n" id="nWeb"></span></button>
+    </nav>
+    <a class="play" href="./"><i><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M0 0l8 4-8 4z" fill="#eceef1"/></svg></i><span class="lbl-long">Play Camp Hollowpine</span><span class="lbl-short">Play</span></a>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap" id="featured" aria-label="Newest project">
+    <div class="glow" aria-hidden="true"><img src="assets/home/camp-hero.webp" alt=""></div>
+    <a class="feature" href="./">
+      <img src="assets/home/camp-hero.webp" width="1600" height="900" alt="Camp Hollowpine: log cabins, a sandy beach and a dock on the lake, with a lookout tower on the hill" fetchpriority="high">
+      <div class="copy">
+        <div class="eyebrow"><span class="tag" data-k="game">Game</span><span class="new" id="heroNew" hidden>New</span><span class="when" id="heroWhen"></span></div>
+        <h1>Camp Hollowpine</h1>
+        <p>Summer camp with a secret. Earn four badges by fishing, canoeing, shooting arrows and riding the zip line. Then follow Pip into the Hollow after dark.</p>
+        <div class="actions">
+          <span class="btn"><i><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M0 0l8 4-8 4z" fill="#ffb44f"/></svg></i>Play now</span>
+          <small>Runs in the browser · keyboard, mouse or touch</small>
+        </div>
+      </div>
+    </a>
+  </section>
+
+  <section class="section wrap" id="games" aria-labelledby="gamesTitle">
+    <div class="head"><h2 id="gamesTitle">Games</h2><span class="meta"><b id="gamesCount"></b> · newest first</span></div>
+    <div class="grid" id="gamesGrid"></div>
+  </section>
+
+  <section class="section wrap" id="websites" aria-labelledby="webTitle">
+    <div class="head"><h2 id="webTitle">Websites</h2><span class="meta"><b id="webCount"></b> · newest first</span></div>
+    <div id="webGroups"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>John Gresh builds websites, web apps and automation for small businesses in Winston-Salem, NC. My resume, contact form and Ask John chat are inside Sunset Mall and Gresh International.</p>
+    <p><a href="./">Back to the game</a> · © <span id="yr">2026</span></p>
+  </div>
+</footer>
+
+<script>
+/* Every project, one line each. Dates are the last real work on it; sections sort newest first. */
+const PROJECTS = [
+  { id: 'camp', kind: 'game', title: 'Camp Hollowpine', date: '2026-11-07', url: './', featured: true,
+    text: 'Summer camp with a secret. Earn four badges, then go into the Hollow.' },
+  { id: 'lamplight', kind: 'game', title: 'Lamplight Cove', date: '2026-11-05', url: 'games/lamplight-cove/',
+    text: 'The lighthouse went dark this morning. Gather oil, a wick, a lens and a spark from the islanders before the night boat comes home.' },
+  { id: 'descent', kind: 'game', title: 'Descent: Evolve', date: '2026-10-03', url: 'games/descent/',
+    text: 'Start as a see-through fry on a coral reef and eat your way up ten forms to a great white. Or just dive from the lagoon to the abyss.' },
+  { id: 'airport', kind: 'game', title: 'Gresh International', date: '2026-06-30', url: 'airport.html',
+    text: 'A storm-lashed airport. Walk the terminal, then fly a jet, a P-51 Mustang or an F/A-18 off Runway 09.' },
+  { id: 'mall', kind: 'game', title: 'Sunset Mall', date: '2026-04-27', url: 'mall.html',
+    text: 'A pixel-art mall at dusk with a resume shop and an arcade. Its menu turns the whole site into eight other designs.' },
+
+  { id: 'boop-chooser', kind: 'client', group: 'boop', title: 'All seven directions', sub: 'Template chooser', date: '2026-07-09', url: 'https://booppillow.johngresh.org/',
+    text: 'The page that puts every Boop Pillow design side by side.' },
+  { id: 'boop-v7', kind: 'client', group: 'boop', title: 'Herbarium', sub: 'Template 7', date: '2026-07-06', order: 7, url: 'https://booppillow.johngresh.org/v7/',
+    text: 'A botanical field journal: the pillow mounted like a pressed specimen, hand-drawn leaves, numbered plates.' },
+  { id: 'boop-v6', kind: 'client', group: 'boop', title: 'Daybreak', sub: 'Template 6', date: '2026-07-06', order: 6, url: 'https://booppillow.johngresh.org/v6/',
+    text: 'Cream and sage from the brand’s own bedding photos, with their “Meet the Boop” poster pinned up.' },
+  { id: 'boop-v5', kind: 'client', group: 'boop', title: 'Nocturne', sub: 'Template 5', date: '2026-07-06', order: 5, url: 'https://booppillow.johngresh.org/v5/',
+    text: 'Midnight navy and moon gold, with a starfield hero for a sleep product.' },
+  { id: 'boop-v4', kind: 'client', group: 'boop', title: 'Atelier, with film', sub: 'Template 4', date: '2026-07-06', order: 4, url: 'https://booppillow.johngresh.org/v4/',
+    text: 'The champagne design with a 3D orbit film of the pillow in the hero.' },
+  { id: 'boop-v3', kind: 'client', group: 'boop', title: 'Atelier', sub: 'Template 3', date: '2026-07-06', order: 3, url: 'https://booppillow.johngresh.org/v3/',
+    text: 'Quiet luxury in ivory and champagne, built only from the client’s own photos and how-to video.' },
+  { id: 'boop-v2', kind: 'client', group: 'boop', title: 'Conversion', sub: 'Template 2', date: '2026-06-27', url: 'https://booppillow.johngresh.org/v2/',
+    text: 'A bold store: comparison table, review wall and a three-question fit finder.' },
+  { id: 'boop-v1', kind: 'client', group: 'boop', title: 'Boutique', sub: 'Template 1', date: '2026-06-24', url: 'https://booppillow.johngresh.org/v1/',
+    text: 'The first build, with an interactive 3D pillow you can spin and squish.' },
+
+  { id: 'biolab', kind: 'app', group: 'apps', title: 'W Firm Biology Lab', sub: 'Lab AI sign-in', date: '2026-06-05', url: 'biology-lab.html',
+    text: 'The front door to a teaching lab’s shared AI memory: guided tasks, a memory bank and recall.' },
+  { id: 'tpl-ivy', kind: 'template', group: 'more', title: 'Ivy', sub: 'Country club', date: '2026-04-20', url: 'mall.html?tpl=ivy',
+    text: 'The Greshwood Club: crests, lawn games and a members’ album.' },
+  { id: 'tpl-aurora', kind: 'template', group: 'more', title: 'Aurora', sub: 'Web studio', date: '2026-04-18', order: 8, url: 'mall.html?tpl=aurora',
+    text: 'Websites that actually ship. A bright studio landing page with fixed prices.' },
+  { id: 'tpl-noir', kind: 'template', group: 'more', title: 'Noir', sub: 'Luxury house', date: '2026-04-18', order: 7, url: 'mall.html?tpl=noir',
+    text: 'The House of Gresh: black-tie, by-inquiry design for a few clients a year.' },
+  { id: 'tpl-forge', kind: 'template', group: 'more', title: 'Forge', sub: 'Industrial shop', date: '2026-04-18', order: 6, url: 'mall.html?tpl=forge',
+    text: 'Built to last, wired to run. Safety orange for shops that can’t afford downtime.' },
+  { id: 'tpl-terra', kind: 'template', group: 'more', title: 'Terra', sub: 'Restaurant', date: '2026-04-18', order: 5, url: 'mall.html?tpl=terra',
+    text: 'A table for every story: menu, reservations and late-night plates.' },
+  { id: 'tpl-slate', kind: 'template', group: 'more', title: 'Slate', sub: 'Software studio', date: '2026-04-18', order: 4, url: 'mall.html?tpl=slate',
+    text: 'Quiet studio, shipped work. Web apps and internal tools for owner-run businesses.' },
+  { id: 'tpl-halo', kind: 'template', group: 'more', title: 'Halo', sub: 'Product launch', date: '2026-04-18', order: 3, url: 'mall.html?tpl=halo',
+    text: 'Websites that ship fast, in a crisp product-launch style.' },
+  { id: 'tpl-manor', kind: 'template', group: 'more', title: 'Manor', sub: 'Estates', date: '2026-04-18', order: 2, url: 'mall.html?tpl=manor',
+    text: 'Six estates, one unhurried way of making them ready.' }
+];
+
+const GROUPS = {
+  boop: { title: 'Boop Pillow', kind: 'client', href: 'https://booppillow.johngresh.org/', host: 'booppillow.johngresh.org',
+    text: 'Seven website directions for a real Winston-Salem pillow company, with Shopify checkout behind every one.' },
+  apps: { title: 'Web apps', kind: 'app', wide: true,
+    text: 'Working tools with sign-in and saved data, not just pages.' },
+  more: { title: 'Studio templates', kind: 'template',
+    text: 'Eight industry designs for my own studio. Each one is a skin you can switch to inside Sunset Mall.' }
+};
+const KIND = { game: 'Game', client: 'Client site', template: 'Template', app: 'Web app' };
+const NEW_DAYS = 21;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const day = d => new Date(d + 'T12:00:00');
+const month = d => day(d).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+const isNew = p => (Date.now() - day(p.date)) / 864e5 < NEW_DAYS;
+const newest = (a, b) => b.date.localeCompare(a.date) || (b.order || 0) - (a.order || 0);
+const external = url => /^https?:/.test(url);
+
+const ARROW = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9L9 3M4.5 3H9v4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const PLAY = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2.2l6.3 3.8-6.3 3.8z" fill="currentColor"/></svg>';
+const OPEN = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6h7.5M6.5 3l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function card(p) {
+  const ext = external(p.url);
+  const go = p.kind === 'game' ? PLAY + 'Play' : ext ? ARROW + new URL(p.url).host + (new URL(p.url).pathname.length > 1 ? new URL(p.url).pathname.replace(/\/$/, '') : '') : OPEN + 'Open';
+  return `<a class="card" href="${esc(p.url)}"${ext ? ' target="_blank" rel="noopener"' : ''}>
+    <div class="shot"><img src="assets/home/${p.id}.webp" width="960" height="600" loading="lazy" decoding="async" alt="">
+      <div class="tags"><span class="tag" data-k="${p.kind}">${KIND[p.kind]}</span>${isNew(p) ? '<span class="new">New</span>' : ''}</div></div>
+    <div class="body">
+      <div class="row"><h4>${esc(p.title)}${p.sub ? `<small>${esc(p.sub)}</small>` : ''}</h4><time datetime="${p.date}">${month(p.date)}</time></div>
+      <p>${esc(p.text)}</p>
+      <div class="go">${go}</div>
+    </div>
+  </a>`;
+}
+
+function render() {
+  const games = PROJECTS.filter(p => p.kind === 'game').sort(newest);
+  const web = PROJECTS.filter(p => p.kind !== 'game').sort(newest);
+  const feat = games.find(p => p.featured);
+  $('heroWhen').textContent = month(feat.date);
+  $('heroNew').hidden = !isNew(feat);
+  $('gamesGrid').innerHTML = games.filter(p => !p.featured).map(card).join('');
+  $('gamesCount').textContent = games.length + ' games';
+  $('webCount').textContent = web.length + ' sites';
+  $('nAll').textContent = PROJECTS.length; $('nGames').textContent = games.length; $('nWeb').textContent = web.length;
+  // groups follow the date of their newest site
+  const order = [...new Set(web.map(p => p.group))];
+  $('webGroups').innerHTML = order.map(g => {
+    const G = GROUPS[g], items = web.filter(p => p.group === g);
+    const link = G.href ? `<a class="out" href="${G.href}" target="_blank" rel="noopener">${G.host} ↗</a>` : '';
+    return `<div class="group"><div class="ghead"><div><h3><span class="tag" data-k="${G.kind}">${KIND[G.kind]}</span>${esc(G.title)}</h3><p>${esc(G.text)}</p></div>${link}</div>
+      <div class="grid${G.wide ? ' wide' : ''}">${items.map(card).join('')}</div></div>`;
+  }).join('');
+}
+
+const VIEWS = { all: ['featured', 'games', 'websites'], games: ['featured', 'games'], websites: ['websites'] };
+function show(f, scroll) {
+  if (!VIEWS[f]) f = 'all';
+  for (const id of VIEWS.all) $(id).hidden = !VIEWS[f].includes(id);
+  for (const b of document.querySelectorAll('.tabs button')) b.setAttribute('aria-pressed', b.dataset.f === f ? 'true' : 'false');
+  history.replaceState(null, '', f === 'all' ? location.pathname : '#' + f);
+  if (scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+render();
+$('yr').textContent = new Date().getFullYear();
+for (const b of document.querySelectorAll('.tabs button')) b.addEventListener('click', () => show(b.dataset.f, true));
+show(location.hash.slice(1), false);
+window.addEventListener('hashchange', () => show(location.hash.slice(1), true));
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Descent: Evolve</title>
+<meta name="theme-color" content="#04141f">
+<link rel="icon" href="icons/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/"
+} }
+</script>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="hud">
+  <div id="gauge">
+    <div class="g-depth"><span id="g-depth">0</span><small>m</small></div>
+    <div class="g-zone" id="g-zone">Sunlit shallows</div>
+    <div class="g-sub" id="g-sub"></div>
+  </div>
+  <div id="loading"><div class="l-title">Descent</div><div class="l-msg" id="l-msg">preparing the sea…</div><div class="l-bar"><i id="l-bar"></i></div></div>
+  <div id="hint">
+    <b>Drag</b> look &nbsp; <b>W A S D</b> swim &nbsp; <b>Q / E</b> down / up &nbsp; <b>Shift</b> fast &nbsp; <b>1–7</b> dive sites &nbsp; <b>G</b> auto-dive &nbsp; <b>L</b> lamp &nbsp; <b>P</b> photo &nbsp; <b>H</b> settings &nbsp; <b>Esc</b> game menu
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+<style>#gui .top-r { right: 76px !important; }</style>
+<script src="../../assets/site-menu.js" data-corner="tr" defer></script>
+</body>
+</html>

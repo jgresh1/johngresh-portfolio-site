@@ -75,7 +75,8 @@ def main():
         shutil.copytree(os.path.join(ocean, d), os.path.join(dst, d),
                         ignore=shutil.ignore_patterns('preview.html', '__pycache__'))
     html = open(os.path.join(ocean, 'index.html'), encoding='utf-8').read()
-    tag = ('<style>#gui .top-r { right: 76px !important; }</style>\n'
+    # Descent's HUD is scaled by --ui (0.6 on a phone), so divide to keep a fixed 68 px gap for the site button
+    tag = ('<style>#gui .top-r { right: calc(68px / var(--ui, 1)) !important; } #tr { right: 68px !important; }</style>\n'
            '<script src="../../assets/site-menu.js" data-corner="tr" defer></script>\n')
     assert '</body>' in html
     write(os.path.join(dst, 'index.html'), html.replace('</body>', tag + '</body>', 1))

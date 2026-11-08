@@ -26,14 +26,16 @@
     <div class="g-zone" id="g-zone">Sunlit shallows</div>
     <div class="g-sub" id="g-sub"></div>
   </div>
-  <div id="loading"><div class="l-title">Descent</div><div class="l-msg" id="l-msg">preparing the sea…</div><div class="l-bar"><i id="l-bar"></i></div></div>
   <div id="hint">
-    <b>Drag</b> look &nbsp; <b>W A S D</b> swim &nbsp; <b>Q / E</b> down / up &nbsp; <b>Shift</b> fast &nbsp; <b>1–7</b> dive sites &nbsp; <b>G</b> auto-dive &nbsp; <b>L</b> lamp &nbsp; <b>P</b> photo &nbsp; <b>H</b> settings &nbsp; <b>Esc</b> game menu
+    <span class="t-hint"><b>Left thumb</b> swim &nbsp; <b>Right thumb</b> look &nbsp; <b>Rise / Sink / Dash</b> buttons &nbsp; <b>Chips</b> jump to a dive site</span>
+    <span class="k-hint"><b>Drag</b> look &nbsp; <b>W A S D</b> swim &nbsp; <b>Q / E</b> down / up &nbsp; <b>Shift</b> fast &nbsp; <b>1–7</b> dive sites &nbsp; <b>G</b> auto-dive &nbsp; <b>L</b> lamp &nbsp; <b>P</b> photo &nbsp; <b>H</b> settings &nbsp; <b>Esc</b> game menu</span>
   </div>
 </div>
 
+<div id="loading"><div class="l-title">Descent</div><div class="l-msg" id="l-msg">preparing the sea…</div><div class="l-bar"><i id="l-bar"></i></div><div class="l-note">The first visit takes longest while your graphics card prepares the scene. Later visits start faster.</div></div>
+
 <script type="module" src="js/main.js"></script>
-<style>#gui .top-r { right: 76px !important; }</style>
+<style>#gui .top-r { right: calc(68px / var(--ui, 1)) !important; } #tr { right: 68px !important; }</style>
 <script src="../../assets/site-menu.js" data-corner="tr" defer></script>
 </body>
 </html>

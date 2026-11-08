@@ -11,16 +11,36 @@ html, body { margin: 0; height: 100%; background: #02121c; overflow: hidden; }
 .g-sub { font-size: 12px; opacity: .6; margin-top: 2px; }
 #hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 12px; opacity: .55; text-shadow: 0 1px 6px rgba(0,20,40,.8); }
 #hint b { font-weight: 600; color: #fff; }
+#hint .t-hint, body.touch #hint .k-hint { display: none; }
+body.touch #hint .t-hint { display: inline; }
+body.touch #hint { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); left: 14px; right: 84px; }
 body.photo #hud { display: none; }
 
-#loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+#loading { position: fixed; inset: 0; z-index: 30; display: flex; font-family: "Segoe UI", system-ui, sans-serif; color: #d8f3ff; flex-direction: column; align-items: center; justify-content: center;
   background: radial-gradient(ellipse at 50% 40%, #0b3a52 0%, #031824 70%); transition: opacity 1.2s ease; }
 #loading.done { opacity: 0; pointer-events: none; }
 .l-title { font-size: 44px; font-weight: 200; letter-spacing: .32em; text-indent: .32em; }
 .l-msg { margin-top: 14px; font-size: 13px; letter-spacing: .12em; opacity: .7; }
 .l-bar { width: 220px; height: 2px; background: rgba(255,255,255,.12); margin-top: 18px; overflow: hidden; border-radius: 2px; }
 .l-bar i { display: block; height: 100%; width: 0%; background: #7fd8ff; transition: width .25s ease; }
+.l-note { margin-top: 22px; max-width: 300px; padding: 0 16px; text-align: center; font-size: 12px; line-height: 1.5; opacity: 0; animation: lnote .8s ease 3s forwards; }
+@keyframes lnote { to { opacity: .5; } }
 
 body.game-on #hud #gauge, body.game-on #hud #hint { display: none; }
 body.game-on #ui-extra { display: none; }
 body.game-on #app canvas { cursor: crosshair; }
+
+/* phone and tablet controls (js/touch.js) */
+#touchui { position: fixed; inset: 0; z-index: 6; pointer-events: none; display: none; font-family: "Segoe UI", system-ui, sans-serif; color: #e3f6ff; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#touchui.on { display: block; }
+body.photo #touchui { display: none; }
+.t-stick { position: absolute; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; border: 1.5px solid rgba(190,235,255,.45); background: radial-gradient(circle, rgba(4,26,38,.18), rgba(4,26,38,.42)); opacity: 0; transition: opacity .15s; }
+.t-stick.on { opacity: 1; }
+.t-stick i { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%; background: rgba(170,230,255,.55); box-shadow: 0 0 16px rgba(110,220,255,.45); }
+.t-btns { position: absolute; right: max(14px, env(safe-area-inset-right, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
+.t-b { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; align-content: center; background: rgba(4,26,38,.58); border: 1px solid rgba(160,220,255,.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); touch-action: none; }
+.t-b svg { width: 24px; height: 24px; }
+.t-b small { font-size: 8px; letter-spacing: .1em; text-transform: uppercase; opacity: .7; margin-top: 1px; }
+.t-b.down { background: rgba(40,140,190,.75); border-color: rgba(190,240,255,.7); }
+.t-dash { width: 62px; height: 62px; }
+@media (orientation: landscape) and (max-height: 500px) { .t-btns { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); } }

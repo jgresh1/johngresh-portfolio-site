@@ -83,13 +83,13 @@ export class Game {
     a.ctl.yaw = this.rig.yaw; a.ctl.pitch = this.rig.pitch; a.ctl.vel.set(0, 0, 0); a.applyLook();
   }
 
-  warm() {
+  warm(compile = true) {
     this.warmed = true;
     try { const t0 = performance.now(); const n = this.gw.solids.prewarm(); console.info('collision fields', n, Math.round(performance.now() - t0) + ' ms'); } catch (e) { console.error('solids warm', e); }
     for (const k of Object.keys(SPECIES)) { try { this.eco.rec(k); } catch (e) { console.error('warm', k, e); } }
     for (const f of FORMS) { try { this.rend.ensure(f.vis, 2, f.len, true); } catch (e) { console.error('warm form', f.id, e); } }
     // compile every creature shader now (a first shark or turtle would otherwise hitch the frame it appears)
-    try {
+    if (compile) try {
       const meshes = []; for (const r of this.rend.recs.values()) for (const l of r.lods) for (const m of l.meshes) { if (!m.visible) { m.visible = true; meshes.push(m); } }
       this.api.renderer.compile(this.scene, this.camera);
       for (const m of meshes) m.visible = false;
@@ -153,7 +153,7 @@ export class Game {
     this.eco.setCalm(pl, 24); pl.invuln = Math.max(pl.invuln, 6);                  // a quiet first few seconds
     this.requestLock();
     this.audio.start(); this.audio.setMood('play');
-    if (fresh || !this.settings.tut.moved) this.hud.hint('Move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> and the mouse. Swim into the glowing <b>plankton</b> to eat.', 12000);
+    if (fresh || !this.settings.tut.moved) this.hud.hint(this.touchOn ? 'Drag on the left of the screen to swim, drag on the right to look. Swim into the glowing <b>plankton</b> to eat.' : 'Move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to swim, drag the mouse to look. Swim into the glowing <b>plankton</b> to eat.', 12000);
   }
 
   menuAction(a) {
@@ -183,7 +183,7 @@ export class Game {
     this.hud.pauseMenu(); this.save(); this.audio.duck(true);
   }
   resume() { this.mode = 'play'; this.hud.hideOverlays(); this.requestLock(); this.audio.duck(false); }
-  requestLock() { this.lockWanted = true; try { const p = this.api.renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* not available */ } }
+  requestLock() { /* free mouse: the cursor is never captured; drag with either button to look */ }
 
   save() { if (this.mode === 'title' || this.mode === 'off') return; store.set(SAVE_KEY, this.player.serialize()); this.refreshSaveInfo(); }
   setSetting(k, v) {
@@ -226,24 +226,35 @@ export class Game {
     cv.addEventListener('mousedown', (e) => {
       if (!this.active) return;
       if (this.mode === 'play') {
-        if (document.pointerLockElement !== cv) { this.requestLock(); }
-        if (e.button === 0) this.pressed.add('Mouse0');
-        if (e.button === 2) this.pressed.add('Mouse2');
-        this.mouseDown = true; this.lx = e.clientX; this.ly = e.clientY;
+        if (e.button === 0) this.pressed.add('Mouse0');                // bite on press; right button: ability on release, unless it was a drag
+        this.mouseDown = true; this.dragBtn = e.button; this.dragPx = 0; this.lx = e.clientX; this.ly = e.clientY;
       }
       e.preventDefault();
     });
-    window.addEventListener('mouseup', () => { this.mouseDown = false; });
+    window.addEventListener('mouseup', (e) => {
+      if (this.mouseDown && e.button === 2 && this.dragBtn === 2 && this.dragPx < 6 && this.active && this.mode === 'play') this.pressed.add('Mouse2');
+      this.mouseDown = false;
+    });
     cv.addEventListener('contextmenu', (e) => { if (this.active) e.preventDefault(); });
     window.addEventListener('mousemove', (e) => {
       if (!this.active || this.mode !== 'play') return;
       const locked = document.pointerLockElement === cv;
       let dx = 0, dy = 0;
-      if (locked) { dx = e.movementX; dy = e.movementY; } else if (this.mouseDown && this.lx !== undefined) { dx = e.clientX - this.lx; dy = e.clientY - this.ly; this.lx = e.clientX; this.ly = e.clientY; } else return;
+      if (locked) { dx = e.movementX; dy = e.movementY; } else if (this.mouseDown && this.lx !== undefined) { dx = e.clientX - this.lx; dy = e.clientY - this.ly; this.lx = e.clientX; this.ly = e.clientY; this.dragPx += Math.abs(dx) + Math.abs(dy); } else return;
       this.look(dx, dy);
     });
-    cv.addEventListener('wheel', (e) => { if (this.active && this.mode === 'play') { this.rig.zoom = clamp(this.rig.zoom * (e.deltaY > 0 ? 1.08 : 0.93), 0.45, 2.6); this.settings.zoom = this.rig.zoom; e.preventDefault(); } }, { passive: false });
+    cv.addEventListener('wheel', (e) => { if (this.active && this.mode === 'play') { this.zoomBy(e.deltaY > 0 ? 1.08 : 0.93); e.preventDefault(); } }, { passive: false });
   }
+
+  // phones and tablets (main.js makes the controls, touch.js): the ability tiles become buttons, and hints name touches instead of keys
+  useTouch(t) {
+    this.touch = t;
+    const tiles = [[this.hud.slotBite, 'KeyF'], [this.hud.slotPulse, 'KeyQ'], [this.hud.slotA[0], 'KeyE'], [this.hud.slotA[1], 'KeyR']];
+    for (const [el, k] of tiles) el.addEventListener('touchstart', (e) => { e.preventDefault(); if (this.active && this.mode === 'play') this.pressed.add(k); }, { passive: false });
+  }
+  get touchOn() { return !!(this.touch && this.touch.on); }
+
+  zoomBy(f) { this.rig.zoom = clamp(this.rig.zoom * f, 0.45, 2.6); this.settings.zoom = this.rig.zoom; }
 
   look(dx, dy) {
     const s = 0.0023 * this.settings.sens;
@@ -259,6 +270,8 @@ export class Game {
     i.right = (any('KeyD', 'ArrowRight') ? 1 : 0) - (any('KeyA', 'ArrowLeft') ? 1 : 0);
     i.up = (any('Space') ? 1 : 0) - (any('KeyC', 'KeyZ', 'ControlLeft', 'ControlRight') ? 1 : 0);
     i.dash = any('ShiftLeft', 'ShiftRight');
+    const t = this.touch;
+    if (t && t.on) { i.fwd = clamp(i.fwd + t.fwd, -1, 1); i.right = clamp(i.right + t.right, -1, 1); i.up = clamp(i.up + t.up, -1, 1); i.dash = i.dash || t.dash; }
     return i;
   }
 
@@ -280,6 +293,7 @@ export class Game {
       case 'paused': this.rig.update(0, this.player, {}); break;
     }
     this.pressed.clear();
+    this.hud.setTouch(this.touchOn);
     this.hud.lockPrompt(this.mode === 'play' && !this.botInput && !document.pointerLockElement && this.lockWanted);
     const cam = this.camera;
     cam.updateMatrixWorld(true);
@@ -387,7 +401,7 @@ export class Game {
           break;
         }
         case 'golden': this.hud.toast(`<b>A golden ${e.c.sp.name} is nearby!</b> Catch it for a big growth bonus.`, 'disc', 5000); this.audio.pulse(); break;
-        case 'alert': { this.stats.alerts++; this.stats.alertSp[e.c.key] = (this.stats.alertSp[e.c.key] || 0) + 1; A.alert(); if (!this.settings.tut.alert) { this.settings.tut.alert = true; store.set(SET_KEY, this.settings); hud.hint('A hunter noticed you! <kbd>Shift</kbd> to dash away, or dive into the seagrass to hide.', 7000); } break; }
+        case 'alert': { this.stats.alerts++; this.stats.alertSp[e.c.key] = (this.stats.alertSp[e.c.key] || 0) + 1; A.alert(); if (!this.settings.tut.alert) { this.settings.tut.alert = true; store.set(SET_KEY, this.settings); hud.hint(this.touchOn ? 'A hunter noticed you! Hold <kbd>Dash</kbd> to get away, or dive into the seagrass to hide.' : 'A hunter noticed you! <kbd>Shift</kbd> to dash away, or dive into the seagrass to hide.', 7000); } break; }
         case 'escaped': this.ach.onEscaped(); break;
         case 'dodged': this.ach.onDodged(); break;
         case 'miss': this.stats.misses++; hud.toast('It bit the false eye and missed!', 'good'); break;
@@ -435,7 +449,7 @@ export class Game {
     if (e.first) hud.toast(`<b>New food:</b> ${e.name} — bonus growth!`, 'disc', 3200);
     if (!e.speck && !this.settings.tut.bite) { }
     if (!this.settings.tut.ate1 && !e.speck) { this.settings.tut.ate1 = true; store.set(SET_KEY, this.settings); }
-    if (e.speck && !this.settings.tut.plankton) { this.settings.tut.plankton = true; store.set(SET_KEY, this.settings); hud.hint('Nice! Bigger prey: aim at a green-ringed fish and press <kbd>click</kbd> or <kbd>F</kbd> to bite. <kbd>Shift</kbd> dashes.', 9000); }
+    if (e.speck && !this.settings.tut.plankton) { this.settings.tut.plankton = true; store.set(SET_KEY, this.settings); hud.hint(this.touchOn ? 'Nice! Bigger prey: aim at a green-ringed fish and tap the screen or <kbd>Bite</kbd>. Hold <kbd>Dash</kbd> to dash.' : 'Nice! Bigger prey: aim at a green-ringed fish and press <kbd>click</kbd> or <kbd>F</kbd> to bite. <kbd>Shift</kbd> dashes.', 9000); }
   }
 
   checkDiscoveries() {
@@ -455,8 +469,8 @@ export class Game {
 
   tutorial() {
     const s = this.settings.tut, pl = this.player, hud = this.hud;
-    if (!s.lock && this.lockTarget && !this.lockTarget.dead && this.lockTarget.role === 'prey') { s.lock = true; store.set(SET_KEY, s === this.settings.tut ? this.settings : this.settings); hud.hint('Green ring = food in reach. Press <kbd>click</kbd> or <kbd>F</kbd> to lunge and bite.', 7000); }
-    if (!s.ability && pl.abilities.length) { s.ability = true; store.set(SET_KEY, this.settings); hud.hint(`Press <kbd>E</kbd>${pl.abilities.length > 1 ? ' or <kbd>R</kbd>' : ''} to use ${ABILITIES[pl.abilities[0]].name}.`, 6000); }
+    if (!s.lock && this.lockTarget && !this.lockTarget.dead && this.lockTarget.role === 'prey') { s.lock = true; store.set(SET_KEY, s === this.settings.tut ? this.settings : this.settings); hud.hint(this.touchOn ? 'Green ring = food in reach. Tap the screen or <kbd>Bite</kbd> to lunge and bite.' : 'Green ring = food in reach. Press <kbd>click</kbd> or <kbd>F</kbd> to lunge and bite.', 7000); }
+    if (!s.ability && pl.abilities.length) { s.ability = true; store.set(SET_KEY, this.settings); hud.hint(this.touchOn ? `Tap the <kbd>${ABILITIES[pl.abilities[0]].name}</kbd> tile at the bottom to use it.` : `Press <kbd>E</kbd>${pl.abilities.length > 1 ? ' or <kbd>R</kbd>' : ''} to use ${ABILITIES[pl.abilities[0]].name}.`, 6000); }
   }
 
   xpFor(c) {

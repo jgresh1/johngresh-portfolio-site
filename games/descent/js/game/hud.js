@@ -94,6 +94,14 @@ body.photo #gui .hudpart { display: none; }
 .slot.ready { box-shadow: 0 0 14px rgba(110,220,255,.45); border-color: rgba(160,230,255,.6); }
 .slot .nm { position: absolute; left: 0; right: 0; top: 3px; text-align: center; font-size: 8px; letter-spacing: .08em; opacity: .65; text-transform: uppercase; }
 .slot.small { width: 46px; height: 46px; font-size: 21px; }
+#gui.touch .slot { pointer-events: auto; touch-action: none; }
+#gui.touch .slot .k { display: none; }
+#gui.touch .abil { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+#gui.touch .hint { bottom: calc(86px / var(--ui, 1)); }
+@media (orientation: portrait) {                                   /* tall phone: tiles beside the radar on the right, under the rise/sink/dash column */
+  #gui.touch .abil { left: auto; right: max(14px, env(safe-area-inset-right, 0px)); transform: none; }
+  #gui.touch .hint { left: calc(14px / var(--ui, 1)); transform: none; max-width: calc((100vw - 104px) / var(--ui, 1)); }
+}
 .guide { position: absolute; right: 20px; bottom: 22px; padding: 9px 13px; font-size: 12px; display: flex; align-items: center; gap: 10px; max-width: 250px; }
 .guide .arr { width: 30px; height: 30px; display: grid; place-items: center; }
 .guide .arr svg { width: 26px; height: 26px; transition: transform .1s; }
@@ -262,7 +270,11 @@ export class Hud {
     const s = +Math.min(pref > 0 ? pref : auto, fit).toFixed(3);
     if (!force && s === this.ui) return;
     this.ui = s; this.root.style.setProperty('--ui', String(s));
+    this.$('g-abil').style.zoom = this.touch && s < 1 ? (1 / s).toFixed(3) : '';           // finger-sized tiles on a phone, whatever the HUD scale
   }
+
+  setTouch(on) { if (this.touch !== on) { this.touch = on; this.root.classList.toggle('touch', on); this.updateScale(true); } }
+  tip(s) { return this.touch ? s.replace('click to bite', 'tap to bite').replace('Shift dashes, but it', 'Dashing').replace('Q sends a sense pulse', 'The Sense tile sends a pulse') : s; }
 
   buildAbil() {
     const el = this.$('g-abil'); el.innerHTML = '';
@@ -439,18 +451,26 @@ export class Hud {
     const el = this.$('ov-help');
     el.innerHTML = `<div class="panel glass"><h3>How to play</h3>
       <p>You are a tiny fish. <b>Eat</b> things smaller than you to grow, and keep away from anything bigger. Fill the growth bar to <b>evolve</b> into a bigger fish and pick an upgrade. Ten forms, ten upgrades. Reach the top.</p>
-      <div class="keys">
-        <span><span class="kbd">Mouse</span></span><span>Look around (click the game to capture the mouse)</span>
+      <div class="keys">${this.touch ? `
+        <span><span class="kbd">Left thumb</span></span><span>Drag on the left of the screen to swim toward where the camera looks</span>
+        <span><span class="kbd">Right thumb</span></span><span>Drag anywhere else to look around. Pinch to zoom.</span>
+        <span><span class="kbd">Tap</span></span><span>Bite. Aim at the green-ringed fish. The Bite tile works too.</span>
+        <span><span class="kbd">Rise</span> <span class="kbd">Sink</span></span><span>Swim up / down (hold)</span>
+        <span><span class="kbd">Dash</span></span><span>Dash (hold; uses stamina)</span>
+        <span><span class="kbd">Sense</span></span><span>Sense pulse: food glows green, danger red</span>
+        <span><span class="kbd">Tiles</span></span><span>Abilities you unlock appear at the bottom; tap to use</span>
+        <span><span class="kbd">Gear</span></span><span>Pause, bestiary and settings</span>` : `
+        <span><span class="kbd">Drag</span></span><span>Look around (hold either mouse button and move; the right button never bites)</span>
         <span><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span></span><span>Swim toward where the camera looks</span>
         <span><span class="kbd">Space</span> <span class="kbd">C</span></span><span>Swim up / down</span>
         <span><span class="kbd">Shift</span></span><span>Dash (uses stamina)</span>
         <span><span class="kbd">Click</span> <span class="kbd">F</span></span><span>Bite. Aim at the green-ringed fish.</span>
-        <span><span class="kbd">E</span> <span class="kbd">R</span></span><span>Abilities you unlock</span>
+        <span><span class="kbd">Right-click</span> <span class="kbd">E</span> <span class="kbd">R</span></span><span>Abilities you unlock</span>
         <span><span class="kbd">Q</span></span><span>Sense pulse: food glows green, danger red</span>
         <span><span class="kbd">Tab</span></span><span>Bestiary</span>
-        <span><span class="kbd">Esc</span></span><span>Pause</span>
+        <span><span class="kbd">Esc</span></span><span>Pause</span>`}
       </div>
-      <p style="margin-top:12px"><b>Tips.</b> ${TIPS.slice(0, 5).join(' ')}</p>
+      <p style="margin-top:12px"><b>Tips.</b> ${TIPS.slice(0, 5).map((t) => this.tip(t)).join(' ')}</p>
       <div class="menu" style="margin-top:16px"><div class="mbtn main" data-a="${back}">Back</div></div></div>`;
     this.bind(el); this.show('ov-help');
   }
@@ -541,7 +561,7 @@ export class Hud {
     const by = killer ? (killer.sp ? killer.sp.name : 'something big') : 'the sea';
     el.innerHTML = `<h2>Eaten</h2><div class="tag" style="margin:6px 0 10px">by a ${by}</div>
       <div class="stats"><span>Growth lost</span><b>${Math.round(lost)} xp</b><span>Meals so far</span><b>${p.meals}</b></div>
-      <div class="menu"><div class="mbtn main" data-a="respawn">Swim again</div><div class="mbtn" data-a="quit">Quit to title</div></div><div class="tipline">${TIPS[(Math.random() * TIPS.length) | 0]}</div>`;
+      <div class="menu"><div class="mbtn main" data-a="respawn">Swim again</div><div class="mbtn" data-a="quit">Quit to title</div></div><div class="tipline">${this.tip(TIPS[(Math.random() * TIPS.length) | 0])}</div>`;
     this.bind(el); this.show('ov-dead');
   }
 

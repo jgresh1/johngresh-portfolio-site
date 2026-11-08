@@ -8,7 +8,7 @@ export function initUI(api) {
   root.id = 'ui-extra';
   root.innerHTML = `
     <div id="sites"></div>
-    <button id="gear" title="Settings">⚙</button>
+    <div id="tr"><button id="b-menu" title="Game menu (Esc)">Game menu</button><button id="gear" title="Settings">⚙</button></div>
     <div id="panel" class="hidden">
       <h3>Settings</h3>
       <label>Quality
@@ -40,7 +40,10 @@ export function initUI(api) {
     #sites button { background: rgba(6,30,44,.55); border: 1px solid rgba(160,220,255,.28); color: #cfeefe; padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; backdrop-filter: blur(6px); }
     #sites button:hover { background: rgba(20,70,100,.7); }
     #sites button small { opacity: .6; margin-left: 4px; }
-    #gear { position: absolute; right: 18px; top: 14px; width: 38px; height: 38px; border-radius: 19px; background: rgba(6,30,44,.55); border: 1px solid rgba(160,220,255,.28); color: #d8f3ff; font-size: 18px; cursor: pointer; backdrop-filter: blur(6px); }
+    #tr { position: absolute; right: 18px; top: 14px; display: flex; gap: 8px; }
+    #b-menu { height: 38px; padding: 0 14px; border-radius: 19px; background: rgba(6,30,44,.55); border: 1px solid rgba(160,220,255,.28); color: #d8f3ff; font: 600 11px "Segoe UI", system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; backdrop-filter: blur(6px); }
+    #b-menu:hover, #gear:hover { background: rgba(20,70,100,.7); }
+    #gear { width: 38px; height: 38px; border-radius: 19px; background: rgba(6,30,44,.55); border: 1px solid rgba(160,220,255,.28); color: #d8f3ff; font-size: 18px; cursor: pointer; backdrop-filter: blur(6px); }
     #panel { position: absolute; right: 18px; top: 60px; width: 250px; padding: 14px 16px; background: rgba(4,22,34,.78); border: 1px solid rgba(160,220,255,.22); border-radius: 12px; backdrop-filter: blur(10px); pointer-events: auto; font-size: 12px; }
     #panel.hidden { display: none; }
     #panel h3 { margin: 0 0 10px; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; font-size: 11px; opacity: .8; }
@@ -52,6 +55,10 @@ export function initUI(api) {
     #panel .btns { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
     #panel .btns button { background: rgba(30,90,125,.6); border: 1px solid rgba(160,220,255,.3); color: #e6f7ff; padding: 7px; border-radius: 8px; cursor: pointer; }
     body.photo #ui-extra { display: none; }
+    body.touch #sites { left: max(14px, env(safe-area-inset-left, 0px)); right: calc(84px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: none; max-width: none; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+    body.touch #sites::-webkit-scrollbar { display: none; }
+    body.touch #sites button { flex: none; padding: 9px 14px; font-size: 13px; }
+    body.touch #panel { max-height: calc(100vh - 80px); overflow-y: auto; }
   `;
   document.head.appendChild(css);
 

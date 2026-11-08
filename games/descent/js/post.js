@@ -81,7 +81,7 @@ void main() {
       vec2 px = 1.0 / vec2(textureSize(tColor, 0));
       vec3 acc = vec3(0.0); float wsum = 0.0;
       float rot = ign(gl_FragCoord.xy) * 6.2831853;
-      for (int i = 0; i < 16; i++) {
+      for (int i = 0; i < LOOPN(16); i++) {
         float a = float(i) * 2.399963 + rot, rr = r * sqrt((float(i) + 0.5) / 16.0);
         vec2 uv2 = vUv + vec2(cos(a), sin(a)) * rr * px;
         float d2 = texture(tDepth, uv2).r;
@@ -112,7 +112,7 @@ void main() {
       ruv = min(ruv, vec2(0.12));
       float occ = 0.0;
       float rot = ign(gl_FragCoord.xy + uFrame * 3.17) * 6.2831853;
-      for (int i = 0; i < 14; i++) {
+      for (int i = 0; i < LOOPN(14); i++) {
         float fi = (float(i) + 0.5) / 14.0;
         float a = rot + float(i) * 2.399963;
         vec2 uv2 = vUv + vec2(cos(a), sin(a)) * sqrt(fi) * ruv;
@@ -144,7 +144,7 @@ void main() {
     float ds = (tEnd - tStart) / float(steps);
     float cosT = dot(dir, uSunDirW);
     float ph = 0.55 * hg(cosT, uShaft.w) + 0.45 * hg(cosT, uShaft.w * 0.55);
-    for (int i = 0; i < 64; i++) {
+    for (int i = 0; i < LOOPN(64); i++) {
       if (i >= steps) break;
       float s = tStart + (float(i) + j) * ds;
       vec3 p = C + dir * s;

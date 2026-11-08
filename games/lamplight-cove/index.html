@@ -436,7 +436,7 @@ function resize() {
   renderer.setSize(w, h, false);
   composer.setSize(w, h);
   bloom.resolution.set(w, h);
-  fxaa.uniforms.resolution.value.set(1 / (w * DPR), 1 / (h * DPR));
+  fxaa.uniforms.resolution.value.set(1 / (w * renderer.getPixelRatio()), 1 / (h * renderer.getPixelRatio()));
   camera.aspect = w / h;
   // Portrait phones: open the vertical view so the sides keep about 38 degrees.
   camera.fov = clamp(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(19)) / camera.aspect) * 180 / Math.PI, 50, 72);
@@ -444,6 +444,35 @@ function resize() {
 }
 new ResizeObserver(resize).observe(canvas);
 window.addEventListener('resize', resize);
+
+// Adaptive resolution: weaker GPUs (phones, older laptops) step the render scale down until frames come in under ~19 ms, and climb
+// back when there is headroom. A step down is kept only if it helped: a screen or browser locked at 30 fps, or a frame held up by
+// the CPU, gains nothing from fewer pixels. Still slow at the lowest scale: the sun's shadow map halves. ?dpr= pins the resolution.
+const PERF = { on: !params.has('dpr'), scale: 1, min: Math.max(0.6, 0.75 / DPR), win: [], sum: 0, probe: null, calm: 0, hold: 0, backoff: 1, noHelp: 0, shadowLo: false };
+function setRenderScale(s) {
+  PERF.scale = s;
+  renderer.setPixelRatio(DPR * s); composer.setPixelRatio(DPR * s); resize();
+}
+function perfFrame(sec) {
+  if (!PERF.on || document.hidden || sec <= 0) return;
+  PERF.win.push(sec); PERF.sum += Math.min(sec, 1);
+  if (PERF.sum < 1.5) return;
+  const f = PERF.win.sort((a, b) => a - b), ms = f[f.length >> 1] * 1000; PERF.win = []; PERF.sum = 0;   // median: one hitch is not slowness
+  if (PERF.hold > 0) { PERF.hold--; return; }
+  if (PERF.probe) {                                                    // judge the last step
+    const p = PERF.probe; PERF.probe = null;
+    if (p.down && ms > p.ms * 0.93) { setRenderScale(p.scale); PERF.hold = 20 * ++PERF.noHelp; }
+    else if (!p.down && ms > 19.5) { setRenderScale(p.scale); PERF.hold = 10 * (PERF.backoff = Math.min(8, PERF.backoff * 2)); }
+    return;
+  }
+  if (ms > 19.5) {
+    PERF.calm = 0;
+    if (PERF.scale > PERF.min + 1e-3) { PERF.probe = { down: true, ms, scale: PERF.scale }; setRenderScale(Math.max(PERF.min, PERF.scale * 0.85)); }
+    else if (!PERF.shadowLo && ms > 22) { PERF.shadowLo = true; sun.shadow.mapSize.set(1024, 1024); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  } else if (ms < 17.8 && PERF.scale < 1) {
+    if (++PERF.calm >= 4) { PERF.calm = 0; PERF.probe = { down: false, ms, scale: PERF.scale }; setRenderScale(Math.min(1, PERF.scale / 0.85)); }
+  } else PERF.calm = 0;
+}
 
 // ---------------------------------------------------------------- lights
 const hemi = new THREE.HemisphereLight(0xcfe9ff, 0x9cb874, 1.0);
@@ -1688,8 +1717,22 @@ function eyes(head, x, y, z, s = 1, gap = 0.12) {
 }
 function blush(head, x, y, z) { for (const s of [-1, 1]) mk(head, G.sphLo, '#ff9aa0', s * x, y, z, 0.07, 0.04, 0.03, { noOutline: true, noShadow: true }); }
 
+// Detail by distance, from each part's size on screen: under ~1 px the part is skipped (with everything on it), under 6 px it
+// keeps its colour but drops its outline (at that size the rim reads as a dark blob), under 4 px it casts no shadow. Parts under
+// 6 cm (eyes, buttons) never cast one; theirs falls inside the body's. Skipping moves meshes to a render layer the camera does not
+// draw, so it never fights the animation code, which owns `visible`.
+const RIGS = [], LOD_OFF = 31;
+const _lodM = new THREE.Matrix4(), _lodInv = new THREE.Matrix4(), _lodS = new THREE.Vector3(), _lodP = new THREE.Vector3();
+function rigDetail(cam, heightPx) {
+  const k = heightPx / (2 * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2));
+  for (const r of RIGS) {
+    r.root.matrixWorldAutoUpdate = r.root.visible;          // hidden rigs (monsters waiting for their scene) skip the per-frame matrix work
+    if (r.detail && r.root.parent && r.root.visible) r.lod(k / Math.max(0.5, r.root.getWorldPosition(_lodP).distanceTo(cam.position)));
+  }
+}
 class Rig {
   constructor() {
+    RIGS.push(this);
     this.root = new THREE.Group();
     this.body = pivot(this.root, 0, 0, 0);
     this.phase = rand() * 10; this.walk = 0; this.speed = 0; this.talk = 0; this.sq = 0; this.sqV = 0;
@@ -1730,7 +1773,31 @@ class Rig {
   finish() {
     for (const e of this.eyes) e.userData.sy = e.scale.y;
     this.root.traverse(o => { if (o.isMesh && o.material !== outlineChar) o.receiveShadow = false; });
+    // each part's size in the rest pose (parents before children, so a child's own size has the last word)
+    this.root.updateMatrixWorld(true); _lodInv.copy(this.root.matrixWorld).invert();
+    this.detail = []; this.lodKey = null;
+    this.root.traverse(o => {
+      if (!o.isMesh || o.material === outlineChar) return;
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      _lodS.setFromMatrixScale(_lodM.multiplyMatrices(_lodInv, o.matrixWorld));
+      const r = o.geometry.boundingSphere.radius * Math.max(_lodS.x, _lodS.y, _lodS.z);
+      const meshes = []; o.traverse(c => { if (c.isMesh) meshes.push(c); });
+      this.detail.push({ d: 2 * r, part: o, cast: o.castShadow && r >= 0.06, outs: o.children.filter(c => c.isMesh && c.material === outlineChar), meshes });
+    });
     return this;
+  }
+  // pxPerM: screen pixels per metre at this character's distance
+  lod(pxPerM) {
+    const key = Math.round(Math.log2(pxPerM) * 8);
+    if (key === this.lodKey) return;
+    this.lodKey = key;
+    for (const e of this.detail) {
+      const px = e.d * pxPerM;
+      if (px < 1.2) { for (const m of e.meshes) m.layers.set(LOD_OFF); continue; }
+      e.part.layers.set(0);
+      for (const m of e.outs) m.layers.set(px < 6 ? LOD_OFF : 0);
+      e.part.castShadow = e.cast && px >= 4;
+    }
   }
 }
 
@@ -3124,15 +3191,15 @@ function step(dt) {
   W.sky.position.copy(camera.position);
   W.clouds.group.rotation.y = S.clock * 0.004;
   applyPalette();
-  const sc = canvas.clientHeight * DPR / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+  const sc = renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
   FX_GLOW.mat.uniforms.uScale.value = FX_PUFF.mat.uniforms.uScale.value = fireflies.pts.material.uniforms.uScale.value = sc;
   pressed.clear();
 }
-function render() { composer.render(); }
+function render() { rigDetail(camera, renderer.domElement.height); composer.render(); }
 let last = performance.now();
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  step(dt); render();
+  const raw = (now - last) / 1000, dt = Math.min(0.05, raw); last = now;
+  perfFrame(raw); step(dt); render();
   requestAnimationFrame(frame);
 }
 
@@ -3181,6 +3248,7 @@ window.__game = {
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) step(dt); render(); },
   tp(x, z, y) { player.pos.set(x, y ?? terrainH(x, z) + 0.05, z); player.lastSafe.copy(player.pos); cam.target.copy(player.pos); player.grounded = true; },
   setTime(t) { S.time = S.timeTarget = t; },
+  perf() { return { ...PERF, probe: !!PERF.probe }; },
   give(k) { giveItem(k); }, talk, begin, startFinale, keepWandering, terrainH, CAM_OCC, COL, AU, surfaceAt,
 };
 boot().catch(e => { console.error(e); $('loading').textContent = 'The island could not load: ' + e.message; });

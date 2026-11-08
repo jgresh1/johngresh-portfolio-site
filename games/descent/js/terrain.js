@@ -149,6 +149,8 @@ export async function bakeWorld(renderer, onProgress = () => {}) {
   const tx = WORLD.nx / TILE, tz = WORLD.nz / TILE, total = tx * tz * 2;
   let done = 0;
   const prev = renderer.getRenderTarget();
+  renderer.setRenderTarget(rt);
+  await renderer.compileAsync(scene, cam);                        // a big shader: compile it without blocking the page
   for (let mode = 0; mode < 2; mode++) {
     for (let jz = 0; jz < tz; jz++) for (let ix = 0; ix < tx; ix++) {
       mat.uniforms.uMode.value = mode;
@@ -200,7 +202,7 @@ float baseH(vec2 xz) {
   ivec2 i0 = ivec2(floor(t)); vec2 f = t - vec2(i0);
   vec4 wx = crw(f.x), wy = crw(f.y);
   float r = 0.0;
-  for (int j = 0; j < 4; j++) {
+  for (int j = 0; j < LOOPN(4); j++) {
     float row = 0.0;
     for (int i = 0; i < 4; i++) row += wx[i] * texH(i0 + ivec2(i - 1, j - 1));
     r += wy[j] * row;
@@ -217,7 +219,7 @@ float detailH(vec2 xz, float lod) {
   float ridge = smoothstep(0.35, 0.80, rock);
   float h = 0.0, amp = 0.55 * rock * mix(0.4, 1.0, ridge);
   vec2 p = xz / 3.2;
-  for (int o = 0; o < 4; o++) {
+  for (int o = 0; o < LOOPN(4); o++) {
     float w = 1.0 - smoothstep(3.0 - float(o), 4.0 - float(o), lod);
     float nn = vn2(p);
     h += amp * w * ((o < 2 ? mix(nn, 1.0 - abs(2.0 * nn - 1.0), ridge) : nn) - 0.5);
@@ -324,7 +326,7 @@ vec3 burrowH(vec2 p, out float hole) {
 float pebbles(vec2 P, float scale, float occThr, out vec2 g, out vec3 c, out float edge) {
   vec2 p = P * scale, ip = floor(p), fp = fract(p);
   float f1 = 8.0; vec2 bestR = vec2(0.0), id = vec2(0.0);
-  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+  for (int j = -1; j <= LOOPN(1); j++) for (int i = -1; i <= 1; i++) {
     vec2 gg = vec2(float(i), float(j));
     vec2 r = gg + 0.28 + 0.44 * h22(ip + gg) - fp;                // fragment -> feature point
     float d = dot(r, r);

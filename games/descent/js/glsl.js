@@ -4,7 +4,18 @@
 // Hashing + noise. Integer (PCG) hashes: stable at world coordinates in the
 // thousands of metres, no sin() hash banding.
 // ---------------------------------------------------------------------------
+export const GLSL_LOOP = /* glsl */`
+// Loop bounds go through LOOPN() so they are not compile-time constants. Chrome on Windows compiles WebGL with Direct3D's
+// shader compiler, which unrolls every constant loop; unrolled, a first visit spent ~90 s compiling and the tab froze.
+// uLoopZero is never set, and GL zeroes uniforms at link, so LOOPN(n) == n.
+#ifndef LOOPN
+uniform highp int uLoopZero;
+#define LOOPN(n) ((n) + uLoopZero)
+#endif
+`;
+
 export const GLSL_NOISE = /* glsl */`
+${GLSL_LOOP}
 uint pcg1(uint v) {
   uint s = v * 747796405u + 2891336453u;
   uint w = ((s >> ((s >> 28u) + 4u)) ^ s) * 277803737u;
@@ -78,7 +89,7 @@ const mat3 ROT3 = mat3( 0.00,  0.80,  0.60,
 
 float fbm2(vec2 p, int oct) {
   float a = 0.5, s = 0.0, n = 0.0;
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < LOOPN(12); i++) {
     if (i >= oct) break;
     s += a * vn2(p); n += a;
     p = ROT2 * p * 2.02 + 17.3; a *= 0.5;
@@ -89,7 +100,7 @@ float fbm2(vec2 p, int oct) {
 vec3 fbm2d(vec2 p, int oct) {
   float a = 0.5, s = 0.0, n = 0.0; vec2 d = vec2(0.0);
   mat2 m = mat2(1.0, 0.0, 0.0, 1.0); float f = 1.0;
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < LOOPN(12); i++) {
     if (i >= oct) break;
     vec3 v = vn2d(p);
     s += a * v.x; d += a * f * (transpose(m) * v.yz); n += a;
@@ -99,7 +110,7 @@ vec3 fbm2d(vec2 p, int oct) {
 }
 float fbm3(vec3 p, int oct) {
   float a = 0.5, s = 0.0, n = 0.0;
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < LOOPN(12); i++) {
     if (i >= oct) break;
     s += a * vn3(p); n += a;
     p = ROT3 * p * 2.01 + 11.7; a *= 0.5;
@@ -110,7 +121,7 @@ float fbm3(vec3 p, int oct) {
 vec4 fbm3d(vec3 p, int oct) {
   float a = 0.5, s = 0.0, n = 0.0; vec3 d = vec3(0.0);
   mat3 m = mat3(1.0); float f = 1.0;
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < LOOPN(12); i++) {
     if (i >= oct) break;
     vec4 v = vn3d(p);
     s += a * v.x; d += a * f * (transpose(m) * v.yzw); n += a;
@@ -122,7 +133,7 @@ vec4 fbm3d(vec3 p, int oct) {
 vec4 worley2(vec2 p) {
   vec2 ip = floor(p), fp = fract(p);
   float f1 = 8.0, f2 = 8.0; vec2 id = vec2(0.0);
-  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+  for (int j = -1; j <= LOOPN(1); j++) for (int i = -1; i <= 1; i++) {
     vec2 g = vec2(float(i), float(j));
     vec2 o = h22(ip + g);
     vec2 r = g + o - fp;
@@ -135,7 +146,7 @@ vec4 worley2(vec2 p) {
 vec4 worley3(vec3 p) {
   vec3 ip = floor(p), fp = fract(p);
   float f1 = 8.0, f2 = 8.0; vec3 id = vec3(0.0);
-  for (int k = -1; k <= 1; k++) for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+  for (int k = -1; k <= LOOPN(1); k++) for (int j = -1; j <= LOOPN(1); j++) for (int i = -1; i <= 1; i++) {
     vec3 g = vec3(float(i), float(j), float(k));
     vec3 o = h33(ip + g);
     vec3 r = g + o - fp;
@@ -149,7 +160,7 @@ vec4 worley3(vec3 p) {
 vec4 worley3d(vec3 p) {
   vec3 ip = floor(p), fp = fract(p);
   float f1 = 8.0; vec3 best = vec3(0.0);
-  for (int k = -1; k <= 1; k++) for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+  for (int k = -1; k <= LOOPN(1); k++) for (int j = -1; j <= LOOPN(1); j++) for (int i = -1; i <= 1; i++) {
     vec3 g = vec3(float(i), float(j), float(k));
     vec3 r = g + h33(ip + g) - fp;
     float d = dot(r, r);
@@ -163,7 +174,7 @@ vec4 worley3d(vec3 p) {
 void worley3g(vec3 p, out float f1o, out float f2o, out vec3 gradF1, out float ha, out float hb) {
   vec3 ip = floor(p), fp = fract(p);
   float f1 = 8.0, f2 = 8.0; vec3 best = vec3(0.0), id = vec3(0.0);
-  for (int k = -1; k <= 1; k++) for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+  for (int k = -1; k <= LOOPN(1); k++) for (int j = -1; j <= LOOPN(1); j++) for (int i = -1; i <= 1; i++) {
     vec3 g = vec3(float(i), float(j), float(k));
     vec3 r = g + h33(ip + g) - fp;
     float d = dot(r, r);
@@ -225,6 +236,7 @@ export function waveGLSL(set) {
   const wv = set.waves.map(w => `vec4(${f(w.kx)},${f(w.kz)},${f(w.amp)},${f(w.omega)})`).join(',\n  ');
   const wp = set.waves.map(w => f(w.phase)).join(',');
   return /* glsl */`
+${GLSL_LOOP}
 #define NW ${n}
 const vec4 WV[NW] = vec4[NW](
   ${wv}
@@ -233,7 +245,7 @@ const float WP[NW] = float[NW](${wp});
 // height only. kmax fades out waves finer than the viewer can resolve.
 float waveH(vec2 p, float t, float kmax) {
   float h = 0.0;
-  for (int i = 0; i < NW; i++) {
+  for (int i = 0; i < LOOPN(NW); i++) {
     vec4 w = WV[i];
     float k = length(w.xy);
     float fade = 1.0 - smoothstep(kmax * 0.5, kmax, k);
@@ -244,7 +256,7 @@ float waveH(vec2 p, float t, float kmax) {
 // height + slope (dh/dx, dh/dz)
 float waveHG(vec2 p, float t, float kmax, out vec2 g) {
   float h = 0.0; g = vec2(0.0);
-  for (int i = 0; i < NW; i++) {
+  for (int i = 0; i < LOOPN(NW); i++) {
     vec4 w = WV[i];
     float k = length(w.xy);
     float fade = 1.0 - smoothstep(kmax * 0.5, kmax, k);
@@ -307,10 +319,10 @@ const vec3 MC[9] = vec3[9](vec3(0.78, 0.30, 0.06), vec3(0.58, 0.09, 0.07), vec3(
                            vec3(0.66, 0.40, 0.48), vec3(0.72, 0.70, 0.64), vec3(0.32, 0.27, 0.13), vec3(0.20, 0.28, 0.10), vec3(0.42, 0.29, 0.17));
 const float MWS[9] = float[9](0.02, 0.01, 0.03, 0.02, 0.07, 0.02, 0.38, 0.19, 0.26);     // shallow: turf / algae dominate, few pale spots
 const float MWD[9] = float[9](0.09, 0.06, 0.06, 0.06, 0.09, 0.14, 0.16, 0.04, 0.22);     // deep reef / wall: sponges & tunicates (most colonies are muted)
-vec3 mosaicMean(float vivid) { vec3 m = vec3(0.0); float w = 0.0; for (int i = 0; i < 9; i++) { float wi = mix(MWS[i], MWD[i], vivid); m += MC[i] * wi; w += wi; } return m / w; }
+vec3 mosaicMean(float vivid) { vec3 m = vec3(0.0); float w = 0.0; for (int i = 0; i < LOOPN(9); i++) { float wi = mix(MWS[i], MWD[i], vivid); m += MC[i] * wi; w += wi; } return m / w; }
 vec3 mosaicPick(float t, float vivid, out int kk) {
   float acc = 0.0; kk = 8;
-  for (int i = 0; i < 9; i++) { acc += mix(MWS[i], MWD[i], vivid); if (t < acc) { kk = i; break; } }
+  for (int i = 0; i < LOOPN(9); i++) { acc += mix(MWS[i], MWD[i], vivid); if (t < acc) { kk = i; break; } }
   vec3 c = MC[kk];
   float luma = dot(c, vec3(0.30, 0.55, 0.15));
   return mix(vec3(luma) * vec3(1.0, 0.92, 0.80), c, mix(0.50, 0.78, vivid));
@@ -390,10 +402,15 @@ void reefMosaic(vec3 rk, vec3 under, float depth, float cover, float dist, out v
   vec3 q = rk + 0.20 * wq;
   grad = vec3(0.0); ao = 1.0;
   vec3 c = under;
-  c = colonyLayer(c, q, 1.9,  cover * 0.85, 0.40, 0.56, vivid, 1.0, pxSize, dist, grad, ao);      // big colonies (~40 cm)
-  c = colonyLayer(c, q, 5.6,  cover * 0.90, 0.36, 0.54, vivid, 2.0, pxSize, dist, grad, ao);      // medium (~14 cm)
-  c = colonyLayer(c, q, 17.0, cover * 0.95, 0.32, 0.52, vivid, 3.0, pxSize, dist, grad, ao);      // small (~5 cm)
-  c = colonyLayer(c, q, 58.0, cover * 0.30 * (0.35 + 0.65 * vivid), 0.22, 0.38, vivid, 4.0, pxSize, dist, grad, ao);      // polyp groups (~1.5 cm)
+  // big colonies (~40 cm), medium (~14 cm), small (~5 cm), polyp groups (~1.5 cm): one call site in a real loop, because
+  // Direct3D's compiler inlines every call and four copies of colonyLayer made the reef shaders take seconds to compile
+  for (int i = 0; i < LOOPN(4); i++) {
+    float sc = i == 0 ? 1.9 : i == 1 ? 5.6 : i == 2 ? 17.0 : 58.0;
+    float oc = i == 0 ? cover * 0.85 : i == 1 ? cover * 0.90 : i == 2 ? cover * 0.95 : cover * 0.30 * (0.35 + 0.65 * vivid);
+    float r0 = i == 0 ? 0.40 : i == 1 ? 0.36 : i == 2 ? 0.32 : 0.22;
+    float r1 = i == 0 ? 0.56 : i == 1 ? 0.54 : i == 2 ? 0.52 : 0.38;
+    c = colonyLayer(c, q, sc, oc, r0, r1, vivid, float(i + 1), pxSize, dist, grad, ao);
+  }
   col = c;
 }
 

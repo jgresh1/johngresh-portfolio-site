@@ -4,6 +4,7 @@ installOpticsChunks();                       // must happen before any material 
 import { Caustics, OceanSurface, PlanarReflection, makeBackground } from './water.js';
 import { bakeWorld, Terrain } from './terrain.js';
 import { Post } from './post.js';
+import { initTouch } from './touch.js';
 import { Scatter } from './scatter.js';
 import { buildLife } from './life.js';
 import { buildDeepLife } from './lifedeep.js';
@@ -15,6 +16,7 @@ import { suiteViews } from './suite.js';
 import { Heroes } from './fauna/heroes.js';
 import { Jellies } from './fauna/jelly.js';
 import { WORLD } from './worldgen.js';
+import { warmShaders } from './warm.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -80,11 +82,12 @@ function sizeToWindow() {
 // ---------------------------------------------------------------------------
 // Camera controls
 // ---------------------------------------------------------------------------
+let touch = null;
 const ctl = { yaw: -Math.PI / 2 + 0.2, pitch: -0.12, vel: new THREE.Vector3(), keys: new Set(), drag: false, lx: 0, ly: 0, boost: false };
 function applyLook() { camera.rotation.set(ctl.pitch, ctl.yaw, 0); }
 applyLook();
 const cv = renderer.domElement;
-cv.addEventListener('pointerdown', (e) => { if (game && game.active) return; ctl.drag = true; ctl.lx = e.clientX; ctl.ly = e.clientY; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointerdown', (e) => { if ((game && game.active) || e.pointerType === 'touch') return; ctl.drag = true; ctl.lx = e.clientX; ctl.ly = e.clientY; cv.setPointerCapture(e.pointerId); });   // fingers: touch.js
 cv.addEventListener('pointerup', (e) => { ctl.drag = false; });
 cv.addEventListener('pointermove', (e) => {
   if (!ctl.drag || (game && game.active)) return;
@@ -118,14 +121,16 @@ function goto(s) {
 }
 
 function moveCamera(dt) {
-  const k = ctl.keys, sp = (k.has('ShiftLeft') || k.has('ShiftRight') ? 14 : 3.2) * (camera.position.y < -300 ? 2 : 1);
+  let k = ctl.keys, sp = (k.has('ShiftLeft') || k.has('ShiftRight') ? 14 : 3.2) * (camera.position.y < -300 ? 2 : 1);
   const f = new THREE.Vector3(), r = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   camera.getWorldDirection(f); r.crossVectors(f, up).normalize();
   const acc = new THREE.Vector3();
   if (k.has('KeyW')) acc.add(f); if (k.has('KeyS')) acc.sub(f);
   if (k.has('KeyD')) acc.add(r); if (k.has('KeyA')) acc.sub(r);
   if (k.has('KeyE') || k.has('Space')) acc.y += 1; if (k.has('KeyQ') || k.has('KeyC')) acc.y -= 1;
-  if (acc.lengthSq() > 0) acc.normalize().multiplyScalar(sp);
+  if (touch && touch.on) { acc.addScaledVector(f, touch.fwd).addScaledVector(r, touch.right); acc.y += touch.up; if (touch.dash) sp *= 14 / 3.2; }
+  if (acc.lengthSq() > 1) acc.normalize();
+  acc.multiplyScalar(sp);
   ctl.vel.lerp(acc, 1 - Math.exp(-dt * 4.5));
   camera.position.addScaledVector(ctl.vel, dt);
   clampCamera();
@@ -303,13 +308,46 @@ function adaptResolution(now) {
   else if (g < target * 0.70 && s < 1) s = Math.min(1, s * 1.07);
   if (Math.abs(s - state.renderScale) > 0.025) { state.renderScale = s; gpuT.ema = 0; gpuT.n = 0; sizeToWindow(); }
 }
+// Without a GPU timer (most phones, Safari, Firefox) judge by whole frames instead, in 1.5 s windows. A frame that came after the
+// frame cap skipped a display refresh had time to spare; when most do, nothing is slow, whatever the display's refresh rate (a
+// 90 Hz phone capped at 60 shows every other refresh, 22 ms apart). Otherwise slow means a median frame well over the cap's.
+// Step the resolution down while slow and keep a step only if it helped (fewer pixels do not help a slow CPU); probe back up
+// when there is room, waiting longer after each failed probe. The first windows after loading are skipped: they are not typical.
+const ft = { win: [], sum: 0, idle: 0, skipped: false, probe: null, calm: 0, hold: 2, noHelp: 0, backoff: 1, downWait: 0 };
+function setScale(s) { state.renderScale = s; sizeToWindow(); }
+function adaptByFrameTime(sec) {
+  if (ft.skipped) { ft.idle++; ft.skipped = false; }
+  if (!state.autoScale || !gpuT.tried || gpuT.ext || document.hidden || sec <= 0) { ft.win = []; ft.sum = 0; ft.idle = 0; return; }
+  ft.win.push(sec); ft.sum += sec;
+  if (ft.sum < 1.5) return;
+  const f = ft.win.sort((a, b) => a - b), ms = f[f.length >> 1] * 1000, spare = ft.idle >= f.length * 0.5;
+  ft.win = []; ft.sum = 0; ft.idle = 0;
+  const cap = state.fpsCap ?? 60, aim = cap > 0 ? Math.max(1000 / cap, 1000 / 60) : 1000 / 60;
+  const slow = !spare && ms > aim * 1.17, easy = spare || ms < aim * 1.07;
+  if (ft.hold > 0) { ft.hold--; return; }
+  if (ft.probe) { const p = ft.probe; ft.probe = null;
+    if (p.down && !spare && ms > p.ms * 0.93) { setScale(p.scale); ft.downWait = 20 * ++ft.noHelp; ft.cpu = true; }   // no help: the CPU is the limit
+    else if (p.down) ft.cpu = false;
+    else if (p.cpu ? ms > p.ms * 1.07 : slow) { setScale(p.scale); ft.hold = 10 * (ft.backoff = Math.min(8, ft.backoff * 2)); }
+    return; }
+  const s = state.renderScale, min = 0.6;
+  if (slow) {
+    ft.calm = 0;
+    if (ft.cpu && s < 1) { ft.probe = { down: false, cpu: true, ms, scale: s }; setScale(Math.min(1, s / 0.85)); }   // pixels are not the problem: take back resolution that costs nothing
+    else if (ft.downWait > 0) ft.downWait--;
+    else if (s > min + 1e-3) { ft.probe = { down: true, ms, scale: s }; setScale(Math.max(min, s * 0.85)); }
+  }
+  else if (easy && s < 1) { if (++ft.calm >= 4) { ft.calm = 0; ft.probe = { down: false, ms, scale: s }; setScale(Math.min(1, s / 0.85)); } }
+  else ft.calm = 0;
+}
 function loop(now) {
   requestAnimationFrame(loop);
   const cap = state.fpsCap ?? 60;
-  if (cap > 0 && now - last < 1000 / cap - 1.5) return;             // frame limiter: do not pin the GPU
+  if (cap > 0 && now - last < 1000 / cap - 1.5) { ft.skipped = true; return; }            // frame limiter: do not pin the GPU
   const dt = Math.min((now - last) / 1000, 0.1); last = now; state.dt = dt;
   fpsAcc += dt; fpsN++; if (fpsAcc > 1) { state.fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
   if (!post || !state.running) return;
+  if (touch) touch.tick();
   if (game && game.active) game.frame(dt);
   else { if (ui) ui.updateDive(dt);
   if (state.diving) clampCamera(); else moveCamera(dt); }
@@ -319,6 +357,7 @@ function loop(now) {
   post.render(scene, camera, null);
   gpuTimerEnd();
   adaptResolution(now);
+  adaptByFrameTime(dt);
   updateHud(dt);
 }
 
@@ -537,14 +576,7 @@ async function boot() {
   sizeToWindow();
   window.addEventListener('resize', sizeToWindow);
   setLoad(0.86, 'warming up the light…');
-  state.sync = true; updateScene(0); state.sync = false;
-  heroes.entries.concat(jellies.entries).forEach(e => e.slots.forEach(s => { if (!s.mesh.visible) { s.mesh.visible = true; s._warm = true; } }));
-  schools.species.forEach(e => e.slots.forEach(s => { if (!s.mesh.visible) { s.mesh.visible = true; s._warm = true; } }));
-  setLoad(0.9, 'compiling shaders…');
-  try { await renderer.compileAsync(scene, camera); } catch (e) { /* older path: compile lazily */ }
-  post.render(scene, camera, null);
-  heroes.entries.concat(jellies.entries, schools.species).forEach(e => e.slots.forEach(s => { if (s._warm) { s.mesh.visible = false; s._warm = false; } }));
-  window.__OCEAN__ = { THREE, renderer, scene, camera, post, world, terrain, surface, caustics, state, ctl, U, shot, dumpMap, stepFrame, goto, SITES, updateScene, sun, hemi, lamp, refl, scatter, schools, heroes, jellies, vents, particles, strobe, applyLook, setSun, setWater };
+  window.__OCEAN__ = { ft, THREE, renderer, scene, camera, post, world, terrain, surface, caustics, state, ctl, U, shot, dumpMap, stepFrame, goto, SITES, updateScene, sun, hemi, lamp, refl, scatter, schools, heroes, jellies, vents, particles, strobe, applyLook, setSun, setWater };
   window.__OCEAN__.T = makeDev();
   window.__OCEAN__.gallery = gallery;
   // Pin a school so that at shot time its centre is at `at` and (optionally) it swims along `heading` ([x,z], either direction).
@@ -626,15 +658,38 @@ async function boot() {
     const { initGame } = await import('./game/game.js');
     game = initGame({ THREE, scene, camera, renderer, post, world, scatter, particles, schools, heroes, jellies, vents, state, ctl, U, ui, lamp, sizeToWindow, applyLook, setSun, setWater, SITES, goto });
     window.__OCEAN__.game = game;
-    if (!params.has('explore')) {                                          // compile the creature shaders while the loading screen is still up
-      setLoad(0.96, 'waking the reef…');
-      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
-      game.warm();
+    if (!params.has('explore')) {                                          // build the creatures and start on the title screen (behind the loading screen)
+      setLoad(0.87, 'waking the reef…');
+      await new Promise((r) => setTimeout(r, 0));
+      game.warm(false);
+      game.enter(true);
     }
   } catch (e) { console.error('game init failed', e); fetch('/__log', { method: 'POST', body: 'game init failed ' + String(e.stack || e) }); }
+  // phones and tablets: a thumb stick, drag-to-look and hold buttons, shared by the game and the free camera (touch.js)
+  touch = initTouch(cv, {
+    active: () => !state.photo && (game && game.active ? game.mode === 'play' : !state.diving),
+    look: (dx, dy) => { if (game && game.active) game.look(dx, dy); else { ctl.yaw -= dx * 0.0024; ctl.pitch = Math.max(-1.55, Math.min(1.55, ctl.pitch - dy * 0.0024)); applyLook(); } },
+    tap: () => { if (game && game.active) game.pressed.add('Mouse0'); },
+    pinch: (f) => { if (game && game.active) game.zoomBy(1 / f); },
+  });
+  window.__OCEAN__.touch = touch;
+  { const b = $('b-menu'); if (b) { if (game) b.onclick = () => { if (!game.active) game.enter(true); }; else b.remove(); } }   // the free camera's way back (Esc does the same)
+  if (game) game.useTouch(touch);
+  // Compile every shader the first frame needs without freezing the page (see warm.js), then draw it for real.
+  const firstFrame = () => {
+    state.sync = true;
+    if (game && game.active) game.frame(1 / 60);
+    updateScene(state.time);
+    post.render(scene, camera, null);
+    state.sync = false;
+  };
+  setLoad(0.88, 'preparing the light…');
+  const warm = await warmShaders(renderer, firstFrame, { scene, onProgress: (f) => setLoad(0.88 + 0.11 * f, `preparing the light… ${Math.round(f * 100)}%`) });
+  firstFrame();
   setLoad(1, 'ready');
   $('loading').classList.add('done');
-  if (game && !params.has('explore')) game.enter(true);
   requestAnimationFrame(loop);
+  // the explore-mode animals are hidden while the game runs: compile them in the background so leaving the game does not stall
+  if (game && game.active) setTimeout(() => warm.compile([schools.group, heroes.group, jellies.group]), 3000);
 }
 boot().catch((e) => { console.error(e); $('l-msg').textContent = 'error: ' + e.message; fetch('/__log', { method: 'POST', body: String(e.stack || e) }); });

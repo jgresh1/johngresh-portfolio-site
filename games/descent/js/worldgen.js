@@ -45,7 +45,7 @@ float spurGroove(float x, float z, out float ridge) {
 float bommies(vec2 p, out float cover) {
   vec2 c = p / 64.0, ic = floor(c);
   float h = 0.0; cover = 0.0;
-  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+  for (int j = -1; j <= LOOPN(1); j++) for (int i = -1; i <= 1; i++) {
     vec2 cell = ic + vec2(float(i), float(j));
     vec3 r = h23(cell);
     float present = step(0.40, h21(cell + 91.3));
@@ -89,11 +89,17 @@ float worldHeight(vec2 p) { float r, b; return worldHeight(p, r, b); }
 
 // masks: x sand, y reef community (corals/sponges), z hard rock, w seagrass
 vec4 worldMasks(vec2 p) {
-  float ridge, bcov;
-  float h = worldHeight(p, ridge, bcov);
+  // the centre and four neighbours come from ONE call site in a real loop: Direct3D's compiler inlines every call, and five
+  // inlined copies of worldHeight took ~8 s to compile on a first visit (same values as five separate calls)
+  float ridge = 0.0, bcov = 0.0, h = 0.0, hx = 0.0, hz = 0.0;
   float e = 3.0;
-  float hx = worldHeight(p + vec2(e, 0.0)) - worldHeight(p - vec2(e, 0.0));
-  float hz = worldHeight(p + vec2(0.0, e)) - worldHeight(p - vec2(0.0, e));
+  for (int k = 0; k < LOOPN(5); k++) {
+    vec2 o = k == 1 ? vec2(e, 0.0) : k == 2 ? vec2(-e, 0.0) : k == 3 ? vec2(0.0, e) : k == 4 ? vec2(0.0, -e) : vec2(0.0);
+    float rk, bk;
+    float hk = worldHeight(p + o, rk, bk);
+    if (k == 0) { h = hk; ridge = rk; bcov = bk; }
+    else if (k == 1) hx += hk; else if (k == 2) hx -= hk; else if (k == 3) hz += hk; else hz -= hk;
+  }
   float slope = length(vec2(hx, hz)) / (2.0 * e);           // tan(angle)
   float x = p.x;
   float depth = -h;

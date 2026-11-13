@@ -68,13 +68,23 @@ button:focus-visible { outline: 3px solid var(--sea); outline-offset: 3px; }
 #tasks li .ic svg { width: 18px; height: 18px; }
 #tasks li b { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
 #tasks li span { display: block; color: var(--ink-soft); font-size: 12.5px; }
+#tasks li.side { cursor: pointer; border-radius: 12px; margin: -3px -6px; padding: 3px 6px; transition: background .2s; scale: calc(1 - var(--p, 0) * 0.03); }
+#tasks li.side:hover { background: rgba(255,211,77,.18); }
+#tasks li.tracked { background: rgba(255,211,77,.32); box-shadow: inset 0 0 0 2px rgba(217,164,65,.55); }
+/* Goal marker: points at what you're following, slides to the screen edge with an arrow */
+#marker { position: fixed; z-index: 3; left: 0; top: 0; pointer-events: none; transform: translate(-50%, -50%); opacity: 0; transition: opacity .4s; }
+#marker.on { opacity: 1; }
+#marker .gem { width: 22px; height: 22px; background: var(--glow); border: 2.5px solid var(--ink); transform: rotate(45deg); border-radius: 4px; box-shadow: 0 3px 0 var(--ink); }
+#marker .arr { position: absolute; left: 50%; top: 50%; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 13px solid var(--ink); transform-origin: 50% 100%; display: none; }
+#marker.edge .arr { display: block; }
+#marker .dist { position: absolute; top: 26px; left: 50%; transform: translateX(-50%); font: 700 12px var(--font-display); color: var(--paper); text-shadow: 0 1px 3px #000, 0 0 2px #000; white-space: nowrap; }
 #tasks li.done .ic { background: var(--glow); transform: rotate(-8deg); }
 #tasks li.done b { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--rose); }
 #tasks li.done span { color: var(--leaf); }
 #tasks li.unknown { opacity: .55; }
 #tasks li.goal .ic { background: var(--sun); }
 #hud.collapsed #tasks li:not(.goal) { display: none; }
-#hudToggle { display: none; background: none; border: 0; padding: 0; cursor: pointer; font: 700 12px var(--font-body); color: var(--ink-soft); }
+#hudToggle { display: none; background: none; border: 0; padding: 10px 8px; margin: -10px -8px; cursor: pointer; font: 700 12px var(--font-body); color: var(--ink-soft); scale: calc(1 - var(--p, 0) * 0.12); }
 
 /* Top-right: time of day + sound */
 #topright {
@@ -85,16 +95,16 @@ button:focus-visible { outline: 3px solid var(--sea); outline-offset: 3px; }
 #phase { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 7px; font: 600 14px var(--font-display); border-radius: 999px; }
 #phase .dial { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink); position: relative; overflow: hidden; background: linear-gradient(#8fd0ff, #ffe0a8); transition: background 1s; }
 #phase .dial i { position: absolute; width: 10px; height: 10px; border-radius: 50%; left: 6px; background: #fff3a0; border: 1.5px solid var(--ink); transition: top 1.5s, background 1s; top: 3px; }
-.iconbtn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.iconbtn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; padding: 0; scale: calc(1 - var(--p, 0) * 0.09); }
 .iconbtn svg { width: 20px; height: 20px; }
 
 /* Interact prompt */
 #prompt {
   position: fixed; z-index: 4; left: 0; top: 0; pointer-events: none; padding: 5px 11px 5px 6px; border-radius: 999px;
   font: 600 14px var(--font-display); display: flex; align-items: center; gap: 7px; white-space: nowrap;
-  transform: translate(-50%, -100%); transition: opacity .2s; opacity: 0;
+  transform: translate(-50%, -100%) scale(.82); transform-origin: 50% 100%; transition: opacity .16s, transform .38s cubic-bezier(.3, 1.7, .5, 1); opacity: 0;
 }
-#prompt.on { opacity: 1; }
+#prompt.on { opacity: 1; transform: translate(-50%, -100%) scale(1); }
 #prompt kbd {
   font: 700 12px var(--font-body); background: var(--ink); color: var(--paper); border-radius: 7px; min-width: 22px; height: 22px;
   display: grid; place-items: center; padding: 0 5px;
@@ -104,9 +114,9 @@ button:focus-visible { outline: 3px solid var(--sea); outline-offset: 3px; }
 #dialog {
   position: fixed; z-index: 6; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px);
   width: min(640px, calc(100vw - 32px)); padding: 22px 24px 18px; opacity: 0; pointer-events: none;
-  transition: opacity .25s, transform .25s; cursor: pointer;
+  transition: opacity .22s, transform .45s cubic-bezier(.25, 1.45, .45, 1); cursor: pointer;
 }
-#dialog.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+#dialog.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; scale: calc(1 - var(--p, 0) * 0.012); }
 #dialog .who {
   position: absolute; top: -17px; left: 20px; padding: 3px 14px 4px; border-radius: 12px; border: 2.5px solid var(--ink);
   font: 700 16px var(--font-display); color: #fff; background: var(--rose); letter-spacing: .02em;
@@ -157,10 +167,10 @@ button:focus-visible { outline: 3px solid var(--sea); outline-offset: 3px; }
 .screen .tag { margin: 0; font: 600 clamp(16px, 2.6vw, 21px) var(--font-display); color: var(--paper); text-shadow: 0 2px 10px rgba(40, 10, 30, .7); text-wrap: balance; }
 .btn {
   font: 700 22px var(--font-display); padding: 12px 34px 14px; border-radius: 999px; cursor: pointer; border: 2.5px solid var(--ink);
-  background: var(--sun); color: var(--ink); box-shadow: 0 5px 0 var(--ink), 0 14px 30px var(--shade); transition: transform .12s, box-shadow .12s;
+  background: var(--sun); color: var(--ink);
+  /* --p is a spring (see FEEL): -1 hovered, 0 resting, 1 pressed all the way onto its shadow */
+  translate: 0 calc(var(--p, 0) * 3px); box-shadow: 0 max(0px, calc(5px - var(--p, 0) * 3px)) 0 var(--ink), 0 calc(14px - var(--p, 0) * 5px) 30px var(--shade);
 }
-.btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--ink), 0 16px 30px var(--shade); }
-.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink), 0 8px 20px var(--shade); }
 .btn.alt { background: var(--paper); font-size: 18px; padding: 10px 24px 12px; }
 .screen .keys { font-size: 14px; color: var(--paper); opacity: .9; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; }
 .screen .keys kbd { font: 800 12px var(--font-body); background: var(--paper); color: var(--ink); border-radius: 5px; padding: 1px 6px; margin-right: 4px; }
@@ -179,12 +189,14 @@ button:focus-visible { outline: 3px solid var(--sea); outline-offset: 3px; }
 body.touch #touch { display: block; }
 #joy {
   position: fixed; z-index: 5; left: calc(28px + env(safe-area-inset-left, 0px)); bottom: calc(28px + env(safe-area-inset-bottom, 0px));
-  width: 124px; height: 124px; border-radius: 50%; background: rgba(255, 247, 234, .22); border: 2.5px solid rgba(255, 247, 234, .7);
+  width: 124px; height: 124px; border-radius: 50%; background: rgba(255, 247, 234, calc(.22 + var(--p, 0) * .1)); border: 2.5px solid rgba(255, 247, 234, .7);
+  scale: calc(1 + var(--p, 0) * 0.05); touch-action: none;
 }
 #joy i { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px; border-radius: 50%; background: var(--paper); border: 2.5px solid var(--ink); }
 .tbtn {
   position: fixed; z-index: 5; width: 70px; height: 70px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--paper);
-  font: 700 15px var(--font-display); box-shadow: 0 4px 0 var(--ink);
+  font: 700 15px var(--font-display); padding: 0; touch-action: none;
+  translate: 0 calc(var(--p, 0) * 3px); scale: calc(1 - var(--p, 0) * 0.05); box-shadow: 0 max(0px, calc(4px - var(--p, 0) * 3px)) 0 var(--ink);
 }
 #tJump { right: calc(24px + env(safe-area-inset-right, 0px)); bottom: calc(30px + env(safe-area-inset-bottom, 0px)); background: var(--sun); }
 #tTalk { right: calc(106px + env(safe-area-inset-right, 0px)); bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
@@ -230,6 +242,7 @@ body.touch #dialog { bottom: calc(170px + env(safe-area-inset-bottom, 0px)); }
 </div>
 
 <div id="prompt" class="card"><kbd id="promptKey">E</kbd><span id="promptText">Talk</span></div>
+<div id="marker"><div class="gem"></div><div class="arr"></div><div class="dist"></div></div>
 
 <div id="dialog" class="card" role="dialog" aria-live="polite">
   <div class="who" id="dlgWho">Pim</div>
@@ -624,7 +637,81 @@ function addPart(geo, color, m, opt = {}) {
   if (jit) for (let i = 0; i < n * 3; i++) col[i] *= 1 + (hash2(i * 0.37, n) - 0.5) * jit;
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   (opt.glow ? BAKE.glow : opt.outline === false ? BAKE.plain : BAKE.outlined).push(g);
+  if (ZF) ZF.push({ g, color, kind: opt.glow ? 'glow' : 'part', jit, tex: 0, m: m.clone(), shape: geo === G.box ? 1 : geo.type === 'CylinderGeometry' && geo !== G.roof ? Math.cos(Math.PI / geo.parameters.radialSegments) : 0,
+    at: new Error().stack.split('\n').slice(2, 5).map(s => s.replace(/^\s*at\s*/, '').replace(/https?:\/\/[^)]*?\.html/, '')).join(' < ') });
 }
+// ?zf in the URL keeps every baked part so zfScan() can list coplanar faces that z-fight (debug only).
+// A pair only counts when some of the shared patch is in the open: not buried in a third solid part or under the ground.
+const ZF = /[?&]zf\b/.test(location.search) ? [] : null;
+function zfScan(minPen = 0.006) {
+  const buckets = new Map(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+  const grid = new Map(), GS = 2, q = new THREE.Vector3();
+  ZF.forEach((p, pi) => {
+    if (p.shape) { p.inv = p.m.clone().invert(); p.g.computeBoundingBox(); const bb = p.g.boundingBox;
+      for (let i = Math.floor(bb.min.x / GS); i <= Math.floor(bb.max.x / GS); i++) for (let j = Math.floor(bb.min.z / GS); j <= Math.floor(bb.max.z / GS); j++) {
+        const k = i * 8192 + j; let l = grid.get(k); if (!l) grid.set(k, l = []); l.push(pi); } }
+    const pos = p.g.attributes.position;
+    for (let i = 0; i < pos.count; i += 3) {
+      a.fromBufferAttribute(pos, i); b.fromBufferAttribute(pos, i + 1); c.fromBufferAttribute(pos, i + 2);
+      n.crossVectors(e1.subVectors(b, a), e2.subVectors(c, a)); if (n.length() < 4e-4) continue; n.normalize();
+      const ax = Math.abs(n.x) > Math.abs(n.y) ? (Math.abs(n.x) > Math.abs(n.z) ? 0 : 2) : Math.abs(n.y) > Math.abs(n.z) ? 1 : 2, u = (ax + 1) % 3, v = (ax + 2) % 3;
+      const t = { pi, n: n.clone(), d: n.dot(a), ax, u, v, P: [a, b, c].map(r => [r.getComponent(u), r.getComponent(v)]) };
+      const k = Math.round(n.x * 40) + ',' + Math.round(n.y * 40) + ',' + Math.round(n.z * 40) + ',' + Math.round(t.d * 100);
+      let l = buckets.get(k); if (!l) buckets.set(k, l = []); l.push(t);
+    }
+  });
+  const sep = (A, B) => { for (const T of [A, B]) for (let i = 0; i < 3; i++) {
+    const p = T[i], r = T[(i + 1) % 3], ax = [r[1] - p[1], p[0] - r[0]], L = Math.hypot(ax[0], ax[1]); if (L < 1e-9) continue;
+    let a0 = 1e9, a1 = -1e9, b0 = 1e9, b1 = -1e9;
+    for (const s of A) { const w = (s[0] * ax[0] + s[1] * ax[1]) / L; a0 = Math.min(a0, w); a1 = Math.max(a1, w); }
+    for (const s of B) { const w = (s[0] * ax[0] + s[1] * ax[1]) / L; b0 = Math.min(b0, w); b1 = Math.max(b1, w); }
+    if (Math.min(a1, b1) - Math.max(a0, b0) < minPen) return true; } return false; };
+  const buried = (A, skip) => {
+    if (q.y < terrainH(q.x, q.z) - 0.02) return true;
+    for (const pi of grid.get(Math.floor(q.x / GS) * 8192 + Math.floor(q.z / GS)) || []) {
+      if (skip.includes(pi)) continue; const p = ZF[pi]; a.copy(q).applyMatrix4(p.inv);
+      if (p.shape === 1 ? Math.abs(a.x) < 0.5 && Math.abs(a.y) < 0.5 && Math.abs(a.z) < 0.5 : Math.abs(a.y) < 0.5 && Math.hypot(a.x, a.z) < p.shape) return true;
+    }
+    return false;
+  };
+  const hits = new Map();
+  for (const [k, l] of buckets) {
+    const [x, y, z, dd] = k.split(',').map(Number), near = [l], l2 = buckets.get(x + ',' + y + ',' + z + ',' + (dd + 1)); if (l2) near.push(l2);
+    for (const L2 of near) for (let i = 0; i < l.length; i++) for (let j = L2 === l ? i + 1 : 0; j < L2.length; j++) {
+      const A = l[i], B = L2[j]; if (A.pi === B.pi || A.n.dot(B.n) < 0.9995 || Math.abs(A.d - B.d) > 0.004 || sep(A.P, B.P)) continue;
+      // clip A by B to get the shared patch, then it shows if a sample just in front of it is in the open
+      let poly = A.P;
+      const sB = Math.sign((B.P[1][0] - B.P[0][0]) * (B.P[2][1] - B.P[0][1]) - (B.P[1][1] - B.P[0][1]) * (B.P[2][0] - B.P[0][0]));
+      for (let e = 0; e < 3 && poly.length; e++) {
+        const p0 = B.P[e], p1 = B.P[(e + 1) % 3], side = r => sB * ((p1[0] - p0[0]) * (r[1] - p0[1]) - (p1[1] - p0[1]) * (r[0] - p0[0])), out = [];
+        for (let k = 0; k < poly.length; k++) {
+          const r0 = poly[k], r1 = poly[(k + 1) % poly.length], s0 = side(r0), s1 = side(r1);
+          if (s0 >= 0) out.push(r0);
+          if ((s0 >= 0) !== (s1 >= 0)) { const t = s0 / (s0 - s1); out.push([r0[0] + (r1[0] - r0[0]) * t, r0[1] + (r1[1] - r0[1]) * t]); }
+        }
+        poly = out;
+      }
+      if (poly.length < 3) continue;
+      let ar = 0, cx = 0, cy = 0;
+      for (let k = 0; k < poly.length; k++) { const r0 = poly[k], r1 = poly[(k + 1) % poly.length]; ar += r0[0] * r1[1] - r1[0] * r0[1]; cx += r0[0]; cy += r0[1]; }
+      if (Math.abs(ar) / 2 < minPen * minPen) continue;
+      cx /= poly.length; cy /= poly.length;
+      let seen = false;
+      for (const r of [[cx, cy], ...poly.map(r => [cx + (r[0] - cx) * 0.8, cy + (r[1] - cy) * 0.8])]) {
+        q.setComponent(A.u, r[0]); q.setComponent(A.v, r[1]);
+        q.setComponent(A.ax, (A.d - A.n.getComponent(A.u) * r[0] - A.n.getComponent(A.v) * r[1]) / A.n.getComponent(A.ax)); q.addScaledVector(A.n, 0.008);
+        if (A.n.y < -0.9 && q.y < terrainH(q.x, q.z) + 0.35) continue;
+        if (!buried(A, [A.pi, B.pi])) { seen = true; break; }
+      }
+      if (!seen) continue;
+      const pa = ZF[A.pi], pb = ZF[B.pi], key = [pa.at, pb.at].sort().join('  ||  ');
+      let h = hits.get(key); if (!h) hits.set(key, h = { key, n: 0, eg: [], cols: pa.color + '/' + pb.color, same: pa.color === pb.color && !pa.jit && !pb.jit && !pa.tex && !pb.tex });
+      h.n++; if (h.eg.length < 4) h.eg.push([q.x, q.y, q.z].map(v => +v.toFixed(2)));
+    }
+  }
+  return [...hits.values()].sort((p, q) => q.n - p.n);
+}
+
 const worldMat = nearFade(new THREE.MeshToonMaterial({ vertexColors: true, gradientMap }));
 const glowMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: true });
 function bakeStatic() {
@@ -1070,8 +1157,8 @@ function buildHouse(H) {
     const Q = (geo, col, lx, ly, lz, sx, sy, sz, opt) => addPart(geo, col, mul(m, M(lx, ly, lz, 0, sx, sy, sz)), opt);
     Q(G.box, '#fff4e2', 0, 0, 0.02, 0.9, 0.9, 0.08);
     Q(G.box, WINDOW_GLOW, 0, 0, 0.06, 0.66, 0.66, 0.06, { glow: true });
-    Q(G.box, '#fff4e2', 0, 0, 0.1, 0.07, 0.66, 0.04, { outline: false });
-    Q(G.box, '#fff4e2', 0, 0, 0.1, 0.66, 0.07, 0.04, { outline: false });
+    Q(G.box, '#fff4e2', 0, 0, 0.1, 0.07, 0.64, 0.04, { outline: false });
+    Q(G.box, '#fff4e2', 0, 0, 0.1, 0.64, 0.07, 0.04, { outline: false });
     for (const s of [-1, 1]) Q(G.box, H.roof, s * 0.62, 0, 0.05, 0.26, 0.86, 0.06);
     Q(G.box, H.trim, 0, -0.55, 0.16, 1.0, 0.2, 0.3);
     for (let i = 0; i < 4; i++) Q(G.sphLo, pick(['#ff8fb1', '#ffd84f', '#ffffff', '#ff7a5c']), -0.36 + i * 0.24, -0.4, 0.18, 0.12, 0.12, 0.12);
@@ -1317,7 +1404,7 @@ function buildPier() {
   const p = LOC.pier, len = p.x1 - p.x0;
   for (let i = 0; i * 0.5 < len; i++) {
     const x = p.x0 + 0.25 + i * 0.5;
-    addPart(G.box, i % 3 ? '#c8925e' : '#b9834f', M(x, p.top - 0.08, p.z, rr(-0.02, 0.02), 0.46, 0.16, p.hw * 2), { outline: i % 4 === 0 });
+    addPart(G.box, i % 3 ? '#c8925e' : '#b9834f', M(x, p.top - 0.08, p.z, rr(-0.008, 0.008), 0.46, 0.16, p.hw * 2), { outline: i % 4 === 0 });
   }
   for (const s of [-1, 1]) addPart(G.box, '#8a5a3c', M((p.x0 + p.x1) / 2, p.top - 0.25, p.z + s * (p.hw - 0.15), 0, len, 0.2, 0.2), { outline: false });
   for (let x = p.x0 + 1.5; x <= p.x1 - 0.2; x += 2.6) for (const s of [-1, 1]) {
@@ -2231,6 +2318,89 @@ const AU = {
   },
 };
 
+// ================================================================ feel: weight, springs and momentum for every touch and click
+// Things you touch behave like objects with mass. A slow pull tracks your finger exactly; a flick carries on
+// after you let go and settles; a press sinks, overshoots a hair on release, and springs home.
+// Springs write a CSS custom property (--p) and the stylesheet decides what it means for each control.
+const FEEL = (() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const live = new Set(); let raf = 0, last = 0;
+  function tick(now) {
+    const dt = Math.min(0.04, Math.max(0.001, (now - last) / 1000)); last = now;
+    for (const f of live) if (!f(dt)) live.delete(f);
+    raf = live.size ? requestAnimationFrame(tick) : 0;
+  }
+  // runs f(dt) every frame until it returns false (its own loop, so it keeps going while the game is paused)
+  function run(f) { live.add(f); if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }
+  // a damped spring: k stiffness, c damping (c < 2*sqrt(k) overshoots)
+  function spring(x = 0, k = 420, c = 24) { return { x, v: 0, to: x, k, c }; }
+  function step(s, dt) {
+    if (reduce.matches) { s.x = s.to; s.v = 0; return false; }
+    const n = Math.max(1, Math.ceil(dt / 0.006)), h = dt / n;
+    for (let i = 0; i < n; i++) { s.v += (s.k * (s.to - s.x) - s.c * s.v) * h; s.x += s.v * h; }
+    if (Math.abs(s.to - s.x) < 5e-4 && Math.abs(s.v) < 5e-3) { s.x = s.to; s.v = 0; return false; }
+    return true;
+  }
+  // pointer velocity in px/ms over the last ~100 ms; zero when the finger stopped before it lifted
+  function tracker() {
+    const pts = [];
+    return {
+      add(x, y, t) { pts.push([x, y, t]); while (pts.length > 2 && t - pts[0][2] > 100) pts.shift(); },
+      reset() { pts.length = 0; },
+      vel(t) {
+        if (pts.length < 2) return [0, 0];
+        const a = pts[0], b = pts[pts.length - 1];
+        if (t - b[2] > 60) return [0, 0];
+        const ms = Math.max(8, b[2] - a[2]); return [(b[0] - a[0]) / ms, (b[1] - a[1]) / ms];
+      },
+    };
+  }
+  // past `lim`, extra travel shrinks the way an iPhone list stretches past its end (d sets how stiff)
+  function rubber(x, lim, d) {
+    const a = Math.abs(x); if (a <= lim) return x;
+    return Math.sign(x) * (lim + (1 - 1 / ((a - lim) * 0.55 / d + 1)) * d);
+  }
+  // a short tap of the phone's motor, where the browser allows it
+  let lastBuzz = 0;
+  function buzz(ms = 8) {
+    const t = performance.now(); if (t - lastBuzz < 60) return; lastBuzz = t;
+    try { if (navigator.userActivation?.hasBeenActive !== false) navigator.vibrate?.(ms); } catch (e) { /* not allowed: fine */ }
+  }
+
+  // ---- springy controls: hover lifts (--p toward -1), a press sinks (toward 1), letting go bounces home
+  const SEL = '.btn, .iconbtn, .tbtn, #hudToggle, #mapClose, #tasks li.side, #dialog.on, [data-spring]';
+  const state = new WeakMap();
+  function of(el) {
+    let s = state.get(el);
+    if (!s) {
+      s = spring(0, 560, 27); s.hover = false; s.down = false;
+      s.fn = dt => { const m = step(s, dt); el.style.setProperty('--p', s.x.toFixed(4)); return m; };
+      state.set(el, s);
+    }
+    return s;
+  }
+  const settle = (el, s) => { s.to = s.down ? 1 : s.hover ? -1 : 0; run(s.fn); };
+  const find = e => e.target instanceof Element ? e.target.closest(SEL) : null;
+  document.addEventListener('pointerover', e => { const el = find(e); if (!el || e.pointerType !== 'mouse') return; const s = of(el); s.hover = true; settle(el, s); });
+  document.addEventListener('pointerout', e => {
+    const el = find(e); if (!el || (e.relatedTarget instanceof Node && el.contains(e.relatedTarget))) return;
+    const s = of(el); s.hover = false; s.down = false; settle(el, s);
+  });
+  document.addEventListener('pointerdown', e => {
+    const el = find(e); if (!el) return;
+    const s = of(el); s.down = true; s.v += 6;   // a kick, so even the quickest tap visibly lands
+    settle(el, s); if (e.pointerType === 'touch') buzz(6);
+  }, true);
+  const up = e => { const el = find(e); if (!el) return; const s = of(el); s.down = false; if (e.pointerType !== 'mouse') s.hover = false; settle(el, s); };
+  document.addEventListener('pointerup', up, true); document.addEventListener('pointercancel', up, true);
+  // keyboard presses on a focused button get the same push
+  document.addEventListener('keydown', e => { if ((e.code === 'Enter' || e.code === 'Space') && document.activeElement?.matches?.(SEL)) { const el = document.activeElement, s = of(el); s.down = true; s.v += 6; settle(el, s); setTimeout(() => { s.down = false; settle(el, s); }, 90); } });
+
+  // test hook: advance every live spring by `ms` (for panes where requestAnimationFrame never fires)
+  function pump(ms = 16, dt = 1 / 60) { for (let t = 0; t < ms / 1000; t += dt) for (const f of live) if (!f(dt)) live.delete(f); }
+  return { run, spring, step, tracker, rubber, buzz, reduce, pump };
+})();
+
 // ================================================================ input
 const keys = new Set(), pressed = new Set();
 const joy = { x: 0, y: 0, id: null };
@@ -2242,39 +2412,101 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => keys.delete(e.code));
 window.addEventListener('blur', () => keys.clear());
-const drag = { id: null, x: 0, y: 0, moved: 0 };
+const drag = { id: null, x: 0, y: 0, moved: 0, type: 'mouse' };
+// Look has weight: a slow drag aims finely and stops dead when you stop; a quick swipe turns further and,
+// let go mid-swipe, the view coasts on and eases to a stop. Touching the screen again catches it.
+const look = { tr: FEEL.tracker(), vx: 0, vy: 0 };
+const pinch = { id: null, x: 0, y: 0, d0: 1, dist0: 7.6 };
 // Touch controls show on phones from the start, and on any device the first time a finger lands.
 if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
 window.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') document.body.classList.add('touch'); }, true);
 canvas.addEventListener('contextmenu', e => e.preventDefault());
+const lookK = type => type === 'touch' ? 0.0075 : 0.0058;
 canvas.addEventListener('pointerdown', e => {
-  if (drag.id !== null) return;
-  drag.id = e.pointerId; drag.x = e.clientX; drag.y = e.clientY; drag.moved = 0;
-  canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging'); canvas.focus();
+  look.vx = look.vy = 0;
+  if (drag.id !== null) {  // a second finger: pinch to zoom
+    if (e.pointerType === 'touch' && drag.type === 'touch' && pinch.id === null) {
+      pinch.id = e.pointerId; pinch.x = e.clientX; pinch.y = e.clientY;
+      pinch.d0 = Math.max(24, Math.hypot(pinch.x - drag.x, pinch.y - drag.y)); pinch.dist0 = cam.distT ?? cam.dist; drag.moved += 99;
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
+    }
+    return;
+  }
+  drag.id = e.pointerId; drag.x = e.clientX; drag.y = e.clientY; drag.moved = 0; drag.type = e.pointerType;
+  look.tr.reset(); look.tr.add(e.clientX, e.clientY, e.timeStamp);
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
+  canvas.classList.add('dragging'); canvas.focus();
   AU.resume();
 });
 canvas.addEventListener('pointermove', e => {
+  if (pinch.id !== null && (e.pointerId === pinch.id || e.pointerId === drag.id)) {
+    if (e.pointerId === pinch.id) { pinch.x = e.clientX; pinch.y = e.clientY; } else { drag.x = e.clientX; drag.y = e.clientY; }
+    cam.distT = clamp(pinch.dist0 * pinch.d0 / Math.max(24, Math.hypot(pinch.x - drag.x, pinch.y - drag.y)), 3.2, 15);
+    return;
+  }
   if (e.pointerId !== drag.id) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
   drag.moved += Math.abs(dx) + Math.abs(dy);
-  const k = e.pointerType === 'touch' ? 0.0075 : 0.0058;
+  look.tr.add(e.clientX, e.clientY, e.timeStamp);
+  const [vx, vy] = look.tr.vel(e.timeStamp), k = lookK(e.pointerType) * (0.8 + 0.45 * smoothstep(0.15, 1.8, Math.hypot(vx, vy)));
   cam.yaw -= dx * k; cam.pitch = clamp(cam.pitch + dy * k * 0.8, -0.05, 1.25);
 });
-const endDrag = e => { if (e.pointerId === drag.id) { drag.id = null; canvas.classList.remove('dragging'); } };
+const endDrag = e => {
+  if (e.pointerId === pinch.id) { pinch.id = null; look.tr.reset(); return; }
+  if (e.pointerId !== drag.id) return;
+  if (pinch.id !== null) {  // the first finger lifted mid-pinch: the second carries on as the look finger
+    drag.id = pinch.id; drag.x = pinch.x; drag.y = pinch.y; pinch.id = null; look.tr.reset(); return;
+  }
+  if (e.type === 'pointerup' && drag.moved > 12) {  // flicked: let the view coast
+    const [vx, vy] = look.tr.vel(e.timeStamp), sp = Math.hypot(vx, vy), touch = drag.type !== 'mouse';
+    if (sp > (touch ? 0.28 : 0.5)) {
+      const f = lookK(drag.type) * 1000 * (touch ? 0.4 : 0.22) * smoothstep(touch ? 0.28 : 0.5, 1.2, sp);
+      look.vx = clamp(-vx * f, -5.5, 5.5); look.vy = clamp(vy * f * 0.4, -1.5, 1.5);
+    }
+  }
+  drag.id = null; canvas.classList.remove('dragging');
+};
 canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
-canvas.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist * Math.exp(e.deltaY * 0.0011), 3.2, 15); }, { passive: false });
+// wheel and trackpad pinch zoom glide to where you scrolled instead of jumping there
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const dy = e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1) * (e.ctrlKey ? 2.5 : 1);
+  cam.distT = clamp((cam.distT ?? cam.dist) * Math.exp(dy * 0.0011), 3.2, 15);
+}, { passive: false });
+// each frame: the coasting look and the gliding zoom
+function lookCoast(dt) {
+  if (cam.distT != null) { cam.dist = damp(cam.dist, cam.distT, 11, dt); if (Math.abs(cam.dist - cam.distT) < 0.005) { cam.dist = cam.distT; cam.distT = null; } }
+  if (!look.vx && !look.vy) return;
+  if (drag.id !== null) { look.vx = look.vy = 0; return; }
+  cam.yaw += look.vx * dt;
+  const p = cam.pitch + look.vy * dt; cam.pitch = clamp(p, -0.05, 1.25); if (p !== cam.pitch) look.vy = 0;
+  const f = Math.exp(-4.6 * dt); look.vx *= f; look.vy *= f;
+  if (Math.abs(look.vx) < 0.03 && Math.abs(look.vy) < 0.03) look.vx = look.vy = 0;
+}
+// The stick: the knob rides a stiff spring under your thumb, stretches a little past the rim, and when you
+// let go it snaps home with a small bounce.
 (() => {
-  const el = $('joy'), knob = el.querySelector('i');
+  const el = $('joy'), knob = el.querySelector('i'), R = 50, KR = 36;
+  const sx = FEEL.spring(0), sy = FEEL.spring(0), ring = FEEL.spring(0, 520, 20);
+  const firm = on => { for (const s of [sx, sy]) { s.k = on ? 1500 : 560; s.c = on ? 58 : 17; } };
+  const paint = dt => {
+    const a = FEEL.step(sx, dt), b = FEEL.step(sy, dt), c = FEEL.step(ring, dt);
+    knob.style.transform = `translate(${sx.x.toFixed(2)}px, ${sy.x.toFixed(2)}px)`; el.style.setProperty('--p', ring.x.toFixed(4));
+    return a || b || c;
+  };
   const set = e => {
     const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    let x = (e.clientX - cx) / 50, y = (e.clientY - cy) / 50; const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
-    joy.x = x; joy.y = y; knob.style.transform = `translate(${x * 36}px, ${y * 36}px)`;
+    let x = (e.clientX - cx) / R, y = (e.clientY - cy) / R; const l = Math.hypot(x, y);
+    const vis = l > 1e-4 ? FEEL.rubber(l * KR, KR, 22) / (l * KR) : 1;
+    sx.to = x * KR * vis; sy.to = y * KR * vis;
+    if (l > 1) { x /= l; y /= l; }
+    joy.x = x; joy.y = y; FEEL.run(paint);
   };
-  el.addEventListener('pointerdown', e => { joy.id = e.pointerId; el.setPointerCapture(e.pointerId); set(e); AU.resume(); });
+  el.addEventListener('pointerdown', e => { e.preventDefault(); joy.id = e.pointerId; firm(true); ring.to = 1; ring.v += 6; set(e); try { el.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ } AU.resume(); });
   el.addEventListener('pointermove', e => { if (e.pointerId === joy.id) set(e); });
-  const up = e => { if (e.pointerId === joy.id) { joy.id = null; joy.x = joy.y = 0; knob.style.transform = ''; } };
+  const up = e => { if (e.pointerId !== joy.id) return; joy.id = null; joy.x = joy.y = 0; firm(false); sx.to = sy.to = 0; ring.to = 0; FEEL.run(paint); };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-  const tb = (id, code) => { const b = $(id); b.addEventListener('pointerdown', e => { e.preventDefault(); pressed.add(code); keys.add(code); }); b.addEventListener('pointerup', () => keys.delete(code)); b.addEventListener('pointerleave', () => keys.delete(code)); };
+  const tb = (id, code) => { const b = $(id); b.addEventListener('pointerdown', e => { e.preventDefault(); pressed.add(code); keys.add(code); }); for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => keys.delete(code)); };
   tb('tJump', 'Space'); tb('tTalk', 'KeyE');
 })();
 const anyPressed = (...codes) => codes.some(c => pressed.has(c));
@@ -2610,14 +2842,69 @@ function hudRender() {
     spark: () => { const q = S.q.spark; return q.state === 'done' ? 'Odessa sang the lamp song with you.' : q.state === 'active' ? `Repeat Odessa's song on the chime stones: verse ${q.round + 1} of 3.` : 'Ask Odessa in the big tree to the south.'; },
   };
   let html = '';
+  const tk = trackedKey();
   for (const k of ORDER) {
-    const q = S.q[k];
-    html += `<li class="${q.state === 'done' ? 'done' : ''}"><div class="ic">${ICON[k]}</div><div><b>${ITEM_NAME[k]}</b><span>${rows[k]()}</span></div></li>`;
+    const q = S.q[k], cls = q.state === 'done' ? 'done' : `side${k === tk ? ' tracked' : ''}`;
+    html += `<li class="${cls}"${q.state === 'done' ? '' : ` data-q="${k}"`}><div class="ic">${ICON[k]}</div><div><b>${ITEM_NAME[k]}</b><span>${rows[k]()}</span></div></li>`;
   }
   if (S.items === 4 && S.phase === 'play') html = `<li class="goal"><div class="ic">${ICON.lamp}</div><div><b>Back to Pim</b><span>Bring everything up to the lighthouse.</span></div></li>` + html;
   if (S.phase === 'free') html = `<li class="goal done"><div class="ic">${ICON.lamp}</div><div><b>The lamp is lit</b><span>Wander as long as you like. Everyone has something to say.</span></div></li>`;
   ul.innerHTML = html;
 }
+// ---------------------------------------------------------------- the goal you're following
+// Tap (or click) a row in the list to follow it; otherwise the first unfinished one leads. A marker on screen
+// points the way with the distance, and slides to the edge with an arrow when the goal is off to one side.
+let TRACK = null;
+const markerEl = $('marker'), _mk = new THREE.Vector3(), _mp = new THREE.Vector3(), _mq = new THREE.Vector3();
+const npcAt = k => NPC[k].rig.root.position;
+function nearest(list, ok, at) { let best = null, bd = 1e9; for (const o of list) if (ok(o)) { const p = at(o), d = Math.hypot(p.x - player.pos.x, p.z - player.pos.z); if (d < bd) { bd = d; best = o; } } return best; }
+function trackedKey() {
+  if (!S.met || S.items === 4 || S.phase !== 'play') return null;
+  if (!TRACK || S.q[TRACK].state === 'done') TRACK = ORDER.find(k => S.q[k].state !== 'done') || null;
+  return TRACK;
+}
+function questTarget(k) {
+  const q = S.q[k];
+  if (k === 'oil') {
+    const b = q.state === 'active' && q.n < 5 ? nearest(W.berries, b => !b.taken, b => b) : null;
+    return b ? { name: 'Sunberries', at: _mk.set(b.x, b.y, b.z) } : { name: 'Bea', at: npcAt('bea') };
+  }
+  if (k === 'wick') {
+    const s = q.state === 'active' ? nearest(sheep, s => !s.penned, s => s.pos) : null;
+    return s ? { name: s.name, at: s.pos } : { name: 'Mabel', at: npcAt('mabel') };
+  }
+  if (k === 'lens') return S.fennickMet ? { name: 'Gull Rock', at: _mk.set(LOC.gullRock.x, 2.6, LOC.gullRock.z) } : { name: 'Fennick', at: npcAt('fennick') };
+  return q.state === 'active' ? { name: 'Chime stones', at: _mk.set(LOC.chimes.x, terrainH(LOC.chimes.x, LOC.chimes.z), LOC.chimes.z) } : { name: 'Odessa', at: npcAt('odessa') };
+}
+function objective() {
+  if (S.phase !== 'play') return null;
+  if (!S.met || S.items === 4) return { name: 'Pim', at: npcAt('pim') };
+  const k = trackedKey(); return k ? questTarget(k) : null;
+}
+function updateMarker() {
+  const ob = !DLG.open && !player.locked ? objective() : null, o = ob?.at;
+  const d = o ? Math.hypot(o.x - player.pos.x, o.z - player.pos.z) : 0;
+  if (!o || d < 4) { markerEl.classList.remove('on'); return; }
+  _mp.set(o.x, o.y + 2.2, o.z); const behind = _mq.copy(_mp).applyMatrix4(camera.matrixWorldInverse).z > 0;
+  _mp.project(camera);
+  const W0 = canvas.clientWidth, H0 = canvas.clientHeight, pad = 46;
+  let x = (_mp.x * 0.5 + 0.5) * W0, y = (-_mp.y * 0.5 + 0.5) * H0, edge = false;
+  if (behind) { x = W0 - x; y = H0 - pad; edge = true; }
+  if (x < pad || x > W0 - pad || y < pad + 60 || y > H0 - pad) edge = true;
+  // a character's own bobbing diamond already shows the way once they're on screen and near
+  const npc = Object.values(NPC).find(n => n.rig.root.position === o);
+  if (npc && markerPool[npc.key]?.visible && !edge && d < 30) { markerEl.classList.remove('on'); return; }
+  x = clamp(x, pad, W0 - pad); y = clamp(y, pad + 60, H0 - pad);
+  markerEl.classList.add('on'); markerEl.classList.toggle('edge', edge);
+  markerEl.style.left = `${x}px`; markerEl.style.top = `${y}px`;
+  if (edge) { const a = Math.atan2(y - H0 / 2, x - W0 / 2); markerEl.querySelector('.arr').style.transform = `translate(-50%, -100%) rotate(${a + Math.PI / 2}rad) translateY(-18px)`; }
+  const lbl = `${ob.name} · ${Math.round(d)} m`, de = markerEl.querySelector('.dist'); if (de.textContent !== lbl) de.textContent = lbl;
+}
+$('tasks').addEventListener('click', e => {
+  const li = e.target.closest('li[data-q]'); if (!li || li.dataset.q === TRACK) return;
+  TRACK = li.dataset.q; hudRender();
+  toast(`Following: ${ITEM_NAME[TRACK]}`, `The marker points the way. ${document.body.classList.contains('touch') ? 'Tap' : 'Click'} another to switch.`, TRACK, 2400);
+});
 function setTime() { S.timeTarget = TIME_STEPS[S.items]; }
 function giveItem(k) {
   if (S.q[k].state === 'done') return;
@@ -2830,7 +3117,9 @@ function updatePlayer(dt) {
   const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
   let mx = rx * ix + fx * iz, mz = rz * ix + fz * iz; const ml = Math.hypot(mx, mz);
   if (ml > 1) { mx /= ml; mz /= ml; }
-  const SPEED = 6.2;
+  // on the stick, a light push is a careful walk (stairs, the jetty) and a full push is full speed
+  if (joy.id !== null && ml > 0.001) { const l = Math.min(1, ml), c = Math.pow(l, 1.35) / l; mx *= c; mz *= c; }
+  const SPEED = 6.2 * (joy.id !== null && onStairs(P.pos.x, P.pos.z) ? 0.84 : 1);
   const k = P.grounded ? 13 : 4.5;
   P.vel.x = damp(P.vel.x, mx * SPEED, k, dt); P.vel.z = damp(P.vel.z, mz * SPEED, k, dt);
   if (ml > 0.1) R.yaw = angleDamp(R.yaw, Math.atan2(mx, mz), 13, dt);
@@ -3173,6 +3462,7 @@ function step(dt) {
     if (k > fk) { fk = k; cam.frameAt.set(rp.x, rp.y + n.height, rp.z); }
   }
   cam.frame = damp(cam.frame, fk, 3, dt); cam.frameQ = damp(cam.frameQ, DLG.open ? 0.24 : 0.36, 3, dt);
+  lookCoast(dt);
   if (DLG.open && S.phase !== 'finale') {
     const n = DLG.npc, rp = n.rig.root.position, dx = rp.x - player.pos.x, dz = rp.z - player.pos.z;
     player.rig.yaw = angleDamp(player.rig.yaw, Math.atan2(dx, dz), 8, dt);
@@ -3184,7 +3474,7 @@ function step(dt) {
   } else followCamera(dt, player.pos);
   placeCamera(dt);
   dlgUpdate(dt);
-  updateInteract();
+  updateInteract(); updateMarker();
   FX_GLOW.update(dt); FX_PUFF.update(dt);
   W.water.material.uniforms.uTime.value = S.clock; W.sky.material.uniforms.uTime.value = S.clock;
   W.grass.uni.uTime.value = S.clock; W.grass.uni.uPlayer.value.copy(player.pos);
@@ -3218,7 +3508,7 @@ function begin() {
   S.phase = 'play'; S.t0 = performance.now();
   player.locked = false;
   cam.cinePos.copy(camera.position); cam.cineLook.copy(cam.look); cam.blend = 0; cam.mode = 'follow';
-  cam.yaw = 0.2; cam.pitch = 0.26; cam.dist = 7.6; cam.cur = 7.6; cam.target.copy(player.pos);
+  cam.yaw = 0.2; cam.pitch = 0.26; cam.dist = 7.6; cam.cur = 7.6; cam.distT = null; cam.target.copy(player.pos);
   $('hud').classList.remove('off'); $('topright').classList.remove('off'); $('hint').classList.remove('off');
   setTimeout(() => $('hint').classList.add('off'), 15000);
   hudRender(); canvas.focus();
@@ -3246,6 +3536,7 @@ async function boot() {
 window.__game = {
   S, W, NPC, player, cam, PZ, LOC, scene, camera, renderer, composer, get sheep() { return sheep; }, get gull() { return gull; },
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) step(dt); render(); },
+  ev(src) { return eval(src); },  // debug: evaluate inside the game's scope (zfScan(), FEEL.pump(), ...)
   tp(x, z, y) { player.pos.set(x, y ?? terrainH(x, z) + 0.05, z); player.lastSafe.copy(player.pos); cam.target.copy(player.pos); player.grounded = true; },
   setTime(t) { S.time = S.timeTarget = t; },
   perf() { return { ...PERF, probe: !!PERF.probe }; },

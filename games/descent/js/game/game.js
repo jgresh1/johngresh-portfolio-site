@@ -11,6 +11,9 @@ import { CameraRig } from './camera.js';
 import { Hud } from './hud.js';
 import { GameAudio } from './audio.js';
 import { Achievements } from './achievements.js';
+import { FEEL } from '../feel.js';
+
+const smooth01 = (t) => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const SAVE_KEY = 'descent.save.v1', SET_KEY = 'descent.settings.v1';
@@ -44,6 +47,7 @@ export class Game {
     this.hud = new Hud(this);
     this.mode = 'off'; this.active = false; this.timeScale = 1; this.rawT = 0;
     this.keys = new Set(); this.pressed = new Set(); this.mouseDown = false; this.lockWanted = false;
+    this.coast = { x: 0, y: 0 }; this.lookTr = FEEL.tracker();
     this.lockTarget = null; this.cards = null; this.evoT = 0; this.deadT = 0; this.titleT = 0; this.sinceSave = 0; this.hitStop = 0;
     this.frustum = new THREE.Frustum(); this._pv = new THREE.Matrix4();
     this.resetStats(); this.saveInfo = null; this.bot = null; this.simT = 0; this.warmed = false; this.discT = 0; this.tutT = 0; this.lastToastKey = '';
@@ -228,11 +232,16 @@ export class Game {
       if (this.mode === 'play') {
         if (e.button === 0) this.pressed.add('Mouse0');                // bite on press; right button: ability on release, unless it was a drag
         this.mouseDown = true; this.dragBtn = e.button; this.dragPx = 0; this.lx = e.clientX; this.ly = e.clientY;
+        this.fling(0, 0); this.lookTr.reset(); this.lookTr.add(e.clientX, e.clientY, e.timeStamp);
       }
       e.preventDefault();
     });
     window.addEventListener('mouseup', (e) => {
       if (this.mouseDown && e.button === 2 && this.dragBtn === 2 && this.dragPx < 6 && this.active && this.mode === 'play') this.pressed.add('Mouse2');
+      if (this.mouseDown && this.dragPx > 12 && this.active && this.mode === 'play' && document.pointerLockElement !== cv) {   // flicked: let the view coast
+        const [vx, vy] = this.lookTr.vel(e.timeStamp), sp = Math.hypot(vx, vy);
+        if (sp > 0.5) { const f = 0.22 * smooth01((sp - 0.5) / 0.7); this.fling(vx * f, vy * f); }
+      }
       this.mouseDown = false;
     });
     cv.addEventListener('contextmenu', (e) => { if (this.active) e.preventDefault(); });
@@ -241,7 +250,9 @@ export class Game {
       const locked = document.pointerLockElement === cv;
       let dx = 0, dy = 0;
       if (locked) { dx = e.movementX; dy = e.movementY; } else if (this.mouseDown && this.lx !== undefined) { dx = e.clientX - this.lx; dy = e.clientY - this.ly; this.lx = e.clientX; this.ly = e.clientY; this.dragPx += Math.abs(dx) + Math.abs(dy); } else return;
-      this.look(dx, dy);
+      let g = 1;
+      if (!locked) { this.lookTr.add(e.clientX, e.clientY, e.timeStamp); const [vx, vy] = this.lookTr.vel(e.timeStamp); g = 0.8 + 0.45 * smooth01((Math.hypot(vx, vy) - 0.15) / 1.65); }   // slow drags aim finely
+      this.look(dx * g, dy * g);
     });
     cv.addEventListener('wheel', (e) => { if (this.active && this.mode === 'play') { this.zoomBy(e.deltaY > 0 ? 1.08 : 0.93); e.preventDefault(); } }, { passive: false });
   }
@@ -253,6 +264,15 @@ export class Game {
     for (const [el, k] of tiles) el.addEventListener('touchstart', (e) => { e.preventDefault(); if (this.active && this.mode === 'play') this.pressed.add(k); }, { passive: false });
   }
   get touchOn() { return !!(this.touch && this.touch.on); }
+
+  // a look flick (px/ms): the view keeps turning and eases to a stop; fling(0, 0) catches it
+  fling(vx, vy) { const c = this.coast; c.x = Math.max(-2000, Math.min(2000, vx * 1000)); c.y = Math.max(-700, Math.min(700, vy * 1000 * 0.4)); }
+  coastLook(dt) {
+    const c = this.coast; if (!c.x && !c.y) return;
+    if (this.mouseDown || this.mode !== 'play') { c.x = c.y = 0; return; }
+    this.look(c.x * dt, c.y * dt);
+    const k = Math.exp(-4.6 * dt); c.x *= k; c.y *= k; if (Math.abs(c.x) < 10 && Math.abs(c.y) < 10) c.x = c.y = 0;
+  }
 
   zoomBy(f) { this.rig.zoom = clamp(this.rig.zoom * f, 0.45, 2.6); this.settings.zoom = this.rig.zoom; }
 
@@ -324,6 +344,7 @@ export class Game {
   }
 
   playFrame(h, dt) {
+    this.coastLook(dt);
     let rem = h;
     while (rem > 1e-5) { const s = Math.min(rem, 1 / 30); this.simStep(s); rem -= s; }
     const pl = this.player;

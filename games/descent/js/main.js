@@ -671,6 +671,7 @@ async function boot() {
     look: (dx, dy) => { if (game && game.active) game.look(dx, dy); else { ctl.yaw -= dx * 0.0024; ctl.pitch = Math.max(-1.55, Math.min(1.55, ctl.pitch - dy * 0.0024)); applyLook(); } },
     tap: () => { if (game && game.active) game.pressed.add('Mouse0'); },
     pinch: (f) => { if (game && game.active) game.zoomBy(1 / f); },
+    fling: (vx, vy) => { if (game && game.active) game.fling(vx, vy); },
   });
   window.__OCEAN__.touch = touch;
   { const b = $('b-menu'); if (b) { if (game) b.onclick = () => { if (!game.active) game.enter(true); }; else b.remove(); } }   // the free camera's way back (Esc does the same)

@@ -2,6 +2,8 @@
 // anywhere else to look, a quick tap to act (bite), two fingers to pinch-zoom, and hold buttons to rise, sink and dash.
 // Touch events are handled here and cancelled, so the browser never turns them into mouse clicks or page zoom.
 
+import { FEEL } from './feel.js';
+
 const SVG = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const STICK_R = 52;                    // px from centre to full speed
 const TAP_MS = 280, TAP_PX = 12;       // a touch shorter and stiller than this is a tap
@@ -12,6 +14,7 @@ const TAP_MS = 280, TAP_PX = 12;       // a touch shorter and stiller than this 
  * @param opts.look(dx, dy)  screen-pixel drag, already scaled for touch
  * @param opts.tap()         quick tap away from the stick
  * @param opts.pinch(f)      finger spread changed by factor f since the last call
+ * @param opts.fling(vx, vy) a look finger let go while still moving (px/ms, already scaled); (0, 0) = a finger landed: stop coasting
  * @returns {{ on: boolean, fwd: number, right: number, up: number, dash: boolean, tick(): void }}  call tick() once a frame
  */
 export function initTouch(cv, opts) {
@@ -27,6 +30,14 @@ export function initTouch(cv, opts) {
   document.body.appendChild(root);
   const base = root.querySelector('.t-stick'), knob = base.querySelector('i');
   const held = { up: 0, down: 0, dash: 0 };
+  // the knob rides a stiff spring under the thumb and bounces home when it lifts; the ring pops in where the thumb lands
+  const kx = FEEL.spring(0), ky = FEEL.spring(0), pop = FEEL.spring(1, 520, 20), lookTr = FEEL.tracker();
+  const firm = (on) => { for (const s of [kx, ky]) { s.k = on ? 1500 : 560; s.c = on ? 58 : 17; } };
+  const paint = (dt) => {
+    const a = FEEL.step(kx, dt), b = FEEL.step(ky, dt), c = FEEL.step(pop, dt);
+    knob.style.transform = `translate(${kx.x.toFixed(2)}px, ${ky.x.toFixed(2)}px)`; base.style.setProperty('--s', pop.x.toFixed(4));
+    return a || b || c;
+  };
 
   let stick = null;                                     // { id, x, y }: the finger on the stick and the stick's centre
   const looks = new Map();                              // finger id -> { x, y, x0, y0, t0 }
@@ -38,7 +49,7 @@ export function initTouch(cv, opts) {
   }
   function show(on) { if (T.shown !== on) { T.shown = on; root.classList.toggle('on', on); if (!on) release(); } }
   function release() {
-    stick = null; looks.clear(); T.fwd = T.right = 0; base.classList.remove('on');
+    stick = null; looks.clear(); T.fwd = T.right = 0; base.classList.remove('on'); firm(false); kx.to = ky.to = 0; FEEL.run(paint);
     for (const k in held) held[k] = 0;
     root.querySelectorAll('.t-b.down').forEach((b) => b.classList.remove('down'));
     sync();
@@ -48,9 +59,11 @@ export function initTouch(cv, opts) {
     let dx = x - stick.x, dy = y - stick.y, d = Math.hypot(dx, dy);
     if (d > STICK_R * 1.6) { const k = (d - STICK_R * 1.6) / d; stick.x += dx * k; stick.y += dy * k; dx = x - stick.x; dy = y - stick.y; d = Math.hypot(dx, dy); base.style.left = stick.x + 'px'; base.style.top = stick.y + 'px'; }
     const m = Math.min(1, d / STICK_R), u = d > 0 ? m / d : 0;
-    const live = m < 0.12 ? 0 : (m - 0.12) / 0.88;     // small dead zone so a resting thumb does not drift
+    // small dead zone so a resting thumb does not drift; then a gentle curve: a light push is a slow, careful swim, the rim is full speed
+    const live = m < 0.12 ? 0 : Math.pow((m - 0.12) / 0.88, 1.25);
     T.right = dx * u * (live / (m || 1)); T.fwd = -dy * u * (live / (m || 1));
-    knob.style.transform = `translate(${dx * u * STICK_R}px, ${dy * u * STICK_R}px)`;
+    const vis = d > 1e-4 ? FEEL.rubber(d, STICK_R, 16) / d : 0;    // past the rim the knob stretches a little, then stops
+    kx.to = dx * vis; ky.to = dy * vis; FEEL.run(paint);
   }
   const spreadNow = () => { const [a, b] = [...looks.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
 
@@ -61,8 +74,13 @@ export function initTouch(cv, opts) {
     for (const t of e.changedTouches) {
       if (!stick && t.clientX < innerWidth * 0.42 && t.clientY > innerHeight * 0.22) {
         stick = { id: t.identifier, x: t.clientX, y: t.clientY };
-        base.style.left = stick.x + 'px'; base.style.top = stick.y + 'px'; knob.style.transform = ''; base.classList.add('on');
-      } else looks.set(t.identifier, { x: t.clientX, y: t.clientY, x0: t.clientX, y0: t.clientY, t0: performance.now() });
+        base.style.left = stick.x + 'px'; base.style.top = stick.y + 'px'; base.classList.add('on');
+        firm(true); kx.x = ky.x = kx.to = ky.to = kx.v = ky.v = 0; pop.x = 0.55; pop.v = 0; pop.to = 1; FEEL.run(paint);
+      } else {
+        looks.set(t.identifier, { x: t.clientX, y: t.clientY, x0: t.clientX, y0: t.clientY, t0: performance.now() });
+        if (looks.size === 1) { lookTr.reset(); lookTr.add(t.clientX, t.clientY, e.timeStamp); }
+        opts.fling?.(0, 0);                             // a finger landing catches a coasting view
+      }
     }
     if (looks.size === 2) spread = spreadNow();
   }, { passive: false });
@@ -76,18 +94,28 @@ export function initTouch(cv, opts) {
       const l = looks.get(t.identifier);
       if (!l) continue;
       ldx += t.clientX - l.x; ldy += t.clientY - l.y; l.x = t.clientX; l.y = t.clientY;
+      if (looks.size === 1) lookTr.add(t.clientX, t.clientY, e.timeStamp);
     }
     if (looks.size >= 2) { const s = spreadNow(); if (spread > 0 && s > 0) opts.pinch(s / spread); spread = s; }
-    else if (ldx || ldy) opts.look(ldx * 1.9, ldy * 1.9);
+    else if (ldx || ldy) {                              // a slow drag aims finely, a quick swipe turns further
+      const [vx, vy] = lookTr.vel(e.timeStamp), g = 1.9 * (0.8 + 0.45 * smooth(0.15, 1.8, Math.hypot(vx, vy)));
+      opts.look(ldx * g, ldy * g);
+    }
   }, { passive: false });
 
   const end = (e) => {
     for (const t of e.changedTouches) {
-      if (stick && t.identifier === stick.id) { stick = null; T.fwd = T.right = 0; base.classList.remove('on'); continue; }
+      if (stick && t.identifier === stick.id) { stick = null; T.fwd = T.right = 0; base.classList.remove('on'); firm(false); kx.to = ky.to = 0; FEEL.run(paint); continue; }
       const l = looks.get(t.identifier);
       if (!l) continue;
+      const wasPinch = looks.size >= 2;
       looks.delete(t.identifier);
       if (e.type === 'touchend' && looks.size === 0 && performance.now() - l.t0 < TAP_MS && Math.hypot(l.x - l.x0, l.y - l.y0) < TAP_PX && opts.active()) opts.tap();
+      else if (e.type === 'touchend' && looks.size === 0 && !wasPinch && Math.hypot(l.x - l.x0, l.y - l.y0) > 12) {   // let go mid-swipe: the view coasts
+        const [vx, vy] = lookTr.vel(e.timeStamp), sp = Math.hypot(vx, vy);
+        if (sp > 0.28) { const f = 1.9 * 0.4 * smooth(0.28, 1.2, sp); opts.fling?.(vx * f, vy * f); }
+      }
+      if (looks.size !== 1) lookTr.reset();
     }
     if (looks.size < 2) spread = 0;
     if (e.cancelable) e.preventDefault();
@@ -106,3 +134,4 @@ export function initTouch(cv, opts) {
   window.addEventListener('blur', release);
   return T;
 }
+function smooth(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }

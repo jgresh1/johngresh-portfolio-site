@@ -2413,9 +2413,8 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => keys.delete(e.code));
 window.addEventListener('blur', () => keys.clear());
 const drag = { id: null, x: 0, y: 0, moved: 0, type: 'mouse' };
-// Look has weight: a slow drag aims finely and stops dead when you stop; a quick swipe turns further and,
-// let go mid-swipe, the view coasts on and eases to a stop. Touching the screen again catches it.
-const look = { tr: FEEL.tracker(), vx: 0, vy: 0 };
+// Look is 1:1 and stays exactly where you let go: no coasting after a flick, no speed-based gain, so the same
+// hand movement always turns the view the same amount (the user asked for this on PC and phone, Nov 13 2026).
 const pinch = { id: null, x: 0, y: 0, d0: 1, dist0: 7.6 };
 // Touch controls show on phones from the start, and on any device the first time a finger lands.
 if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
@@ -2423,7 +2422,6 @@ window.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') doc
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 const lookK = type => type === 'touch' ? 0.0075 : 0.0058;
 canvas.addEventListener('pointerdown', e => {
-  look.vx = look.vy = 0;
   if (drag.id !== null) {  // a second finger: pinch to zoom
     if (e.pointerType === 'touch' && drag.type === 'touch' && pinch.id === null) {
       pinch.id = e.pointerId; pinch.x = e.clientX; pinch.y = e.clientY;
@@ -2433,7 +2431,6 @@ canvas.addEventListener('pointerdown', e => {
     return;
   }
   drag.id = e.pointerId; drag.x = e.clientX; drag.y = e.clientY; drag.moved = 0; drag.type = e.pointerType;
-  look.tr.reset(); look.tr.add(e.clientX, e.clientY, e.timeStamp);
   try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
   canvas.classList.add('dragging'); canvas.focus();
   AU.resume();
@@ -2447,22 +2444,14 @@ canvas.addEventListener('pointermove', e => {
   if (e.pointerId !== drag.id) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
   drag.moved += Math.abs(dx) + Math.abs(dy);
-  look.tr.add(e.clientX, e.clientY, e.timeStamp);
-  const [vx, vy] = look.tr.vel(e.timeStamp), k = lookK(e.pointerType) * (0.8 + 0.45 * smoothstep(0.15, 1.8, Math.hypot(vx, vy)));
+  const k = lookK(e.pointerType);
   cam.yaw -= dx * k; cam.pitch = clamp(cam.pitch + dy * k * 0.8, -0.05, 1.25);
 });
 const endDrag = e => {
-  if (e.pointerId === pinch.id) { pinch.id = null; look.tr.reset(); return; }
+  if (e.pointerId === pinch.id) { pinch.id = null; return; }
   if (e.pointerId !== drag.id) return;
   if (pinch.id !== null) {  // the first finger lifted mid-pinch: the second carries on as the look finger
-    drag.id = pinch.id; drag.x = pinch.x; drag.y = pinch.y; pinch.id = null; look.tr.reset(); return;
-  }
-  if (e.type === 'pointerup' && drag.moved > 12) {  // flicked: let the view coast
-    const [vx, vy] = look.tr.vel(e.timeStamp), sp = Math.hypot(vx, vy), touch = drag.type !== 'mouse';
-    if (sp > (touch ? 0.28 : 0.5)) {
-      const f = lookK(drag.type) * 1000 * (touch ? 0.4 : 0.22) * smoothstep(touch ? 0.28 : 0.5, 1.2, sp);
-      look.vx = clamp(-vx * f, -5.5, 5.5); look.vy = clamp(vy * f * 0.4, -1.5, 1.5);
-    }
+    drag.id = pinch.id; drag.x = pinch.x; drag.y = pinch.y; pinch.id = null; return;
   }
   drag.id = null; canvas.classList.remove('dragging');
 };
@@ -2473,15 +2462,9 @@ canvas.addEventListener('wheel', e => {
   const dy = e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1) * (e.ctrlKey ? 2.5 : 1);
   cam.distT = clamp((cam.distT ?? cam.dist) * Math.exp(dy * 0.0011), 3.2, 15);
 }, { passive: false });
-// each frame: the coasting look and the gliding zoom
+// each frame: the gliding zoom
 function lookCoast(dt) {
   if (cam.distT != null) { cam.dist = damp(cam.dist, cam.distT, 11, dt); if (Math.abs(cam.dist - cam.distT) < 0.005) { cam.dist = cam.distT; cam.distT = null; } }
-  if (!look.vx && !look.vy) return;
-  if (drag.id !== null) { look.vx = look.vy = 0; return; }
-  cam.yaw += look.vx * dt;
-  const p = cam.pitch + look.vy * dt; cam.pitch = clamp(p, -0.05, 1.25); if (p !== cam.pitch) look.vy = 0;
-  const f = Math.exp(-4.6 * dt); look.vx *= f; look.vy *= f;
-  if (Math.abs(look.vx) < 0.03 && Math.abs(look.vy) < 0.03) look.vx = look.vy = 0;
 }
 // The stick: the knob rides a stiff spring under your thumb, stretches a little past the rim, and when you
 // let go it snaps home with a small bounce.

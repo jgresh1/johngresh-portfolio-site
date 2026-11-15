@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Copies the web games into the site and adds the site menu button to each.
 
-  index.html                  <- ../camp-hollowpine/game.html   (the front page)
+  index.html                  <- ../phantom-gp/index.html       (the front page; it loads its files from games/phantom-gp/)
+  games/phantom-gp/           <- ../phantom-gp (index.html, js, vendor, assets)
+  games/camp-hollowpine/      <- ../camp-hollowpine/game.html
   games/lamplight-cove/       <- ../lamplight-cove/game.html
   games/descent/              <- ../ocean-3d (index.html, css, js, vendor, icons)
 
@@ -56,11 +58,30 @@ def main():
     ap.add_argument('--src', default=os.path.dirname(ROOT), help='folder holding the game projects')
     src = ap.parse_args().src
 
+    # Phantom GP is the front page. The game's files live in games/phantom-gp/; the root page is the same document
+    # with a <base> pointing there (the old-link redirect runs before the <base>, so it still resolves at the root).
+    ph = os.path.join(src, 'phantom-gp')
+    pdst = os.path.join(ROOT, 'games', 'phantom-gp')
+    for d in ('js', 'vendor', 'assets'):
+        shutil.rmtree(os.path.join(pdst, d), ignore_errors=True)
+        shutil.copytree(os.path.join(ph, d), os.path.join(pdst, d), ignore=shutil.ignore_patterns('__pycache__', '*.py'))
+    shutil.copy(os.path.join(ph, 'LICENSES.md'), os.path.join(pdst, 'LICENSES.md'))
+    html = open(os.path.join(ph, 'index.html'), encoding='utf-8').read()
+    menu = '<script src="../../assets/site-menu.js" data-corner="tr" data-dock="#h-btns" defer></script>\n'
+    head = ('<meta property="og:title" content="Phantom GP">\n'
+            '<meta property="og:description" content="A one-on-one race round the full Spa-Francorchamps circuit, in the browser.">\n'
+            '<meta property="og:image" content="https://johngresh.org/assets/home/phantom-hero.webp">\n'
+            f'<link rel="icon" href="{ICON}">\n')
+    assert '</body>' in html and '<meta charset="UTF-8">' in html and '</head>' in html
+    sub = html.replace('</head>', head + '</head>', 1).replace('</body>', menu + '</body>', 1)
+    write(os.path.join(pdst, 'index.html'), sub)
+    write(os.path.join(ROOT, 'index.html'), sub.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n' + LEGACY + '<base href="games/phantom-gp/">', 1))
+
     camp = open(os.path.join(src, 'camp-hollowpine', 'game.html'), encoding='utf-8').read()
-    write(os.path.join(ROOT, 'index.html'), page(
+    write(os.path.join(ROOT, 'games', 'camp-hollowpine', 'index.html'), page(
         camp, 'Camp Hollowpine',
         'Camp Hollowpine: a summer-camp adventure game by John Gresh. Earn four badges, then go into the Hollow.',
-        'assets/site-menu.js', head_extra=LEGACY, dock='#topright'))
+        '../../assets/site-menu.js', dock='#topright'))
 
     lamp = open(os.path.join(src, 'lamplight-cove', 'game.html'), encoding='utf-8').read()
     write(os.path.join(ROOT, 'games', 'lamplight-cove', 'index.html'), page(

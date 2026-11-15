@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#08090b">
+<title>Phantom GP — Duel at Spa-Francorchamps</title>
+<meta name="description" content="A one-on-one race round the full Spa-Francorchamps circuit, in the browser. By John Gresh, co-produced by Luke Carlan.">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/" } }
+</script>
+<style>
+  :root { --ink: #f2f3f4; --dim: #a4a9b1; --line: rgba(255,255,255,.14); --panel: rgba(10,12,15,.62); --accent: #f2b200; --red: #e2231a; --green: #25d366;
+    --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px); --pw: min(26vw, 180px); --ph: min(28vh, 104px); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #050607; color: var(--ink); overflow: hidden; overscroll-behavior: none;
+    font-family: Bahnschrift, "DIN Alternate", "Barlow Condensed", "Segoe UI", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  #stage { position: fixed; inset: 0; }
+  #view { width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  [data-spring] { transform: translateY(calc(var(--p, 0) * 2px)) scale(calc(1 - var(--p, 0) * 0.045)); will-change: transform; }
+  .layer { position: fixed; inset: 0; z-index: 5; display: none; }
+  .layer.on { display: flex; }
+  .glass { border: 1px solid var(--line); background: var(--panel); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .eyebrow { font-size: 12px; letter-spacing: .32em; text-transform: uppercase; color: var(--dim); }
+
+  /* ---- loading + title ---- */
+  #load, #title { flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+  #load { background: #050607; z-index: 9; }
+  #title { justify-content: space-between; padding: max(4.5vh, 18px) 24px max(3.5vh, 14px); background: linear-gradient(180deg, rgba(5,6,7,.86) 0%, rgba(5,6,7,0) 36%, rgba(5,6,7,0) 60%, rgba(5,6,7,.92) 100%); }
+  #title .blk { display: flex; flex-direction: column; align-items: center; }
+  #title .logo { font-size: clamp(40px, min(10.5vw, 19vh), 140px); }
+  #title .cta { margin-top: 0; }
+  #title .credit { position: static; margin-top: 12px; }
+  #title .fine { margin-top: 12px; }
+  .attr { margin-top: 7px; font-size: 9.5px; letter-spacing: .12em; color: #7d828a; text-transform: uppercase; }
+  .logo { font-weight: 800; font-style: italic; letter-spacing: -.01em; line-height: .86; font-size: clamp(54px, 13vw, 168px); text-shadow: 0 6px 60px rgba(0,0,0,.6); }
+  .logo b { color: var(--accent); font-weight: 800; }
+  .sub { margin-top: 14px; font-size: clamp(12px, 1.5vw, 17px); letter-spacing: .42em; text-transform: uppercase; color: #d7dade; }
+  #load-bar { width: min(420px, 70vw); height: 3px; background: rgba(255,255,255,.12); margin: 30px 0 12px; overflow: hidden; }
+  #load-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+  #load-text { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); min-height: 16px; }
+  .cta { margin-top: 38px; padding: 17px 46px 15px; font-size: 19px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; color: #0a0a0a; background: var(--accent);
+    clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+  .cta.ghost { background: rgba(255,255,255,.1); color: var(--ink); }
+  .fine { margin-top: 18px; font-size: 12px; letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
+  .credit { position: absolute; bottom: calc(18px + var(--safe-b)); left: 0; right: 0; text-align: center; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); }
+  .credit b { color: var(--ink); font-weight: 600; }
+
+  /* ---- cinematic ---- */
+  #cine { pointer-events: none; }
+  #cine .bar { position: absolute; left: 0; right: 0; height: 11vh; background: #000; transform: scaleY(0); transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+  #cine .bar.t { top: 0; transform-origin: top; } #cine .bar.b { bottom: 0; transform-origin: bottom; }
+  #cine.bars .bar { transform: scaleY(1); }
+  #cap { position: absolute; left: calc(6vw + var(--safe-l)); bottom: 15vh; opacity: 0; transform: translateY(8px); transition: opacity .18s ease, transform .18s ease; text-shadow: 0 2px 22px rgba(0,0,0,.8); }
+  #cap.on { opacity: 1; transform: none; }
+  #cap small { display: block; font-size: clamp(10px, 1.2vw, 14px); letter-spacing: .44em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  #cap span { display: block; font-size: clamp(30px, 6.2vw, 84px); font-weight: 800; font-style: italic; line-height: .9; letter-spacing: -.01em; }
+  #cap.center { left: 0; right: 0; text-align: center; bottom: auto; top: 50%; transform: translateY(-50%); }
+  #skip { position: absolute; right: calc(20px + var(--safe-r)); bottom: calc(18px + var(--safe-b)); pointer-events: auto; padding: 10px 16px; font-size: 12px; letter-spacing: .26em; text-transform: uppercase; color: #dfe2e6; border: 1px solid var(--line); background: rgba(0,0,0,.35); z-index: 2; }
+
+  /* ---- race HUD ---- */
+  #hud { pointer-events: none; }
+  #hud > * { position: absolute; }
+  #h-pos { top: calc(16px + var(--safe-t)); left: calc(18px + var(--safe-l)); display: flex; align-items: stretch; gap: 10px; }
+  #h-pos .big { font-size: 46px; font-weight: 800; font-style: italic; line-height: 1; padding: 6px 14px 4px 12px; background: var(--accent); color: #0a0a0a; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); min-width: 84px; text-align: center; }
+  #h-pos .big.p2 { background: #e9eaec; }
+  #h-pos .col { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 4px 12px; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; }
+  #h-pos .col b { font-size: 19px; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+  #h-gap { top: calc(18px + var(--safe-t)); left: 50%; transform: translateX(-50%); padding: 7px 16px 6px; font-size: 13px; letter-spacing: .2em; text-transform: uppercase; display: flex; gap: 12px; align-items: baseline; white-space: nowrap; }
+  #h-gap b { font-size: 21px; letter-spacing: .02em; font-variant-numeric: tabular-nums; min-width: 78px; text-align: center; }
+  #h-gap b.ahead { color: var(--green); } #h-gap b.behind { color: #ff6b5e; }
+  #h-map { top: calc(64px + var(--safe-t)); right: calc(14px + var(--safe-r)); width: 132px; height: 182px; opacity: .92; }
+  #h-btns { top: calc(14px + var(--safe-t)); right: calc(14px + var(--safe-r)); display: flex; gap: 8px; pointer-events: auto; }
+  #h-btns button { width: 42px; height: 42px; display: grid; place-items: center; font-size: 12px; letter-spacing: .08em; }
+  #h-speed { right: calc(26px + var(--safe-r)); bottom: calc(22px + var(--safe-b)); text-align: right; text-shadow: 0 2px 18px rgba(0,0,0,.65); }
+  #h-speed .rev { display: flex; gap: 3px; justify-content: flex-end; margin-bottom: 8px; }
+  #h-speed .rev i { width: 13px; height: 7px; background: rgba(255,255,255,.16); transform: skewX(-18deg); }
+  #h-speed .rev i.g { background: #25d366; } #h-speed .rev i.r { background: #ff3b30; } #h-speed .rev i.b { background: #4f7dff; }
+  #h-speed .row { display: flex; align-items: flex-end; justify-content: flex-end; gap: 14px; }
+  #h-gear { font-size: 58px; font-weight: 800; font-style: italic; line-height: .9; color: var(--accent); min-width: 40px; text-align: center; }
+  #h-kmh { font-size: 82px; font-weight: 800; font-style: italic; line-height: .82; letter-spacing: -.02em; font-variant-numeric: tabular-nums; min-width: 168px; }
+  #h-speed .unit { font-size: 12px; letter-spacing: .34em; color: var(--dim); margin-top: 6px; }
+  #h-boost { margin-top: 9px; height: 6px; width: 230px; margin-left: auto; background: rgba(255,255,255,.14); transform: skewX(-18deg); overflow: hidden; }
+  #h-boost i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ffd24a, #ff7a1a); transform-origin: left; }
+  #h-boost.on i { background: #fff; }
+  #h-tags { margin-top: 7px; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); min-height: 14px; }
+  #h-tags b { color: var(--accent); font-weight: 600; margin-left: 10px; }
+  #h-corner { top: calc(64px + var(--safe-t)); left: 50%; transform: translateX(-50%); font-size: 12px; letter-spacing: .34em; text-transform: uppercase; color: #e6e8eb; text-shadow: 0 1px 10px rgba(0,0,0,.85); opacity: 0; transition: opacity .5s ease; white-space: nowrap; }
+  #h-corner.on { opacity: .92; }
+  #h-toast { top: 21%; left: 50%; transform: translate(-50%, 8px); opacity: 0; transition: opacity .2s ease, transform .2s ease; font-size: clamp(20px, 3.4vw, 44px); font-weight: 800; font-style: italic; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 3px 30px rgba(0,0,0,.75); white-space: nowrap; text-align: center; }
+  #h-toast.on { opacity: 1; transform: translate(-50%, 0); }
+  #h-toast small { display: block; font-size: .36em; letter-spacing: .4em; color: var(--accent); font-style: normal; font-weight: 600; margin-bottom: 4px; }
+  #h-lights { top: 12%; left: 50%; transform: translateX(-50%); display: none; gap: 12px; padding: 14px 18px; background: rgba(8,9,11,.82); border: 1px solid var(--line); border-radius: 14px; }
+  #h-lights.on { display: flex; }
+  #h-lights i { width: clamp(26px, 4.4vw, 46px); aspect-ratio: 1; border-radius: 50%; background: #1b1d21; box-shadow: inset 0 0 0 3px #0b0c0e; }
+  #h-lights i.lit { background: radial-gradient(circle at 40% 35%, #ff8a80, #ff1f12 55%, #a80d05); box-shadow: 0 0 34px rgba(255,40,25,.85), inset 0 0 0 3px #0b0c0e; }
+  #h-hint { bottom: calc(22px + var(--safe-b)); left: calc(22px + var(--safe-l)); font-size: 12px; letter-spacing: .14em; color: #cfd3d8; text-transform: uppercase; line-height: 1.9; text-shadow: 0 1px 10px rgba(0,0,0,.8); transition: opacity 1.2s ease; }
+  #h-hint kbd { font: inherit; padding: 2px 7px 1px; border: 1px solid rgba(255,255,255,.3); border-radius: 4px; margin-right: 6px; color: #fff; }
+  #h-hint.off { opacity: 0; }
+
+  /* ---- touch controls ---- */
+  #touch { display: none; position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+  body.touch.racing #touch { display: block; }
+  body.touch #h-hint { display: none; }
+  #t-steer { position: absolute; left: 0; bottom: 0; width: 52%; height: 62%; pointer-events: auto; touch-action: none; }
+  #t-rail { position: absolute; left: calc(26px + var(--safe-l)); bottom: calc(30px + var(--safe-b)); width: min(44vw, 300px); height: 68px; border-radius: 34px; border: 1px solid rgba(255,255,255,.2); background: rgba(8,9,11,.34); display: grid; place-items: center; }
+  #t-rail::before { content: ''; position: absolute; left: 50%; top: 14px; bottom: 14px; width: 1px; background: rgba(255,255,255,.28); }
+  #t-rail .arrow { position: absolute; top: 50%; transform: translateY(-50%); font-size: 18px; color: rgba(255,255,255,.4); } #t-rail .arrow.l { left: 16px; } #t-rail .arrow.r { right: 16px; }
+  #t-puck { width: 58px; height: 58px; border-radius: 50%; background: radial-gradient(circle at 40% 32%, #fff, #c9ccd1 60%, #8d9198); box-shadow: 0 6px 20px rgba(0,0,0,.5); position: relative; z-index: 1; }
+  #t-steer.on #t-puck { background: radial-gradient(circle at 40% 32%, #fff3c4, var(--accent) 62%, #a87800); }
+  .pedal { position: absolute; pointer-events: auto; touch-action: none; display: grid; place-items: center; font-weight: 700; letter-spacing: .2em; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(255,255,255,.24); background: rgba(8,9,11,.4); }
+  #t-brake { right: calc(18px + var(--safe-r)); bottom: calc(20px + var(--safe-b)); width: var(--pw); height: var(--ph); border-radius: 16px; color: #ffb3ad; border-color: rgba(255,90,80,.55); }
+  #t-gas { right: calc(18px + var(--safe-r)); bottom: calc(20px + var(--safe-b)); width: var(--pw); height: var(--ph); border-radius: 16px; color: #b9f5cd; border-color: rgba(60,220,120,.5); display: none; }
+  #t-boost { right: calc(18px + var(--safe-r) + (var(--pw) - 78px) / 2); bottom: calc(var(--ph) + 32px + var(--safe-b)); width: 78px; height: 78px; border-radius: 50%; color: #1a1200; background: rgba(242,178,0,.85); border-color: rgba(255,255,255,.4); font-size: 11px; }
+  body.manual { --pw: min(21vw, 150px); }
+  body.manual #t-gas { display: grid; }
+  body.manual #t-brake { right: calc(28px + var(--safe-r) + var(--pw)); }
+  body.touch #h-speed { right: calc(50% - 26px); transform: translateX(50%) scale(.58); transform-origin: bottom center; bottom: calc(6px + var(--safe-b)); }
+  body.touch #h-map { width: 84px; height: 116px; top: calc(76px + var(--safe-t)); left: calc(16px + var(--safe-l)); right: auto; }
+  body.touch #t-rail { width: min(40vw, 280px); }
+
+  /* ---- menus ---- */
+  .sheet { align-items: center; justify-content: center; padding: 18px; background: rgba(5,6,7,.55); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); overflow: auto; }
+  .card { width: min(560px, 100%); padding: 26px 28px 24px; max-height: 100%; overflow: auto; }
+  .card h2 { margin: 6px 0 2px; font-size: clamp(34px, 6vw, 58px); font-weight: 800; font-style: italic; line-height: .9; letter-spacing: -.01em; }
+  .card h2.win { color: var(--accent); } .card h2.lose { color: #ff6b5e; }
+  .card p { margin: 8px 0 0; color: #cfd3d8; font-size: 14px; line-height: 1.5; }
+  .rows { margin: 18px 0 6px; display: grid; gap: 10px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+  .row > span { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .seg button { padding: 8px 12px 7px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; border: 1px solid var(--line); background: rgba(255,255,255,.04); min-width: 44px; }
+  .seg button.on { background: var(--ink); color: #0a0a0a; border-color: var(--ink); font-weight: 700; }
+  .seg.paint button { width: 30px; min-width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid transparent; }
+  .seg.paint button.on { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.6) inset; }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 18px 0 4px; }
+  .stats div { padding: 11px 13px 9px; border: 1px solid var(--line); background: rgba(255,255,255,.04); }
+  .stats small { display: block; font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); }
+  .stats b { font-size: 24px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+  .card > .btns { position: sticky; bottom: -24px; margin: 20px -28px -24px; padding: 14px 28px 24px; background: linear-gradient(rgba(10,12,15,0), rgba(10,12,15,.96) 34%); }
+  .btns .cta { margin-top: 0; padding: 14px 30px 12px; font-size: 15px; flex: 1 1 auto; text-align: center; }
+  .keys { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; letter-spacing: .08em; color: var(--dim); line-height: 1.9; }
+  .keys kbd { font: inherit; padding: 1px 6px; border: 1px solid rgba(255,255,255,.26); border-radius: 4px; color: var(--ink); margin: 0 2px; }
+  #rotate { position: fixed; inset: 0; z-index: 20; background: #050607; display: none; align-items: center; justify-content: center; text-align: center; padding: 30px; font-size: 15px; letter-spacing: .22em; text-transform: uppercase; line-height: 1.8; }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+  @media (max-height: 520px) {
+    .card { padding: 16px 18px 14px; } .card > .btns { bottom: -14px; margin: 10px -18px -14px; padding: 10px 18px 14px; } .rows { margin: 10px 0 2px; gap: 6px; } .seg button { padding: 6px 9px 5px; font-size: 12px; } .card h2 { font-size: 30px; } .btns { margin-top: 12px; } .keys { display: none; }
+    #h-pos .big { font-size: 32px; min-width: 62px; } #h-pos .col { font-size: 11px; } #h-pos .col b { font-size: 15px; } #h-gap { font-size: 11px; padding: 5px 12px 4px; } #h-gap b { font-size: 17px; min-width: 64px; }
+    .stats b { font-size: 19px; } .stats { margin: 10px 0 2px; gap: 6px; } .stats div { padding: 7px 10px 5px; }
+  }
+  @media (prefers-reduced-motion: reduce) { #cine .bar, #cap, #h-toast { transition: none; } }
+</style>
+<meta property="og:title" content="Phantom GP">
+<meta property="og:description" content="A one-on-one race round the full Spa-Francorchamps circuit, in the browser.">
+<meta property="og:image" content="https://johngresh.org/assets/home/phantom-hero.webp">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a2c30'/%3E%3Cg fill='%23e9ebee'%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2' fill='%23ffb44f'/%3E%3C/g%3E%3C/svg%3E">
+</head>
+<body>
+<div id="stage"><canvas id="view" tabindex="0"></canvas></div>
+
+<div id="load" class="layer on">
+  <div class="eyebrow">A John Gresh production</div>
+  <div class="logo" style="margin-top:14px">PHANTOM <b>GP</b></div>
+  <div id="load-bar"><i></i></div>
+  <div id="load-text">Starting</div>
+</div>
+
+<div id="title" class="layer">
+  <div class="blk">
+    <div class="eyebrow">Spa-Francorchamps · 7.004 km · one rival</div>
+    <div class="logo" style="margin-top:8px">PHANTOM <b>GP</b></div>
+  </div>
+  <div class="blk">
+    <button id="b-start" class="cta" data-spring>Start</button>
+    <div class="fine" id="title-fine">Sound on</div>
+    <div class="credit">Created by <b>John Gresh</b> · Co-producer <b>Luke Carlan</b></div>
+    <div class="attr">Circuit data © Service public de Wallonie (CC BY 4.0) · © OpenStreetMap contributors</div>
+  </div>
+</div>
+
+<div id="cine" class="layer">
+  <div class="bar t"></div><div class="bar b"></div>
+  <div id="cap"><small></small><span></span></div>
+  <button id="skip" data-spring>Skip ▸▸</button>
+</div>
+
+<div id="hud" class="layer">
+  <div id="h-pos"><div class="big" id="h-p">P2</div><div class="col glass"><div>Lap <b id="h-lap">1/1</b></div><div><b id="h-time">0:00.0</b></div></div></div>
+  <div id="h-gap" class="glass"><span>You</span><b id="h-gapv">+0.00</b><span id="h-rname">Voss</span></div>
+  <div id="h-btns"><button id="b-cam" class="glass" data-spring aria-label="Change camera">CAM</button><button id="b-pause" class="glass" data-spring aria-label="Pause">II</button></div>
+  <canvas id="h-map" width="264" height="364"></canvas>
+  <div id="h-lights"><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="h-corner"></div>
+  <div id="h-toast"><small></small><span></span></div>
+  <div id="h-hint"></div>
+  <div id="h-speed">
+    <div class="rev" id="h-rev"></div>
+    <div class="row"><div id="h-gear">1</div><div id="h-kmh">0</div></div>
+    <div class="unit">KM/H</div>
+    <div id="h-boost"><i></i></div>
+    <div id="h-tags"></div>
+  </div>
+</div>
+
+<div id="touch">
+  <div id="t-steer"><div id="t-rail"><span class="arrow l">◀</span><span class="arrow r">▶</span><div id="t-puck"></div></div></div>
+  <button id="t-gas" class="pedal" data-spring>Gas</button>
+  <button id="t-brake" class="pedal" data-spring>Brake</button>
+  <button id="t-boost" class="pedal" data-spring>Boost</button>
+</div>
+
+<div id="pause" class="layer sheet">
+  <div class="card glass">
+    <div class="eyebrow">Paused</div>
+    <h2>Pit wall</h2>
+    <div class="rows" id="pause-rows"></div>
+    <div class="btns"><button class="cta" id="b-resume" data-spring>Resume</button><button class="cta ghost" id="b-restart" data-spring>Restart</button><button class="cta ghost" id="b-quit" data-spring>Quit</button></div>
+  </div>
+</div>
+
+<div id="result" class="layer sheet">
+  <div class="card glass">
+    <div class="eyebrow" id="r-eyebrow">Duel · Spa-Francorchamps</div>
+    <h2 id="r-title">Victory</h2>
+    <p id="r-line"></p>
+    <div class="stats" id="r-stats"></div>
+    <div class="btns"><button class="cta" id="b-rematch" data-spring>Rematch</button><button class="cta ghost" id="b-tomenu" data-spring>Menu</button></div>
+  </div>
+</div>
+
+<div id="menu" class="layer sheet">
+  <div class="card glass">
+    <div class="eyebrow">Phantom GP · Spa-Francorchamps</div>
+    <h2>Duel · 1 v 1</h2>
+    <p>You and one rival in identical cars, from the lights to the flag. Stay in the slipstream, save your boost, and pick your moment.</p>
+    <div class="rows" id="menu-rows"></div>
+    <div class="btns"><button class="cta" id="b-duel" data-spring>Start duel</button><button class="cta ghost" id="b-intro" data-spring>Watch the film</button></div>
+    <div class="keys" id="menu-keys"></div>
+  </div>
+</div>
+
+<div id="rotate"><div>Turn your phone sideways<br>to race</div></div>
+
+<script type="module" src="./js/game/main.js"></script>
+<script src="../../assets/site-menu.js" data-corner="tr" data-dock="#h-btns" defer></script>
+</body>
+</html>

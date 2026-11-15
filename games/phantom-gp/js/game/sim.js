@@ -1,6 +1,7 @@
 // sim.js — the driving model, the rival driver and the race. Both cars share one set of performance numbers, so the
 // rival is fast because it drives well, not because it has a better car.
-import { W, frameAt, nearestStation, surfaceAt, contactAt, groundClass } from '../track/world.js';
+import { W, frameAt, nearestStation, surfaceAt, contactAt, groundClass, treeWithin } from '../track/world.js';
+import { nearestRoad, roadAhead, roadSpeed } from '../track/roads.js';
 
 // tyre contact points in the car frame (x forward, z right): front axle 1.8 m ahead of the middle, rear 1.8 m behind;
 // half-tracks from car.js (ZF, ZR). Order: front right, front left, rear right, rear left.
@@ -157,6 +158,7 @@ class Body {
   locate() {
     const n = nearestStation(this.x, this.z, this._ns);
     if (n) { const ds = n.s - this.s, L = W.L, dd = ds > L / 2 ? ds - L : ds < -L / 2 ? ds + L : ds; if (Math.abs(dd) < 120) this.prog += dd; this.s = n.s; this.d = n.d; this.hw = n.hw; this.kerbW = n.kerb; }
+    else this.d = 9999;                                       // nowhere near the circuit (free roam)
   }
   // Height, slope and bank from where the four tyres touch down (once per frame). The body plane goes through the
   // axle midpoints with no smoothing, so the tyres never sink on a climb or float on a descent; whatever one tyre
@@ -168,7 +170,7 @@ class Body {
     this.y = (yF + yR) / 2;
     this.slope = (yF - yR) / (W2[0][0] - W2[2][0]);
     this.bank = ((h[0] - h[1]) / (2 * W2[0][1]) + (h[2] - h[3]) / (2 * W2[2][1])) / 2;
-    for (let k = 0; k < 4; k++) { const [ax, az] = W2[k]; this.wheelLift[k] = clamp(h[k] - (this.y + this.slope * ax + this.bank * az), -0.05, 0.05); }
+    for (let k = 0; k < 4; k++) { const [ax, az] = W2[k]; this.wheelLift[k] = clamp(h[k] - (this.y + this.slope * ax + this.bank * az), -0.12, 0.07); }
     // body motion on the springs (the wheels stay put: see CarView.sync)
     this.pitch = damp(this.pitch, clamp(-this.ax * 0.0006, -0.011, 0.009), 9, dt);
     this.rollA = damp(this.rollA, clamp(this.ay * 0.0003, -0.014, 0.014), 9, dt);
@@ -189,7 +191,12 @@ class Body {
 
 /* ------------------------------------------------------------------ the player's car */
 export class Car extends Body {
-  constructor() { super('player'); this.offT = 0; this.wrongT = 0; this.stuckT = 0; this.ghost = 0; this.auto = null; }
+  constructor() { super('player'); this.offT = 0; this.wrongT = 0; this.stuckT = 0; this.ghost = 0; this.auto = null; this.roam = false; this.road = null; }
+  // free roam: stand the car anywhere, facing psi
+  placeAt(x, z, psi, v = 0) {
+    this.x = x; this.z = z; this.psi = psi; this.u = v; this.w = 0; this.yaw = 0; this.steer = 0; this.rev = false; this.impact = 0;
+    this.gear = gearFor(v, 1); this.rpm = rpmFor(v, this.gear); this.locate(); this.settle(0);
+  }
   place(s, d, v) {
     const fr = frameAt(s, {});
     this.x = fr.x + fr.rx * d; this.z = fr.z + fr.rz * d; this.psi = Math.atan2(fr.dz, fr.dx);
@@ -202,15 +209,28 @@ export class Car extends Body {
     this.locate();
     const fr = frameAt(this.s, this._fr || (this._fr = {}));
     const onRoad = Math.abs(this.d) < this.hw + (this.kerbW || 0) + 0.25;
-    const cls = onRoad ? 1 : groundClass(this.x, this.z);
+    // free roam: off the circuit the car may be on one of the public roads (roads.js)
+    let rd = null;
+    if (this.roam && !onRoad) { rd = nearestRoad(this.x, this.z, this._rd || (this._rd = {}), this.psi + clamp(inp.steer, -1, 1) * 0.7); if (rd && Math.abs(rd.d) > rd.hw + 3) rd = null; }
+    this.road = rd;
+    const cls = onRoad || (rd && Math.abs(rd.d) < rd.hw + 0.2) ? 1 : groundClass(this.x, this.z);
     this.surface = cls; this.kerb = onRoad && Math.abs(this.d) > this.hw - 0.2 ? 1 : 0;
     const mu = cls === 1 ? 1 : cls === 2 ? 0.5 : 0.6;
     let steerIn = clamp(inp.steer, -1, 1), thr = clamp(inp.throttle, 0, 1), brk = clamp(inp.brake, 0, 1);
     const v = Math.abs(this.u), trackPsi = Math.atan2(fr.dz, fr.dx), headErr = wrapPi(trackPsi - this.psi);
 
     // ---- assists
-    const vLim = vpAt(this.s + clamp(v * 0.05, 0, 6));
-    if (assist >= 1 && onRoad && Math.abs(headErr) < 1.2) {
+    // which way the road runs for this car: along the circuit (either way round in free roam), or along a public road
+    let refPsi = null, sgn = 1;
+    if (rd) { sgn = rd.tx * Math.cos(this.psi) + rd.tz * Math.sin(this.psi) >= 0 ? 1 : -1; refPsi = roadAhead(rd, v * 0.15, sgn, this._ra || (this._ra = {})).psi; }
+    else if (onRoad || !this.roam) {
+      const back = this.roam && Math.abs(headErr) > Math.PI / 2, a3 = frameAt(this.s + (back ? -1 : 1) * v * 0.15, this._f3 || (this._f3 = {}));
+      refPsi = Math.atan2(a3.dz, a3.dx) + (back ? Math.PI : 0); if (back) sgn = -1;
+    }
+    let vLim = vpAt(this.s + clamp(v * 0.05, 0, 6));
+    if (rd) vLim = roadSpeed(rd, sgn, v, grip(v) * 0.6 * mu);            // public road: slow enough for the bends ahead
+    else if (this.roam && (sgn < 0 || !onRoad)) vLim = 1e9;                // the wrong way round the circuit, or open ground: no advice
+    if (assist >= 1 && (onRoad || rd) && (rd || this.roam || Math.abs(headErr) < 1.2)) {
       const over = v - vLim * (assist >= 2 ? 0.95 : 1.04);
       if (over > 0) { brk = Math.max(brk, clamp(over / 5, 0, 1)); thr = Math.min(thr, 1 - clamp(over / 2, 0, 1)); }
     }
@@ -222,7 +242,7 @@ export class Car extends Body {
         if (v > tgt) { thr = Math.min(thr, 0.15); if (v > tgt + 1.5) brk = Math.max(brk, clamp((v - tgt - 1.5) / 6, 0, 0.7)); }
       }
     }
-    if (assist >= 2 && v > 8) {
+    if (assist >= 2 && v > 8 && !rd && sgn > 0 && (onRoad || !this.roam)) {
       // hold the racing line when the driver is not steering much (this form does the slow corners)
       const la = clamp(v * 0.22, 6, 26), f2 = frameAt(this.s + la, this._f2 || (this._f2 = {}));
       const ln = lineAt(this.s + la), tx = f2.x + f2.rx * ln, tz = f2.z + f2.rz * ln;
@@ -231,7 +251,7 @@ export class Car extends Body {
       const help = steerFor(want, Math.hypot(tx - this.x, tz - this.z), dmax), wgt = 1 - clamp(Math.abs(steerIn) * 1.5, 0, 1);
       steerIn = clamp(steerIn + help * wgt, -1, 1);
     }
-    if (v > 5 && Math.abs(headErr) < 1.0) {
+    if (v > 5 && refPsi !== null && Math.abs(wrapPi(refPsi - this.psi)) < 1.0) {
       /* How the car steers (every help level). A racing car turns so hard that a key held a third of a second, or a
          thumb moved a centimetre, throws it off the road: at 300 km/h three degrees of heading is 4 m/s of drift.
          So the driver's input is read as "move across the road": the car aims along the road ahead plus an angle set
@@ -239,14 +259,15 @@ export class Car extends Body {
          too fast for a corner and the car still runs wide. Below walking pace, and whenever the car is pointing well
          away from the road's direction, the wheel is direct. */
       const TAU = 0.15, k = clamp((v - 5) / 8, 0, 1), blend = k * k * (3 - 2 * k);
-      const ahead = frameAt(this.s + v * TAU, this._f3 || (this._f3 = {}));
       const maxAng = clamp(7.5 / v, 0.06, 0.4);
       let ang = clamp(inp.steer, -1, 1) * maxAng;
-      if (assist >= 2) ang += clamp((lineAt(this.s + v * TAU) - this.d) / Math.max(v * 0.8, 8), -maxAng, maxAng) * (1 - clamp(Math.abs(inp.steer) * 1.5, 0, 1));
+      const hands = 1 - clamp(Math.abs(inp.steer) * 1.5, 0, 1);
+      if (assist >= 2 && !rd && sgn > 0) ang += clamp((lineAt(this.s + v * TAU) - this.d) / Math.max(v * 0.8, 8), -maxAng, maxAng) * hands;
+      if (assist >= 2 && rd) ang += clamp((rd.hw * 0.42 - rd.d * sgn) / Math.max(v * 0.8, 8), -maxAng, maxAng) * hands;     // keep to the right-hand lane
       const rFull = 1.15 * grip(v) * EDGE * mu / Math.max(v, 4);                 // yaw rate at full lock
-      const cmd = clamp(wrapPi(Math.atan2(ahead.dz, ahead.dx) + ang - this.psi) / TAU / rFull, -1, 1);
+      const cmd = clamp(wrapPi(refPsi + ang - this.psi) / TAU / rFull, -1, 1);
       steerIn += (cmd - steerIn) * blend;
-    }
+    } else if (v > 14) steerIn *= clamp(14 / v, 0.3, 1);        // no road to follow (open ground, or sideways): a gentler wheel at speed
     if (this.auto) { const a = this.auto(this, fr); steerIn = a.steer; thr = a.throttle; brk = a.brake; }
 
     // ---- along the car
@@ -320,14 +341,26 @@ export class Car extends Body {
     this.wheelAng += this.u / PHYS.R * dt; this.wheelAngR += (this.u / PHYS.R + this.spinR * 60) * dt;
 
     // ---- trouble: far off the circuit, facing the wrong way, or stuck
-    const far = Math.abs(this.d) > this.hw + 55 || (cls !== 1 && Math.abs(this.d) > this.hw + 28);
+    const far = !this.roam && (Math.abs(this.d) > this.hw + 55 || (cls !== 1 && Math.abs(this.d) > this.hw + 28));
     this.offT = far ? this.offT + dt : 0;
-    this.wrongT = Math.abs(headErr) > 2.0 && v > 4 ? this.wrongT + dt : 0;
+    this.wrongT = !this.roam && Math.abs(headErr) > 2.0 && v > 4 ? this.wrongT + dt : 0;
+    // free roam: a tree trunk stops the car
+    if (this.roam && cls !== 1 && Math.abs(this.u) > 1 && treeWithin(this.x + Math.cos(this.psi) * 1.9 * Math.sign(this.u), this.z + Math.sin(this.psi) * 1.9 * Math.sign(this.u), 0.55)) {
+      this.impact = Math.max(this.impact, clamp(Math.abs(this.u) / 14, 0.15, 1)); this.x -= Math.cos(this.psi) * 0.25 * Math.sign(this.u); this.z -= Math.sin(this.psi) * 0.25 * Math.sign(this.u); this.u *= -0.25; this.w *= 0.3;
+    }
     this.stuckT = v < 1.5 && thr > 0.5 && !this.rev ? this.stuckT + dt : 0;
     this.ghost = Math.max(0, this.ghost - dt);
   }
   // put the car back on the circuit, rolling
-  reset() { const s = this.s, prog = this.prog; this.place(s, lineAt(s), 28); this.prog = prog; this.ghost = 1.6; this.rev = false; }
+  reset() {
+    if (this.roam) {
+      // free roam: back onto the nearest road, facing the way the car was going
+      const rd = nearestRoad(this.x, this.z, {}, this.psi);
+      if (rd && Math.abs(this.d) > this.hw + 6) { const sg = rd.tx * Math.cos(this.psi) + rd.tz * Math.sin(this.psi) >= 0 ? 1 : -1; this.placeAt(this.x - (-rd.tz) * rd.d, this.z - rd.tx * rd.d, Math.atan2(rd.tz * sg, rd.tx * sg), 0); return; }
+      if (Math.abs(this.d) > this.hw + 30) { this.u = 0; this.w = 0; return; }
+    }
+    const s = this.s, prog = this.prog; this.place(s, lineAt(s), this.roam ? 0 : 28); this.prog = prog; this.ghost = 1.6; this.rev = false;
+  }
 }
 
 /* ------------------------------------------------------------------ the rival: drives the racing line on rails */

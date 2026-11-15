@@ -36,7 +36,7 @@ export class Hud {
     this.rows($('pause-rows'), ['assist', 'autoThrottle', 'line', 'music', 'sound']);
     const click = (id, fn) => $(id).addEventListener('click', (e) => { e.preventDefault(); fn(); });
     click('b-start', () => on.start()); click('skip', () => on.skip()); click('b-resume', () => on.resume()); click('b-restart', () => on.restart()); click('b-quit', () => on.quit());
-    click('b-rematch', () => on.rematch()); click('b-tomenu', () => on.toMenu()); click('b-duel', () => on.duel()); click('b-intro', () => on.film());
+    click('b-rematch', () => on.rematch()); click('b-tomenu', () => on.toMenu()); click('b-duel', () => on.duel()); click('b-intro', () => on.film()); click('b-roam', () => on.roam());
     click('b-cam', () => on.cam()); click('b-pause', () => on.pause());
     $('menu-keys').innerHTML = matchMedia('(pointer: coarse)').matches
       ? 'Drag the puck to steer · Brake on the right · Boost when the bar is full'
@@ -59,13 +59,14 @@ export class Hud {
     }
     this.refresh();
   }
-  refresh() {
+  // roam: free roam has no automatic throttle, so its switch is hidden there
+  refresh(roam = false) {
     for (const row of document.querySelectorAll('.row[data-key]')) {
       const v = JSON.stringify(this.s[row.dataset.key]);
       for (const b of row.querySelectorAll('button')) b.classList.toggle('on', b.dataset.val === v);
-      if (row.dataset.key === 'autoThrottle') row.style.display = document.body.classList.contains('touch') ? '' : 'none';
+      if (row.dataset.key === 'autoThrottle') row.style.display = document.body.classList.contains('touch') && !roam ? '' : 'none';
     }
-    document.body.classList.toggle('manual', !this.s.autoThrottle);
+    document.body.classList.toggle('manual', !this.s.autoThrottle || roam);
   }
 
   screen(name) {
@@ -94,7 +95,7 @@ export class Hud {
   hint(on) { $('h-hint').classList.toggle('off', !on); }
   rivalName(n) { $('h-rname').textContent = n; }
 
-  initMap() {
+  initMap(roads = []) {
     const c = $('h-map'); this.mapCtx = c.getContext('2d');
     let minx = 1e9, maxx = -1e9, minz = 1e9, maxz = -1e9;
     for (let i = 0; i < W.N; i += 4) { minx = Math.min(minx, W.tx[i]); maxx = Math.max(maxx, W.tx[i]); minz = Math.min(minz, W.tz[i]); maxz = Math.max(maxz, W.tz[i]); }
@@ -102,7 +103,11 @@ export class Hud {
     this.mapT = { sc, ox: (c.width - (maxx - minx) * sc) / 2 - minx * sc, oz: (c.height - (maxz - minz) * sc) / 2 - minz * sc, w: c.width, h: c.height };
     // the outline never changes: draw it once
     const bg = document.createElement('canvas'); bg.width = c.width; bg.height = c.height; const g = bg.getContext('2d'), { ox, oz } = this.mapT;
-    g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath();
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    // the roads round the circuit, faint, under the circuit itself
+    g.strokeStyle = 'rgba(205,210,218,.5)';
+    for (const P of roads) { g.lineWidth = 1.2 + 0.6 * P.rank; g.beginPath(); for (let i = 0; i < P.n; i += 4) { const x = P.x[i] * sc + ox, z = P.z[i] * sc + oz; i ? g.lineTo(x, z) : g.moveTo(x, z); } g.stroke(); }
+    g.beginPath();
     for (let i = 0; i <= W.N; i += 3) { const k = i % W.N, x = W.tx[k] * sc + ox, z = W.tz[k] * sc + oz; i ? g.lineTo(x, z) : g.moveTo(x, z); }
     g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 9; g.stroke(); g.strokeStyle = '#f1f2f3'; g.lineWidth = 4; g.stroke();
     const sf = frameAt(0, {}); g.fillStyle = '#e2231a'; g.fillRect(sf.x * sc + ox - 7, sf.z * sc + oz - 2, 14, 4);
@@ -128,13 +133,15 @@ export class Hud {
     if (tags !== L.tags) { $('h-tags').innerHTML = tags; L.tags = tags; }
     // name of the corner coming up
     let name = '';
-    for (const [nm, ls] of W.meta.labels) { const d = ((ls - P.s) % W.L + W.L) % W.L; if (d < 170 || d > W.L - 60) name = nm; }
+    if (top.label !== undefined) name = top.label;
+    else if (!top.roam || Math.abs(P.d) < P.hw + 8) for (const [nm, ls] of W.meta.labels) { const d = ((ls - P.s) % W.L + W.L) % W.L; if (d < 170 || d > W.L - 60) name = nm; }
     if (name !== L.corner) { const el = $('h-corner'); if (name) el.textContent = name; el.classList.toggle('on', !!name); L.corner = name; }
     // minimap
     const c = this.mapCtx, { sc, ox, oz, w, h } = this.mapT;
     c.clearRect(0, 0, w, h); c.drawImage(this.mapBg, 0, 0);
     const dot = (b, col, r) => { c.beginPath(); c.arc(b.x * sc + ox, b.z * sc + oz, r, 0, 6.283); c.fillStyle = col; c.fill(); c.lineWidth = 3; c.strokeStyle = '#0b0b0c'; c.stroke(); };
-    dot(R, top.rivalColor || '#ff3b2f', 7); dot(P, top.playerColor || '#f2b200', 8.5);
+    if (!top.roam) dot(R, top.rivalColor || '#ff3b2f', 7);
+    dot(P, top.playerColor || '#f2b200', 8.5);
   }
 
   result(r) {

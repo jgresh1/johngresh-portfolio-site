@@ -43,3 +43,7 @@ banner names are invented; no real team, series or company is shown.
 ## Names
 
 "Spa-Francorchamps" and the corner names are used descriptively. No circuit, series or sponsor logos are reproduced.
+
+## Free roam roads
+
+`assets/roads.json`: road centrelines, names and classes from OpenStreetMap, © OpenStreetMap contributors, Open Database Licence (ODbL) 1.0. Extracted by `tools/build_roads.py`; the road surfaces themselves are fitted by the game.

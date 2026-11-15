@@ -71,6 +71,7 @@
   #h-pos .big.p2 { background: #e9eaec; }
   #h-pos .col { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 4px 12px; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; }
   #h-pos .col b { font-size: 19px; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+  body.roam #h-pos, body.roam #h-gap { display: none; }      /* free roam: no position, no gap */
   #h-gap { top: calc(18px + var(--safe-t)); left: 50%; transform: translateX(-50%); padding: 7px 16px 6px; font-size: 13px; letter-spacing: .2em; text-transform: uppercase; display: flex; gap: 12px; align-items: baseline; white-space: nowrap; }
   #h-gap b { font-size: 21px; letter-spacing: .02em; font-variant-numeric: tabular-nums; min-width: 78px; text-align: center; }
   #h-gap b.ahead { color: var(--green); } #h-gap b.behind { color: #ff6b5e; }
@@ -240,7 +241,7 @@
     <h2>Duel · 1 v 1</h2>
     <p>You and one rival in identical cars, from the lights to the flag. Stay in the slipstream, save your boost, and pick your moment.</p>
     <div class="rows" id="menu-rows"></div>
-    <div class="btns"><button class="cta" id="b-duel" data-spring>Start duel</button><button class="cta ghost" id="b-intro" data-spring>Watch the film</button></div>
+    <div class="btns"><button class="cta" id="b-duel" data-spring>Start duel</button><button class="cta ghost" id="b-roam" data-spring>Free roam</button><button class="cta ghost" id="b-intro" data-spring>Watch the film</button></div>
     <div class="keys" id="menu-keys"></div>
   </div>
 </div>

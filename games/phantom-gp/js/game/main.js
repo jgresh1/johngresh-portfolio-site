@@ -7,6 +7,7 @@ import { cloudNoise3D } from '../track/tex.js';
 import { W, LOAD, loadWorld, upgradeGround, frameAt, surfaceAt } from '../track/world.js';
 import { buildTerrain, TERRAIN, groundUniforms } from '../track/terrain.js';
 import { buildRoad } from '../track/road.js';
+import { ROADS, loadRoads, prepRoads, buildRoadMeshes } from '../track/roads.js';
 import { buildCars, PAINTS } from './cars.js';
 import { TRACK, buildTrack, Car, Rival, Race, touch, autopilot, lineAt, vpAt } from './sim.js';
 import { Chase, CAM_MODES } from './chase.js';
@@ -60,7 +61,7 @@ let studio, shadows, terrain, road, trees, props, trackside, cars, P, R, race, c
 const handlers = {
   start: () => begin(), skip: () => { if (G.state === 'film') intro.skip(); },
   resume: () => setPaused(false), restart: () => { setPaused(false); startRace(G.lastRace || { mode: 'grid' }); }, quit: () => { setPaused(false); toMenu(); },
-  rematch: () => startRace({ mode: 'grid' }), toMenu: () => toMenu(), duel: () => startRace({ mode: 'grid' }), film: () => playFilm(),
+  rematch: () => startRace({ mode: 'grid' }), toMenu: () => toMenu(), duel: () => startRace({ mode: 'grid' }), film: () => playFilm(), roam: () => startRoam(),
   cam: () => { if (G.state === 'race') hud.toast('Camera', chase.cycle(), 1.1); }, pause: () => { if (G.state === 'race') setPaused(!G.paused); },
   setting: (k, v) => applySetting(k, v),
 };
@@ -95,6 +96,7 @@ async function boot() {
   let netP = 0, titleUp; const gate = new Promise((r) => { titleUp = r; });
   const worldP = loadWorld((p) => { netP = p; if (!G.trackReady) hud.startProgress(0.7 * p); }, gate);
   const hiP = q.lo ? null : worldP.then(() => upgradeGround());
+  const roadsP = loadRoads();
 
   await yieldNow();
   cars = await buildCars(renderer, q);
@@ -145,9 +147,11 @@ async function boot() {
   shadows = new SunShadows(scene, q.shadow); shadows.maxPerFrame = 1;
   await step(0.1);
   TERRAIN.farStep = q.farStep || 1;
+  await roadsP; prepRoads();                // free roam's roads: fitted to the ground before the terrain and trees are built
   terrain = buildTerrain(scene);
   await step(0.35);
   road = buildRoad(scene);
+  buildRoadMeshes(scene);
   await step(0.45);
   trees = (await import('../track/trees.js')).buildTrees(scene, renderer, q);
   await step(0.6);
@@ -159,7 +163,7 @@ async function boot() {
   console.log(`[phantom] tier ${tierName}, car ${cars.tris.toLocaleString()} triangles in ${cars.meshes} meshes, ${cars.ms} ms, lap at the limit ${TRACK.lapTime.toFixed(1)} s, ${TRACK.walls} wall segments`);
   P = new Car(); R = new Rival(); race = new Race(P, R); chase = new Chase(camera);
   scene.add(cars.rival.root, cars.rival.shadow, cars.player.shadow);
-  hud.initMap(); hud.rivalName('Voss');
+  hud.initMap(ROADS.pieces); hud.rivalName('Voss');
   await step(0.8);
   // warm the circuit: compile every program and draw the first shadow maps now, not at the cut from the film
   const back = G.state; G.state = 'warming';
@@ -172,7 +176,7 @@ async function boot() {
   toStudio(); G.state = back;
   G.trackReady = true; G.readyT = Math.round(performance.now());
   hud.startProgress(1);
-  window.__game = { THREE, G, gfx, scene, camera, studio, cars, P, R, race, chase, input, hud, sound, intro, gov, q, S, W, TRACK, tierName, frame, startRace, toMenu, playFilm, begin, setPaused, shot, step: stepFrames, START_S };
+  window.__game = { THREE, G, gfx, scene, camera, studio, cars, P, R, race, chase, input, hud, sound, intro, gov, q, S, W, TRACK, tierName, frame, startRace, startRoam, toMenu, playFilm, begin, setPaused, shot, step: stepFrames, START_S, ROADS };
   if (Q.has('race')) { await sound.init(); startRace({ mode: Q.get('race') === 'grid' ? 'grid' : 'rolling' }); }
   else if (G.wantStart) { G.wantStart = false; begin(); }
   // full-size ground photos (desktops): swapped in at a calm moment, see frameBody
@@ -251,8 +255,9 @@ function playFilm() {
   G.state = 'film'; hud.screen('cine'); intro.start();
 }
 function startRace(o = {}) {
+  if (o.mode === 'roam') return startRoam();
   const laps = o.laps || S.laps, mode = o.mode || 'grid', tm = performance.now();
-  G.lastRace = { mode: 'grid' };
+  G.lastRace = { mode: 'grid' }; setRoam(false);
   toTrack(); mark('toTrack', tm);
   race.start({ laps, mode, s0: START_S, skill: S.skill });
   P.auto = null; G.ctrl = mode === 'rolling' ? 0 : 1; G.top = 0; G.hits = 0; G.finishCam = 0; G.acc = 0; G.hintT = 9; G.leading = null; G.passes = 0; G.inTow = false;
@@ -266,6 +271,36 @@ function startRace(o = {}) {
   if (mode === 'rolling') { gfx.fx.flash = 1.0; hud.toast('Tuck in behind Voss, then pull out and pass', 'Your race', 3.6); }
   gov.reset(); mark('started', tm);
 }
+// free roam: no rival, no laps, the whole place to drive in
+function setRoam(on) {
+  G.roam = on; P.roam = on; document.body.classList.toggle('roam', on);
+  cars.rival.root.visible = !on; if (on) cars.rival.shadow.visible = false;
+}
+function roamSpawn() {
+  // a main road close to La Source, well clear of the circuit: the longest piece of the biggest road class there is
+  let best = null, score = -1;
+  for (const p of ROADS.pieces) { const sc = p.rank * 1000 + p.n; if (sc > score) { score = sc; best = p; } }
+  if (!best) return null;
+  const i = Math.min(best.n - 2, Math.max(4, Math.round(best.n * 0.12)));
+  const rx = -best.tz[i], rz = best.tx[i], off = best.hw * 0.42;
+  return { x: best.x[i] + rx * off, z: best.z[i] + rz * off, psi: Math.atan2(best.tz[i], best.tx[i]), name: best.name };
+}
+function startRoam() {
+  const sp = roamSpawn();
+  toTrack();
+  race.start({ laps: 1, mode: 'rolling', s0: START_S, skill: S.skill }); race.laps = 1e9; race.events.length = 0;
+  setRoam(true); G.lastRace = { mode: 'roam' };
+  P.auto = null; G.ctrl = 1; G.top = 0; G.hits = 0; G.finishCam = 0; G.acc = 0; G.hintT = 9; G.leading = null;
+  if (sp) P.placeAt(sp.x, sp.z, sp.psi, 0); else P.place(START_S, 0, 0);
+  P.settle(0); cars.player.sync(P, ATMO.sunDir, 0);
+  chase.snap(); chase.update(0.016, cars.player, P);
+  input.enabled = true; input.autoThrottle = false;          // free roam: the throttle is yours, on every device
+  lineMesh.visible = false;
+  G.state = 'race'; G.paused = false; hud.screen('race'); hud.lights(-1); hud.hint(true); hud.refresh(true);
+  sound.startLoop();
+  hud.toast(sp && sp.name ? sp.name : 'The roads round the circuit', 'Free roam', 3.6);
+  gov.reset();
+}
 function setPaused(p) {
   if (G.state !== 'race') return;
   G.paused = p; hud.screen(p ? 'pause' : 'race'); input.enabled = !p;
@@ -274,6 +309,7 @@ function setPaused(p) {
 function toMenu() {
   if (G.state === 'film') return;
   toTrack();
+  if (G.roam) { setRoam(false); race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill }); hud.refresh(); }
   if (race.state === 'idle' || race.state === 'lights') race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill });
   race.state = 'green'; race.laps = 1e9; race.result = null; P.done = R.done = false;
   P.auto = autopilot(0.6); R.skill = { pace: 0.6, ease: 0.02, push: 0.02 }; R.pace = 0.6;
@@ -302,7 +338,8 @@ function simulate(dt) {
   while (G.acc >= H && n < 8) {
     G.acc -= H; n++;
     const racing = G.state === 'race' && race.state === 'green';
-    if (race.state === 'green' || race.state === 'done') { P.step(H, racing && !P.done ? input : IDLE, G.state === 'race' ? S.assist : 0, R); }
+    if (race.state === 'green' || race.state === 'done') { P.step(H, racing && !P.done ? input : IDLE, G.state === 'race' ? S.assist : 0, G.roam ? null : R); }
+    if (G.roam) continue;
     R.step(H, P, race);
     if (race.state === 'green' || race.state === 'done') { const h = touch(P, R, H); if (h > 0.15) { G.hits++; sound.sfx('hit', h); } }
     race.update(H);
@@ -311,7 +348,7 @@ function simulate(dt) {
   P.settle(dt); R.settle(dt);
   G.top = Math.max(G.top, P.speed);
   // the lead changing hands, and the tow catching: say so (2 m of hysteresis so a side-by-side fight does not chatter)
-  if (G.state === 'race' && race.state === 'green' && !P.done && !R.done) {
+  if (G.state === 'race' && race.state === 'green' && !P.done && !R.done && !G.roam) {
     const lead = P.prog - R.prog, was = G.leading;
     if (was === undefined || was === null) G.leading = lead >= 0;
     else if (!was && lead > 2) { G.leading = true; G.passes = (G.passes || 0) + 1; hud.toast('You lead', 'Overtake', 1.6); sound.sfx('pass'); gfx.fx.flash = Math.max(gfx.fx.flash, 0.25); }
@@ -345,7 +382,7 @@ const _o = new THREE.Vector3();
 function frameRace(dt, warm = false) {
   if (!G.paused && !warm) simulate(dt);
   const pv = cars.player, rv = cars.rival, sun = ATMO.sunDir;
-  pv.sync(P, sun, dt); rv.sync(R, sun, dt);
+  pv.sync(P, sun, dt); if (!G.roam) rv.sync(R, sun, dt);
   const orbiting = G.state === 'menu' || G.state === 'result' || G.finishCam > 0;
   if (orbiting && !warm) {
     // slow orbit round the player's car behind the menus and after the flag
@@ -373,7 +410,7 @@ function frameRace(dt, warm = false) {
   gfx.renderScene(scene, camera);
   if (!warm) gfx.present(dt);
   if (G.state === 'race') {
-    hud.race(G.paused ? 0 : dt, P, R, race, { assist: S.assist === 2 ? 'Full help' : '', playerColor: PAINTS[S.paint].a, rivalColor: S.paint === 6 ? '#e23a3a' : '#111' });
+    hud.race(G.paused ? 0 : dt, P, R, race, { assist: S.assist === 2 ? 'Full help' : '', playerColor: PAINTS[S.paint].a, rivalColor: S.paint === 6 ? '#e23a3a' : '#111', roam: G.roam, label: G.roam && P.road ? (P.road.name || 'Service road') : undefined });
     if (G.hintT > 0) { G.hintT -= dt; if (G.hintT <= 0) hud.hint(false); }
   }
   if (!warm) sound.update(dt, P, R, camera, G);

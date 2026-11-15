@@ -402,9 +402,13 @@ function kerbLift(f) {
   return KERB_KP[KERB_KP.length - 1][1];
 }
 
+// free roam's roads (roads.js) plug in here: top(x, z) -> surface height if a road or its shoulder is there
+export const EXTRA = { top: null };
+
 // where a tyre touches down at (x, z): the road, a kerb, or the ground
 const _nc = {};
 export function contactAt(x, z) {
+  if (EXTRA.top) { const e = EXTRA.top(x, z); if (e !== undefined) return e; }
   const g = groundAt(x, z), n = nearestStation(x, z, _nc);
   if (!n) return g;
   const ad = Math.abs(n.d);
@@ -420,6 +424,7 @@ export function contactAt(x, z) {
 // surface height including the racing surface (for cameras / props that may sit on the road)
 const _ns = {};
 export function surfaceAt(x, z) {
+  if (EXTRA.top) { const e = EXTRA.top(x, z); if (e !== undefined) return e; }
   const g = groundAt(x, z), n = nearestStation(x, z, _ns);
   if (n && Math.abs(n.d) < n.hw + n.kerb + 0.3) return Math.max(g, n.y);
   return g;

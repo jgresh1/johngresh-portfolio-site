@@ -62,15 +62,19 @@ export class Input {
     // ---- keyboard
     const kl = K.has('ArrowLeft') || K.has('KeyA'), kr = K.has('ArrowRight') || K.has('KeyD');
     const target = (kr ? 1 : 0) - (kl ? 1 : 0);
-    const rate = target === 0 ? 5.5 : (Math.sign(target) !== Math.sign(this.kSteer) && this.kSteer !== 0 ? 7 : 3.6 - 1.4 * clamp(speed / 80, 0, 1));
+    // A key is all or nothing, so the wheel behind it turns at a rate and the first part of its travel does little
+    // (the curve below): a tap is a nudge and a held key still reaches full lock.
+    const fast = 0.15;      // sim.js scales steering with speed itself (see "How the car steers at speed")
+    const rate = target === 0 ? 8 : (Math.sign(target) !== Math.sign(this.kSteer) && this.kSteer !== 0 ? 7 : 3.6 - 2.5 * fast);
     this.kSteer += clamp(target - this.kSteer, -rate * dt, rate * dt);
-    let steer = this.kSteer;
+    const shape = (x, p) => Math.sign(x) * Math.pow(Math.abs(x), p);
+    let steer = shape(this.kSteer, 1.2 + 0.8 * fast);
     let thr = K.has('ArrowUp') || K.has('KeyW') ? 1 : 0, brk = K.has('ArrowDown') || K.has('KeyS') ? 1 : 0;
     let boost = K.has('ShiftLeft') || K.has('ShiftRight') || K.has('Space');
     // ---- gamepad
     const gp = (navigator.getGamepads ? [...navigator.getGamepads()] : []).find((g) => g && g.connected && g.buttons.length > 7);
     if (gp) {
-      const ax = Math.abs(gp.axes[0]) > 0.09 ? gp.axes[0] : 0, s = Math.sign(ax) * Math.pow(Math.abs(ax), 1.7);
+      const ax = Math.abs(gp.axes[0]) > 0.09 ? gp.axes[0] : 0, s = shape(ax, 1.5 + 0.7 * fast);
       if (Math.abs(s) > Math.abs(steer)) steer = s;
       thr = Math.max(thr, gp.buttons[7].value); brk = Math.max(brk, gp.buttons[6].value);
       boost = boost || gp.buttons[0].pressed || gp.buttons[5].pressed;
@@ -84,7 +88,7 @@ export class Input {
     } else if (T.puck.x !== 0 || T.puck.v !== 0) FEEL.step(T.puck, dt);
     if (this.puckEl) this.puckEl.style.transform = `translate3d(${(T.puck.x * T.range).toFixed(1)}px, 0, 0)`;
     if (this.usedTouch) {
-      const ts = clamp(T.puck.x, -1, 1), curved = Math.sign(ts) * Math.pow(Math.abs(ts), 1.35);
+      const ts = clamp(T.puck.x, -1, 1), curved = shape(ts, 1.3 + 0.7 * fast);
       if (Math.abs(curved) > Math.abs(steer)) steer = curved;
       if (T.brake) brk = 1; if (T.gas) thr = 1; if (T.boost) boost = true;
     }

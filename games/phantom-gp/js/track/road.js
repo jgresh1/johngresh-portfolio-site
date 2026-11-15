@@ -1,7 +1,7 @@
 // road.js — racing surface ribbon (banked, 1 m stations), red/yellow kerbs, and the shoulder strips that
 // stitch both into the LiDAR terrain.
 import * as THREE from 'three';
-import { W, VERGE, naturalAt, meshAt } from './world.js';
+import { W, VERGE, naturalAt, meshAt, KERB_KP, kerbRamps } from './world.js';
 import { groundUniforms, makeGroundMaterial } from './terrain.js';
 
 const COLS = 11;                       // vertices across the asphalt
@@ -51,27 +51,17 @@ export function buildRoad(scene) {
   }
 
   /* ---------------- kerbs ---------------- */
-  const KP = [[0, 0.0], [0.12, 0.022], [0.5, 0.055], [0.86, 0.075], [1, 0.045]];     // (fraction across, height m)
+  const KP = KERB_KP;                    // (fraction across, height m); contactAt() in world.js uses the same profile
   const kpos = [], knor = [], kuv = [], kidx = [];
   for (const side of [-1, 1]) {
-    const kw = side < 0 ? W.kerbL : W.kerbR;
-    // distance (stations) to the nearest end of the run, for the ramp-in / ramp-out
-    const endDist = new Float32Array(N);
-    for (let pass = 0; pass < 2; pass++) {
-      let run = 0;
-      for (let t = 0; t < 2 * N; t++) {
-        const i = pass ? (2 * N - 1 - t) % N : t % N;
-        run = kw[i] > 0 ? run + 1 : 0;
-        endDist[i] = pass ? Math.min(endDist[i], run) : run;
-      }
-    }
+    const kw = side < 0 ? W.kerbL : W.kerbR, rampOf = kerbRamps()[side < 0 ? 0 : 1];
     for (let i = 0; i < N; i++) {
       const j = (i + 1) % N;
       if (!(kw[i] > 0 && kw[j] > 0)) continue;
       const base = kpos.length / 3;
       for (const st of [i, j]) {
         const dx = W.dx[st], dz = W.dz[st], rx = -dz * side, rz = dx * side, hw = W.hw[st], w = kw[st];
-        const ramp = Math.min(1, endDist[st] / 3);
+        const ramp = rampOf[st];
         const sAlong = (st === 0 && i === N - 1) ? L : st * W.ds;
         for (const [fr, hgt] of KP) {
           const d = hw + fr * w;

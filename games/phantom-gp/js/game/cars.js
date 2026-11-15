@@ -52,7 +52,11 @@ export class CarView {
     this.root = new THREE.Group(); this.root.add(car); this.root.matrixAutoUpdate = false;
     this.wheels = [];
     car.traverse((o) => {
-      if (o.userData && o.userData.wheel) this.wheels.push({ group: o, steer: o.getObjectByName('steer'), spin: o.getObjectByName('spin'), front: o.userData.wheel.front, side: o.userData.wheel.side });
+      if (o.userData && o.userData.wheel) {
+        const { front, side } = o.userData.wheel;
+        this.wheels.push({ group: o, steer: o.getObjectByName('steer'), spin: o.getObjectByName('spin'), front, side,
+          k: (front ? 0 : 2) + (side > 0 ? 0 : 1), p0: o.position.clone(), q0: o.quaternion.clone() });
+      }
       if (o.name === 'steeringWheel') this.sw = o;
       if (o.name === 'driver') this.driver = o;
     });
@@ -73,6 +77,7 @@ export class CarView {
       vertexShader: 'attribute vec2 aLocal; varying vec2 vL; void main() { vL = aLocal; gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0); }', fragmentShader: SHADOW_FRAG }));
     this.shadow.frustumCulled = false; this.shadow.renderOrder = 3;
     this._f = new THREE.Vector3(); this._u = new THREE.Vector3(); this._r = new THREE.Vector3(); this._m = new THREE.Matrix4();
+    this._qi = new THREE.Quaternion(); this._v = new THREE.Vector3();
     this.pos = new THREE.Vector3(); this.fwd = new THREE.Vector3(1, 0, 0); this.up = new THREE.Vector3(0, 1, 0);
     this.dash = null;
   }
@@ -81,7 +86,20 @@ export class CarView {
   setStage(studio) { for (const [m, c, deep] of this.meshes) { m.castShadow = studio && c; if (deep) m.visible = studio && !this.q.noDeep; } }
 
   // stand the car at the origin, as in the studio
-  home() { this.root.matrix.identity(); this.root.matrixWorldNeedsUpdate = true; this.car.rotation.set(0, 0, 0); this.car.position.set(0, 0, 0); this.shadow.visible = false; }
+  home() {
+    this.root.matrix.identity(); this.root.matrixWorldNeedsUpdate = true; this.car.rotation.set(0, 0, 0); this.car.position.set(0, 0, 0); this.shadow.visible = false;
+    for (const w of this.wheels) { w.group.position.copy(w.p0); w.group.quaternion.copy(w.q0); }
+  }
+  // The body pitches and rolls on its springs; the wheels must not. Each wheel group gets the inverse of the body's
+  // rotation, so in the road's frame it stays where it was built, raised by that corner's suspension travel.
+  plantWheels(lift) {
+    const qi = this._qi.copy(this.car.quaternion).invert(), v = this._v;
+    for (const w of this.wheels) {
+      v.copy(w.p0); v.y += lift ? lift[w.k] : 0;
+      w.group.position.copy(v.applyQuaternion(qi));
+      w.group.quaternion.multiplyQuaternions(qi, w.q0);
+    }
+  }
 
   // wheels: angles in radians (front axle, rear axle), steer in radians (+ = right), blur = fraction of a turn per exposure
   setWheels(angF, angR, steer, blurF, blurR) {
@@ -103,6 +121,7 @@ export class CarView {
     this._m.makeBasis(f, u, r).setPosition(this.pos);
     this.root.matrix.copy(this._m); this.root.matrixWorldNeedsUpdate = true;
     this.car.rotation.set(-b.rollA * 1.0, 0, -b.pitch);
+    this.plantWheels(b.wheelLift);
     const sh = 1 / 90, tw = 2 * Math.PI;
     this.setWheels(b.wheelAng, b.wheelAngR, b.steer, Math.min(0.5, Math.abs(b.u) / 0.36 * sh / tw), Math.min(0.5, (Math.abs(b.u) / 0.36 + b.spinR * 60) * sh / tw));
     // ground shadow: a small grid laid on the surface around the car

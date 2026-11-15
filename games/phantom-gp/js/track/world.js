@@ -1,7 +1,9 @@
 // world.js — loads the survey-derived assets and exposes height / track queries.
 import * as THREE from 'three';
 
-export const LOAD = { lo: false };   // lo: half-size ground textures from assets/lo (phones)
+// lo: half-size ground photos from assets/lo. Every device starts with them (they are a quarter of the download);
+// desktops then fetch the full-size ones in the background and swap them in (upgradeGround).
+export const LOAD = { lo: false };
 export const W = {};        // filled by loadWorld()
 
 async function bin(url, Type) {
@@ -19,7 +21,8 @@ function loadTex(url, srgb) {
   }, undefined, rej));
 }
 
-export async function loadWorld(progress = () => {}) {
+// gate: a promise to wait for before the CPU work on the downloaded data (the game shows its title first)
+export async function loadWorld(progress = () => {}, gate = null) {
   let done = 0; const total = 15;
   const tick = (p) => p.then((v) => { progress(++done / total); return v; });
   const [meta, track, hNear, hFar, trees0, buildings, barriers, tNear, tFar, tMask, trackside, tPaint, tTone, ground, treesX] = await Promise.all([
@@ -30,15 +33,16 @@ export async function loadWorld(progress = () => {}) {
     tick(bin('assets/trees.bin', Float32Array)),
     tick(fetch('assets/buildings.json').then((r) => r.json())),
     tick(fetch('assets/barriers.json').then((r) => r.json())),
-    tick(loadTex((LOAD.lo ? 'assets/lo/' : 'assets/') + 'near_ortho.jpg', true)),
-    tick(loadTex((LOAD.lo ? 'assets/lo/' : 'assets/') + 'far_ortho.jpg', true)),
-    tick(loadTex('assets/near_mask.png', false)),
+    tick(loadTex('assets/lo/near_ortho.jpg', true)),
+    tick(loadTex('assets/lo/far_ortho.jpg', true)),
+    tick(loadTex('assets/near_mask.webp', false)),
     tick(fetch('assets/trackside.json').then((r) => r.json()).catch(() => ({ tyres: [] }))),
     tick(loadTex((LOAD.lo ? 'assets/lo/' : 'assets/') + 'near_paint.png', true)),
-    tick(loadTex('assets/near_tone.png', false)),
+    tick(loadTex('assets/near_tone.webp', false)),
     tick(fetch('assets/ground.json').then((r) => r.json())),
     tick(bin('assets/trees_extra.bin', Float32Array)),
   ]);
+  if (gate) await gate;
   // surveyed trees + the young trees and narrow strips found by the ground model
   const trees = new Float32Array(trees0.length + treesX.length);
   trees.set(trees0); trees.set(treesX, trees0.length);
@@ -63,6 +67,23 @@ export async function loadWorld(progress = () => {}) {
   shapeStandGround();
   buildVerge();
   return W;
+}
+
+// Desktops: fetch the full-size ground photos and decode them off the main thread. Resolves to a swap function the
+// game calls at a calm moment (a texture this size takes a frame or two to upload), or null on phones / failure.
+export async function upgradeGround() {
+  if (LOAD.lo) return null;
+  try {
+    const bmp = async (url) => createImageBitmap(await (await fetch(url)).blob(), { imageOrientation: 'none', premultiplyAlpha: 'none' });
+    const [near, far] = await Promise.all([bmp('assets/near_ortho.jpg'), bmp('assets/far_ortho.jpg')]);
+    return (uniforms) => {
+      for (const [key, img] of [['tNear', near], ['tFar', far]]) {
+        const old = uniforms[key].value, t = new THREE.Texture(img);
+        t.colorSpace = THREE.SRGBColorSpace; t.flipY = false; t.anisotropy = 8; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.needsUpdate = true;
+        uniforms[key].value = t; W[key] = t; old.dispose();
+      }
+    };
+  } catch (e) { console.warn('full-size ground photos not loaded', e); return null; }
 }
 
 /* ---- verge: the strip of ground between the road edge and the surveyed terrain ----
@@ -352,6 +373,48 @@ export function nearestStation(x, z, out = {}) {
   out.s = s; out.dist = Math.sqrt(bdd); out.d = (x - fr.x) * fr.rx + (z - fr.z) * fr.rz; out.y = fr.y + fr.bank * out.d; out.hw = fr.hw;
   out.kerb = out.d < 0 ? W.kerbL[fr.i] : W.kerbR[fr.i];
   return out;
+}
+
+// kerb cross-section: (fraction across from the road edge, height above the road in m); road.js builds the kerbs from it
+export const KERB_KP = [[0, 0.0], [0.12, 0.022], [0.5, 0.055], [0.86, 0.075], [1, 0.045]];
+// each kerb run ramps up over its first and last 3 m; per station, 0..1, for both sides
+let kerbRamp = null;
+export function kerbRamps() {
+  if (kerbRamp) return kerbRamp;
+  const N = W.N; kerbRamp = [];
+  for (const kw of [W.kerbL, W.kerbR]) {
+    const endDist = new Float32Array(N);
+    for (let pass = 0; pass < 2; pass++) {
+      let run = 0;
+      for (let t = 0; t < 2 * N; t++) {
+        const i = pass ? (2 * N - 1 - t) % N : t % N;
+        run = kw[i] > 0 ? run + 1 : 0;
+        endDist[i] = pass ? Math.min(endDist[i], run) : run;
+      }
+    }
+    const r = new Float32Array(N); for (let i = 0; i < N; i++) r[i] = Math.min(1, endDist[i] / 3);
+    kerbRamp.push(r);
+  }
+  return kerbRamp;
+}
+function kerbLift(f) {
+  for (let k = 1; k < KERB_KP.length; k++) if (f <= KERB_KP[k][0]) { const [a, ha] = KERB_KP[k - 1], [b, hb] = KERB_KP[k]; return ha + (hb - ha) * (f - a) / (b - a); }
+  return KERB_KP[KERB_KP.length - 1][1];
+}
+
+// where a tyre touches down at (x, z): the road, a kerb, or the ground
+const _nc = {};
+export function contactAt(x, z) {
+  const g = groundAt(x, z), n = nearestStation(x, z, _nc);
+  if (!n) return g;
+  const ad = Math.abs(n.d);
+  if (ad >= n.hw + n.kerb + 0.3) return g;
+  let y = n.y;
+  if (n.kerb > 0 && ad > n.hw && ad < n.hw + n.kerb) {
+    const i = Math.round(n.s / W.ds) % W.N;
+    y += kerbLift((ad - n.hw) / n.kerb) * kerbRamps()[n.d < 0 ? 0 : 1][i] + 0.004;
+  }
+  return Math.max(g, y);
 }
 
 // surface height including the racing surface (for cameras / props that may sit on the road)

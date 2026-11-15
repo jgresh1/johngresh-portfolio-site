@@ -114,9 +114,9 @@ export class Sound {
   startLoop() {
     if (!this.ready) return;
     if (!this.music || this.music.length !== 1) { this.stopMusic(); const lp = this.ctx.createBufferSource(); lp.buffer = this.loopBuf; lp.loop = true; lp.connect(this.musicG); lp.start(); this.music = [lp]; }
-    this.setMusicLevel(0.36, 1.2);
+    this.setMusicLevel(0.46, 1.2);
   }
-  raceLevel() { if (this.music && this.music.length === 2) { try { this.music[0].stop(); } catch (e) { /* done */ } this.music = [this.music[1]]; } this.setMusicLevel(0.36, 1.5); }
+  raceLevel() { if (this.music && this.music.length === 2) { try { this.music[0].stop(); } catch (e) { /* done */ } this.music = [this.music[1]]; } this.setMusicLevel(0.46, 1.5); }
 
   /* ---- one-shots ---- */
   tone(f, dur, g = 0.2, type = 'sine', f1 = f) {
@@ -139,6 +139,9 @@ export class Sound {
     else if (name === 'win') [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.tone(f, 0.5, 0.14, 'triangle'), i * 110));
     else if (name === 'lose') [392, 330, 262].forEach((f, i) => setTimeout(() => this.tone(f, 0.5, 0.12, 'triangle'), i * 160));
     else if (name === 'whoosh') this.burst(0.7, 0.35 * k, 1800, 0.6, 'bandpass');
+    else if (name === 'pass') { this.burst(0.5, 0.3, 2400, 0.7, 'bandpass'); [659, 988].forEach((f, i) => setTimeout(() => this.tone(f, 0.22, 0.13, 'square'), i * 90)); }
+    else if (name === 'passed') { this.burst(0.5, 0.3, 900, 0.7, 'bandpass'); this.tone(330, 0.3, 0.13, 'square', 220); }
+    else if (name === 'tow') this.tone(880, 0.12, 0.07, 'triangle', 1320);
     else if (name === 'shift') { this.burst(0.07, 0.3 * k, 2600, 1.2, 'bandpass'); this.tone(170, 0.09, 0.3 * k, 'square', 70); }
   }
 

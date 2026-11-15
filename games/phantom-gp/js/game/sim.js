@@ -1,6 +1,10 @@
 // sim.js — the driving model, the rival driver and the race. Both cars share one set of performance numbers, so the
 // rival is fast because it drives well, not because it has a better car.
-import { W, frameAt, nearestStation, surfaceAt, groundClass } from '../track/world.js';
+import { W, frameAt, nearestStation, surfaceAt, contactAt, groundClass } from '../track/world.js';
+
+// tyre contact points in the car frame (x forward, z right): front axle 1.8 m ahead of the middle, rear 1.8 m behind;
+// half-tracks from car.js (ZF, ZR). Order: front right, front left, rear right, rear left.
+export const WHEELS = [[1.8, 0.8375], [1.8, -0.8375], [-1.8, 0.7875], [-1.8, -0.7875]];
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const damp = (cur, target, lambda, dt) => cur + (target - cur) * (1 - Math.exp(-lambda * dt));
@@ -51,10 +55,17 @@ export function buildTrack() {
   for (let i = 0; i < N; i++) { dMax[i] = Math.min(W.hw[i] - 1.15, wr[i] - 1.7); dMin[i] = Math.min(W.hw[i] - 1.15, wl[i] - 1.7); }
   dMax = spread(spread(dMax, 10, Math.min), 10, null); dMin = spread(spread(dMin, 10, Math.min), 10, null);
   for (let i = 0; i < N; i++) dMin[i] = -dMin[i];
+  // The racing line stays 1.8 m inside the road edge (a wheel's width of margin at 300 km/h) and a further 0.35 m
+  // off any wall that narrows the road: a line that brushes the grass or a wall is a trap for whoever follows it.
   let line = new Float32Array(N);
-  for (let i = 0; i < N; i++) line[i] = clamp(W.line[i], dMin[i], dMax[i]);
+  const nearL = new Float32Array(N), nearR = new Float32Array(N);       // 0 where a wall, not the road edge, sets the limit
+  for (let i = 0; i < N; i++) { nearL[i] = wl[i] - 1.7 < W.hw[i] - 1.15 ? 0 : 1; nearR[i] = wr[i] - 1.7 < W.hw[i] - 1.15 ? 0 : 1; }
+  const wlS = spread(nearL, 12, Math.min), wrS = spread(nearR, 12, Math.min);
+  const lo2 = (i) => { const m = wlS[i] < 0.5 ? 1.0 : 0.65; return Math.min(dMin[i] + m, Math.max(dMin[i], -0.2)); };
+  const hi2 = (i) => { const m = wrS[i] < 0.5 ? 1.0 : 0.65; return Math.max(dMax[i] - m, Math.min(dMax[i], 0.2)); };
+  for (let i = 0; i < N; i++) line[i] = clamp(W.line[i], lo2(i), hi2(i));
   line = spread(line, 8, null);
-  for (let i = 0; i < N; i++) line[i] = clamp(line[i], dMin[i], dMax[i]);
+  for (let i = 0; i < N; i++) line[i] = clamp(line[i], lo2(i), hi2(i));
   T.dMin = dMin; T.dMax = dMax; T.line = line;
   // the racing line and its curvature
   const lx = new Float32Array(N), lz = new Float32Array(N), fr = {};
@@ -139,6 +150,7 @@ class Body {
     this.s = 0; this.d = 0; this.prog = 0; this.hw = 6; this.surface = 1; this.kerb = 0;
     this.slip = 0; this.impact = 0; this.wheelAng = 0; this.wheelAngR = 0; this.spinR = 0;
     this.pitch = 0; this.rollA = 0; this.nx = 0; this.ny = 1; this.nz = 0; this._ns = {};
+    this.wheelY = new Float32Array(4); this.wheelLift = new Float32Array(4);   // FR, FL, RR, RL (see WHEELS)
     this.lap = 0; this.lapStart = 0; this.laps = []; this.done = false; this.finishT = 0;
   }
   get speed() { return Math.hypot(this.u, this.w); }
@@ -146,17 +158,20 @@ class Body {
     const n = nearestStation(this.x, this.z, this._ns);
     if (n) { const ds = n.s - this.s, L = W.L, dd = ds > L / 2 ? ds - L : ds < -L / 2 ? ds + L : ds; if (Math.abs(dd) < 120) this.prog += dd; this.s = n.s; this.d = n.d; this.hw = n.hw; this.kerbW = n.kerb; }
   }
-  // height, slope and bank from the surface under the four wheels (once per frame)
+  // Height, slope and bank from where the four tyres touch down (once per frame). The body plane goes through the
+  // axle midpoints with no smoothing, so the tyres never sink on a climb or float on a descent; whatever one tyre
+  // sits above or below that plane (a kerb under one wheel, a twist in the road) is that wheel's suspension travel.
   settle(dt) {
-    const c = Math.cos(this.psi), s = Math.sin(this.psi), a = 1.8, b = 0.78;
-    const hf = surfaceAt(this.x + c * a, this.z + s * a), hr = surfaceAt(this.x - c * a, this.z - s * a);
-    const hR = surfaceAt(this.x - s * b, this.z + c * b), hL = surfaceAt(this.x + s * b, this.z - c * b);
-    const y = (hf + hr + hR + hL) / 4, k = dt > 0 ? 1 - Math.exp(-26 * dt) : 1;
-    this.y += (y - this.y) * k;
-    this.slope = (this.slope ?? 0) + ((hf - hr) / (2 * a) - (this.slope ?? 0)) * k;
-    this.bank = (this.bank ?? 0) + ((hR - hL) / (2 * b) - (this.bank ?? 0)) * k;
-    this.pitch = damp(this.pitch, clamp(-this.ax * 0.0011, -0.022, 0.016), 9, dt);
-    this.rollA = damp(this.rollA, clamp(this.ay * 0.00042, -0.022, 0.022), 9, dt);
+    const c = Math.cos(this.psi), s = Math.sin(this.psi), W2 = WHEELS, h = this.wheelY;
+    for (let k = 0; k < 4; k++) { const [ax, az] = W2[k]; h[k] = contactAt(this.x + c * ax - s * az, this.z + s * ax + c * az); }
+    const yF = (h[0] + h[1]) / 2, yR = (h[2] + h[3]) / 2;
+    this.y = (yF + yR) / 2;
+    this.slope = (yF - yR) / (W2[0][0] - W2[2][0]);
+    this.bank = ((h[0] - h[1]) / (2 * W2[0][1]) + (h[2] - h[3]) / (2 * W2[2][1])) / 2;
+    for (let k = 0; k < 4; k++) { const [ax, az] = W2[k]; this.wheelLift[k] = clamp(h[k] - (this.y + this.slope * ax + this.bank * az), -0.05, 0.05); }
+    // body motion on the springs (the wheels stay put: see CarView.sync)
+    this.pitch = damp(this.pitch, clamp(-this.ax * 0.0006, -0.011, 0.009), 9, dt);
+    this.rollA = damp(this.rollA, clamp(this.ay * 0.0003, -0.014, 0.014), 9, dt);
   }
   gears(dt) {
     const v = Math.abs(this.u), g = gearFor(v, this.gear);
@@ -196,17 +211,41 @@ export class Car extends Body {
     // ---- assists
     const vLim = vpAt(this.s + clamp(v * 0.05, 0, 6));
     if (assist >= 1 && onRoad && Math.abs(headErr) < 1.2) {
-      const over = v - vLim * (assist >= 2 ? 0.955 : 1.04);
+      const over = v - vLim * (assist >= 2 ? 0.95 : 1.04);
       if (over > 0) { brk = Math.max(brk, clamp(over / 5, 0, 1)); thr = Math.min(thr, 1 - clamp(over / 2, 0, 1)); }
     }
+    if (assist >= 1 && other && !this.rev) {
+      // do not ram the car in front: tucked in behind it the help lifts, so the car sits in the tow until the driver pulls out
+      const dx = other.x - this.x, dz = other.z - this.z, c0 = Math.cos(this.psi), s0 = Math.sin(this.psi), gapA = dx * c0 + dz * s0, side = -dx * s0 + dz * c0;
+      if (gapA > 4.8 && gapA < 16 && Math.abs(side) < 1.7) {
+        const tgt = other.u + (gapA - 7) * 1.1;
+        if (v > tgt) { thr = Math.min(thr, 0.15); if (v > tgt + 1.5) brk = Math.max(brk, clamp((v - tgt - 1.5) / 6, 0, 0.7)); }
+      }
+    }
     if (assist >= 2 && v > 8) {
-      // hold the racing line when the driver is not steering much
+      // hold the racing line when the driver is not steering much (this form does the slow corners)
       const la = clamp(v * 0.22, 6, 26), f2 = frameAt(this.s + la, this._f2 || (this._f2 = {}));
       const ln = lineAt(this.s + la), tx = f2.x + f2.rx * ln, tz = f2.z + f2.rz * ln;
       const want = wrapPi(Math.atan2(tz - this.z, tx - this.x) - this.psi);
       const dmax = Math.min(0.42, Math.atan(PHYS.L * 1.15 * grip(v) * EDGE * mu / Math.max(v * v, 60)));
       const help = steerFor(want, Math.hypot(tx - this.x, tz - this.z), dmax), wgt = 1 - clamp(Math.abs(steerIn) * 1.5, 0, 1);
       steerIn = clamp(steerIn + help * wgt, -1, 1);
+    }
+    if (v > 5 && Math.abs(headErr) < 1.0) {
+      /* How the car steers (every help level). A racing car turns so hard that a key held a third of a second, or a
+         thumb moved a centimetre, throws it off the road: at 300 km/h three degrees of heading is 4 m/s of drift.
+         So the driver's input is read as "move across the road": the car aims along the road ahead plus an angle set
+         by the input (at most ~7.5 m/s sideways), and with no input it runs parallel to the road. Grip is unchanged:
+         too fast for a corner and the car still runs wide. Below walking pace, and whenever the car is pointing well
+         away from the road's direction, the wheel is direct. */
+      const TAU = 0.15, k = clamp((v - 5) / 8, 0, 1), blend = k * k * (3 - 2 * k);
+      const ahead = frameAt(this.s + v * TAU, this._f3 || (this._f3 = {}));
+      const maxAng = clamp(7.5 / v, 0.06, 0.4);
+      let ang = clamp(inp.steer, -1, 1) * maxAng;
+      if (assist >= 2) ang += clamp((lineAt(this.s + v * TAU) - this.d) / Math.max(v * 0.8, 8), -maxAng, maxAng) * (1 - clamp(Math.abs(inp.steer) * 1.5, 0, 1));
+      const rFull = 1.15 * grip(v) * EDGE * mu / Math.max(v, 4);                 // yaw rate at full lock
+      const cmd = clamp(wrapPi(Math.atan2(ahead.dz, ahead.dx) + ang - this.psi) / TAU / rFull, -1, 1);
+      steerIn += (cmd - steerIn) * blend;
     }
     if (this.auto) { const a = this.auto(this, fr); steerIn = a.steer; thr = a.throttle; brk = a.brake; }
 
@@ -268,7 +307,7 @@ export class Car extends Body {
       const vn = vx * h.nx + vz * h.nz;
       if (vn < 0) {
         vx -= 1.2 * vn * h.nx; vz -= 1.2 * vn * h.nz;
-        const fr2 = Math.exp(-(0.6 + Math.min(3, -vn * 0.25)) * 0.12); vx *= fr2; vz *= fr2;
+        const fr2 = Math.exp(-(0.2 + Math.min(3, -vn * 0.25)) * 0.1); vx *= fr2; vz *= fr2;      // a glancing touch costs little, a square hit a lot
         this.impact = Math.max(this.impact, clamp(-vn / 14, 0.08, 1));
         // turn the nose along the wall so the car slides off instead of sticking
         const tx = -h.nz, tz = h.nx, sgn = Math.sign(tx * c2 + tz * s2) || 1, want = Math.atan2(tz * sgn, tx * sgn);
@@ -292,7 +331,9 @@ export class Car extends Body {
 }
 
 /* ------------------------------------------------------------------ the rival: drives the racing line on rails */
-export const SKILL = { rookie: { pace: 0.90, ease: 0.06, push: 0.04 }, pro: { pace: 0.945, ease: 0.045, push: 0.04 }, legend: { pace: 0.985, ease: 0.015, push: 0.03 } };
+// pace: fraction of the racing line's limit speed in corners. ease: how much the rival gives away when it is well
+// clear in front (so a mistake does not end the race). push: how much it finds when it is behind.
+export const SKILL = { rookie: { pace: 0.915, ease: 0.11, push: 0.035 }, pro: { pace: 0.965, ease: 0.085, push: 0.045 }, legend: { pace: 1.005, ease: 0.045, push: 0.04 } };
 export class Rival extends Body {
   constructor() { super('rival'); this.dOff = 0; this.dRate = 0; this.skill = SKILL.pro; this.pace = 1; this.hold = 0; }
   place(s, d, v) {
@@ -316,10 +357,13 @@ export class Rival extends Body {
     const gap = P.prog - this.prog;                              // > 0: the player is ahead
     // pace: a little more when chasing, a little less when clear in front, so the fight stays close
     let pace = sk.pace;
-    if (gap > 0) pace += Math.min(sk.push, gap / 1200); else if (gap < -25) pace -= Math.min(sk.ease, (-gap - 25) / 1600);
+    let easing = 0;
+    if (gap > 0) pace += sk.push * clamp(gap / 70, 0, 1);
+    else if (gap < -20) { easing = clamp((-gap - 20) / 140, 0, 1); pace -= sk.ease * easing; }
     this.pace = damp(this.pace, pace, 1.5, dt);
     const lim = vpAt(this.s + 2), st = clamp((lim - 82) / 13, 0, 1);
     let vt = lim * (this.pace + (1 - this.pace) * st * st * (3 - 2 * st));       // the pace factor is for corners; straights are flat out
+    vt *= 1 - 0.5 * sk.ease * easing * st;                                       // ... unless it is far ahead: then it lifts a little there too
     // off the line in a corner costs speed
     const offLine = Math.abs(this.dOff);
     vt *= 1 - clamp(offLine / 6, 0, 1) * clamp(Math.abs(T.kl[i]) * 60, 0, 1) * 0.07;

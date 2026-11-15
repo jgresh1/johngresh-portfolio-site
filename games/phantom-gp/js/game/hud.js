@@ -18,7 +18,7 @@ const OPTIONS = {
   laps: ['Laps', [['1', 1], ['2', 2], ['3', 3]]],
   skill: ['Rival', [['Rookie', 'rookie'], ['Pro', 'pro'], ['Legend', 'legend']]],
   paint: ['Livery', PAINTS.map((p, i) => [p.name, i])],
-  assist: ['Driving help', [['Off', 0], ['Brakes', 1], ['Full', 2]]],
+  assist: ['Driving help', [['Off', 0], ['Standard', 1], ['Full', 2]]],
   autoThrottle: ['Throttle', [['Auto', true], ['Manual', false]]],
   line: ['Racing line', [['On', true], ['Off', false]]],
   music: ['Music', [['On', true], ['Off', false]]],
@@ -74,7 +74,19 @@ export class Hud {
     document.body.classList.toggle('racing', name === 'race');
     $('h-btns').classList.toggle('off', !(name === 'race' || name === 'pause'));     // the site's own menu button docks here while the row shows
   }
-  load(text, p) { $('load-text').textContent = text; $('load-bar').firstElementChild.style.width = Math.round(p * 100) + '%'; }
+  load(text, p) { (window.__bootT ||= []).push([text, Math.round(performance.now())]); $('load-text').textContent = text; $('load-bar').firstElementChild.style.width = Math.round(p * 100) + '%'; }
+  // the circuit loading behind the title: p in 0..1, null = the player pressed Start early (it starts by itself at 1)
+  startProgress(p) {
+    const b = $('b-start'), fine = $('title-fine');
+    if (p === null) { this.asked = true; p = this.prog || 0; }
+    this.prog = p;
+    const ready = p >= 1;
+    b.classList.toggle('wait', !ready); b.classList.toggle('asked', !ready && !!this.asked);
+    b.style.setProperty('--p', p.toFixed(3));
+    if (!this.fineText) this.fineText = fine.textContent;
+    if (ready) { b.textContent = 'Start'; fine.textContent = this.fineText; }
+    else { b.textContent = this.asked ? 'Starting' : 'Start'; fine.textContent = 'Loading the circuit · ' + Math.round(p * 100) + '%'; }
+  }
   bars(on) { $('cine').classList.toggle('bars', on); }
   caption(small, big, center = false) { const c = $('cap'); c.firstElementChild.textContent = small || ''; c.lastElementChild.textContent = big || ''; c.classList.toggle('center', center); c.classList.toggle('on', !!(small || big)); }
   toast(small, big, sec = 1.8) { const t = $('h-toast'); t.firstElementChild.textContent = small || ''; t.lastElementChild.textContent = big || ''; t.classList.add('on'); this.toastT = sec; }

@@ -12,6 +12,7 @@ export class Chase {
     this.cam = camera; this.mode = 0;
     this.dir = new V(1, 0, 0); this.pos = new V(); this.look = new V(); this.fov = 60; this.roll = 0; this.t = 0; this.y = 0; this.side = 0;
     this._a = new V(); this._b = new V(); this._r = new V(); this._up = new V(0, 1, 0); this.first = true;
+    this.boost = 0;                 // the boost as the camera sees it: eased, so the view never jumps when it is pressed or runs out
   }
   cycle() { this.mode = (this.mode + 1) % CAM_MODES.length; this.first = true; return CAM_MODES[this.mode]; }
   snap() { this.first = true; }
@@ -20,6 +21,7 @@ export class Chase {
   update(dt, view, b) {
     const cam = this.cam, v = Math.abs(b.u), a = this._a, r = this._r;
     this.t += dt;
+    const boost = this.boost = this.first ? b.boost : damp(this.boost, b.boost, b.boost > this.boost ? 1.8 : 1.3, dt);
     r.crossVectors(view.fwd, view.up).normalize();
     const shakeAmp = 0.003 + 0.013 * (v / 90) ** 2 + 0.06 * b.impact + (b.surface !== 1 ? 0.035 * clamp(v / 40, 0, 1) : 0) + (b.kerb ? 0.014 * clamp(v / 50, 0, 1) : 0);
     const sx = (Math.sin(this.t * 71.3) + Math.sin(this.t * 113.7 + 1.3)) * 0.5 * shakeAmp, sy = (Math.sin(this.t * 83.9 + 0.7) + Math.sin(this.t * 127.1)) * 0.5 * shakeAmp;
@@ -29,7 +31,7 @@ export class Chase {
       // the camera trails the direction the car is moving, a touch behind its heading, so slides show
       a.copy(view.fwd).multiplyScalar(Math.max(b.u, 6)).addScaledVector(r, b.w * 0.6).normalize();
       if (this.first) this.dir.copy(a); else this.dir.lerp(a, 1 - Math.exp(-(far ? 5 : 7.5) * dt)).normalize();
-      const dist = (far ? 8.4 : 5.5) + v * 0.011 + b.boost * 0.5, h = (far ? 2.5 : 1.42) + v * 0.002;
+      const dist = (far ? 8.4 : 5.5) + v * 0.011 + boost * 0.5, h = (far ? 2.5 : 1.42) + v * 0.002;
       this.side = damp(this.side, clamp(b.yaw * 1.6, -1.6, 1.6), 3, dt);
       a.copy(view.pos).addScaledVector(this.dir, -dist).addScaledVector(view.up, h * 0.35); a.y += h * 0.65;
       a.addScaledVector(r, -this.side * 0.35);
@@ -41,7 +43,7 @@ export class Chase {
       cam.up.set(0, 1, 0); cam.lookAt(this.look);
       this.roll = damp(this.roll, clamp(-b.ay * 0.0006 - (b.bank || 0) * 0.5, -0.09, 0.09), 5, dt);
       cam.rotateZ(this.roll);
-      fovT = (far ? 54 : 58) + 15 * (v / 90) ** 1.3 + 4 * b.boost;
+      fovT = (far ? 54 : 58) + 15 * (v / 90) ** 1.3 + 4 * boost;
       if (Math.abs(cam.near - 0.3) > 1e-3) { cam.near = 0.3; this.fov = 0; }
     } else {
       const nose = this.mode === 3;
@@ -50,7 +52,7 @@ export class Chase {
       this.look.copy(a).addScaledVector(view.fwd, 12).addScaledVector(view.up, nose ? -0.2 : -1.9).addScaledVector(r, clamp(b.yaw * 2.2, -3, 3));
       cam.position.copy(this.pos).addScaledVector(r, sx * 0.5).addScaledVector(view.up, sy * 0.5);
       cam.up.copy(view.up); cam.lookAt(this.look);
-      fovT = (nose ? 66 : 60) + 12 * (v / 90) ** 1.3 + 3 * b.boost;
+      fovT = (nose ? 66 : 60) + 12 * (v / 90) ** 1.3 + 3 * boost;
       if (Math.abs(cam.near - 0.12) > 1e-3) { cam.near = 0.12; this.fov = 0; }
     }
     const f = this.first || this.fov === 0 ? fovT : damp(this.fov, fovT, 4, dt);

@@ -169,11 +169,16 @@ function buildWheel(hw, M, front) {
 
   const zo = hw - 0.036, rc = 0.2215;
   const rim = lathe([
-    { pts: [[-(hw - 0.036), 0.2440], [-(hw - 0.046), 0.2300], [hw - 0.046, 0.2300], [zo - 0.004, 0.2380], [zo, 0.2445], [zo + 0.0025, 0.2400], [zo + 0.001, 0.2330], [zo - 0.008, 0.2270], [zo - 0.016, 0.2240]], mat: 0 },
+    { pts: [[-(hw - 0.036), 0.2440], [-(hw - 0.046), 0.2300], [hw - 0.046, 0.2300], [zo - 0.004, 0.2380], [zo, 0.2445], [zo + 0.0025, 0.2400], [zo + 0.001, 0.2330], [zo - 0.008, 0.2270], [zo - 0.016, 0.2240], [zo - 0.017, rc]], mat: 0 },
     { pts: [[zo - 0.017, rc], [zo - 0.021, 0.19], [zo - 0.028, 0.12], [zo - 0.034, 0.068]], mat: 1, uv: (p) => [0.5 + p.x / (2 * rc), 0.5 + p.y / (2 * rc)] },
-    { pts: [[zo - 0.035, 0.062], [zo - 0.048, 0.058], [zo - 0.078, 0.056], [zo - 0.079, 0.002]], mat: 0 },
+    { pts: [[zo - 0.034, 0.068], [zo - 0.035, 0.062], [zo - 0.048, 0.058], [zo - 0.078, 0.056], [zo - 0.079, 0.002]], mat: 0 },
   ], 96);
   const rm = new THREE.Mesh(rim, [M.rim, front ? M.coverF : M.cover]); rm.castShadow = rm.receiveShadow = true; spin.add(rm);
+  /* The inside of the wheel. The rim, cover and hub are one skin seen from outside; from behind (between the brake
+     drum and the rim) and through any hairline between parts you looked straight through the wheel at the road
+     beyond. A dark wall behind the cover and a liner inside the barrel close it: no line of sight passes through. */
+  const zd = zo - 0.060, liner = lathe([{ pts: [[zd, 0.050], [zd, 0.2288], [-(hw - 0.046), 0.2288], [-(hw - 0.037), 0.2425]] }], 72);
+  const lm = new THREE.Mesh(liner, M.duct); lm.receiveShadow = true; spin.add(lm);
 
   // wheel nut + axle stub
   const nut = lathe([{ pts: [[zo - 0.079, 0.040], [zo - 0.050, 0.040], [zo - 0.044, 0.036], [zo - 0.044, 0.022], [zo - 0.062, 0.020], [zo - 0.062, 0.002]] }], 24);

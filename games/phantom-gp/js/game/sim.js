@@ -428,8 +428,11 @@ export class Rival extends Body {
     }
     if (near && Math.abs(this.d - P.d) < 2.4) dTarget = this.dOff + Math.sign(this.d - P.d || 1) * 1.2;   // alongside: give room
     dTarget = clamp(dTarget, T.dMin[i] - lineD, T.dMax[i] - lineD);
-    const rate = clamp((dTarget - this.dOff) * 1.6, -2.6, 2.6);
-    this.dRate = damp(this.dRate, rate, 5, dt);
+    // A car moves sideways only by driving forward: about 8 degrees off the road's direction at most, and not at all
+    // before the lights go out. (It used to cross the grid sideways, standing still, while the lights counted down.)
+    const latMax = race.state === 'green' || race.state === 'done' ? Math.min(2.6, v * 0.14) : 0;
+    const rate = clamp((dTarget - this.dOff) * 1.6, -latMax, latMax);
+    this.dRate = latMax ? clamp(damp(this.dRate, rate, 5, dt), -latMax, latMax) : 0;
     this.dOff += this.dRate * dt;
 
     // ---- speed

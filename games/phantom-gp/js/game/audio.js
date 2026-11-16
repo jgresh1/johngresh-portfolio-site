@@ -4,30 +4,13 @@ import { loadScore, SCORE, BEAT } from './music.js';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-// Slow-motion dips in the film: the music is slowed with the picture. Each: the beat it starts on, then seconds of
-// real time to ease in, hold and ease out, and the playback rate while held.
-export const SLOW = [{ beat: 44.8, in: 0.3, hold: 1.5, out: 0.35, rate: 0.5 }, { beat: 48.8, in: 0.3, hold: 1.5, out: 0.35, rate: 0.5 }];
-// break-points (real seconds from the start of the film, rate) and the music time reached at each
-function slowCurve() {
-  const pts = [[0, 1, 0]]; let w = 0, tau = 0;
-  for (const s of SLOW) {
-    const ws = w + (s.beat * BEAT - tau); tau = s.beat * BEAT; w = ws; pts.push([w, 1, tau]);
-    w += s.in; tau += s.in * (1 + s.rate) / 2; pts.push([w, s.rate, tau]);
-    w += s.hold; tau += s.hold * s.rate; pts.push([w, s.rate, tau]);
-    w += s.out; tau += s.out * (1 + s.rate) / 2; pts.push([w, 1, tau]);
-  }
-  return pts;
-}
-const CURVE = slowCurve();
-export function tauAt(w) {                      // music time (s) at real time w (s)
-  let i = 0; while (i + 1 < CURVE.length && CURVE[i + 1][0] <= w) i++;
-  const [w0, r0, t0] = CURVE[i], nx = CURVE[i + 1];
-  if (!nx) return t0 + (w - w0);
-  const u = (w - w0) / Math.max(1e-6, nx[0] - w0), r = r0 + (nx[1] - r0) * u;
-  return t0 + (w - w0) * (r0 + r) / 2;
-}
-export function wallAt(tau) { let lo = 0, hi = tau + 10; for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2; if (tauAt(m) < tau) lo = m; else hi = m; } return (lo + hi) / 2; }
-export function rateAt(w) { let i = 0; while (i + 1 < CURVE.length && CURVE[i + 1][0] <= w) i++; const nx = CURVE[i + 1]; if (!nx) return 1; const u = (w - CURVE[i][0]) / Math.max(1e-6, nx[0] - CURVE[i][0]); return CURVE[i][1] + (nx[1] - CURVE[i][1]) * u; }
+// Slow motion in the film: the picture slows so the names on the tyre can be read; the music does not. Each: the
+// beat it starts on, then seconds to ease in, hold and ease out. Both fit inside their four-beat shots (intro.js).
+export const SLOW = [{ beat: 44.2, in: 0.25, hold: 1.15, out: 0.28 }, { beat: 48.2, in: 0.25, hold: 1.15, out: 0.28 }];
+// The music plays at one speed from start to finish, so film time and music time are the same thing. (They were not
+// while the music slowed with the picture; these two stay so the film's code reads the same either way.)
+export const tauAt = (w) => w;
+export const wallAt = (tau) => tau;
 
 class Engine {
   constructor(ctx, out, noise) {
@@ -56,17 +39,37 @@ class Engine {
   }
 }
 
+// Music levels. The film plays at full level. On the circuit the same piece carries on, but well back, under the
+// engines; behind the menus a little higher.
+const FILM_LEVEL = 0.95, RACE_LEVEL = 0.34, MENU_LEVEL = 0.46;
+
 export class Sound {
   constructor() { this.ctx = null; this.ready = false; this.opts = { music: true, sound: true }; this.scoreP = null; this.music = null; }
   // fetch and decode the score while the game loads (needs no user gesture); the game runs without music if it fails
   prepare() { return this.scoreP || (this.scoreP = loadScore().catch((e) => { console.warn('music not loaded', e); return null; })); }
 
+  /* Call this inside a tap, click or key press, before anything is awaited. A phone only lets sound start from
+     inside the gesture itself; once the game has waited for a download the tap no longer counts, the audio clock
+     never starts, and the film (which ran on that clock alone) sat on its first black frame. */
+  unlock() {
+    try {
+      if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC({ latencyHint: 'interactive' }); }
+      const ctx = this.ctx;
+      if (this.held || (this.unlocked && ctx.state === 'running')) return;      // (held: the game has stopped the sound itself, see pause)
+      const p = ctx.resume(); if (p && p.catch) p.catch(() => {});
+      const s = ctx.createBufferSource(); s.buffer = this.silent || (this.silent = ctx.createBuffer(1, 1, 22050)); s.connect(ctx.destination); s.start(0);
+      if (ctx.state === 'running') this.unlocked = true;
+    } catch (e) { /* no audio on this device: the game runs silent */ }
+  }
+
   async init() {
-    if (this.ready) { try { await this.ctx.resume(); } catch (e) { /* fine */ } return; }
+    if (this.ready) { this.unlock(); return; }
+    this.unlock();
     const score = await this.prepare();
     try {
-      const AC = window.AudioContext || window.webkitAudioContext; const ctx = this.ctx = new AC({ latencyHint: 'interactive' });
-      try { await ctx.resume(); } catch (e) { /* stays suspended until a later gesture */ }
+      const ctx = this.ctx; if (!ctx) throw new Error('no audio context');
+      // (never wait on resume: on a phone that has not unlocked sound it does not settle)
+      this.unlock();
       const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -9; comp.knee.value = 8; comp.ratio.value = 6; comp.attack.value = 0.004; comp.release.value = 0.16;
       this.master = ctx.createGain(); this.master.gain.value = 0.9; this.master.connect(comp).connect(ctx.destination);
       this.musicG = ctx.createGain(); this.musicG.gain.value = 0.9; this.musicG.connect(this.master);
@@ -82,44 +85,71 @@ export class Sound {
   }
   setOptions(o) { this.opts = { music: o.music, sound: o.sound }; if (!this.ready) return; const t = this.ctx.currentTime; this.musicG.gain.setTargetAtTime(o.music ? this.musicLevel || 0.9 : 0, t, 0.05); this.fxG.gain.setTargetAtTime(o.sound ? 1 : 0, t, 0.05); }
   setMusicLevel(v, tc = 0.4) { this.musicLevel = v; if (this.ready && this.opts.music) this.musicG.gain.setTargetAtTime(v, this.ctx.currentTime, tc); }
-  pause() { if (this.ready) this.ctx.suspend(); }
-  resume() { if (this.ready) this.ctx.resume(); }
+  pause() { this.held = true; if (this.ctx) { const p = this.ctx.suspend(); if (p && p.catch) p.catch(() => {}); } }
+  resume() { this.held = false; this.resumeT = performance.now() / 1000; if (this.ctx) { const p = this.ctx.resume(); if (p && p.catch) p.catch(() => {}); } }
 
   /* ---- soundtrack ---- */
-  // start the film score; returns a clock: beats() = position in beats, rate() = current speed (1 or less in slow motion)
+  /* Start the film score. Returns the film's clock: wall() = seconds into the film, beats() = the same in beats.
+     The film runs on the audio clock, so every cut stays on the beat. But that clock only moves while the device is
+     actually playing sound, and a phone may refuse to (or take a while). So it is watched: if it has not moved for
+     half a second the film carries on by the ordinary clock instead of standing still, and if sound does start
+     later the music comes in at the point the film has reached. */
   playFilm() {
     this.stopMusic();
-    const t0p = performance.now() / 1000;
-    if (!this.ready) return { beats: () => tauAt(performance.now() / 1000 - t0p) / BEAT, rate: () => rateAt(performance.now() / 1000 - t0p), wall: () => performance.now() / 1000 - t0p };
-    const ctx = this.ctx, t0 = ctx.currentTime + 0.12;
-    if (this.filmBuf && this.loopBuf) {
-      const src = ctx.createBufferSource();
-      src.buffer = this.filmBuf; src.connect(this.musicG);
-      src.playbackRate.setValueAtTime(1, t0);
-      for (const [w, r] of CURVE.slice(1)) src.playbackRate.linearRampToValueAtTime(r, t0 + w);
-      src.start(t0);
+    const now = () => performance.now() / 1000, self = this, wEnd = 64 * BEAT;
+    // the ordinary clock: adds up frame times (a long gap, such as the tab being hidden, counts as a quarter second)
+    const free = (w0) => { const f = { w: w0, p: now(), a: self.ctx ? self.ctx.currentTime : 0 }; f.tick = () => { const p = now(); if (!self.held) f.w += Math.min(p - f.p, 0.25); f.p = p; return f.w; }; return f; };
+    if (!this.ready) { const f = free(0); return { wall: f.tick, beats: () => Math.max(0, f.tick()) / BEAT, rate: () => 1 }; }
+    const ctx = this.ctx, lat = ctx.outputLatency || ctx.baseLatency || 0;
+    // put the music on so that film time `at` falls on audio time `when`
+    const schedule = (when, at) => {
+      if (!this.filmBuf || !this.loopBuf) return;
+      const src = ctx.createBufferSource(); src.buffer = this.filmBuf; src.connect(this.musicG);
+      src.start(when, Math.max(0, Math.min(at, this.filmBuf.duration - 0.02)));
       // The race music takes over on the beat the film ends, 48 beats into its loop: exactly where the film's music
       // has got to. The film's last 40 ms fade out as these fade in.
-      const wEnd = wallAt(64 * BEAT), lp = ctx.createBufferSource(), lg = ctx.createGain(); lp.buffer = this.loopBuf; lp.loop = true;
-      lg.gain.setValueAtTime(0, t0 + wEnd); lg.gain.linearRampToValueAtTime(1, t0 + wEnd + 0.04);
-      lp.connect(lg).connect(this.musicG); lp.start(t0 + wEnd, SCORE.race.entry);
+      const tEnd = when + (wEnd - at), lp = ctx.createBufferSource(), lg = ctx.createGain(); lp.buffer = this.loopBuf; lp.loop = true;
+      lg.gain.setValueAtTime(0, tEnd); lg.gain.linearRampToValueAtTime(1, tEnd + 0.04);
+      lp.connect(lg).connect(this.musicG); lp.start(tEnd, SCORE.race.entry);
       this.music = [src, lp];
-    }
-    this.setMusicLevel(0.95, 0.02);
-    const lat = (ctx.outputLatency || ctx.baseLatency || 0);
-    const wall = () => ctx.currentTime - t0 - lat;
-    return { beats: () => tauAt(Math.max(0, wall())) / BEAT, rate: () => rateAt(Math.max(0, wall())), wall };
+    };
+    let t0 = ctx.currentTime + 0.12;                       // the audio time of the film's first frame
+    schedule(t0, 0); this.setMusicLevel(FILM_LEVEL, 0.02);
+    let fr = null, lastA = ctx.currentTime, lastP = now(), lastW = -1;
+    const clock = {
+      wall() {
+        const p = now(), a = ctx.currentTime;
+        if (fr) {
+          const w = fr.tick();
+          if (a === fr.a || ctx.state !== 'running' || self.held || w > wEnd - 1.5) return w;
+          // sound has started after all: bring the music in where the film is, and go back to the audio clock
+          schedule(a + 0.08, w + 0.08); self.setMusicLevel(FILM_LEVEL, 0.02);
+          t0 = a - w; fr = null; lastA = a; lastP = p; lastW = w; return w;            // (the clock holds for the output delay, then follows the sound)
+        }
+        if (a !== lastA || self.held || p - (self.resumeT || 0) < 1.5) { lastA = a; lastP = p; }         // moving, or stopped on purpose, or just asked to start again
+        else if (p - lastP > 0.5) { fr = free(Math.max(0, a - t0 - lat)); self.stopMusic(); return fr.w; }
+        return lastW = Math.max(lastW, a - t0 - lat);
+      },
+      beats() { return Math.max(0, clock.wall()) / BEAT; },
+      rate() { return 1; },
+    };
+    return clock;
   }
   stopMusic() { if (this.music) for (const s of this.music) { try { s.stop(); } catch (e) { /* not started */ } s.disconnect(); } this.music = null; }
   stopFilm() { this.stopMusic(); }
   // make sure the race loop is playing (it already is when the race follows the film)
-  startLoop() {
+  startLoop(menu = false) {
     if (!this.ready) return;
     if ((!this.music || this.music.length !== 1) && this.loopBuf) { this.stopMusic(); const lp = this.ctx.createBufferSource(); lp.buffer = this.loopBuf; lp.loop = true; lp.connect(this.musicG); lp.start(); this.music = [lp]; }
-    this.setMusicLevel(0.6, 1.2);
+    this.setMusicLevel(menu ? MENU_LEVEL : RACE_LEVEL, 1.2);
   }
-  // the race has begun straight from the film: the film's source is left to ring out its last hit
-  raceLevel() { if (this.music && this.music.length === 2) this.music = [this.music[1]]; this.setMusicLevel(0.6, 2.5); }
+  /* The race has begun straight from the film. The hit on the cut rings out at the film's level (the film's source
+     is left to finish), then the music falls away over about four seconds and carries on softly under the race. */
+  raceLevel() {
+    if (!this.music || this.music.length !== 2) { this.startLoop(); return; }
+    this.music = [this.music[1]]; this.musicLevel = RACE_LEVEL;
+    if (this.ready && this.opts.music) { const t = this.ctx.currentTime, g = this.musicG.gain; g.cancelScheduledValues(t); g.setValueAtTime(FILM_LEVEL, t); g.setTargetAtTime(RACE_LEVEL, t + 0.45, 1.3); }
+  }
 
   /* ---- one-shots ---- */
   tone(f, dur, g = 0.2, type = 'sine', f1 = f) {

@@ -61,7 +61,7 @@ const G = { state: 'boot', paused: false, time: 0, acc: 0, top: 0, hits: 0, ctrl
 let studio, shadows, terrain, road, trees, props, trackside, cars, P, R, race, chase, intro, hud, gov, lineMesh, sky;
 
 const handlers = {
-  start: () => begin(), skip: () => { if (G.state === 'film') intro.skip(); },
+  start: () => { sound.unlock(); begin(); }, skip: () => { if (G.state === 'film') intro.skip(); },
   resume: () => setPaused(false), restart: () => { setPaused(false); startRace(G.lastRace || { mode: 'grid' }); }, quit: () => { setPaused(false); toMenu(); },
   rematch: () => startRace({ mode: 'grid' }), toMenu: () => toMenu(), duel: () => startRace({ mode: 'grid' }), film: () => playFilm(), roam: () => startRoam(),
   cam: () => { if (G.state === 'race') hud.toast('Camera', chase.cycle(), 1.1); }, pause: () => { if (G.state === 'race') setPaused(!G.paused); },
@@ -69,7 +69,9 @@ const handlers = {
 };
 input.on.pause = handlers.pause; input.on.cam = handlers.cam;
 input.on.reset = () => { if (G.state === 'race' && !G.paused && race.state === 'green' && !P.done) { P.reset(); chase.snap(); } };
-input.on.any = (e) => { if (G.state === 'title' && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Pad')) begin(); };
+input.on.any = (e) => { if (G.state === 'title' && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Pad')) { sound.unlock(); begin(); } };
+// any tap, click or key unlocks sound (see Sound.unlock): the Start press may come before the circuit is ready
+for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, () => sound.unlock(), { passive: true, capture: true });
 
 function applySetting(k, v) {
   if (k === 'paint' && cars) { cars.player.setPaint(v); cars.rival.setPaint(rivalPaint()); }
@@ -81,6 +83,7 @@ function applySetting(k, v) {
 const rivalPaint = () => (S.paint === 6 ? 5 : 6);        // the rival runs in black, or in crimson if the player took the black car
 
 function resize() {
+  G.appH = window.__appH ? window.__appH() : 0;               // the visible height, in px, into the page's CSS (index.html)
   const w = Math.max(2, stage.clientWidth), h = Math.max(2, stage.clientHeight);
   gfx.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -346,7 +349,7 @@ function toMenu() {
   P.auto = autopilot(0.6); R.skill = { pace: 0.6, ease: 0.02, push: 0.02 }; R.pace = 0.6;
   input.enabled = false; lineMesh.visible = false;
   G.state = 'menu'; hud.screen('menu'); G.orbit = 0;
-  sound.startLoop();
+  sound.startLoop(true);
 }
 function finish() {
   const r = race.result, best = P.laps.length ? Math.min(...P.laps) : 0;
@@ -433,9 +436,9 @@ function frameRace(dt, warm = false) {
   if (props && props.update) props.update(camera, dt);
   shadows.update(camera, pv.pos);
   const v = P.speed;
-  gfx.fx.blur = orbiting ? 0 : (chase.mode <= 1 ? 1 : 0.6) * (0.006 + 0.046 * (v / 95) ** 2 + 0.03 * P.boost);
+  gfx.fx.blur = orbiting ? 0 : (chase.mode <= 1 ? 1 : 0.6) * (0.006 + 0.046 * (v / 95) ** 2 + 0.03 * chase.boost);
   gfx.fx.flash = Math.max(0, gfx.fx.flash - dt * 2.6);
-  gfx.fx.chroma = 0.0025 * P.boost + 0.01 * P.impact;
+  gfx.fx.chroma = 0.0025 * chase.boost + 0.01 * P.impact;
   renderer.info.reset();
   if (gfx.bloom && gfx.noBloom) gfx.look.bloom = [0, 0, 9];
   gfx.renderScene(scene, camera);
@@ -456,7 +459,7 @@ function frameBody(dt) {
   G.time += dt;
   // the picture must match the page: checked every frame, because after a phone is rotated the browser's own resize
   // events can arrive early (with the old size) or not at all
-  if (stage.clientWidth !== gfx.cssW || stage.clientHeight !== gfx.cssH) resize();
+  if ((window.__appH && window.__appH() !== G.appH) || stage.clientWidth !== gfx.cssW || stage.clientHeight !== gfx.cssH) resize();
   calmSwap();
   if (G.state === 'warming') return;           // the circuit is drawing its first frames off screen; the title holds
   if (G.state === 'film') {

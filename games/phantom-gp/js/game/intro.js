@@ -89,9 +89,8 @@ export class Intro {
     const { gfx, studio, hud, sound, view } = this.ctx, fx = gfx.fx;
     const b = this.clock.beats(), now = performance.now() / 1000, dt = Math.min(0.05, Math.max(0.001, now - this.last)); this.last = now;
     if (b >= 64) { this.finish(false); return true; }
-    const beatF = b - Math.floor(b), pulse = Math.exp(-beatF * 7);
     studio.floorU.uTime.value += dt;
-    fx.flash = Math.max(0, fx.flash - dt * 5); fx.punch = 0; fx.chroma = 0; fx.blur = 0; fx.fade = 0;
+    fx.flash = Math.max(0, fx.flash - dt * 5); fx.punch = 0; fx.chroma = 0; fx.blur = 0; fx.fade = 0;      // (no zoom or colour pulse on the beat: he found the picture pulsing too much)
     // keep the circuit ready for the cut: a few tiny frames of it while the screen is black, and again in the last flash
     if (this.ctx.warmTrack && ((b > 15.55 && b < 16 && this.warm < 5) || (b > 62.9 && this.warm < 10))) { this.warm = Math.max(this.warm, b > 60 ? 5 : 0) + 1; this.ctx.warmTrack(); }
     let collage = false, vis = 1, spin = 0, eng = null;        // vis: picture speed (1 = real time), spin: rear wheel speed (rad/s)
@@ -122,7 +121,6 @@ export class Intro {
       // ---- the drop: the whole car, pushing in, then round the back
       if (b < 20) { cutTo(1); const u = (b - 16) / 4; this.look(mix3([7.4, 0.95, 4.7], [5.9, 0.72, 3.7], u), [0.45, 0.42, 0], 26); }
       else { cutTo(2); const u = (b - 20) / 4, a = lerp(2.52, 2.86, u); this.look([Math.cos(a) * 7.2, lerp(1.5, 1.05, u), Math.sin(a) * 7.2], [-0.2, 0.45, 0], 25); }
-      fx.punch = 0.035 * pulse; fx.chroma = 0.004 * pulse;
     } else if (b < 32) {
       // ---- along the body, a cut every two beats
       const k = Math.floor((b - 24) / 2), u = ((b - 24) / 2) % 1; cutTo(3 + k);
@@ -130,7 +128,6 @@ export class Intro {
       else if (k === 1) { const x = lerp(3.0, -2.5, u); this.look([x, 2.9, 0.001], [x, 0, 0], 34, false, [0, 0, -1]); }
       else if (k === 2) this.look(mix3([-6.0, 0.6, 1.5], [-4.3, 0.62, 0.45], ease(u)), [-2.2, 0.62, 0], 30);
       else this.look(mix3([4.9, 0.5, -1.0], [3.2, 0.98, -0.5], u), [1.5, 0.5, 0], 28);
-      fx.punch = 0.03 * pulse; fx.chroma = 0.003 * pulse;
     } else if (b < 40) {
       // ---- the gear changes: a pull of the right paddle on every other beat, then every beat
       const second = b >= 36; cutTo(second ? 8 : 7);
@@ -144,13 +141,12 @@ export class Intro {
       const rpm = lerp(8200, 12300, rev);
       if (view.dash) view.drawDash(this.gear, 60 + this.gear * 34 + rev * 30, (rpm - 6200) / 6100, 1);
       eng = [rpm, since < 0.12 ? 0.1 : 1, 0.2];
-      fx.punch = since < 0.2 ? 0.03 * (1 - since / 0.2) : 0;
     } else if (b < 56) {
       // ---- wet floor, wheelspin, and the two slow looks at the tyre
       this.poseHand(0);
       studio.floorU.uWet.value = 1;
       const w = this.clock.wall();
-      // picture speed: the two slow-motion dips in the music (audio.js) drop the picture almost to a stop
+      // picture speed: twice (SLOW in audio.js) the picture drops almost to a stop; the music carries on at full speed
       let slow = 0, hold = -1;
       SLOW.forEach((s, i) => { const w0 = wallAt(s.beat * BEAT), a = w0 + s.in, c = a + s.hold, d = c + s.out; if (w > w0 && w < d) { slow = w < a ? ease((w - w0) / s.in) : w < c ? 1 : 1 - ease((w - c) / s.out); hold = i; this.holdU = clamp((w - a) / s.hold, 0, 1); } });
       vis = lerp(1, 0.012, slow);
@@ -163,7 +159,7 @@ export class Intro {
       else { cutTo(12); this.caption('', ''); this.look([5.35, 0.28, 1.3], [0, 0.45, 0], 24); }
       // while the picture is held, the lettering sits at the top of the tyre and drifts through the frame
       this.nameAt = hold === 0 ? 0 : hold === 1 ? Math.PI / 2 : null; this.slow = slow;
-      eng = [lerp(9000, 12400, 0.5 + 0.5 * Math.sin(b * 1.7)) * lerp(1, 0.5, slow), 1, 0.2 * lerp(1, 0.6, slow)];
+      eng = [lerp(9000, 12400, 0.5 + 0.5 * Math.sin(b * 1.7)) * lerp(1, 0.5, slow), 1, 0.2 * lerp(1, 0.6, slow)];     // the engine slows with the picture; the music does not
       fx.chroma = 0;                         // locked off and clean: no lens tricks on the burn-out
     } else {
       // ---- the camera drops in behind the car; the hall's lights come up and the door at its far end rises on

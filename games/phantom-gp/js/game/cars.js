@@ -29,7 +29,7 @@ function bakeHeight(renderer, car) {
 
 const SHADOW_FRAG = /* glsl */`
   uniform sampler2D tH; uniform vec3 uSun; uniform float uFade;
-  varying vec2 vL;
+  varying vec2 vL; varying float vEdge;
   float hAt(vec2 p) {
     vec2 uv = vec2((p.y + ${HZ.toFixed(2)}) / ${(2 * HZ).toFixed(2)}, (p.x - ${HX0.toFixed(2)}) / ${(HX1 - HX0).toFixed(2)});
     if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return 0.0;
@@ -39,9 +39,12 @@ const SHADOW_FRAG = /* glsl */`
     vec2 dir = uSun.xz / max(uSun.y, 0.2);
     float n = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
     float occ = 0.0;
-    for (int i = 0; i < STEPS; i++) { float h = (float(i) + n) / float(STEPS) * 1.06; occ = max(occ, smoothstep(h - 0.03, h + 0.02, hAt(vL + dir * h))); }
+    // Only the car casts: where the height image is empty (bare road, height 0) there is nothing to cast, whatever
+    // height the ray is at. Without that test the lowest steps of the ray counted the road itself as a caster and
+    // the whole patch showed as a grainy dark box round the car.
+    for (int i = 0; i < STEPS; i++) { float h = (float(i) + n) / float(STEPS) * 1.06, hv = hAt(vL + dir * h); occ = max(occ, smoothstep(h - 0.03, h + 0.02, hv) * smoothstep(0.012, 0.035, hv)); }
     float under = smoothstep(0.015, 0.04, hAt(vL));
-    float a = max(occ * 0.70, under * 0.86) * uFade;
+    float a = max(occ * 0.70, under * 0.86) * uFade * vEdge;      // (fades out before the patch's own edge: a long shadow never ends on a line)
     if (a < 0.004) discard;
     gl_FragColor = vec4(0.0, 0.0, 0.0, a);
   }`;
@@ -74,7 +77,9 @@ export class CarView {
     this.shU = { tH: { value: heightTex }, uSun: { value: new THREE.Vector3(0, 1, 0) }, uFade: { value: 1 } };
     this.shadow = new THREE.Mesh(g, new THREE.ShaderMaterial({
       uniforms: this.shU, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4, defines: { STEPS: q.shadowSteps || 12 },
-      vertexShader: 'attribute vec2 aLocal; varying vec2 vL; void main() { vL = aLocal; gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0); }', fragmentShader: SHADOW_FRAG }));
+      vertexShader: `attribute vec2 aLocal; varying vec2 vL; varying float vEdge; void main() { vL = aLocal;
+        vEdge = clamp(min(min(aLocal.x - (${X0.toFixed(2)}), ${X1.toFixed(2)} - aLocal.x), min(aLocal.y - (${Z0.toFixed(2)}), ${Z1.toFixed(2)} - aLocal.y)) / 0.6, 0.0, 1.0);
+        gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0); }`, fragmentShader: SHADOW_FRAG }));
     this.shadow.frustumCulled = false; this.shadow.renderOrder = 3;
     this._f = new THREE.Vector3(); this._u = new THREE.Vector3(); this._r = new THREE.Vector3(); this._m = new THREE.Matrix4();
     this._qi = new THREE.Quaternion(); this._v = new THREE.Vector3();

@@ -24,19 +24,36 @@
 <link rel="modulepreload" href="./js/game/main.js">
 <link rel="preload" href="./vendor/hands/left.glb" as="fetch" crossorigin>
 <link rel="preload" href="./vendor/hands/right.glb" as="fetch" crossorigin>
+<script>
+  // The visible height of the page in px, as --app-h (the CSS below sizes every layer with it). Read again on every
+  // resize and every frame by the game (main.js): phones report the old height for a while after a rotation.
+  (function () {
+    var last = -1;
+    window.__appH = function () {
+      var v = window.visualViewport, h = Math.round(v ? v.height * v.scale : window.innerHeight);
+      if (h !== last && h > 0) { last = h; document.documentElement.style.setProperty('--app-h', h + 'px'); }
+      return last;
+    };
+    window.__appH();
+  })();
+</script>
 <style>
   :root { --ink: #f2f3f4; --dim: #a4a9b1; --line: rgba(255,255,255,.14); --panel: rgba(10,12,15,.62); --accent: #f2b200; --red: #e2231a; --green: #25d366;
-    --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px); --pw: min(26vw, 180px); --ph: min(28vh, 104px); }
+    --vh: calc(var(--app-h, 100vh) / 100);
+    --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px); --pw: min(26vw, 180px); --ph: min(calc(var(--vh) * 28), 104px); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; height: 100%; background: #050607; color: var(--ink); overflow: hidden; overscroll-behavior: none;
     -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation;       /* no text inflation in landscape, no double-tap zoom */
     font-family: Bahnschrift, "DIN Alternate", "Barlow Condensed", "Segoe UI", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-  #stage { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; }
+  /* Every full-screen layer is exactly as tall as what is on screen (--app-h, in px, set by the script above). On a
+     phone neither 100vh nor a fixed box with inset 0 is: after a rotation both can be taller, and the bottom of the
+     title screen went off the screen. */
+  #stage { position: fixed; left: 0; top: 0; width: 100%; height: var(--app-h, 100vh); }
   #view { width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
   button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
   [data-spring] { transform: translateY(calc(var(--p, 0) * 2px)) scale(calc(1 - var(--p, 0) * 0.045)); will-change: transform; }
-  .layer { position: fixed; inset: 0; z-index: 5; display: none; }
+  .layer { position: fixed; left: 0; top: 0; width: 100%; height: var(--app-h, 100vh); z-index: 5; display: none; }
   .layer.on { display: flex; }
   .glass { border: 1px solid var(--line); background: var(--panel); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
   .eyebrow { font-size: 12px; letter-spacing: .32em; text-transform: uppercase; color: var(--dim); }
@@ -44,9 +61,9 @@
   /* ---- loading + title ---- */
   #load, #title { flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
   #load { background: #050607; z-index: 9; }
-  #title { justify-content: space-between; padding: max(4.5vh, 18px) 24px max(3.5vh, 14px); background: linear-gradient(180deg, rgba(5,6,7,.86) 0%, rgba(5,6,7,0) 36%, rgba(5,6,7,0) 60%, rgba(5,6,7,.92) 100%); }
+  #title { justify-content: space-between; padding: max(calc(var(--vh) * 4.5), 18px) calc(24px + var(--safe-r)) calc(max(calc(var(--vh) * 3.5), 14px) + var(--safe-b)) calc(24px + var(--safe-l)); background: linear-gradient(180deg, rgba(5,6,7,.86) 0%, rgba(5,6,7,0) 36%, rgba(5,6,7,0) 60%, rgba(5,6,7,.92) 100%); }
   #title .blk { display: flex; flex-direction: column; align-items: center; }
-  #title .logo { font-size: clamp(40px, min(10.5vw, 19vh), 140px); }
+  #title .logo { font-size: clamp(40px, min(10.5vw, calc(var(--vh) * 19)), 140px); }
   #title .cta { margin-top: 0; }
   #title .credit { position: static; margin-top: 12px; }
   #title .fine { margin-top: 12px; }
@@ -69,10 +86,10 @@
 
   /* ---- cinematic ---- */
   #cine { pointer-events: none; }
-  #cine .bar { position: absolute; left: 0; right: 0; height: 11vh; background: #000; transform: scaleY(0); transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+  #cine .bar { position: absolute; left: 0; right: 0; height: calc(var(--vh) * 11); background: #000; transform: scaleY(0); transition: transform .5s cubic-bezier(.2,.8,.2,1); }
   #cine .bar.t { top: 0; transform-origin: top; } #cine .bar.b { bottom: 0; transform-origin: bottom; }
   #cine.bars .bar { transform: scaleY(1); }
-  #cap { position: absolute; left: calc(6vw + var(--safe-l)); bottom: 15vh; opacity: 0; transform: translateY(8px); transition: opacity .18s ease, transform .18s ease; text-shadow: 0 2px 22px rgba(0,0,0,.8); }
+  #cap { position: absolute; left: calc(6vw + var(--safe-l)); bottom: calc(var(--vh) * 15); opacity: 0; transform: translateY(8px); transition: opacity .18s ease, transform .18s ease; text-shadow: 0 2px 22px rgba(0,0,0,.8); }
   #cap.on { opacity: 1; transform: none; }
   #cap small { display: block; font-size: clamp(10px, 1.2vw, 14px); letter-spacing: .44em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
   #cap span { display: block; font-size: clamp(30px, 6.2vw, 84px); font-weight: 800; font-style: italic; line-height: .9; letter-spacing: -.01em; }
@@ -121,7 +138,7 @@
   #h-hint.off { opacity: 0; }
 
   /* ---- touch controls ---- */
-  #touch { display: none; position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+  #touch { display: none; position: fixed; left: 0; top: 0; width: 100%; height: var(--app-h, 100vh); z-index: 6; pointer-events: none; }
   body.touch.racing #touch { display: block; }
   body.touch #h-hint { display: none; }
   #t-steer { position: absolute; left: 0; bottom: 0; width: 52%; height: 62%; pointer-events: auto; touch-action: none; }
@@ -164,9 +181,11 @@
   .btns .cta { margin-top: 0; padding: 14px 30px 12px; font-size: 15px; flex: 1 1 auto; text-align: center; }
   .keys { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; letter-spacing: .08em; color: var(--dim); line-height: 1.9; }
   .keys kbd { font: inherit; padding: 1px 6px; border: 1px solid rgba(255,255,255,.26); border-radius: 4px; color: var(--ink); margin: 0 2px; }
-  #rotate { position: fixed; inset: 0; z-index: 20; background: #050607; display: none; align-items: center; justify-content: center; text-align: center; padding: 30px; font-size: 15px; letter-spacing: .22em; text-transform: uppercase; line-height: 1.8; }
+  #rotate { position: fixed; left: 0; top: 0; width: 100%; height: var(--app-h, 100vh); z-index: 20; background: #050607; display: none; align-items: center; justify-content: center; text-align: center; padding: 30px; font-size: 15px; letter-spacing: .22em; text-transform: uppercase; line-height: 1.8; }
   @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
   @media (max-height: 520px) {
+    #title { padding-top: 12px; } #title .logo { font-size: clamp(34px, min(9vw, calc(var(--vh) * 17)), 140px); margin-top: 5px !important; } #title .eyebrow { font-size: 10.5px; }
+    #title .cta { padding: 12px 38px 10px; font-size: 16px; } #title .fine { margin-top: 8px; font-size: 11px; } #title .credit { margin-top: 6px; font-size: 10px; } .attr { margin-top: 4px; font-size: 8.5px; }
     .card { padding: 16px 18px 14px; } .card > .btns { bottom: -14px; margin: 10px -18px -14px; padding: 10px 18px 14px; } .rows { margin: 10px 0 2px; gap: 6px; } .seg button { padding: 6px 9px 5px; font-size: 12px; } .card h2 { font-size: 30px; } .btns { margin-top: 12px; } .keys { display: none; }
     #h-pos .big { font-size: 32px; min-width: 62px; } #h-pos .col { font-size: 11px; } #h-pos .col b { font-size: 15px; } #h-gap { font-size: 11px; padding: 5px 12px 4px; } #h-gap b { font-size: 17px; min-width: 64px; }
     .stats b { font-size: 19px; } .stats { margin: 10px 0 2px; gap: 6px; } .stats div { padding: 7px 10px 5px; }

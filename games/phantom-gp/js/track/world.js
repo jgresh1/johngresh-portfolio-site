@@ -4,6 +4,9 @@ import * as THREE from 'three';
 // lo: half-size ground photos from assets/lo. Every device starts with them (they are a quarter of the download);
 // desktops then fetch the full-size ones in the background and swap them in (upgradeGround).
 export const LOAD = { lo: false };
+// The near terrain mesh uses every MESH.step-th survey point: 1 = 2 m (desktops), 2 = 4 m (phones, a quarter of the
+// memory). meshAt() follows the same grid, so everything fitted to "the terrain as drawn" still fits.
+export const MESH = { step: 1 };
 export const W = {};        // filled by loadWorld()
 
 async function bin(url, Type) {
@@ -33,11 +36,12 @@ export async function loadWorld(progress = () => {}, gate = null) {
     tick(bin('assets/trees.bin', Float32Array)),
     tick(fetch('assets/buildings.json').then((r) => r.json())),
     tick(fetch('assets/barriers.json').then((r) => r.json())),
-    tick(loadTex('assets/lo/near_ortho.jpg', true)),
-    tick(loadTex('assets/lo/far_ortho.jpg', true)),
-    tick(loadTex('assets/near_mask.webp', false)),
+    // phones (LOAD.lo): the photos and the surface mask at half the size again (assets/tiny)
+    tick(loadTex(LOAD.lo ? 'assets/tiny/near_ortho.jpg' : 'assets/lo/near_ortho.jpg', true)),
+    tick(loadTex(LOAD.lo ? 'assets/tiny/far_ortho.jpg' : 'assets/lo/far_ortho.jpg', true)),
+    tick(loadTex(LOAD.lo ? 'assets/tiny/near_mask.webp' : 'assets/near_mask.webp', false)),
     tick(fetch('assets/trackside.json').then((r) => r.json()).catch(() => ({ tyres: [] }))),
-    tick(loadTex((LOAD.lo ? 'assets/lo/' : 'assets/') + 'near_paint.png', true)),
+    tick(loadTex((LOAD.lo ? 'assets/tiny/' : 'assets/') + 'near_paint.png', true)),
     tick(loadTex('assets/near_tone.webp', false)),
     tick(fetch('assets/ground.json').then((r) => r.json())),
     tick(bin('assets/trees_extra.bin', Float32Array)),
@@ -106,7 +110,17 @@ function triAt(a, scale, off, x, z) {
   return (u + v <= 1 ? p + (q - p) * u + (r - p) * v : s + (r - s) * (1 - u) + (q - s) * (1 - v)) * scale + off;
 }
 export const naturalAt = (x, z) => triAt(W.hNear, W.hScale, W.hMin, x, z);   // surveyed ground
-export const meshAt = (x, z) => triAt(W.hMesh, 1, 0, x, z);                  // the terrain mesh as drawn
+// the terrain mesh as drawn (on phones a coarser grid, split into triangles the same way)
+export function meshAt(x, z) {
+  const s = MESH.step; if (s === 1) return triAt(W.hMesh, 1, 0, x, z);
+  const n = W.meta.near, a = W.hMesh;
+  const fx = Math.min(Math.max((x - n.x0) / n.step, 0), n.nx - 1.001), fy = Math.min(Math.max((z - n.z0) / n.step, 0), n.ny - 1.001);
+  // chunks are 64 cells wide, so their vertex lines fall on multiples of s; the last line of the grid is its edge
+  const i0 = Math.floor(fx / s) * s, j0 = Math.floor(fy / s) * s, i1 = Math.min(i0 + s, n.nx - 1), j1 = Math.min(j0 + s, n.ny - 1);
+  const u = (fx - i0) / (i1 - i0), v = (fy - j0) / (j1 - j0);
+  const p = a[j0 * n.nx + i0], q = a[j0 * n.nx + i1], r = a[j1 * n.nx + i0], t = a[j1 * n.nx + i1];
+  return u + v <= 1 ? p + (q - p) * u + (r - p) * v : t + (r - t) * (1 - u) + (q - t) * (1 - v);
+}
 
 function buildVerge() {
   const N = W.N, n = W.meta.near, nx = n.nx, ny = n.ny, B = VERGE.blend;

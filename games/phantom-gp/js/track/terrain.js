@@ -1,7 +1,7 @@
 // terrain.js — LiDAR terrain: 2 m near grid in LOD chunks + 20 m far grid. Near the circuit the ground is drawn from
 // surface classes (grass, tarmac, gravel, earth, run-off paint) with procedural materials; far from it, from the orthophoto.
 import * as THREE from 'three';
-import { W } from './world.js';
+import { W, MESH } from './world.js';
 import { asphaltMaps, grassMaps, gravelMaps, noiseTex } from './tex.js';
 
 function meanLinear(tex) {
@@ -30,12 +30,19 @@ function layers(texs, srgb) {
 }
 
 export const groundUniforms = {};
-export const TERRAIN = { farStep: 1 };     // far grid: 1 = every 20 m survey point, n = every n-th away from the circuit (phones)
+// farStep: far grid, 1 = every 20 m survey point, n = every n-th away from the circuit (phones).
+// detail: size of the close-up grain maps (1, or 0.5 on phones). The near grid's spacing is MESH.step in world.js.
+export const TERRAIN = { farStep: 1, detail: 1 };
 
 export function makeGroundMaterial(near, shoulder = false) {
   const U = groundUniforms;
   if (!U.tNear) {
     const g = grassMaps(), a = asphaltMaps(), gr = gravelMaps();
+    // phones take the grain maps at half size (a quarter of the memory): drawn at full size, then reduced, so the grain keeps its scale
+    if (TERRAIN.detail !== 1) for (const m of [g, a, gr]) for (const key of ['map', 'normalMap']) {
+      const t = m[key], c = document.createElement('canvas'); c.width = Math.round(t.image.width * TERRAIN.detail); c.height = Math.round(t.image.height * TERRAIN.detail);
+      c.getContext('2d').drawImage(t.image, 0, 0, c.width, c.height); t.image = c; t.needsUpdate = true;
+    }
     const n = W.meta.near, q = W.meta.far;
     // run-off paint colours found in the survey photo (linear); unused slots repeat the first
     const lin = (v) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
@@ -187,13 +194,16 @@ export function buildTerrain(scene) {
   const chunks = [];
   const group = new THREE.Group(); group.name = 'terrain';
   for (let cj = 0; cj * CH < ny - 1; cj++) for (let ci = 0; ci * CH < nx - 1; ci++) {
-    const i0 = ci * CH, j0 = cj * CH, w = Math.min(CH, nx - 1 - i0), hh = Math.min(CH, ny - 1 - j0);
+    const i0 = ci * CH, j0 = cj * CH, cw = Math.min(CH, nx - 1 - i0), chh = Math.min(CH, ny - 1 - j0);
+    // the chunk's own vertex grid: every MESH.step-th survey point (2 m on desktops, 4 m on phones), and its far edge
+    const gx = [], gz = []; for (let i = 0; i < cw; i += MESH.step) gx.push(i); gx.push(cw); for (let j = 0; j < chh; j += MESH.step) gz.push(j); gz.push(chh);
+    const w = gx.length - 1, hh = gz.length - 1;
     const vw = w + 1, vh = hh + 1, nv = vw * vh, ns = 2 * (vw + vh);
     const pos = new Float32Array((nv + ns) * 3), nor = new Float32Array((nv + ns) * 3);
     let ymin = 1e9, ymax = -1e9;
     for (let j = 0; j < vh; j++) for (let i = 0; i < vw; i++) {
       // position from the mesh heights (held down under the road and verge); the normal stays the surveyed slope
-      const gi = i0 + i, gj = j0 + j, k = (j * vw + i) * 3, y = W.hMesh[gj * nx + gi];
+      const gi = i0 + gx[i], gj = j0 + gz[j], k = (j * vw + i) * 3, y = W.hMesh[gj * nx + gi];
       pos[k] = n.x0 + gi * 2; pos[k + 1] = y; pos[k + 2] = n.z0 + gj * 2;
       const sx = (H(gi + 1, gj) - H(gi - 1, gj)) / 4, sz = (H(gi, gj + 1) - H(gi, gj - 1)) / 4, l = Math.hypot(sx, 1, sz);
       nor[k] = -sx / l; nor[k + 1] = 1 / l; nor[k + 2] = -sz / l;
@@ -227,8 +237,8 @@ export function buildTerrain(scene) {
       return nv + ns > 65535 ? new Uint32Array(idx) : new Uint16Array(idx);
     };
     const pa = new THREE.BufferAttribute(pos, 3), na = new THREE.BufferAttribute(nor, 3);
-    const bs = new THREE.Sphere(new THREE.Vector3(n.x0 + (i0 + w / 2) * 2, (ymin + ymax) / 2, n.z0 + (j0 + hh / 2) * 2), Math.hypot(w, hh) + (ymax - ymin) / 2 + 10);
-    const lods = [1, 4].map((step) => {
+    const bs = new THREE.Sphere(new THREE.Vector3(n.x0 + (i0 + cw / 2) * 2, (ymin + ymax) / 2, n.z0 + (j0 + chh / 2) * 2), Math.hypot(cw, chh) + (ymax - ymin) / 2 + 10);
+    const lods = [1, Math.max(2, Math.round(4 / MESH.step))].map((step) => {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', pa); g.setAttribute('normal', na); g.setIndex(new THREE.BufferAttribute(mk(step), 1));
       g.boundingSphere = bs;

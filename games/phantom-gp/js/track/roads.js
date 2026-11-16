@@ -3,7 +3,7 @@
 // ground, the terrain mesh is held down underneath it, a shoulder strip carries each edge back to the ground, and the
 // trees standing in it are dropped. The game then asks this file what is under a tyre and which way the road runs.
 import * as THREE from 'three';
-import { W, EXTRA, naturalAt, meshAt, nearestStation } from './world.js';
+import { W, EXTRA, MESH, naturalAt, meshAt, nearestStation } from './world.js';
 import { groundUniforms } from './terrain.js';
 
 const DS = 2.5;                 // station spacing (m)
@@ -79,7 +79,7 @@ export function prepRoads() {
   // hold the terrain mesh down under every road (and one survey cell beyond its edges)
   const nx = n.nx, ny = n.ny, hm = W.hMesh;
   for (const P of pieces) {
-    const reach = P.hw + LOWER;
+    const reach = P.hw + LOWER * MESH.step;
     for (let i = 0; i < P.n; i++) {
       const x = P.x[i], z = P.z[i], tx = P.tx[i], tz = P.tz[i];
       const i0 = Math.max(0, Math.floor((x - reach - 2 - n.x0) / 2)), i1 = Math.min(nx - 1, Math.ceil((x + reach + 2 - n.x0) / 2));
@@ -181,7 +181,7 @@ function roadTop(x, z) {
   const on = topAmong(x, z, null); if (on !== undefined) return on;        // on tarmac: the top surface where two roads overlap
   const h = nearestRoad(x, z, _top); if (!h) return undefined;
   const ad = Math.abs(h.d);
-  if (ad > h.hw + SKIRT + LOWER) return undefined;
+  if (ad > h.hw + SKIRT + LOWER * MESH.step) return undefined;
   const edge = h.y + h.bank * Math.sign(h.d) * h.hw, out = h.d > 0 ? h.outR : h.outL, f = Math.min(1, (ad - h.hw) / SKIRT);
   return Math.max(edge + (out - edge) * f, meshAt(x, z));
 }

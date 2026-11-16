@@ -29,9 +29,10 @@
     --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px); --pw: min(26vw, 180px); --ph: min(28vh, 104px); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; height: 100%; background: #050607; color: var(--ink); overflow: hidden; overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation;       /* no text inflation in landscape, no double-tap zoom */
     font-family: Bahnschrift, "DIN Alternate", "Barlow Condensed", "Segoe UI", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-  #stage { position: fixed; inset: 0; }
+  #stage { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; }
   #view { width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
   button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
   [data-spring] { transform: translateY(calc(var(--p, 0) * 2px)) scale(calc(1 - var(--p, 0) * 0.045)); will-change: transform; }
@@ -60,7 +61,7 @@
     clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
   .cta.ghost { background: rgba(255,255,255,.1); color: var(--ink); }
   /* Start while the circuit is still loading: the button fills from the left */
-  #b-start.wait { background: linear-gradient(90deg, var(--accent) calc(var(--p, 0) * 100%), rgba(255,255,255,.16) calc(var(--p, 0) * 100%)); color: #0a0a0a; }
+  #b-start.wait { background: linear-gradient(90deg, var(--accent) calc(var(--load, 0) * 100%), rgba(255,255,255,.16) calc(var(--load, 0) * 100%)); color: #0a0a0a; }
   #b-start.wait.asked { color: var(--ink); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
   .fine { margin-top: 18px; font-size: 12px; letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
   .credit { position: absolute; bottom: calc(18px + var(--safe-b)); left: 0; right: 0; text-align: center; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); }

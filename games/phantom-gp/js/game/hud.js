@@ -83,7 +83,7 @@ export class Hud {
     this.prog = p;
     const ready = p >= 1;
     b.classList.toggle('wait', !ready); b.classList.toggle('asked', !ready && !!this.asked);
-    b.style.setProperty('--p', p.toFixed(3));
+    b.style.setProperty('--load', p.toFixed(3));
     if (!this.fineText) this.fineText = fine.textContent;
     if (ready) { b.textContent = 'Start'; fine.textContent = this.fineText; }
     else { b.textContent = this.asked ? 'Starting' : 'Start'; fine.textContent = 'Loading the circuit · ' + Math.round(p * 100) + '%'; }

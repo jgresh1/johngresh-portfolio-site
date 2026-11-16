@@ -4,7 +4,7 @@ import { Gfx, LOOKS } from './gfx.js';
 import { Studio } from './studio.js';
 import { ATMO, setSun, installAtmosphere, bakeSky, makeSky, makeEnvironment, SunShadows } from '../track/atmo.js';
 import { cloudNoise3D } from '../track/tex.js';
-import { W, LOAD, loadWorld, upgradeGround, frameAt, surfaceAt } from '../track/world.js';
+import { W, LOAD, MESH, loadWorld, upgradeGround, frameAt, surfaceAt } from '../track/world.js';
 import { buildTerrain, TERRAIN, groundUniforms } from '../track/terrain.js';
 import { buildRoad } from '../track/road.js';
 import { ROADS, loadRoads, prepRoads, buildRoadMeshes } from '../track/roads.js';
@@ -95,6 +95,7 @@ async function boot() {
   hud.load('Building the car', 0.05);
   resize();
   LOAD.lo = q.lo;
+  MESH.step = q.lo ? 2 : 1; TERRAIN.detail = q.lo ? 0.5 : 1;        // phones: a 4 m terrain mesh and half-size grain maps
   let netP = 0, titleUp; const gate = new Promise((r) => { titleUp = r; });
   // the title's own files first: the circuit's 11 MB starts only once the car's two hand meshes are in, or they queue behind it
   const first = loadHands();
@@ -124,6 +125,12 @@ async function boot() {
     if (DEV) console.log('[perf]', what, v, 'avg', gov.avg.toFixed(1));
   }, LADDER.length);
   new ResizeObserver(resize).observe(stage); resize();
+  // Phones: after a rotation Safari reports the old size for a moment and can leave the page scrolled or pinch-zoomed,
+  // so measure again a few times, put the page back at the top, and refuse the pinch gesture altogether.
+  const settle = () => { window.scrollTo(0, 0); resize(); for (const ms of [120, 350, 800]) setTimeout(resize, ms); };
+  addEventListener('orientationchange', settle); addEventListener('resize', settle);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', settle);
+  for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
   // leaving the tab, or turning a phone upright, stops the clock
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.state === 'race') setPaused(true); else sound.pause(); } else if (!G.paused) sound.resume(); });
   const portrait = matchMedia('(orientation: portrait) and (pointer: coarse)');
@@ -174,10 +181,12 @@ async function boot() {
   toTrack(); race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill });
   P.settle(0); R.settle(0); cars.player.sync(P, ATMO.sunDir, 0); cars.rival.sync(R, ATMO.sunDir, 0); chase.snap(); chase.update(0.016, cars.player, P);
   // compile the circuit's shaders without blocking the page where the browser can (parallel shader compile)
-  try { await renderer.compileAsync(scene, camera); } catch (e) { /* older browsers: the first frame compiles them */ }
+  // (raced against a timer: if a program never reports ready the wait must not hang the load)
+  try { await Promise.race([renderer.compileAsync(scene, camera), new Promise((r) => setTimeout(r, 5000))]); } catch (e) { /* the first frame compiles them */ }
   for (let i = 0; i < 5; i++) { frameRace(1 / 60, true); await step(0.8 + 0.04 * i); }
   G.startPose = { p: camera.position.clone(), q: camera.quaternion.clone(), fov: camera.fov, focus: cars.player.pos.clone() };
   toStudio(); G.state = back;
+  releaseStatic();
   G.trackReady = true; G.readyT = Math.round(performance.now());
   hud.startProgress(1);
   window.__game = { THREE, G, gfx, scene, camera, studio, cars, P, R, race, chase, input, hud, sound, intro, gov, q, S, W, TRACK, tierName, frame, startRace, startRoam, toMenu, playFilm, begin, setPaused, shot, step: stepFrames, START_S, ROADS };
@@ -185,6 +194,24 @@ async function boot() {
   else if (G.wantStart) { G.wantStart = false; begin(); }
   // full-size ground photos (desktops): swapped in at a calm moment, see frameBody
   if (hiP) hiP.then((swap) => { G.groundSwap = swap; });
+}
+/* Everything on the circuit that never changes (terrain, roads, barriers, buildings) keeps a second copy of its
+   geometry in ordinary memory after the graphics card has its own. That copy is about 100 MB, which a phone cannot
+   spare, so each buffer lets go of it the moment it has been uploaded. */
+function releaseStatic() {
+  const drop = function () { this.array = null; };
+  const skip = new Set([cars.player.root, cars.rival.root, cars.player.shadow, cars.rival.shadow]);
+  const walk = (o) => {
+    if (skip.has(o)) return;
+    if (o.isMesh && !o.isInstancedMesh && o.geometry) {
+      const g = o.geometry;
+      if (!g.boundingSphere) g.computeBoundingSphere();
+      for (const a of Object.values(g.attributes)) if (a.isBufferAttribute && !a.isInstancedBufferAttribute && a.usage === THREE.StaticDrawUsage) a.onUpload(drop);
+      if (g.index) g.index.onUpload(drop);
+    }
+    for (const c of o.children) walk(c);
+  };
+  walk(scene);
 }
 // swap the full-size ground photos in where a frame or two of upload cannot be seen
 function calmSwap() {
@@ -427,6 +454,9 @@ function frame(dt) {
 const mark = (name, t) => { if (DEV) G.marks = (G.marks || '') + name + ':' + Math.round(performance.now() - t) + ' '; };
 function frameBody(dt) {
   G.time += dt;
+  // the picture must match the page: checked every frame, because after a phone is rotated the browser's own resize
+  // events can arrive early (with the old size) or not at all
+  if (stage.clientWidth !== gfx.cssW || stage.clientHeight !== gfx.cssH) resize();
   calmSwap();
   if (G.state === 'warming') return;           // the circuit is drawing its first frames off screen; the title holds
   if (G.state === 'film') {
@@ -524,4 +554,9 @@ window.__filmAt = async (beat, name, w = 1280, h = 720, from = null) => {
   return { res, beat: window.__fb, state: G.state };
 };
 
-boot().catch((e) => { console.error(e); $('load-text').textContent = 'Failed: ' + e.message; });
+// if anything stops the load, say so on screen (a phone has no console to look in)
+const fail = (msg) => { const t = 'Could not load: ' + msg; $('load-text').textContent = t; const f = $('title-fine'); if (f) f.textContent = t; if (hud) hud.fineText = t; };
+addEventListener('error', (e) => { if (!G.trackReady) fail(e.message || 'script error'); });
+addEventListener('unhandledrejection', (e) => { if (!G.trackReady) fail((e.reason && e.reason.message) || String(e.reason)); });
+canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); G.trackReady = false; fail('the graphics memory ran out. Close other tabs and reload.'); });
+boot().catch((e) => { console.error(e); fail(e.message); });

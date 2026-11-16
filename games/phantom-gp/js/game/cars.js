@@ -64,6 +64,7 @@ export class CarView {
       if (o.name === 'driver') this.driver = o;
     });
     this.paddle = this.sw ? this.sw.getObjectByName('paddleUR') : null;
+    this.btn = this.sw ? this.sw.getObjectByName('btnDrive') : null; this.handR = car.getObjectByName('handR') || null;      // for the film's button press
     // deep = parts only seen when you look into an inlet (radiator cores, the air filter): not drawn on the circuit
     const DEEP = { coreFin: 1, coreTube: 1, filter: 1, ductFrame: 1 };
     this.meshes = []; car.traverse((o) => { if (o.isMesh) { const m = Array.isArray(o.material) ? o.material[0] : o.material; this.meshes.push([o, o.castShadow, !!DEEP[m.userData.key]]); } });
@@ -147,6 +148,7 @@ export class CarView {
     this.dash = { c, g: c.getContext('2d'), t, key: '' };
     this.drawDash(1, 0, 0, 1);
   }
+  // gear: a number, or 'N' (the film, before the driver presses the button)
   drawDash(gear, kmh, rev, energy) {
     const D = this.dash; if (!D) return;
     const leds = Math.round(Math.min(1, Math.max(0, rev)) * 15), key = gear + '|' + Math.round(kmh) + '|' + leds + '|' + Math.round(energy * 20);
@@ -218,7 +220,7 @@ function mergeCar(car, wheels) {
   const empty = car.getObjectByName('emptySeat'); if (empty) empty.parent.remove(empty);
   car.updateMatrixWorld(true);
   const inWheel = (o) => { for (let p = o; p; p = p.parent) if (p.userData && p.userData.wheel) return true; return false; };
-  const ok = (o) => o.isMesh && !o.isInstancedMesh && o.visible && o.name !== 'paddleUR';
+  const ok = (o) => o.isMesh && !o.isInstancedMesh && o.visible && o.name !== 'paddleUR' && o.name !== 'handR' && o.name !== 'btnDrive';
   const body = []; car.traverse((o) => { if (ok(o) && !inWheel(o)) body.push(o); });
   const jobs = [[car, body]];
   for (const w of wheels) {

@@ -171,24 +171,7 @@ export function noiseTex(size = 512) {
   return toTex(c, { aniso: 4 });
 }
 
-/* ---------- concrete / galvanised steel / painted panels ---------- */
-export function concreteTex(size = 512) {
-  const rand = rng32(51), n = periodicNoise(size, 4, 6, 52), [c, ctx] = canvas(size, size);
-  const img = ctx.createImageData(size, size), d = img.data;
-  for (let i = 0; i < size * size; i++) {
-    const v = 150 + (n[i] - 0.5) * 70 + (rand() - 0.5) * 16;
-    d[i * 4] = v; d[i * 4 + 1] = v - 2; d[i * 4 + 2] = v - 7; d[i * 4 + 3] = 255;
-  }
-  ctx.putImageData(img, 0, 0);
-  for (let i = 0; i < 40; i++) {           // rain streaks
-    const x = rand() * size, w = 2 + rand() * 9;
-    const g = ctx.createLinearGradient(0, 0, 0, size);
-    g.addColorStop(0, 'rgba(40,38,34,0.28)'); g.addColorStop(0.6 + rand() * 0.4, 'rgba(40,38,34,0)');
-    ctx.fillStyle = g; ctx.fillRect(x, 0, w, size);
-  }
-  return toTex(c, { srgb: true });
-}
-
+/* ---------- galvanised steel ---------- */
 export function steelTex(size = 256) {
   const rand = rng32(61), n = periodicNoise(size, 8, 4, 62), [c, ctx] = canvas(size, size);
   const img = ctx.createImageData(size, size), d = img.data;
@@ -215,52 +198,6 @@ export function fenceTex(size = 256) {
   const t = toTex(c, { srgb: true, aniso: 16 });
   t.premultiplyAlpha = false;
   return t;
-}
-
-/* ---------- facade: window bands. u = metres/12, v = one storey per tile ---------- */
-export function facadeTex(size = 512, style = 0) {
-  const rand = rng32(80 + style), [c, ctx] = canvas(size, size);
-  const wall = ['#b9b6ae', '#8d9299', '#d6d2c8', '#6f7479'][style % 4];
-  ctx.fillStyle = wall; ctx.fillRect(0, 0, size, size);
-  const n = periodicNoise(size, 4, 5, 90 + style), img = ctx.getImageData(0, 0, size, size), d = img.data;
-  for (let i = 0; i < size * size; i++) { const k = 0.86 + n[i] * 0.28; d[i * 4] *= k; d[i * 4 + 1] *= k; d[i * 4 + 2] *= k; }
-  ctx.putImageData(img, 0, 0);
-  const cols = 6, cw = size / cols;
-  for (let i = 0; i < cols; i++) {
-    const g = ctx.createLinearGradient(0, size * 0.2, 0, size * 0.78);
-    const b = 30 + rand() * 30;
-    g.addColorStop(0, `rgb(${b + 40},${b + 62},${b + 84})`); g.addColorStop(1, `rgb(${b},${b + 8},${b + 18})`);
-    ctx.fillStyle = g; ctx.fillRect(i * cw + cw * 0.1, size * 0.22, cw * 0.8, size * 0.56);
-    ctx.strokeStyle = 'rgba(30,32,36,0.9)'; ctx.lineWidth = 3; ctx.strokeRect(i * cw + cw * 0.1, size * 0.22, cw * 0.8, size * 0.56);
-  }
-  ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(0, size * 0.97, size, size * 0.03);
-  return toTex(c, { srgb: true });
-}
-
-/* ---------- pit building: 24 m of frontage, full height. Garages at the bottom, glazed floors above ---------- */
-export function pitFacadeTex(size = 1024) {
-  const rand = rng32(140), [c, ctx] = canvas(size, size);
-  ctx.fillStyle = '#d9dad6'; ctx.fillRect(0, 0, size, size);
-  const gTop = size * 0.70, gH = size * 0.30;                 // garage band (canvas y grows downward; v = 0 is the bottom)
-  for (let i = 0; i < 4; i++) {
-    const x0 = i * size / 4 + 14, w = size / 4 - 28;
-    ctx.fillStyle = '#eceded'; ctx.fillRect(x0, gTop + 34, w, gH - 34);
-    for (let y = gTop + 40; y < size - 6; y += 9) { ctx.fillStyle = `rgba(0,0,0,${0.10 + rand() * 0.05})`; ctx.fillRect(x0, y, w, 2); }
-    ctx.strokeStyle = '#3a3d42'; ctx.lineWidth = 6; ctx.strokeRect(x0, gTop + 34, w, gH - 34);
-    ctx.fillStyle = '#f6f6f2'; ctx.fillRect(x0 + w / 2 - 34, gTop + 6, 68, 24);
-  }
-  ctx.fillStyle = '#b3121a'; ctx.fillRect(0, gTop - 26, size, 26);
-  for (let f = 0; f < 3; f++) {                                 // three glazed floors
-    const y0 = 60 + f * (gTop - 100) / 3, h = (gTop - 100) / 3 - 22;
-    const g = ctx.createLinearGradient(0, y0, 0, y0 + h); g.addColorStop(0, '#5d7890'); g.addColorStop(1, '#1d2732');
-    ctx.fillStyle = g; ctx.fillRect(0, y0, size, h);
-    ctx.fillStyle = 'rgba(210,214,216,0.95)';
-    for (let x = 0; x < size; x += size / 16) ctx.fillRect(x - 2, y0, 4, h);
-    ctx.fillRect(0, y0 + h * 0.5 - 1, size, 2);
-  }
-  ctx.fillStyle = '#f1f1ee'; ctx.fillRect(0, 0, size, 44);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0, 44, size, 5);
-  return toTex(c, { srgb: true });
 }
 
 /* ---------- foliage: mid-range broadleaf spray (the other tree textures live in treetex.js) ---------- */
@@ -343,4 +280,152 @@ export function cloudNoise3D(S = 64) {
   t.format = THREE.RGBAFormat; t.type = THREE.UnsignedByteType; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
   t.wrapS = t.wrapT = t.wrapR = THREE.RepeatWrapping; t.unpackAlignment = 1; t.needsUpdate = true;
   return t;
+}
+
+/* ============================================================================================================
+   Building materials. Each returns { map, normalMap, orm }: colour, relief, and a gloss / metal map (green =
+   roughness, blue = metalness) so glass reflects the sky and the wall beside it does not. Nothing here is a
+   photograph: every pixel is drawn.
+   ============================================================================================================ */
+const px = (v) => Math.round(Math.max(0, Math.min(1, v)) * 255);
+const orm = (rough, metal) => `rgb(255,${px(rough)},${px(metal)})`;
+const grey = (h) => { const v = px(h); return `rgb(${v},${v},${v})`; };
+function finish(c, hc, oc, size, strength, aniso = 8) {
+  return { map: toTex(c, { srgb: true, aniso }), normalMap: toTex(normalFrom(hc, size, strength), { aniso }), orm: toTex(oc, { aniso }) };
+}
+// speckle a colour canvas and its height canvas with fine grain (plaster, concrete, paint)
+function grain(ctx, hctx, size, seed, amt, hAmt) {
+  const n = periodicNoise(size, 6, 5, seed), n2 = periodicNoise(size, 48, 2, seed + 1);
+  const a = ctx.getImageData(0, 0, size, size), d = a.data, b = hctx.getImageData(0, 0, size, size), e = b.data;
+  for (let i = 0; i < size * size; i++) {
+    const k = 1 + (n[i] - 0.5) * amt + (n2[i] - 0.5) * amt * 0.5; d[i * 4] *= k; d[i * 4 + 1] *= k; d[i * 4 + 2] *= k;
+    const h = e[i * 4] + (n2[i] - 0.5) * hAmt * 255; e[i * 4] = e[i * 4 + 1] = e[i * 4 + 2] = h;
+  }
+  ctx.putImageData(a, 0, 0); hctx.putImageData(b, 0, 0);
+}
+// one pane of glass at (x, y, w, h) in canvas pixels: dark, smooth and partly mirror; some have a blind part-way down
+function pane(x, hx, ox, X, Y, Wd, Ht, rand, o = {}) {
+  // (the glass is mostly mirror, and a mirror's colour is what it reflects with: a mid blue-grey, not the dark of the room behind)
+  const g = x.createLinearGradient(0, Y, 0, Y + Ht), t = o.tint || [104, 128, 142], k = 0.86 + rand() * 0.28;
+  g.addColorStop(0, `rgb(${t[0] * k},${t[1] * k},${t[2] * k})`); g.addColorStop(1, `rgb(${t[0] * k * 0.8},${t[1] * k * 0.8},${t[2] * k * 0.8})`);
+  x.fillStyle = g; x.fillRect(X, Y, Wd, Ht);
+  hx.fillStyle = grey(0.30); hx.fillRect(X, Y, Wd, Ht);
+  ox.fillStyle = orm(0.05, o.metal ?? 0.78); ox.fillRect(X, Y, Wd, Ht);
+  if (o.blinds !== false && rand() < (o.blindP ?? 0.3)) {
+    const bh = Ht * (0.25 + rand() * 0.55), v = 150 + rand() * 60;
+    x.fillStyle = `rgba(${v},${v - 4},${v - 14},0.92)`; x.fillRect(X + 2, Y + 2, Wd - 4, bh);
+    for (let yy = Y + 4; yy < Y + bh; yy += 4) { x.fillStyle = 'rgba(0,0,0,0.16)'; x.fillRect(X + 2, yy, Wd - 4, 1); }
+    ox.fillStyle = orm(0.35, 0.1); ox.fillRect(X + 2, Y + 2, Wd - 4, bh);
+  }
+}
+function frame(x, hx, ox, X, Y, Wd, Ht, lw, col, hgt = 0.72) {
+  x.strokeStyle = col; x.lineWidth = lw; x.strokeRect(X, Y, Wd, Ht);
+  hx.strokeStyle = grey(hgt); hx.lineWidth = lw; hx.strokeRect(X, Y, Wd, Ht);
+  ox.strokeStyle = orm(0.45, 0.5); ox.lineWidth = lw; ox.strokeRect(X, Y, Wd, Ht);
+}
+
+/* Facades for the ordinary buildings. u = metres / 12 (six bays), v = one storey per tile.
+   0, 2: rendered walls with punched windows, sills and stains   1: ribbon glazing between metal panels
+   3: profiled metal cladding (big sheds) with a strip of high windows */
+export function facadeMaps(size = 512, style = 0) {
+  const S = size, rand = rng32(180 + style), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
+  const wall = ['#b6b1a6', '#a4a9ae', '#d3cfc4', '#858a8f'][style % 4];
+  x.fillStyle = wall; x.fillRect(0, 0, S, S);
+  hx.fillStyle = grey(0.56); hx.fillRect(0, 0, S, S);
+  ox.fillStyle = orm(style === 1 || style === 3 ? 0.5 : 0.9, style === 1 || style === 3 ? 0.35 : 0); ox.fillRect(0, 0, S, S);
+  const cols = 6, cw = S / cols;
+  if (style === 3) {
+    // ribs every 0.25 m, sheet laps every storey
+    for (let i = 0; i < 48; i++) { const X = i * S / 48; hx.fillStyle = grey(0.44); hx.fillRect(X, 0, S / 96, S); x.fillStyle = 'rgba(0,0,0,0.10)'; x.fillRect(X, 0, S / 96, S); }
+    grain(x, hx, S, 190, 0.10, 0.02);
+    const Y = S * 0.16, Ht = S * 0.16;
+    for (let i = 0; i < cols; i++) if (i % 3 !== 2) { pane(x, hx, ox, i * cw + 3, Y, cw - 6, Ht, rand, { blinds: false }); frame(x, hx, ox, i * cw + 3, Y, cw - 6, Ht, 3, '#3a3d42'); }
+    x.fillStyle = 'rgba(0,0,0,0.22)'; x.fillRect(0, S - 5, S, 5); hx.fillStyle = grey(0.42); hx.fillRect(0, S - 5, S, 5);
+  } else if (style === 1) {
+    grain(x, hx, S, 191, 0.06, 0.01);
+    const Y = S * 0.20, Ht = S * 0.56;
+    for (let i = 0; i < cols * 2; i++) { const X = i * cw / 2; pane(x, hx, ox, X + 1, Y, cw / 2 - 2, Ht, rand, { blindP: 0.18, tint: [96, 128, 138] }); frame(x, hx, ox, X + 1, Y, cw / 2 - 2, Ht, 3, '#c9ccce'); }
+    // metal spandrel panels: a joint at every second mullion and along the floor line
+    for (let i = 0; i < cols; i++) { x.fillStyle = 'rgba(0,0,0,0.30)'; x.fillRect(i * cw - 1, 0, 2, S); hx.fillStyle = grey(0.40); hx.fillRect(i * cw - 1, 0, 2, S); }
+    x.fillStyle = 'rgba(0,0,0,0.30)'; x.fillRect(0, S - 3, S, 3); hx.fillStyle = grey(0.40); hx.fillRect(0, S - 3, S, 3);
+  } else {
+    grain(x, hx, S, 192 + style, 0.16, 0.035);
+    const X0 = cw * 0.17, Wd = cw * 0.66, Y = S * 0.22, Ht = S * 0.52;
+    for (let i = 0; i < cols; i++) {
+      const X = i * cw + X0;
+      // a stain under each sill, darker on the pale wall
+      const g = x.createLinearGradient(0, Y + Ht, 0, S); g.addColorStop(0, 'rgba(50,46,40,0.30)'); g.addColorStop(1, 'rgba(50,46,40,0)');
+      x.fillStyle = g; x.fillRect(X + rand() * 6, Y + Ht, Wd * (0.5 + rand() * 0.5), S - Y - Ht);
+      x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(X - 3, Y - 3, Wd + 6, Ht + 6);                    // the reveal's shadow
+      pane(x, hx, ox, X, Y, Wd, Ht, rand);
+      frame(x, hx, ox, X, Y, Wd, Ht, 4, style === 0 ? '#e7e6e1' : '#34373b');
+      x.fillStyle = style === 0 ? '#e7e6e1' : '#34373b'; x.fillRect(X + Wd / 2 - 1.5, Y, 3, Ht); hx.fillStyle = grey(0.72); hx.fillRect(X + Wd / 2 - 1.5, Y, 3, Ht);
+      x.fillStyle = '#c9c6bd'; x.fillRect(X - 6, Y + Ht + 2, Wd + 12, 6); hx.fillStyle = grey(0.86); hx.fillRect(X - 6, Y + Ht + 2, Wd + 12, 6);      // sill
+    }
+    // the floor line: a shallow groove with a dirt line below it
+    x.fillStyle = 'rgba(0,0,0,0.20)'; x.fillRect(0, S - 4, S, 4); hx.fillStyle = grey(0.44); hx.fillRect(0, S - 4, S, 4);
+  }
+  return finish(c, hc, oc, S, 2.4);
+}
+
+/* Curtain wall of the pit buildings. u = one 6 m bay per tile (four panes), v = one floor per tile: a solid spandrel
+   panel at the bottom, vision glass above, aluminium mullions. */
+export function curtainWallMaps(size = 512) {
+  const S = size, rand = rng32(210), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
+  x.fillStyle = '#1b2228'; x.fillRect(0, 0, S, S); hx.fillStyle = grey(0.5); hx.fillRect(0, 0, S, S); ox.fillStyle = orm(0.4, 0.5); ox.fillRect(0, 0, S, S);
+  const n = 4, pw = S / n, sp = S * 0.24;                          // spandrel height (canvas bottom = floor level)
+  for (let i = 0; i < n; i++) {
+    pane(x, hx, ox, i * pw, 0, pw, S - sp, rand, { blindP: 0.22, tint: [92, 126, 140], metal: 0.82 });
+    // spandrel: back-painted glass, a shade greyer and a little less mirror
+    x.fillStyle = `rgb(${70 + rand() * 8},${88 + rand() * 8},${98 + rand() * 8})`; x.fillRect(i * pw, S - sp, pw, sp);
+    ox.fillStyle = orm(0.12, 0.6); ox.fillRect(i * pw, S - sp, pw, sp); hx.fillStyle = grey(0.32); hx.fillRect(i * pw, S - sp, pw, sp);
+  }
+  const bar = (X, Y, Wd, Ht) => { x.fillStyle = '#c4c8ca'; x.fillRect(X, Y, Wd, Ht); hx.fillStyle = grey(0.78); hx.fillRect(X, Y, Wd, Ht); ox.fillStyle = orm(0.42, 0.75); ox.fillRect(X, Y, Wd, Ht); };
+  for (let i = 0; i <= n; i++) bar(i * pw - 3, 0, 6, S);
+  bar(0, S - sp - 3, S, 6); bar(0, 0, S, 5); bar(0, S - 5, S, 5);
+  return finish(c, hc, oc, S, 2.0);
+}
+
+/* Roller shutter of a pit garage. A 0.8 m tile: eight slats (the piers frame the door, so no guide rails are drawn). */
+export function shutterMaps(size = 256) {
+  const S = size, [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
+  x.fillStyle = '#d9dbdb'; x.fillRect(0, 0, S, S); ox.fillStyle = orm(0.5, 0.35); ox.fillRect(0, 0, S, S);
+  const a = hx.createImageData(S, S), d = a.data;
+  for (let y = 0; y < S; y++) { const f = (y / S * 8) % 1, h = 0.35 + 0.5 * Math.sin(Math.PI * f) - (f < 0.08 ? 0.3 : 0); for (let xx = 0; xx < S; xx++) { const i = (y * S + xx) * 4; d[i] = d[i + 1] = d[i + 2] = px(h); d[i + 3] = 255; } }
+  hx.putImageData(a, 0, 0);
+  for (let k = 0; k < 8; k++) { x.fillStyle = 'rgba(0,0,0,0.26)'; x.fillRect(0, k * S / 8, S, 2); x.fillStyle = 'rgba(255,255,255,0.10)'; x.fillRect(0, k * S / 8 + S / 16, S, 3); }
+  grain(x, hx, S, 215, 0.08, 0.0);
+  return finish(c, hc, oc, S, 3.0);
+}
+
+/* Painted cladding panels (pit buildings, cornices). A 3 m x 1.5 m panel per tile, joints all round, faint streaks. */
+export function panelMaps(size = 256) {
+  const S = size, rand = rng32(220), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
+  x.fillStyle = '#e3e4e1'; x.fillRect(0, 0, S, S); hx.fillStyle = grey(0.6); hx.fillRect(0, 0, S, S); ox.fillStyle = orm(0.42, 0.12); ox.fillRect(0, 0, S, S);
+  for (let i = 0; i < 14; i++) { const X = rand() * S, g = x.createLinearGradient(0, 0, 0, S); g.addColorStop(0, 'rgba(60,62,60,0.10)'); g.addColorStop(0.5 + rand() * 0.5, 'rgba(60,62,60,0)'); x.fillStyle = g; x.fillRect(X, 0, 2 + rand() * 6, S); }
+  grain(x, hx, S, 221, 0.05, 0.006);
+  for (const [X, Y, Wd, Ht] of [[0, 0, S, 2], [0, S - 2, S, 2], [0, 0, 2, S], [S - 2, 0, 2, S]]) { x.fillStyle = 'rgba(40,42,44,0.75)'; x.fillRect(X, Y, Wd, Ht); hx.fillStyle = grey(0.3); hx.fillRect(X, Y, Wd, Ht); }
+  return finish(c, hc, oc, S, 2.2);
+}
+
+/* Cast concrete, a 4 m tile: formwork panels 2 m wide, pour lines every metre, tie holes, rain streaks from the top
+   of each pour, grain. */
+export function concreteMaps(size = 512) {
+  const S = size, rand = rng32(51), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
+  x.fillStyle = '#a3a29c'; x.fillRect(0, 0, S, S); hx.fillStyle = grey(0.6); hx.fillRect(0, 0, S, S); ox.fillStyle = orm(0.9, 0); ox.fillRect(0, 0, S, S);
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 4; j++) {          // each pour its own shade
+    const v = (rand() - 0.5) * 22; x.fillStyle = v > 0 ? `rgba(255,255,255,${v / 255})` : `rgba(0,0,0,${-v / 255})`; x.fillRect(i * S / 2, j * S / 4, S / 2, S / 4);
+  }
+  for (let i = 0; i < 26; i++) {
+    const X = rand() * S, Y = Math.floor(rand() * 4) * S / 4, len = S / 4 * (0.4 + rand() * 1.4), g = x.createLinearGradient(0, Y, 0, Y + len);
+    g.addColorStop(0, `rgba(38,36,32,${0.05 + rand() * 0.11})`); g.addColorStop(1, 'rgba(38,36,32,0)'); x.fillStyle = g; x.fillRect(X, Y, 3 + rand() * 16, len);
+  }
+  grain(x, hx, S, 52, 0.22, 0.05);
+  for (let i = 0; i < 2; i++) { x.fillStyle = 'rgba(30,30,28,0.30)'; x.fillRect(i * S / 2, 0, 2, S); hx.fillStyle = grey(0.36); hx.fillRect(i * S / 2, 0, 2, S); }
+  for (let j = 0; j < 4; j++) { x.fillStyle = 'rgba(30,30,28,0.22)'; x.fillRect(0, j * S / 4, S, 2); hx.fillStyle = grey(0.42); hx.fillRect(0, j * S / 4, S, 2); }
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {          // tie holes
+    const X = (i + 0.5) * S / 4, Y = (j + 0.5) * S / 4;
+    x.fillStyle = 'rgba(20,20,18,0.45)'; x.beginPath(); x.arc(X, Y, S / 220, 0, 7); x.fill(); hx.fillStyle = grey(0.2); hx.beginPath(); hx.arc(X, Y, S / 170, 0, 7); hx.fill();
+  }
+  return finish(c, hc, oc, S, 2.6);
 }

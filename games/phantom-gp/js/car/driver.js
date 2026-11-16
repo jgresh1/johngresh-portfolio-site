@@ -5,6 +5,9 @@ import { v3, clamp, lerp, smooth, DEG, curve, range, loft, tube, rod, ellipseLoo
 import * as TX from './tex.js';
 import { buildGripHand } from './hands.js';
 
+// where the right thumb's tip goes to press the button above the right grip, in the steering wheel's own frame
+const PRESS = [0.1005, 0.0575, 0.0315];
+
 export function buildDriver(M, o) {
   const X = o.X, g = new THREE.Group(); g.name = 'driver';
   const add = (geo, mat, parent = g, cast = true) => { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; parent.add(m); return m; };
@@ -106,9 +109,14 @@ export function buildDriver(M, o) {
       oblique: 16, ...ho, G: v3(sx * (ho.gx ?? 0.1335), ho.gy ?? -0.012, ho.gz ?? 0.004), axis: v3(-sx * Math.sin(lean), Math.cos(lean), 0),
       out: v3(sx * Math.cos(roll), 0, Math.sin(roll)), elbow: E.clone().applyMatrix4(sw.matrixWorld.clone().invert()),
       thumbTip: v3(sx * (ho.tx ?? 0.099), ho.ty ?? 0.04, ho.tz ?? 0.024), planes: [{ p: v3(0, 0, 0.0114), n: v3(0, 0, 1) }],      // thumb rests on the top of the grip, clear of the wheel face
+      // right hand: a second thumb pose, its pad on the button above the grip (BTN in car.js); the film blends between the two
+      alt: sx > 0 ? { thumbTip: v3(PRESS[0], PRESS[1], PRESS[2]) } : null,
     });
     H.geometry.applyMatrix4(sw.matrixWorld);
-    const m = new THREE.Mesh(H.geometry, M.gloveHand); m.castShadow = true; m.receiveShadow = true; m.name = 'hand'; armG.add(m);
+    const mp = H.geometry.morphAttributes;
+    if (mp.position) { const nm = new THREE.Matrix3().getNormalMatrix(sw.matrixWorld); mp.position[0].applyMatrix4(sw.matrixWorld); mp.normal[0].applyNormalMatrix(nm); }
+    const m = new THREE.Mesh(H.geometry, M.gloveHand); m.castShadow = true; m.receiveShadow = true; m.name = sx > 0 ? 'handR' : 'hand'; armG.add(m);
+    if (mp.position) { m.morphTargetInfluences = [0]; m.userData.thumb = H.thumb; }
     H.wrist.applyMatrix4(sw.matrixWorld); H.backC.applyMatrix4(sw.matrixWorld);
     for (const d of [H.palmN, H.across, H.backN, H.fingers]) d.transformDirection(sw.matrixWorld);
     const dm = new THREE.Mesh(projectDecal([H.geometry], H.backC, H.backN, H.fingers, 0.058, 0.058 / gloveWord.aspect, 0.03, 0.0005), M.gloveDecal(gloveWord.map)); dm.renderOrder = 2; armG.add(dm);

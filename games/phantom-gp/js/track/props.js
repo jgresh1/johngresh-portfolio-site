@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { W, groundAt, naturalAt, nearestStation, frameAt, isStand } from './world.js';
 import { groundUniforms } from './terrain.js';
-import { steelTex, fenceTex, facadeTex, pitFacadeTex, concreteTex, rng32 } from './tex.js';
+import { steelTex, fenceTex, facadeMaps, curtainWallMaps, shutterMaps, panelMaps, concreteMaps, rng32 } from './tex.js';
 
 export class Buf {
   constructor() { this.pos = []; this.nor = []; this.uv = []; this.idx = []; }
@@ -104,12 +104,16 @@ export function buildProps(scene, qual) {
   mesh.add(group, meshMat, { cast: false }); meshFar.add(group, meshFarMat, { cast: false }); fencePosts.add(group, postMat, { cast: false });
 
   /* ---------------- buildings ---------------- */
+  /* Every surface is a drawn material with its own relief and gloss map: glass is smooth and partly mirror, so it
+     shows the sky; walls, panels and concrete are not. (The relief maps are drawn with y downward: normalScale.y = -1.) */
+  const TS = qual.lo ? 256 : 512, NS = new THREE.Vector2(1, -1);
+  const pbr = (t, o = {}) => new THREE.MeshStandardMaterial({ map: t.map, normalMap: t.normalMap, normalScale: NS, roughnessMap: t.orm, metalnessMap: t.orm, roughness: 1, metalness: 1, envMapIntensity: 1.15, ...o });
   const roofMat = makeFlatRoofMaterial();
-  const wallMats = [0, 1, 2, 3].map((i) => new THREE.MeshStandardMaterial({ map: facadeTex(512, i), roughness: i === 1 ? 0.35 : 0.8, metalness: i === 1 ? 0.25 : 0.0 }));
-  wallMats.push(new THREE.MeshStandardMaterial({ map: pitFacadeTex(), roughness: 0.55, metalness: 0.1 }));     // 4: pit buildings (garages below, glass above)
-  const concMat = new THREE.MeshStandardMaterial({ map: concreteTex(), roughness: 0.9, color: 0xb0b0ac });
-  const seatMat = makeSeatMaterial();
-  const roofs = new Tiles(400, TBuf), walls = [new Tiles(), new Tiles(), new Tiles(), new Tiles(), new Tiles()], conc = new Tiles(), seats = new Tiles(400, TBuf), seatRoof = new Tiles(), standRoof = new Tiles(400, TBuf), tarp = new Tiles();
+  const wallMats = [0, 1, 2, 3].map((i) => pbr(facadeMaps(TS, i)));
+  const concMat = pbr(concreteMaps(TS), { color: 0xe2e0da, envMapIntensity: 0.8 });
+  const seatMat = makeSeatMaterial(qual);
+  const roofs = new Tiles(400, TBuf), walls = [new Tiles(), new Tiles(), new Tiles(), new Tiles()], conc = new Tiles(), seats = new Tiles(400, TBuf), seatRoof = new Tiles(), standRoof = new Tiles(400, TBuf), tarp = new Tiles(), rails = new Tiles();
+  const pit = { panel: new Tiles(), glass: new Tiles(), door: new Tiles(), red: new Tiles(), trim: new Tiles() };
   const rnd = rng32(77);
   for (const b of W.buildings) {
     const name = b.name || '';
@@ -120,22 +124,100 @@ export function buildProps(scene, qual) {
     if (isStand(b) && grandstand(b)) continue;
     const h = Math.min(Math.max(b.h, 3), 30), yb = b.y0 - 0.6, yt = b.y0 + h;
     const style = /Stand F1|Stand Endurance/i.test(name) ? 4 : (/Salons|Campus|RSR|Hotel|H.tel/i.test(name) ? 1 : (b.area > 600 ? 3 : (rnd() < 0.5 ? 0 : 2)));
-    const us = style === 4 ? 24 : 12, vt = style === 4 ? 1 : (yt - yb) / 3.3;
-    const Wt = walls[style].at(cx, cz); let acc = 0;
-    for (let i = 0; i < pts.length; i++) {
-      // footprint is counter-clockwise in (x, z) with z = south, i.e. clockwise seen from above: outward normal = (dz, -dx)
-      const p = pts[i], q = pts[(i + 1) % pts.length], L = p.distanceTo(q); if (L < 0.05) continue;
-      const nx = (q.y - p.y) / L, nz = -(q.x - p.x) / L;
-      Wt.quad([q.x, yb, q.y], [p.x, yb, p.y], [p.x, yt, p.y], [q.x, yt, q.y], [nx, 0, nz], [[(acc + L) / us, 0], [acc / us, 0], [acc / us, vt], [(acc + L) / us, vt]]);
-      acc += L;
+    let roofY = null;
+    if (style === 4) roofY = pitBuilding(b, pts);
+    else {
+      // whole storeys from the ground to the roof, so no row of windows is cut off at the top
+      const nS = Math.max(1, Math.round(h / 3.2)), vb = -0.6 / (h / nS), cope = b.area >= 60 ? 0.45 : 0;
+      const Wt = walls[style].at(cx, cz), Cp = conc.at(cx, cz); let acc = 0;
+      for (let i = 0; i < pts.length; i++) {
+        // footprint is counter-clockwise in (x, z) with z = south, i.e. clockwise seen from above: outward normal = (dz, -dx)
+        const p = pts[i], q = pts[(i + 1) % pts.length], L = p.distanceTo(q); if (L < 0.05) continue;
+        const nx = (q.y - p.y) / L, nz = -(q.x - p.x) / L;
+        Wt.quad([q.x, yb, q.y], [p.x, yb, p.y], [p.x, yt, p.y], [q.x, yt, q.y], [nx, 0, nz], [[(acc + L) / 12, vb], [acc / 12, vb], [acc / 12, nS], [(acc + L) / 12, nS]]);
+        acc += L;
+        if (cope) {
+          // parapet: the wall carries on above the roof as a concrete upstand with a flat top
+          const P0 = [p.x, p.y], Q0 = [q.x, q.y], P1 = [p.x - nx * 0.28, p.y - nz * 0.28], Q1 = [q.x - nx * 0.28, q.y - nz * 0.28], yc = yt + cope;
+          wall(Cp, P0, Q0, yt, yc, yt, yc, [nx, 0, nz]); wall(Cp, P1, Q1, yt, yc, yt, yc, [-nx, 0, -nz]);
+          face(Cp, [P0[0], yc, P0[1]], [Q0[0], yc, Q0[1]], [Q1[0], yc, Q1[1]], [P1[0], yc, P1[1]], [0, 1, 0], [[0, 0], [L / 4, 0], [L / 4, 0.07], [0, 0.07]]);
+        }
+      }
     }
     const tri = THREE.ShapeUtils.triangulateShape(pts, []), R = roofs.at(cx, cz), base = R.pos.length / 3;
     // one colour per roof, taken from the aerial photo (the photo itself is not drawn on the roof)
     let bx0 = 1e9, bx1 = -1e9, bz0 = 1e9, bz1 = -1e9;
     for (const p of pts) { bx0 = Math.min(bx0, p.x); bx1 = Math.max(bx1, p.x); bz0 = Math.min(bz0, p.y); bz1 = Math.max(bz1, p.y); }
     const rc = photoSampler(pts)([[bx0, bz0], [bx1, bz0], [bx1, bz1], [bx0, bz1]]);
-    for (const p of pts) { R.pos.push(p.x, yt, p.y); R.nor.push(0, 1, 0); R.uv.push(p.x, p.y); R.tint.push(rc[0], rc[1], rc[2], 1); }
+    pts.forEach((p, i) => { R.pos.push(p.x, roofY ? roofY[i] : yt, p.y); R.nor.push(0, 1, 0); R.uv.push(p.x, p.y); R.tint.push(rc[0], rc[1], rc[2], 1); });
     for (const t of tri) R.idx.push(base + t[0], base + t[2], base + t[1]);
+  }
+
+  /* A pit building, built bay by bay from its surveyed outline. Every wall of 5 m or more is a run of 6 m bays in
+     groups of four. A group stands level on the ground under it: the pit lane slopes, so the building steps down the
+     hill group by group, as the real ones do. Bottom to top: roller doors set back between piers, a red fascia with a
+     number board over each door, glazed floors each behind a balcony slab and rail, fins on the bay lines, a deep
+     cornice. Shorter walls are plain cladding. Returns the roof height at each corner of the outline. */
+  function pitBuilding(b, pts) {
+    const n = pts.length, h = Math.min(Math.max(b.h, 9), 30), nF = Math.max(1, Math.round((h - 5.9) / 3.1)), fh = (h - 5.9) / nF, GB = 4;
+    const dir = pts.map((p, i) => { const q = pts[(i + 1) % n], L = p.distanceTo(q); return L > 0.05 ? [(q.x - p.x) / L, (q.y - p.y) / L, L] : null; });
+    const prev = (j) => { let k = (j - 1 + n) % n; for (let c = 0; c < n && !dir[k]; c++) k = (k - 1 + n) % n; return dir[k]; };
+    const next = (j) => { let k = (j + 1) % n; for (let c = 0; c < n && !dir[k]; c++) k = (k + 1) % n; return dir[k]; };
+    const turn = (a, c) => Math.atan2(a[0] * c[1] - a[1] * c[0], a[0] * c[0] + a[1] * c[1]);            // > 0: an outside corner
+    const ext = (th, o) => (th > 0.15 ? Math.min(o * 1.6, o * Math.tan(th / 2)) : 0);                // how far a part that projects o m must run on to close an outside corner
+    const topA = new Array(n).fill(null), topB = new Array(n).fill(null), Q4 = [[0, 0], [1, 0], [1, 1], [0, 1]];
+    for (let i = 0; i < n; i++) {
+      if (!dir[i]) continue;
+      const p = pts[i], [tx, tz, L] = dir[i], nx = tz, nz = -tx, ang = Math.atan2(tz, tx), out = [nx, 0, nz], fw = [tx, 0, tz], bk = [-tx, 0, -tz];
+      const pt = (sd, o) => [p.x + tx * sd + nx * o, p.y + tz * sd + nz * o], V3 = (sd, o, y) => { const a = pt(sd, o); return [a[0], y, a[1]]; };
+      const thA = turn(prev(i), dir[i]), thB = turn(dir[i], next(i));
+      // upright quad on the wall line, o m out from it, between s0 and s1 along the wall
+      const wq = (buf, s0, s1, o, y0, y1, u0, u1, v0, v1) => buf.quad(V3(s1, o, y0), V3(s0, o, y0), V3(s0, o, y1), V3(s1, o, y1), out, [[u1, v0], [u0, v0], [u0, v1], [u1, v1]]);
+      const bx = (buf, s0, s1, o0, o1, y0, y1, full) => { const c = pt((s0 + s1) / 2, (o0 + o1) / 2); if (full) boxFull(buf, c[0], (y0 + y1) / 2, c[1], s1 - s0, y1 - y0, o1 - o0, ang); else buf.box(c[0], (y0 + y1) / 2, c[1], s1 - s0, y1 - y0, o1 - o0, ang); };
+      if (L < 5) {
+        const c = pt(L / 2, 1.0), g = groundAt(c[0], c[1]), top = g + h, m0 = pt(L / 2, 0);
+        wq(pit.panel.at(m0[0], m0[1]), 0, L, 0, g - 3, top, 0, L / 3, (g - 3) / 1.5, top / 1.5);
+        bx(pit.trim.at(m0[0], m0[1]), -ext(thA, 1.1), L + ext(thB, 1.1), -0.3, 1.1, top - 0.9, top, true);
+        topA[i] = topB[i] = top;
+        continue;
+      }
+      const nB = Math.max(1, Math.round(L / 6)), w = L / nB, gk = [];
+      for (let k = 0; k < nB; k++) { const c = pt((k + 0.5) * w, 1.2); gk.push(groundAt(c[0], c[1])); }
+      for (let k0 = 0; k0 < nB; k0 += GB) {
+        const k1 = Math.min(nB, k0 + GB), sA = k0 * w, sB = k1 * w, mid = pt((sA + sB) / 2, 0), at = (T) => T.at(mid[0], mid[1]);
+        let base = 0; for (let k = k0; k < k1; k++) base += gk[k]; base /= k1 - k0;
+        const yG = base + 4.2, yF = yG + 0.8, top = base + h, yC = top - 0.9;
+        if (k0 === 0) topA[i] = top; if (k1 === nB) topB[i] = top;
+        const eA = k0 === 0 ? 1 : 0, eB = k1 === nB ? 1 : 0;
+        const PN = at(pit.panel), GL = at(pit.glass), DR = at(pit.door), RD = at(pit.red), TR = at(pit.trim), RL = at(rails);
+        // garages: a roller door set back half a metre in each bay, a number board over it
+        for (let k = k0; k < k1; k++) {
+          const s0 = k * w + 0.3, s1 = (k + 1) * w - 0.3, yb = gk[k] - 0.5, rv = [[0, yb / 1.5], [0.17, yb / 1.5], [0.17, yG / 1.5], [0, yG / 1.5]];
+          wq(DR, s0, s1, -0.5, yb, yG, s0 / 0.8, s1 / 0.8, yb / 0.8, yG / 0.8);
+          face(PN, V3(s0, -0.5, yb), V3(s0, 0, yb), V3(s0, 0, yG), V3(s0, -0.5, yG), fw, rv);
+          face(PN, V3(s1, -0.5, yb), V3(s1, 0, yb), V3(s1, 0, yG), V3(s1, -0.5, yG), bk, rv);
+          face(PN, V3(s0, -0.5, yG), V3(s1, -0.5, yG), V3(s1, 0, yG), V3(s0, 0, yG), [0, -1, 0], [[0, 0], [(s1 - s0) / 3, 0], [(s1 - s0) / 3, 0.33], [0, 0.33]]);
+          const sc = (k + 0.5) * w; wq(TR, sc - 0.9, sc + 0.9, 0.18, yG + 0.14, yG + 0.66, 0, 1, 0, 1);
+        }
+        for (let k = k0; k <= k1; k++) { const a = Math.max(sA, k * w - 0.3), c = Math.min(sB, k * w + 0.3); wq(PN, a, c, 0, base - 3, yG, a / 3, c / 3, (base - 3) / 1.5, yG / 1.5); }      // piers
+        // fascia
+        wq(RD, sA, sB, 0.12, yG, yF, 0, 1, 0, 1);
+        face(RD, V3(sA, 0, yG), V3(sB, 0, yG), V3(sB, 0.12, yG), V3(sA, 0.12, yG), [0, -1, 0], Q4);
+        face(RD, V3(sA, 0, yG), V3(sA, 0.12, yG), V3(sA, 0.12, yF), V3(sA, 0, yF), bk, Q4); face(RD, V3(sB, 0, yG), V3(sB, 0.12, yG), V3(sB, 0.12, yF), V3(sB, 0, yF), fw, Q4);
+        // glazed floors, each behind a balcony slab with a steel rail
+        for (let f = 0; f < nF; f++) {
+          const y0 = yF + f * fh, y1 = f === nF - 1 ? yC : y0 + fh, r0 = sA + 0.05, r1 = sB - 0.05;
+          wq(GL, sA, sB, -0.08, y0, y1, sA / w, sB / w, 0, 1);
+          bx(TR, sA - eA * ext(thA, 0.95), sB + eB * ext(thB, 0.95), -0.08, 0.95, y0 - 0.2, y0 + 0.02, true);
+          bx(RL, r0, r1, 0.86, 0.91, y0 + 1.02, y0 + 1.07, true); bx(RL, r0, r1, 0.87, 0.90, y0 + 0.5, y0 + 0.53, true);
+          if (!qual.lo) { const np = Math.max(2, Math.round((r1 - r0) / 2)); for (let q = 0; q <= np; q++) { const sd = r0 + (r1 - r0) * q / np; bx(RL, sd - 0.02, sd + 0.02, 0.865, 0.905, y0 + 0.02, y0 + 1.02, false); } }
+        }
+        for (let k = k0; k <= k1; k++) { const sd = Math.min(sB - 0.11, Math.max(sA + 0.11, k * w)); bx(TR, sd - 0.11, sd + 0.11, -0.08, 0.45, yF, yC, false); }      // fins on the bay lines
+        bx(TR, sA - eA * ext(thA, 1.1), sB + eB * ext(thB, 1.1), -0.3, 1.1, yC, top, true);                                                                  // cornice
+      }
+    }
+    // the roof sits just under the lowest wall top that meets each corner
+    return pts.map((p, i) => { const a = topA[i], c = topB[(i - 1 + n) % n], t = a === null ? c : c === null ? a : Math.min(a, c); return (t === null ? groundAt(p.x, p.y) + h : t) - 0.55; });
   }
 
   /* A stand is built from its surveyed outline. Every long edge that faces the circuit becomes a run of bays about
@@ -171,6 +253,7 @@ export function buildProps(scene, qual) {
     for (const m of mods) {
       const cx = m.p.x + m.ex * m.L / 2, cz = m.p.y + m.ez * m.L / 2;
       const S = seats.at(cx, cz), C = (b.temp ? tarp : conc).at(cx, cz), R = standRoof.at(cx, cz), U = seatRoof.at(cx, cz);      // a scaffold stand is wrapped in dark sheeting, not built of concrete
+      const ST = conc.at(cx, cz), RLs = rails.at(cx, cz), angE = Math.atan2(m.ez, m.ex);
       const out = [m.ox, 0, m.oz], inw = [-m.ox, 0, -m.oz], fwd = [m.ex, 0, m.ez], bck = [-m.ex, 0, -m.ez];
       const V = (p, y) => [p[0], y, p[1]];
       const F = [], top = [];
@@ -189,10 +272,27 @@ export function buildProps(scene, qual) {
         Fk += lift; F.push(Fk);
         const B0 = Fk + rake * s0, B1 = Fk + rake * s1, Bm = Math.max(B0, B1), yb = gMin - 0.8;
         const A0 = at(m, f0, 0), A1 = at(m, f1, 0), C0 = at(m, f0, s0), C1 = at(m, f1, s1), D0 = at(m, f0, d0), D1 = at(m, f1, d1);
-        // seats
-        face(S, V(A0, Fk), V(A1, Fk), V(C1, B1), V(C0, B0), [0, 1, 0], [[f0, 0], [f1, 0], [f1, (B1 - Fk) / 0.42], [f0, (B0 - Fk) / 0.42]], seatTint);
+        /* Tiers: real steps, 0.8 m deep, with a row of seats on each (a pan and a back; the seat material cuts the
+           gaps between the shells) and a stair aisle left clear at both edges of the bay. */
+        // (an open stand's seats take one colour per bay from the survey photo: sampled seat by seat, the photo's shadows and people came out as blotches)
+        const tintB = seatTint[3] ? seatTint : [...photo([A0, A1, C1, C0]).map((v) => Math.min(0.8, v * 1.7)), 1];
+        const nR = Math.max(2, Math.round(Math.max(s0, s1) / 0.8)), ua = Math.min(0.7, m.bw * 0.07) / m.bw, ub = 1 - ua, sw = (ub - ua) * m.bw;
+        const rp = (u, c, dc) => { const sd = lerp(s0, s1, u); return [at(m, lerp(f0, f1, u), sd * c + dc), Fk + rake * sd * c]; };      // [point, tread height]: u across the bay, row fraction c, dc m further back
+        for (let j = 0; j < nR; j++) {
+          const c0 = j / nR, c1 = (j + 1) / nR;
+          const [T0, ya0] = rp(0, c0, 0), [T1, ya1] = rp(1, c0, 0), [U0, yb0] = rp(0, c1, 0), [U1, yb1] = rp(1, c1, 0);
+          face(ST, V(T0, ya0), V(T1, ya1), V(U1, ya1), V(U0, ya0), [0, 1, 0], [[f0 / 4, j * 0.2], [f1 / 4, j * 0.2], [f1 / 4, j * 0.2 + 0.2], [f0 / 4, j * 0.2 + 0.2]]);
+          face(ST, V(U0, ya0), V(U1, ya1), V(U1, yb1), V(U0, yb0), out, [[f0 / 4, j * 0.2 + 0.2], [f1 / 4, j * 0.2 + 0.2], [f1 / 4, j * 0.2 + 0.3], [f0 / 4, j * 0.2 + 0.3]]);
+          const [a0, h0] = rp(ua, c0, 0.30), [a1, h1] = rp(ub, c0, 0.30), [b0] = rp(ua, c0, 0.68), [b1] = rp(ub, c0, 0.68);
+          face(S, V(a0, h0 + 0.43), V(a1, h1 + 0.43), V(b1, h1 + 0.43), V(b0, h0 + 0.43), [0, 1, 0], [[0, 0], [sw, 0], [sw, 0.5], [0, 0.5]], tintB);
+          face(S, V(b0, h0 + 0.40), V(b1, h1 + 0.40), V(b1, h1 + 0.84), V(b0, h0 + 0.84), out, [[0, 0.5], [sw, 0.5], [sw, 1], [0, 1]], tintB);
+        }
         // front wall, with a parapet standing a little above the first row
         wall(C, A0, A1, yb, Fk + 0.55, yb, Fk + 0.55, out); wall(C, A0, A1, Fk, Fk + 0.55, Fk, Fk + 0.55, inw);
+        { // steel handrail on the parapet
+          const rc = at(m, (f0 + f1) / 2, 0.08); RLs.box(rc[0], Fk + 1.1, rc[1], m.bw - 0.1, 0.05, 0.05, angE);
+          for (let q = 0; q <= 6; q++) { const c = at(m, f0 + 0.08 + (m.bw - 0.16) * q / 6, 0.08); RLs.box(c[0], Fk + 0.81, c[1], 0.04, 0.55, 0.04, angE); }
+        }
         const deck = Math.max(d0 - s0, d1 - s1) > 0.5, block = open && deck;
         const yTop = block ? Bm + 3.2 : Bm;                               // an open stand deeper than its seating has a building behind
         if (deck) {
@@ -216,6 +316,19 @@ export function buildProps(scene, qual) {
             const c = at(m, f, d - 0.3), g = naturalAt(c[0], c[1]) - 0.5;
             C.box(c[0], (g + yBackTop) / 2, c[1], 0.45, yBackTop - g, 0.45, Math.atan2(m.ez, m.ex));
           }
+          /* The roof's frame, so the sheet is carried by something: over each column a rafter, deep at the column
+             and tapering to the front edge it cantilevers to; a raking strut from the column up to the rafter; and
+             purlins across the bay under the sheet. */
+          const ry = (c, d) => lerp(yF, yB, (c + 1.8) / (d + 2.3)) - T, rd = (c, d) => lerp(0.3, 1.25, (c + 1.8) / (d + 1.5));
+          for (const [f, d] of [[f0 + 0.3, d0], [f1 - 0.3, d1]]) {
+            const cb = d - 0.3, yk = ry(cb, d), yn = ry(-1.8, d);
+            for (const sg of [-1, 1]) { const pb = at(m, f + sg * 0.14, cb), pf = at(m, f + sg * 0.14, -1.8); face(U, V(pb, yk - 1.25), V(pf, yn - 0.3), V(pf, yn), V(pb, yk), sg > 0 ? fwd : bck, Q); }
+            face(U, V(at(m, f - 0.14, cb), yk - 1.25), V(at(m, f + 0.14, cb), yk - 1.25), V(at(m, f + 0.14, -1.8), yn - 0.3), V(at(m, f - 0.14, -1.8), yn - 0.3), [0, -1, 0], Q);
+            const cs = cb - Math.min(9, (d + 1.5) * 0.36), ps = at(m, f, cs), pc = at(m, f, cb);
+            beam(U, [pc[0], Bm + 0.6, pc[1]], [ps[0], ry(cs, d) - rd(cs, d) + 0.05, ps[1]], 0.22, 0.3);
+          }
+          { const dm = (d0 + d1) / 2;
+            for (let q = 1; q <= 5; q++) { const c = lerp(-1.8, dm + 0.5, q / 6), pc = at(m, (f0 + f1) / 2, c); U.box(pc[0], ry(c, dm) - 0.11, pc[1], m.bw - 0.6, 0.2, 0.12, angE); } }
         }
         // back wall, both faces
         wall(C, D0, D1, Math.min(yb, gBack - 0.8), yBackTop, Math.min(yb, gBack - 0.8), yBackTop, inw);
@@ -237,6 +350,12 @@ export function buildProps(scene, qual) {
     return true;
   }
   roofs.add(group, roofMat); walls.forEach((t, i) => t.add(group, wallMats[i])); conc.add(group, concMat); seats.add(group, seatMat);
+  rails.add(group, new THREE.MeshStandardMaterial({ color: 0x9aa0a6, metalness: 0.85, roughness: 0.38 }), { cast: false });
+  pit.panel.add(group, pbr(panelMaps(256)));
+  pit.glass.add(group, pbr(curtainWallMaps(TS), { envMapIntensity: 1.3 }));
+  pit.door.add(group, pbr(shutterMaps(256)));
+  pit.red.add(group, new THREE.MeshStandardMaterial({ color: 0xa3151b, roughness: 0.45, metalness: 0.05 }));
+  pit.trim.add(group, new THREE.MeshStandardMaterial({ color: 0xe9eae6, roughness: 0.55, metalness: 0.05 }));
   const steelRoof = new THREE.MeshStandardMaterial({ map: steel, color: 0xaeb3b8, metalness: 0.6, roughness: 0.5, side: THREE.DoubleSide });
   seatRoof.add(group, steelRoof); standRoof.add(group, makeStandRoofMaterial());
   tarp.add(group, new THREE.MeshStandardMaterial({ color: 0x2c3138, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }));
@@ -265,6 +384,24 @@ const SEAT_DEPTH = 24;                        // m of seating; a deeper outline 
 class TBuf extends Buf {
   constructor() { super(); this.tint = []; }
   mesh(mat, o) { const m = super.mesh(mat, o); m.geometry.setAttribute('aTint', new THREE.Float32BufferAttribute(this.tint, 4)); return m; }
+}
+
+// a box with all six faces (Buf.box leaves the underside off), for parts seen from below
+function boxFull(buf, cx, cy, cz, sx, sy, sz, ang = 0) {
+  buf.box(cx, cy, cz, sx, sy, sz, ang);
+  const c = Math.cos(ang), s = Math.sin(ang), hx = sx / 2, hz = sz / 2, P = (x, z) => [cx + x * c - z * s, cy - sy / 2, cz + x * s + z * c];
+  buf.quad(P(-hx, -hz), P(hx, -hz), P(hx, hz), P(-hx, hz), [0, -1, 0], [[0, 0], [1, 0], [1, 1], [0, 1]]);
+}
+
+// a straight beam from a to b ([x, y, z]) with a w x h section: four sides, open ends
+function beam(buf, a, b, w, h) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], L = Math.hypot(dx, dy, dz) || 1, t = [dx / L, dy / L, dz / L];
+  let sx = -t[2], sz = t[0]; const sl = Math.hypot(sx, sz); if (sl < 1e-4) { sx = 1; sz = 0; } else { sx /= sl; sz /= sl; }
+  const u = [-sz * t[1], sz * t[0] - sx * t[2], sx * t[1]];                         // side x along = up
+  const at = (p, i, j) => [p[0] + sx * i * w / 2 + u[0] * j * h / 2, p[1] + u[1] * j * h / 2, p[2] + sz * i * w / 2 + u[2] * j * h / 2];
+  const uv = [[0, 0], [L / 2, 0], [L / 2, 1], [0, 1]];
+  face(buf, at(a, 1, -1), at(b, 1, -1), at(b, 1, 1), at(a, 1, 1), [sx, 0, sz], uv); face(buf, at(a, -1, -1), at(b, -1, -1), at(b, -1, 1), at(a, -1, 1), [-sx, 0, -sz], uv);
+  face(buf, at(a, -1, 1), at(b, -1, 1), at(b, 1, 1), at(a, 1, 1), u, uv); face(buf, at(a, -1, -1), at(b, -1, -1), at(b, 1, -1), at(a, 1, -1), [-u[0], -u[1], -u[2]], uv);
 }
 
 // quad a-b-c-d, wound so that it faces `want`
@@ -351,8 +488,11 @@ function makeStandRoofMaterial() {
   return m;
 }
 
-function makeSeatMaterial() {
-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
+/* Seats. Each row is a pan and a back (uv.x = metres along the row, uv.y < 0.5 the pan, > 0.5 the back). The gap
+   between one shell and the next is cut out, so a row is separate seats with the step showing between them. */
+function makeSeatMaterial(qual) {
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55, side: THREE.DoubleSide });
+  if (qual && qual.msaa > 0) m.alphaToCoverage = true; else m.alphaTest = 0.5;
   m.defines = { USE_UV: '' };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, groundUniforms);
@@ -362,19 +502,19 @@ function makeSeatMaterial() {
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform sampler2D tNear, tNoise; uniform vec4 uNearRect; varying vec4 vTint;')
       .replace('#include <map_fragment>', /* glsl */`
-        // tiers: riser shadow line + individual seat shells; hue follows the survey photo (real seat colours)
+        // open stands take their seat colour from the survey photo (the real colours); under a roof the photo shows
+        // the roof, so those stands carry their own
         vec3 ph = texture2D( tNear, ( vFogWorld.xz - uNearRect.xy ) * uNearRect.zw ).rgb;
-        float row = fract( vUv.y ), seat = fract( vUv.x / 0.52 );
-        float shell = smoothstep( 0.06, 0.12, seat ) * ( 1.0 - smoothstep( 0.88, 0.94, seat ) ) * smoothstep( 0.18, 0.26, row ) * ( 1.0 - smoothstep( 0.80, 0.86, row ) );
-        float aisle = step( 0.94, fract( vUv.x / 14.0 ) );
-        vec3 conc = vec3( 0.30, 0.30, 0.29 );
+        float seat = fract( vUv.x / 0.5 ), id = floor( vUv.x / 0.5 );
+        float shell = smoothstep( 0.04, 0.09, seat ) * ( 1.0 - smoothstep( 0.91, 0.96, seat ) );
         vec3 sc = mix( ph * 0.9, vec3( dot( ph, vec3( 0.33 ) ) ), 0.15 );
-        // under a roof the photo shows the roof, not the seats: those stands carry their own seat colour
-        vec3 sv = texture2D( tNoise, floor( vec2( vUv.x / 0.52, vUv.y ) ) / 64.0 ).rgb;
-        sc = mix( sc, vTint.rgb * ( 0.8 + 0.4 * sv.r ), vTint.a );
-        diffuseColor.rgb = mix( conc, sc, shell * ( 1.0 - aisle ) ) * ( 0.55 + 0.45 * smoothstep( 0.0, 0.3, row ) );
+        vec3 sv = texture2D( tNoise, vec2( id, floor( vFogWorld.y * 2.6 ) ) / 64.0 + 0.37 ).rgb;
+        sc = mix( sc, vTint.rgb, vTint.a ) * ( 0.84 + 0.32 * sv.r );
+        float back = step( 0.5, vUv.y ), v = fract( vUv.y * 2.0 );
+        diffuseColor.rgb = sc * mix( 1.0 - 0.3 * v, 0.78 + 0.26 * v, back );
+        diffuseColor.a = shell;
       `);
   };
-  m.customProgramCacheKey = () => 'seats';
+  m.customProgramCacheKey = () => 'seats2';
   return m;
 }

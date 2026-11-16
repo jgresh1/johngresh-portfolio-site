@@ -281,7 +281,8 @@ export function buildCar(M, opt = {}) {
       part(cyl(0.0105, 0.0112, 0.011, 24), M.knob, x, y, 0.017); part(new THREE.BoxGeometry(0.0022, 0.0085, 0.0015), M.button(0xf0f0f0), x, y + 0.0045, 0.0232);
     }
     for (const sx of [-1, 1]) {
-      part(cyl(0.0085, 0.0085, 0.009, 18), M.knob, sx * 0.1, 0.055, 0.0155); part(cyl(0.0048, 0.0048, 0.0035, 12), M.button(sx > 0 ? 0xe02a2a : 0x22b455), sx * 0.1, 0.055, 0.0215);
+      part(cyl(0.0085, 0.0085, 0.009, 18), M.knob, sx * 0.1, 0.055, 0.0155);
+      { const bt = part(cyl(0.0048, 0.0048, 0.0035, 12), M.button(sx > 0 ? 0xe02a2a : 0x22b455), sx * 0.1, 0.055, 0.0215); if (sx > 0) bt.name = 'btnDrive'; }      // the film's driver presses this one
       for (const pts of [[[0.046, 0.014], [0.15, 0.022], [0.156, 0.05], [0.06, 0.047]], [[0.04, -0.05], [0.136, -0.064], [0.142, -0.038], [0.05, -0.027]]]) part(plate(roundedShape(pts.map(([x, y]) => [sx * x, y]), 0.006), 0.006, 0.002), M.carbon, 0, 0, -0.03).name = 'paddle' + (pts[0][1] > 0 ? 'U' : 'L') + (sx > 0 ? 'R' : 'L');
       // each paddle hangs on a pivot block bolted to the rear housing
       for (const [py, ph] of [[0.031, 0.02], [-0.04, 0.018]]) { part(new THREE.BoxGeometry(0.016, ph, 0.012), M.alu, sx * 0.058, py, -0.0235); part(cyl(0.0026, 0.0026, 0.02, 10).rotateY(Math.PI / 2), M.fastener, sx * 0.058, py, -0.0235); }

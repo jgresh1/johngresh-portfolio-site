@@ -2,7 +2,8 @@
 //   0-4    black, title card            4-15.5  stills flash into a 3 x 3 collage, faster and faster
 //   16-24  the drop: the whole car      24-32   four shots along the body, one per two beats
 //   32-40  the gear changes             40-56   wet floor, wheelspin, two slow-motion looks at the tyre lettering
-//   56-64  the camera drops in behind the car, the floor starts to run, flash, cut to the circuit
+//   56-64  the camera drops in behind the car, the hall's lights come up, the car runs out through the door, cut to the circuit
+// The burn-out (40-56) is shot locked off: neither the car nor any camera in it moves.
 import * as THREE from 'three';
 import { LOOKS } from './gfx.js';
 import { SLOW, wallAt } from './audio.js';
@@ -43,7 +44,7 @@ export class Intro {
   start() {
     const { studio, hud, gfx, sound, view } = this.ctx;
     this.done = false; this.warm = 0; this.tile = 0; this.cut = -1; this.wheel = 0; this.gear = 1; this.lastShift = -1; this.cap = ''; this.last = performance.now() / 1000; this.run = 0; this.runV = 0;
-    studio.floorU.uWet.value = 0; studio.floorU.uRun.value = 0; studio.clearSpray(); studio.setTunnel(0, 0); this.prevWheel = 0;
+    studio.floorU.uWet.value = 0; studio.floorU.uRun.value = 0; studio.clearSpray(); studio.setLaunch(0); this.prevWheel = 0;
     gfx.clearCollage(); gfx.setLook(LOOKS.studio); gfx.fx.fade = 1; gfx.fx.flash = 0; gfx.fx.blur = 0; gfx.fx.punch = 0; gfx.fx.chroma = 0;
     view.home(); view.setWheels(0, 0, 0, 0, 0); if (view.dash) view.drawDash(1, 0, 0, 1);
     hud.bars(true); hud.caption('', '');
@@ -56,7 +57,7 @@ export class Intro {
     const tm = performance.now();
     this.done = true; hud.bars(false); hud.caption('', ''); gfx.fx.fade = 0; gfx.fx.punch = 0; gfx.fx.chroma = 0;
     sound.filmEngine(4000, 0, 0); if (skipped) sound.stopFilm();
-    studio.floorU.uWet.value = 0; studio.floorU.uRun.value = 0; studio.clearSpray(); studio.setTunnel(0, 0);
+    studio.floorU.uWet.value = 0; studio.floorU.uRun.value = 0; studio.clearSpray(); studio.setLaunch(0);
     this.poseHand(0); view.car.position.set(0, 0, 0); view.car.rotation.set(0, 0, 0);
     if (this.ctx.mark) this.ctx.mark('filmEnd', tm);
     this.ctx.onCut(skipped);
@@ -155,31 +156,35 @@ export class Intro {
       vis = lerp(1, 0.012, slow);
       const up = clamp((b - 40) / 2.5, 0, 1);
       spin = 175 * ease(up);
-      if (b < 44) { cutTo(9); const u = (b - 40) / 4; this.look(mix3([-4.9, 0.36, 3.1], [-4.4, 0.42, 2.7], u), [-1.5, 0.36, 0.45], 28); }
+      // locked off: the car stands still, held on its brakes, and so does every camera in this part
+      if (b < 44) { cutTo(9); this.look([-4.7, 0.38, 2.95], [-1.5, 0.36, 0.45], 28); }
       else if (b < 48) { cutTo(10); this.look([-1.74, 0.69, 2.02], [-1.8, 0.585, 1.0], 19, false); if (hold === 0 && slow > 0.6) this.caption('Created by', 'John Gresh'); else this.caption('', ''); }
       else if (b < 52) { cutTo(11); this.look([-1.95, 0.66, 1.72], [-1.8, 0.607, 1.0], 12.5, false); if (hold === 1 && slow > 0.6) this.caption('Co-producer', 'Luke Carlan'); else this.caption('', ''); }
-      else { cutTo(12); this.caption('', ''); const u = (b - 52) / 4; this.look(mix3([5.6, 0.26, 1.5], [5.0, 0.3, 1.0], u), [0, 0.45, 0], 24); }
+      else { cutTo(12); this.caption('', ''); this.look([5.35, 0.28, 1.3], [0, 0.45, 0], 24); }
       // while the picture is held, the lettering sits at the top of the tyre and drifts through the frame
       this.nameAt = hold === 0 ? 0 : hold === 1 ? Math.PI / 2 : null; this.slow = slow;
       eng = [lerp(9000, 12400, 0.5 + 0.5 * Math.sin(b * 1.7)) * lerp(1, 0.5, slow), 1, 0.2 * lerp(1, 0.6, slow)];
-      fx.chroma = 0.003 * pulse * (1 - slow);
+      fx.chroma = 0;                         // locked off and clean: no lens tricks on the burn-out
     } else {
-      // ---- the camera drops in behind the car, the floor starts to run under it, flash, cut
+      // ---- the camera drops in behind the car; the hall's lights come up and the door at its far end rises on
+      // daylight; the car runs down the hall and out through it. The white-out at the cut is the door reaching the lens.
       cutTo(13); this.caption('', '');
       studio.floorU.uWet.value = 1;
       const u = clamp((b - 56) / 5, 0, 1), e = ease(u);
       const a = lerp(0.35, Math.PI, e), rad = lerp(5.6, 6.38, e);
       const pos = [Math.cos(a) * rad, lerp(0.3, CHASE.pos[1], e), Math.sin(a) * rad * 0.7], tg = mix3([0, 0.45, 0], CHASE.tg, e);
       this.look(pos, tg, lerp(24, CHASE.fov, ease(clamp((b - 57) / 6, 0, 1))), false);
-      const go = clamp((b - 58.5) / 5.5, 0, 1);
-      this.runV = 86 * go * go; this.run += this.runV * dt; studio.floorU.uRun.value = this.run % 4096; studio.setTunnel(this.run, Math.min(1, go * 2.2));
+      // distance run is worked out from the beat, not added up frame by frame, so the door arrives exactly on the cut
+      const go = clamp((b - 58.5) / 5.5, 0, 1), T = 5.5 * BEAT, total = 86 * T / 3;
+      this.runV = 86 * go * go; this.run = total * go * go * go;
+      studio.setLaunch(ease(clamp((b - 56) / 1.5, 0, 1)), this.run, this.runV, total - 6.4 - this.run, ease(clamp((b - 56.4) / 2.0, 0, 1)));
       spin = lerp(175, 60, go);
-      fx.blur = 0.05 * go * go; fx.chroma = 0.004 * go;
-      if (b > 63) fx.flash = Math.max(fx.flash, ease((b - 63) / 1) * 1.0);
+      fx.blur = 0.018 * go * go; fx.chroma = 0.0006 * go;      // the smear is in the scene now (road, lights); the lens adds very little
+      if (b > 63.2) fx.flash = Math.max(fx.flash, ease((b - 63.2) / 0.8) * 1.0);
       eng = [lerp(9000, 12300, (b * 0.5) % 1), 1, 0.22];
     }
 
-    // ---- wheels, spray and the shudder of a car held on the brakes
+    // ---- wheels and the water they throw
     if (b >= 40) {
       const R = 0.36;
       if (this.nameAt !== null && this.slow > 0.02 && b < 52) {
@@ -191,12 +196,16 @@ export class Intro {
       const roll = b >= 56 ? this.run / R : 0;
       const wr = Math.abs(this.wheel + roll - this.prevWheel) / dt; this.prevWheel = this.wheel + roll;
       view.setWheels(roll, this.wheel + roll, 0, Math.min(0.5, this.runV / R / 90 / 6.283), Math.min(0.5, wr / 90 / 6.283));
-      const sh = (b < 56 ? 1 : 1 - clamp((b - 58.5) / 3, 0, 1)) * ease(clamp((b - 40) / 2, 0, 1)) * (0.2 + 0.8 * vis);
-      view.car.position.set(Math.sin(now * 61) * 0.0016 * sh, Math.abs(Math.sin(now * 47)) * 0.0012 * sh, Math.sin(now * 23) * 0.004 * sh);
-      view.car.rotation.set(0, Math.sin(now * 5.3) * 0.004 * sh, 0);
-      const rate = spin / 175 * (b < 56 ? 1 : 1 - clamp((b - 58.5) / 4, 0, 1));
-      if (rate > 0.05) for (const z of [0.8, -0.8]) studio.emit(V(-1.92, 0.02, z), V(-0.72, 0.62, 0), 4 + 7 * rate, Math.round((studio.NP / 90) * rate * vis * dt * 60 + Math.random() * 0.6));
-      studio.updateSpray(dt * vis);
+      view.car.position.set(0, 0, 0); view.car.rotation.set(0, 0, 0);      // the car itself does not move: no shudder, no sway
+      // water off the rear tyres: fewer, finer drops, each leaving along the tread (studio.emitTyre)
+      // (standing: a fan of drops off each spinning tyre and a little mist; running: fewer drops and a wake of fine spray)
+      const moving = b >= 58.5 ? clamp(this.runV / 60, 0, 1) : 0;
+      const rate = spin / 175 * (1 - 0.6 * moving), tread = Math.max(spin * R, this.runV);
+      if (rate > 0.05) {
+        const want = 250 * rate * vis * dt, wantM = (12 * rate + 30 * moving) * vis * dt;
+        for (const z of [0.7875, -0.7875]) studio.emitTyre(-1.8, R - 0.0045, z, R, 0.2, tread, Math.floor(want + Math.random()), Math.floor(wantM + Math.random()), moving);
+      }
+      studio.updateSpray(dt * vis, vis / 160, b >= 56 ? this.runV : 0);
     } else { view.setWheels(0, 0, 0, 0, 0); view.car.position.set(0, 0, 0); view.car.rotation.set(0, 0, 0); }
     if (eng) sound.filmEngine(eng[0], eng[1], eng[2]); else sound.filmEngine(4000, 0, 0);
 

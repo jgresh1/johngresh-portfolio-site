@@ -19,7 +19,9 @@ import { Governor } from './perf.js';
 
 const Q = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
-const yieldNow = () => new Promise((r) => setTimeout(r, 0));
+// let the page breathe between loading steps. A message, not a timer: browsers slow timers to one a second in a tab
+// that is not in front, which made a background load take ten seconds longer.
+const yieldNow = () => new Promise((r) => { const c = new MessageChannel(); c.port1.onmessage = () => { c.port1.close(); r(); }; c.port2.postMessage(0); });
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const DEV = Q.has('dev');
 
@@ -135,7 +137,7 @@ async function boot() {
   requestAnimationFrame(loop);
 
   // ---- the circuit, behind the title
-  await new Promise((r) => { requestAnimationFrame(() => setTimeout(r, 0)); setTimeout(r, 120); });      // let the title paint first
+  await new Promise((r) => { requestAnimationFrame(() => yieldNow().then(r)); setTimeout(r, 120); });      // let the title paint first
   titleUp();
   sound.prepare();
   await worldP;

@@ -250,6 +250,7 @@ function buildLine() {
 
 /* ------------------------------------------------------------------ scene switches */
 function toStudio() {
+  gfx.carRect(0, null); gfx.carRect(1, null);
   studio.scene.add(cars.player.root); cars.player.home(); cars.player.setStage(true);
   cars.player.setWheels(0, 0, 0, 0, 0);
   gfx.setLook(LOOKS.studio); gfx.fx.blur = 0; if (lineMesh) lineMesh.visible = false;
@@ -368,17 +369,19 @@ function simulate(dt) {
   input.poll(dt, P.speed);
   // after the film the car drives itself for a moment, then hands over
   if (G.ctrl < 1 && G.state === 'race') { G.ctrl = Math.min(1, G.ctrl + dt / 1.1); P.auto = G.ctrl < 1 ? autopilot(0.97) : null; }
-  G.acc += dt; let n = 0;
-  while (G.acc >= H && n < 8) {
-    G.acc -= H; n++;
+  /* The simulation advances by exactly the frame's time, in equal steps of 1/120 s or less. It used to take fixed
+     1/120 s steps and carry the remainder over, so a frame moved the cars by two steps, or one, or none, while the
+     camera and the body's springs ran on the frame's own time. On any screen that does not refresh at 60 Hz the
+     cars then shuddered against the camera, and on a climb the body jumped 5 cm on its wheels every frame. */
+  const T = Math.min(dt, 8 * H), n = Math.max(1, Math.ceil(T / H - 1e-6)), h = T / n;
+  for (let k = 0; k < n; k++) {
     const racing = G.state === 'race' && race.state === 'green';
-    if (race.state === 'green' || race.state === 'done') { P.step(H, racing && !P.done ? input : IDLE, G.state === 'race' ? S.assist : 0, G.roam ? null : R); }
+    if (race.state === 'green' || race.state === 'done') { P.step(h, racing && !P.done ? input : IDLE, G.state === 'race' ? S.assist : 0, G.roam ? null : R); }
     if (G.roam) continue;
-    R.step(H, P, race);
-    if (race.state === 'green' || race.state === 'done') { const h = touch(P, R, H); if (h > 0.15) { G.hits++; sound.sfx('hit', h); } }
-    race.update(H);
+    R.step(h, P, race);
+    if (race.state === 'green' || race.state === 'done') { const hit = touch(P, R, h); if (hit > 0.15) { G.hits++; sound.sfx('hit', hit); } }
+    race.update(h);
   }
-  if (n === 8) G.acc = 0;
   P.settle(dt); R.settle(dt);
   G.top = Math.max(G.top, P.speed);
   // the lead changing hands, and the tow catching: say so (2 m of hysteresis so a side-by-side fight does not chatter)
@@ -436,6 +439,8 @@ function frameRace(dt, warm = false) {
   if (props && props.update) props.update(camera, dt);
   shadows.update(camera, pv.pos);
   const v = P.speed;
+  // the two cars stay sharp inside the speed blur (onboard, the player's own car is all round the lens: only the rival)
+  gfx.carRect(0, orbiting || chase.mode > 1 ? null : pv, camera); gfx.carRect(1, G.roam ? null : rv, camera);
   gfx.fx.blur = orbiting ? 0 : (chase.mode <= 1 ? 1 : 0.6) * (0.006 + 0.046 * (v / 95) ** 2 + 0.03 * chase.boost);
   gfx.fx.flash = Math.max(0, gfx.fx.flash - dt * 2.6);
   gfx.fx.chroma = 0.0025 * chase.boost + 0.01 * P.impact;

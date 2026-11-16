@@ -33,10 +33,11 @@ export class Gfx {
       uniforms: {
         tDiffuse: { value: null }, uTM: { value: 0 }, uExposure: { value: 1 }, uVig: { value: 0.34 }, uGrade: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 0 },
         uBlur: { value: 0 }, uChroma: { value: 0 }, uPunch: { value: 0 }, uCenter: { value: new THREE.Vector2(0.5, 0.5) }, uTime: { value: 0 }, uTint: { value: new THREE.Vector3(1, 1, 1) },
+        uCar: { value: [new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0)] },      // each car on screen: centre (uv) and half size; 0 = not there
       },
       vertexShader: QUAD_VERT,
       fragmentShader: /* glsl */`
-        uniform sampler2D tDiffuse; uniform float uTM, uExposure, uVig, uGrade, uFlash, uFade, uBlur, uChroma, uPunch, uTime; uniform vec2 uCenter; uniform vec3 uTint;
+        uniform sampler2D tDiffuse; uniform float uTM, uExposure, uVig, uGrade, uFlash, uFade, uBlur, uChroma, uPunch, uTime; uniform vec2 uCenter; uniform vec3 uTint; uniform vec4 uCar[2];
         varying vec2 vUv;
         float h(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
         vec3 RRTAndODTFit(vec3 v) { vec3 a = v * (v + 0.0245786) - 0.000090537; vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081; return a / b; }
@@ -54,11 +55,20 @@ export class Gfx {
           float g = 1.0 - 1.0 / (Desaturation * (peak - newPeak) + 1.0); return mix(color, vec3(newPeak), g);
         }
         vec3 toSRGB(vec3 c) { return mix(c * 12.92, 1.055 * pow(max(c, vec3(0.0)), vec3(0.41666)) - 0.055, step(0.0031308, c)); }
+        // 1 inside the rectangle round a car, falling to 0 a third of its size outside it
+        float carMask(vec2 p) {
+          float m = 0.0;
+          for (int i = 0; i < 2; i++) { vec2 q = abs(p - uCar[i].xy) / max(uCar[i].zw, vec2(1e-5)); m = max(m, 1.0 - smoothstep(1.0, 1.35, max(q.x, q.y))); }
+          return m;
+        }
+        /* Speed blur: the picture smeared outward from the centre, more towards the edges. A camera travelling with the
+           cars would smear the scenery, not the cars: so a car's own pixels are not blurred, and a smear that would
+           reach into a car takes the pixel's own colour instead (no ghost of the car trailing over the road). */
         vec3 grab(vec2 uv) {
           #if ${TAPS} > 0
-            vec2 d = (uv - uCenter); float n = h(gl_FragCoord.xy + uTime);
-            vec3 s = vec3(0.0);
-            for (int i = 0; i < ${TAPS}; i++) { float t = (float(i) + n) / float(${TAPS}); s += texture2D(tDiffuse, uv - d * uBlur * t * dot(d, d) * 4.0).rgb; }
+            vec2 d = (uv - uCenter); float n = h(gl_FragCoord.xy + uTime), k = uBlur * dot(d, d) * 4.0 * (1.0 - carMask(uv));
+            vec3 c0 = texture2D(tDiffuse, uv).rgb, s = vec3(0.0);
+            for (int i = 0; i < ${TAPS}; i++) { vec2 p = uv - d * k * (float(i) + n) / float(${TAPS}); s += mix(texture2D(tDiffuse, p).rgb, c0, carMask(p)); }
             return s / float(${TAPS});
           #else
             return texture2D(tDiffuse, uv).rgb;
@@ -67,7 +77,7 @@ export class Gfx {
         void main() {
           vec2 uv = (vUv - 0.5) * (1.0 - uPunch) + 0.5;
           vec3 c;
-          if (uChroma > 0.0) { vec2 o = (uv - 0.5) * uChroma; c = vec3(grab(uv + o).r, grab(uv).g, grab(uv - o).b); } else c = grab(uv);
+          if (uChroma > 0.0) { vec2 o = (uv - 0.5) * uChroma * (1.0 - carMask(uv)); c = vec3(grab(uv + o).r, grab(uv).g, grab(uv - o).b); } else c = grab(uv);
           c = min(c, vec3(60.0)) * uTint;
           c = mix(aces(c), neutral(c), uTM);
           c = toSRGB(c);
@@ -115,6 +125,20 @@ export class Gfx {
   }
 
   // CSS size of the canvas, and the resolution scale chosen by the performance governor
+  /* Where car i is on screen, for the final pass (see carMask): the box round the car, projected. view = null (or a
+     car behind the camera) clears it. Call once a frame, after the camera has moved. */
+  carRect(i, view, camera) {
+    const u = this.matOut.uniforms.uCar.value[i], v = this._cv || (this._cv = new THREE.Vector3());
+    if (!view) { u.set(0, 0, 0, 0); return; }
+    let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    for (let k = 0; k < 8; k++) {
+      v.set(k & 1 ? 3.3 : -3.05, k & 2 ? 1.2 : -0.05, k & 4 ? 1.12 : -1.12).applyMatrix4(view.root.matrix).applyMatrix4(camera.matrixWorldInverse);
+      if (v.z > -0.3) { u.set(0, 0, 0, 0); return; }                   // a corner beside or behind the lens: no rectangle
+      v.applyMatrix4(camera.projectionMatrix);
+      x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+    }
+    u.set((x0 + x1) / 4 + 0.5, (y0 + y1) / 4 + 0.5, (x1 - x0) / 4, (y1 - y0) / 4);
+  }
   setSize(cssW, cssH, scale = this.scale) {
     this.cssW = Math.max(2, cssW); this.cssH = Math.max(2, cssH); this.scale = scale;
     let pr = Math.min(window.devicePixelRatio || 1, this.dprCap) * scale;

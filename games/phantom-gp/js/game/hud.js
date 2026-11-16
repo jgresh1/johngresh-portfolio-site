@@ -73,6 +73,7 @@ export class Hud {
     this.cur = name;
     for (const [k, el] of Object.entries(this.layers)) el.classList.toggle('on', k === name || (k === 'race' && (name === 'pause')));
     document.body.classList.toggle('racing', name === 'race');
+    document.body.classList.toggle('film', name === 'cine');                  // the site's menu button stays out of the film
     $('h-btns').classList.toggle('off', !(name === 'race' || name === 'pause'));     // the site's own menu button docks here while the row shows
   }
   load(text, p) { (window.__bootT ||= []).push([text, Math.round(performance.now())]); $('load-text').textContent = text; $('load-bar').firstElementChild.style.width = Math.round(p * 100) + '%'; }

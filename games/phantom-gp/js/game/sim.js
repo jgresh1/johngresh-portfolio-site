@@ -173,7 +173,9 @@ class Body {
        damper that acts on the difference in vertical speed, so a steady climb is followed with no lag at all and
        a bump in the road moves the wheels more than the car. Slope and bank ease in over a few hundredths of a
        second. The tyres take up the difference (wheelLift), which is what keeps them on the ground. */
-    if (dt > 0 && this.slope !== undefined && Math.abs(yp - this.yPlane) < 0.6) {
+    // (a jump of more than 0.6 m beyond what the car's own speed explains is a reset or a teleport: start the springs afresh.
+    // Measured against the speed, because on a steep climb at 300 km/h a slow frame alone rises more than 0.6 m.)
+    if (dt > 0 && this.slope !== undefined && Math.abs(yp - this.yPlane) < 0.6 + Math.abs(this.u) * dt * 0.5) {
       const vp = (yp - this.yPlane) / dt, w = 2 * Math.PI * 2.6, n = Math.max(1, Math.ceil(dt / 0.006)), hdt = dt / n;
       for (let k = 0; k < n; k++) { const yq = this.yPlane + vp * hdt * (k + 1); this.vBody += (w * w * (yq - this.y) + 2 * 0.8 * w * (vp - this.vBody)) * hdt; this.y += this.vBody * hdt; }
       if (Math.abs(this.y - yp) > 0.05) { this.y = yp + Math.sign(this.y - yp) * 0.05; this.vBody = vp; }

@@ -111,6 +111,16 @@
   #h-map { top: calc(64px + var(--safe-t)); right: calc(14px + var(--safe-r)); width: 132px; height: 182px; opacity: .92; }
   #h-btns { top: calc(14px + var(--safe-t)); right: calc(14px + var(--safe-r)); display: flex; gap: 8px; pointer-events: auto; }
   #h-btns button { width: 42px; height: 42px; display: grid; place-items: center; font-size: 12px; letter-spacing: .08em; }
+  /* The site's own menu button (johngresh.org adds it; see the site's assets/site-menu.js) joins this row during a
+     race. It arrives as a round grey pill of another size: here it takes the row's own shape, so the three buttons
+     read as one set. In the film it is hidden. */
+  #h-btns #jg-site { display: flex; }
+  #h-btns #jg-site-btn { width: 42px; height: 42px; min-width: 0; padding: 0; gap: 0; justify-content: center; border-radius: 0; opacity: 1; box-shadow: none;
+    border: 1px solid var(--line); background: var(--panel); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: var(--ink); }
+  #h-btns #jg-site-btn:hover, #h-btns #jg-site.open #jg-site-btn { background: rgba(40,44,50,.8); gap: 0; }
+  #h-btns #jg-site-btn span { display: none; }
+  #h-btns #jg-site-btn svg { width: 15px; height: 15px; }
+  body.film #jg-site { display: none; }
   #h-speed { right: calc(26px + var(--safe-r)); bottom: calc(22px + var(--safe-b)); text-align: right; text-shadow: 0 2px 18px rgba(0,0,0,.65); }
   #h-speed .rev { display: flex; gap: 3px; justify-content: flex-end; margin-bottom: 8px; }
   #h-speed .rev i { width: 13px; height: 7px; background: rgba(255,255,255,.16); transform: skewX(-18deg); }

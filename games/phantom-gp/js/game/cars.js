@@ -225,10 +225,15 @@ function mergeCar(car, wheels) {
   for (const [parent, list] of jobs) mergeInto(parent, list);
 }
 
+// the two hand meshes: the only files the car needs, so the game fetches them before anything large (see boot)
+let handsP = null;
+export function loadHands() {
+  return handsP || (handsP = Promise.all([loadHand('./vendor/hands/left.glb'), loadHand('./vendor/hands/right.glb')]).then(([L, R]) => ({ L, R }))
+    .catch((e) => { console.warn('hand meshes not loaded', e); return null; }));
+}
 export async function buildCars(renderer, q) {
   DETAIL.tol = q.carTol; DETAIL.hand = q.handLevels; DETAIL.tex = q.maskScale;
-  const hands = await Promise.all([loadHand('./vendor/hands/left.glb'), loadHand('./vendor/hands/right.glb')]).then(([L, R]) => ({ L, R }))
-    .catch((e) => { console.warn('hand meshes not loaded', e); return null; });
+  const hands = await loadHands();
   const t0 = performance.now();
   const M1 = makeMaterials();
   const b = buildCar(M1, { hands });

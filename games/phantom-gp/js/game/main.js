@@ -8,7 +8,7 @@ import { W, LOAD, loadWorld, upgradeGround, frameAt, surfaceAt } from '../track/
 import { buildTerrain, TERRAIN, groundUniforms } from '../track/terrain.js';
 import { buildRoad } from '../track/road.js';
 import { ROADS, loadRoads, prepRoads, buildRoadMeshes } from '../track/roads.js';
-import { buildCars, PAINTS } from './cars.js';
+import { buildCars, loadHands, PAINTS } from './cars.js';
 import { TRACK, buildTrack, Car, Rival, Race, touch, autopilot, lineAt, vpAt } from './sim.js';
 import { Chase, CAM_MODES } from './chase.js';
 import { Input } from './input.js';
@@ -94,9 +94,11 @@ async function boot() {
   resize();
   LOAD.lo = q.lo;
   let netP = 0, titleUp; const gate = new Promise((r) => { titleUp = r; });
-  const worldP = loadWorld((p) => { netP = p; if (!G.trackReady) hud.startProgress(0.7 * p); }, gate);
+  // the title's own files first: the circuit's 11 MB starts only once the car's two hand meshes are in, or they queue behind it
+  const first = loadHands();
+  const worldP = first.then(() => loadWorld((p) => { netP = p; if (!G.trackReady) hud.startProgress(0.7 * p); }, gate));
   const hiP = q.lo ? null : worldP.then(() => upgradeGround());
-  const roadsP = loadRoads();
+  const roadsP = first.then(() => loadRoads());
 
   await yieldNow();
   cars = await buildCars(renderer, q);

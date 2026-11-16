@@ -18,6 +18,12 @@
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/" } }
 </script>
+<!-- fetch the big scripts and the car's hand meshes straight away, not when the import chain reaches them -->
+<link rel="modulepreload" href="./vendor/three.module.js">
+<link rel="modulepreload" href="./vendor/three.core.js">
+<link rel="modulepreload" href="./js/game/main.js">
+<link rel="preload" href="./vendor/hands/left.glb" as="fetch" crossorigin>
+<link rel="preload" href="./vendor/hands/right.glb" as="fetch" crossorigin>
 <style>
   :root { --ink: #f2f3f4; --dim: #a4a9b1; --line: rgba(255,255,255,.14); --panel: rgba(10,12,15,.62); --accent: #f2b200; --red: #e2231a; --green: #25d366;
     --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px); --pw: min(26vw, 180px); --ph: min(28vh, 104px); }

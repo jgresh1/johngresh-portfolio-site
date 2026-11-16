@@ -6,7 +6,7 @@ import * as THREE from 'three';
 export const LOAD = { lo: false };
 // The near terrain mesh uses every MESH.step-th survey point: 1 = 2 m (desktops), 2 = 4 m (phones, a quarter of the
 // memory). meshAt() follows the same grid, so everything fitted to "the terrain as drawn" still fits.
-export const MESH = { step: 1 };
+export const MESH = { step: 1, farStep: 1 };          // farStep: the far grid's block size away from the circuit (terrain.js)
 export const W = {};        // filled by loadWorld()
 
 async function bin(url, Type) {
@@ -419,30 +419,46 @@ function kerbLift(f) {
 // free roam's roads (roads.js) plug in here: top(x, z) -> surface height if a road or its shoulder is there
 export const EXTRA = { top: null };
 
-// where a tyre touches down at (x, z): the road, a kerb, or the ground
+/* The ground as it is drawn, away from any road. Near the circuit that is the terrain mesh (lowered under roads and
+   verges, and coarser on phones), not the raw survey; further out it is the far grid, split into the triangles the
+   far mesh uses. Anything that stands on the ground must use this, or it floats and sinks by the difference. */
+export function drawnGround(x, z) {
+  const n = W.meta.near;
+  if (x > n.x0 && z > n.z0 && x < n.x0 + n.w && z < n.z0 + n.h) return meshAt(x, z);
+  const q = W.meta.far, a = W.hFar, fx = q.nx, fy = q.ny, st = Math.max(1, MESH.farStep | 0);
+  const u0 = Math.min(Math.max((x - q.x0) / q.step, 0), fx - 1.001), v0 = Math.min(Math.max((z - q.z0) / q.step, 0), fy - 1.001);
+  let i0 = u0 | 0, j0 = v0 | 0, i1 = i0 + 1, j1 = j0 + 1;
+  if (st > 1) {
+    // beyond a frame round the near grid the far mesh is built from st x st blocks (terrain.js)
+    const [c0, c1, r0, r1] = q.hole;
+    const C0 = Math.max(0, Math.floor(c0 / st) * st - st), C1 = Math.min(fx - 1, Math.ceil(c1 / st) * st + st), R0 = Math.max(0, Math.floor(r0 / st) * st - st), R1 = Math.min(fy - 1, Math.ceil(r1 / st) * st + st);
+    if (!(i0 >= C0 && i0 < C1 && j0 >= R0 && j0 < R1)) { i0 = Math.floor(i0 / st) * st; j0 = Math.floor(j0 / st) * st; i1 = Math.min(i0 + st, fx - 1); j1 = Math.min(j0 + st, fy - 1); }
+  }
+  const u = (u0 - i0) / (i1 - i0), v = (v0 - j0) / (j1 - j0);
+  const p = a[j0 * fx + i0], qq = a[j0 * fx + i1], r = a[j1 * fx + i0], t = a[j1 * fx + i1];
+  return (u + v <= 1 ? p + (qq - p) * u + (r - p) * v : t + (r - t) * (1 - u) + (qq - t) * (1 - v)) * W.hScale + W.hMin;
+}
+
+/* What is under a point, exactly as drawn: a free-roam road or its shoulder; the racing surface; a kerb; the verge
+   strip that carries the road's edge out to the ground; or the ground itself. Tyres, cameras and shadows all ask
+   this, so nothing steps or floats where one surface hands over to the next. */
 const _nc = {};
 export function contactAt(x, z) {
   if (EXTRA.top) { const e = EXTRA.top(x, z); if (e !== undefined) return e; }
-  const g = groundAt(x, z), n = nearestStation(x, z, _nc);
-  if (!n) return g;
-  const ad = Math.abs(n.d);
-  if (ad >= n.hw + n.kerb + 0.3) return g;
-  let y = n.y;
-  if (n.kerb > 0 && ad > n.hw && ad < n.hw + n.kerb) {
-    const i = Math.round(n.s / W.ds) % W.N;
-    y += kerbLift((ad - n.hw) / n.kerb) * kerbRamps()[n.d < 0 ? 0 : 1][i] + 0.004;
+  const n = nearestStation(x, z, _nc);
+  if (!n) return drawnGround(x, z);
+  const ad = Math.abs(n.d), sd = n.d < 0 ? 0 : 1, i = Math.round(n.s / W.ds) % W.N, a = ad - n.hw - n.kerb;
+  if (a <= 0) {
+    // the fitted road (the survey under it is rougher and sometimes higher: it must not lift the car)
+    if (n.kerb > 0 && ad > n.hw) return n.y + kerbLift((ad - n.hw) / n.kerb) * kerbRamps()[sd][i] + 0.004;
+    return n.y;
   }
-  return Math.max(g, y);
+  const ab = W.vergeB[sd][i];
+  if (a < ab) { const ye = W.vergeY[sd][i]; return Math.max(ye + (W.vergeG[sd][i] - ye) * (a / ab), meshAt(x, z)); }
+  if (a < Math.min(7.0, W.vergeMax[sd][i])) return Math.max(naturalAt(x, z) + VERGE.lift, meshAt(x, z));
+  return drawnGround(x, z);
 }
-
-// surface height including the racing surface (for cameras / props that may sit on the road)
-const _ns = {};
-export function surfaceAt(x, z) {
-  if (EXTRA.top) { const e = EXTRA.top(x, z); if (e !== undefined) return e; }
-  const g = groundAt(x, z), n = nearestStation(x, z, _ns);
-  if (n && Math.abs(n.d) < n.hw + n.kerb + 0.3) return Math.max(g, n.y);
-  return g;
-}
+export const surfaceAt = contactAt;
 
 /* how much of the ground at (x, z) is hard surface (tarmac or paint), 0..1, from the ground model */
 let maskPx = null;

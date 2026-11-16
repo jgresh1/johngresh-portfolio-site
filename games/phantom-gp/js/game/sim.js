@@ -152,6 +152,7 @@ class Body {
     this.slip = 0; this.impact = 0; this.wheelAng = 0; this.wheelAngR = 0; this.spinR = 0;
     this.pitch = 0; this.rollA = 0; this.nx = 0; this.ny = 1; this.nz = 0; this._ns = {};
     this.wheelY = new Float32Array(4); this.wheelLift = new Float32Array(4);   // FR, FL, RR, RL (see WHEELS)
+    this.yPlane = 0; this.vBody = 0;
     this.lap = 0; this.lapStart = 0; this.laps = []; this.done = false; this.finishT = 0;
   }
   get speed() { return Math.hypot(this.u, this.w); }
@@ -167,9 +168,19 @@ class Body {
     const c = Math.cos(this.psi), s = Math.sin(this.psi), W2 = WHEELS, h = this.wheelY;
     for (let k = 0; k < 4; k++) { const [ax, az] = W2[k]; h[k] = contactAt(this.x + c * ax - s * az, this.z + s * ax + c * az); }
     const yF = (h[0] + h[1]) / 2, yR = (h[2] + h[3]) / 2;
-    this.y = (yF + yR) / 2;
-    this.slope = (yF - yR) / (W2[0][0] - W2[2][0]);
-    this.bank = ((h[0] - h[1]) / (2 * W2[0][1]) + (h[2] - h[3]) / (2 * W2[2][1])) / 2;
+    const yp = (yF + yR) / 2, sp = (yF - yR) / (W2[0][0] - W2[2][0]), bp = ((h[0] - h[1]) / (2 * W2[0][1]) + (h[2] - h[3]) / (2 * W2[2][1])) / 2;
+    /* The body rides on springs. It follows the plane of the four contact points through a spring (2.6 Hz) and a
+       damper that acts on the difference in vertical speed, so a steady climb is followed with no lag at all and
+       a bump in the road moves the wheels more than the car. Slope and bank ease in over a few hundredths of a
+       second. The tyres take up the difference (wheelLift), which is what keeps them on the ground. */
+    if (dt > 0 && this.slope !== undefined && Math.abs(yp - this.yPlane) < 0.6) {
+      const vp = (yp - this.yPlane) / dt, w = 2 * Math.PI * 2.6, n = Math.max(1, Math.ceil(dt / 0.006)), hdt = dt / n;
+      for (let k = 0; k < n; k++) { const yq = this.yPlane + vp * hdt * (k + 1); this.vBody += (w * w * (yq - this.y) + 2 * 0.8 * w * (vp - this.vBody)) * hdt; this.y += this.vBody * hdt; }
+      if (Math.abs(this.y - yp) > 0.05) { this.y = yp + Math.sign(this.y - yp) * 0.05; this.vBody = vp; }
+      const ks = 1 - Math.exp(-dt / 0.045);
+      this.slope += (sp - this.slope) * ks; this.bank += (bp - this.bank) * ks;
+    } else { this.y = yp; this.vBody = 0; this.slope = sp; this.bank = bp; }
+    this.yPlane = yp;
     for (let k = 0; k < 4; k++) { const [ax, az] = W2[k]; this.wheelLift[k] = clamp(h[k] - (this.y + this.slope * ax + this.bank * az), -0.12, 0.07); }
     // body motion on the springs (the wheels stay put: see CarView.sync)
     this.pitch = damp(this.pitch, clamp(-this.ax * 0.0006, -0.011, 0.009), 9, dt);

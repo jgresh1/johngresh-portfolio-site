@@ -277,11 +277,25 @@ export function buildCar(M, opt = {}) {
     }
     for (const sx of [-1, 1]) {
       part(cyl(0.0085, 0.0085, 0.009, 18), M.knob, sx * 0.1, 0.055, 0.0155); part(cyl(0.0048, 0.0048, 0.0035, 12), M.button(sx > 0 ? 0xe02a2a : 0x22b455), sx * 0.1, 0.055, 0.0215);
-      for (const pts of [[[0.046, 0.014], [0.15, 0.022], [0.156, 0.05], [0.06, 0.047]], [[0.04, -0.05], [0.136, -0.064], [0.142, -0.038], [0.05, -0.027]]]) part(plate(roundedShape(pts.map(([x, y]) => [sx * x, y]), 0.006), 0.004, 0.0012), M.carbon, 0, 0, -0.03).name = 'paddle' + (pts[0][1] > 0 ? 'U' : 'L') + (sx > 0 ? 'R' : 'L');
+      for (const pts of [[[0.046, 0.014], [0.15, 0.022], [0.156, 0.05], [0.06, 0.047]], [[0.04, -0.05], [0.136, -0.064], [0.142, -0.038], [0.05, -0.027]]]) part(plate(roundedShape(pts.map(([x, y]) => [sx * x, y]), 0.006), 0.006, 0.002), M.carbon, 0, 0, -0.03).name = 'paddle' + (pts[0][1] > 0 ? 'U' : 'L') + (sx > 0 ? 'R' : 'L');
+      // each paddle hangs on a pivot block bolted to the rear housing
+      for (const [py, ph] of [[0.031, 0.02], [-0.04, 0.018]]) { part(new THREE.BoxGeometry(0.016, ph, 0.012), M.alu, sx * 0.058, py, -0.0235); part(cyl(0.0026, 0.0026, 0.02, 10).rotateY(Math.PI / 2), M.fastener, sx * 0.058, py, -0.0235); }
       add(tube([v3(sx * 0.129, -0.074, 0.002), v3(sx * 0.1345, -0.034, 0.004), v3(sx * 0.1335, 0.008, 0.004), v3(sx * 0.127, 0.047, 0.001)], v3(0, 0, 1), (i, f) => ellipseLoop(0.0165 + 0.002 * Math.sin(Math.PI * f), 0.0195 + 0.0015 * Math.sin(Math.PI * f), 18)), M.grip, { parent: sw });
     }
-    part(cyl(0.031, 0.029, 0.03, 28), M.nut, 0, 0, -0.026); part(cyl(0.024, 0.024, 0.016, 24), M.alu, 0, 0, -0.048);
-    add(rod(v3(0, 0, -0.05), v3(0, -0.012, -0.22), 0.017), M.black, { parent: sw });
+    /* The back of the wheel (the side the film's gear-change shot looks at). A moulded housing for the electronics,
+       the hub flange with its six bolts, the quick-release with its sliding collar and grooves, and the curly
+       cable to the column. Without them the back was a bare plate with the paddles floating behind it. */
+    part(plate(roundedShape([[-0.086, -0.046], [0.086, -0.046], [0.097, 0.002], [0.086, 0.052], [-0.086, 0.052], [-0.097, 0.002]], 0.02), 0.014, 0.0045, 10), M.carbonSatin, 0, 0, -0.0175);
+    part(cyl(0.041, 0.041, 0.005, 36), M.black, 0, 0, -0.0265);
+    for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + 0.26; part(cyl(0.0032, 0.0032, 0.004, 10), M.fastener, Math.cos(a) * 0.0345, Math.sin(a) * 0.0345, -0.0295); }
+    part(cyl(0.029, 0.027, 0.022, 32), M.nut, 0, 0, -0.038);
+    part(cyl(0.0345, 0.0345, 0.008, 36), M.nut, 0, 0, -0.047);                       // the collar you pull to release the wheel
+    for (const z of [-0.0535, -0.0575, -0.0615]) part(cyl(0.0262, 0.0262, 0.0022, 28), M.alu, 0, 0, z);
+    part(cyl(0.024, 0.024, 0.018, 24), M.alu, 0, 0, -0.058);
+    add(rod(v3(0, 0, -0.06), v3(0, -0.012, -0.22), 0.017), M.black, { parent: sw });
+    { const pts = [], A = v3(-0.052, -0.03, -0.024), B = v3(-0.02, -0.03, -0.15), T = 9;       // curly cable, housing to column
+      for (let k = 0; k <= T * 14; k++) { const f = k / (T * 14), a = f * T * 2 * Math.PI, r = 0.0075 * Math.min(1, f * 12, (1 - f) * 12); pts.push(v3(lerp(A.x, B.x, f) + Math.cos(a) * r, lerp(A.y, B.y, f) + Math.sin(a) * r, lerp(A.z, B.z, f))); }
+      add(tube(pts, v3(0, 1, 0), () => ellipseLoop(0.0024, 0.0024, 7)), M.grip, { parent: sw, cast: false }); }
     sw.position.set(X(1.075), 0.59, 0); sw.lookAt(X(1.075) - 1, 0.59 + 0.36, 0);
     sw.name = 'steeringWheel'; car.add(sw); swRef = sw;
   }

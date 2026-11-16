@@ -20,9 +20,12 @@ export async function loadRoads() {
   try { ROADS.raw = (await (await fetch('assets/roads.json')).json()).roads; } catch (e) { console.warn('roads not loaded', e); ROADS.raw = []; }
 }
 
+// Moving average. Past either end the profile is continued along its own slope (a point reflection), so a road on a
+// gradient keeps its height at its ends; averaging only the points that exist left each end up to a metre off.
 const smooth = (a, r, passes = 2) => {
-  let cur = a;
-  for (let p = 0; p < passes; p++) { const o = new Float32Array(cur.length); for (let i = 0; i < cur.length; i++) { let s = 0, c = 0; for (let j = Math.max(0, i - r); j <= Math.min(cur.length - 1, i + r); j++) { s += cur[j]; c++; } o[i] = s / c; } cur = o; }
+  const n = a.length; let cur = a;
+  const at = (c, j) => (j < 0 ? 2 * c[0] - c[Math.min(n - 1, -j)] : j > n - 1 ? 2 * c[n - 1] - c[Math.max(0, 2 * (n - 1) - j)] : c[j]);
+  for (let p = 0; p < passes; p++) { const o = new Float32Array(n); for (let i = 0; i < n; i++) { let t = 0; for (let j = i - r; j <= i + r; j++) t += at(cur, j); o[i] = t / (2 * r + 1); } cur = o; }
   return cur;
 };
 
@@ -58,24 +61,34 @@ export function prepRoads() {
   const order = pieces.map((P, i) => i).sort((a, b) => pieces[b].rank - pieces[a].rank || a - b), done = new Set();
   for (const qi of order) {
     const Q = pieces[qi], delta = new Float32Array(Q.n), has = new Uint8Array(Q.n);
-    // (sampled at the centre and both edges: the smaller road goes level and just under the lowest of them, so the
-    // bigger road's surface is the top one everywhere the two overlap)
+    // (only where the two are within 0.35 m of each other: further apart they are on different levels, as the lanes of
+    // a terraced car park are, and neither is pulled to the other)
+    for (let i = 0; i < Q.n; i++) { const t = topAmong(Q.x[i], Q.z[i], done, 0.6); if (t !== undefined && Math.abs(t - 0.03 - Q.y[i]) < 0.35) { delta[i] = t - 0.03 - Q.y[i]; has[i] = 1; } }
+    // Each stretch that lies on another road takes that road's height point by point (lightly smoothed), and the
+    // correction at each end of the stretch eases out over 25 m.
+    const R = 10, keep = new Float32Array(Q.n).fill(1), raw = Float32Array.from(delta);
     for (let i = 0; i < Q.n; i++) {
-      let low;
-      for (const o of [0, -Q.hw, Q.hw]) { const t = topAmong(Q.x[i] - Q.tz[i] * o, Q.z[i] + Q.tx[i] * o, done, 0.6); if (t !== undefined && (low === undefined || t < low)) low = t; }
-      if (low !== undefined) { delta[i] = low - 0.03 - Q.y[i]; has[i] = 1; }
-    }
-    const R = 8, keep = new Float32Array(Q.n).fill(1);
-    for (let i = 0; i < Q.n; i++) {
-      if (has[i]) { keep[i] = 0; continue; }
-      let w = 0, d = 0;
-      for (let j = Math.max(0, i - R); j <= Math.min(Q.n - 1, i + R); j++) if (has[j]) { const k = 1 - Math.abs(j - i) / (R + 1); if (k > w) { w = k; d = delta[j]; } }
-      delta[i] = d * w; keep[i] = 1 - w;
+      if (!has[i]) continue;
+      let j = i; while (j + 1 < Q.n && has[j + 1]) j++;
+      for (let k = i; k <= j; k++) { let t = 0, c = 0; for (let m = Math.max(i, k - 1); m <= Math.min(j, k + 1); m++) { t += raw[m]; c++; } delta[k] = t / c; keep[k] = 0; }
+      for (const [edge, dir] of [[i, -1], [j, 1]]) for (let o = 1; o <= R; o++) {
+        const k = edge + dir * o; if (k < 0 || k >= Q.n || has[k]) break;
+        const u = 1 - o / (R + 1), w = u * u * (3 - 2 * u);
+        if (w > 1 - keep[k]) { delta[k] = delta[edge] * w; keep[k] = 1 - w; }
+      }
+      i = j;
     }
     for (let i = 0; i < Q.n; i++) { Q.y[i] += delta[i]; Q.bank[i] *= keep[i]; }
+    // A free end (the road stops there: cut short of the circuit, or at the edge of the surveyed area) comes down
+    // onto the ground it stops on over its last 35 m. Left at its fitted height it ended as a ledge in mid-air.
+    for (const [e, dir] of [[0, 1], [Q.n - 1, -1]]) {
+      if (has[e]) continue;
+      const T = Math.min(14, Q.n >> 1);
+      // (by at most 0.4 m: where the survey shows a bank or a wall across the end, the road must not climb it)
+      for (let k = 0; k < T; k++) { const i = e + dir * k, w = (1 - k / T) ** 2; Q.y[i] += Math.max(-0.4, Math.min(0.4, naturalAt(Q.x[i], Q.z[i]) + 0.03 - Q.y[i])) * w; Q.bank[i] *= 1 - w; }
+    }
     done.add(qi);
   }
-  for (const P of pieces) finishPiece(P);
   // hold the terrain mesh down under every road (and one survey cell beyond its edges)
   const nx = n.nx, ny = n.ny, hm = W.hMesh;
   for (const P of pieces) {
@@ -92,6 +105,7 @@ export function prepRoads() {
       }
     }
   }
+  for (const P of pieces) finishPiece(P);          // after the terrain is lowered: each shoulder ends on the ground as it will be drawn
   ROADS.length = pieces.reduce((s, P) => s + (P.n - 1) * DS, 0);
   // no tree may stand in a road
   const T = W.trees, keep = [], hit = {};
@@ -111,7 +125,9 @@ function makePiece(run, hw, rank, name, road) {
     y[i] = naturalAt(x[i], z[i]);
     bank[i] = (naturalAt(x[i] - tz[i] * hw, z[i] + tx[i] * hw) - naturalAt(x[i] + tz[i] * hw, z[i] - tx[i] * hw)) / (2 * hw);      // right minus left
   }
-  y = smooth(y, 6); bank = smooth(bank, 8); for (let i = 0; i < n; i++) bank[i] = Math.max(-0.05, Math.min(0.05, bank[i]));
+  // (the survey along a road still holds banks, ditches and tree stumps; fitted over 15 m they came through as bumps
+  // worth 2 g at speed, so the fit runs over about 60 m in height and 75 m in cross-slope)
+  y = smooth(y, 12, 3); bank = smooth(bank, 15, 2); for (let i = 0; i < n; i++) bank[i] = Math.max(-0.04, Math.min(0.04, bank[i]));
   // curvature (> 0 turns right, as in sim.js)
   const kap = new Float32Array(n), outL = new Float32Array(n), outR = new Float32Array(n);
   for (let i = 0; i < n; i++) {
@@ -124,25 +140,42 @@ function makePiece(run, hw, rank, name, road) {
   return { n, x, z, y, bank, tx, tz, kap: smooth(kap, 2, 1), outL, outR, hw, rank, name, road };
 }
 
-// where each shoulder ends: on the ground a shoulder's width out, or level with the edge if the ground is higher
+// Where each shoulder ends: on the terrain as drawn a shoulder's width out (which may have been lowered for the next
+// road along, as between the terraces of a car park), or level with the edge if the ground is higher.
 function finishPiece(P) {
   const e = P.hw + SKIRT;
   for (let i = 0; i < P.n; i++) {
-    P.outR[i] = Math.min(naturalAt(P.x[i] - P.tz[i] * e, P.z[i] + P.tx[i] * e), P.y[i] + P.bank[i] * P.hw) - 0.2;
-    P.outL[i] = Math.min(naturalAt(P.x[i] + P.tz[i] * e, P.z[i] - P.tx[i] * e), P.y[i] - P.bank[i] * P.hw) - 0.2;
+    P.outR[i] = Math.min(meshAt(P.x[i] - P.tz[i] * e, P.z[i] + P.tx[i] * e), P.y[i] + P.bank[i] * P.hw) - 0.2;
+    P.outL[i] = Math.min(meshAt(P.x[i] + P.tz[i] * e, P.z[i] - P.tx[i] * e), P.y[i] - P.bank[i] * P.hw) - 0.2;
   }
 }
 
-// the highest road surface at (x, z) among the pieces in `only` (all pieces if null), or undefined; `slack` widens the roads
-function topAmong(x, z, only, slack = 0) {
-  const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL); let top;
+// The highest road surface at (x, z) among the pieces in `only` (all pieces if null), or undefined; `slack` widens the
+// roads. With `shoulders` it also leaves in _shoulder the highest shoulder strip there (two roads side by side each
+// have one, and the one drawn on top is the higher).
+let _shoulder;
+function topAmong(x, z, only, slack = 0, shoulders = false) {
+  const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL); let top; _shoulder = undefined;
   for (let j = cz - 1; j <= cz + 1; j++) for (let i = cx - 1; i <= cx + 1; i++) {
     const list = grid.get(i * 8192 + j); if (!list) continue;
     for (const code of list) {
       if (only && !only.has(code >> 16)) continue;
       const P = ROADS.pieces[code >> 16], k = code & 65535, ex = P.x[k + 1] - P.x[k], ez = P.z[k + 1] - P.z[k], l2 = ex * ex + ez * ez;
-      const t = Math.max(0, Math.min(1, ((x - P.x[k]) * ex + (z - P.z[k]) * ez) / l2)), px = P.x[k] + ex * t, pz = P.z[k] + ez * t, l = Math.sqrt(l2);
-      const d = (-(x - px) * ez + (z - pz) * ex) / l; if (Math.hypot(x - px, z - pz) > P.hw + slack) continue;
+      // The point must lie beside this segment, not beyond one of its ends: otherwise a wheel reads the height of a
+      // station metres up or down the hill. A quarter of a segment of overlap either way covers the wedge that opens
+      // between two segments on the outside of a bend; there the height carries on along the segment's own slope.
+      const t = ((x - P.x[k]) * ex + (z - P.z[k]) * ez) / l2, l = Math.sqrt(l2);
+      if (t < -0.25 || t > 1.25) continue;
+      const px = P.x[k] + ex * t, pz = P.z[k] + ez * t;
+      const d = (-(x - px) * ez + (z - pz) * ex) / l, ad = Math.abs(d);
+      if (ad > P.hw + slack) {
+        if (shoulders && ad <= P.hw + SKIRT) {
+          const tc = Math.max(0, Math.min(1, t)), edge = P.y[k] + (P.y[k + 1] - P.y[k]) * t + (P.bank[k] + (P.bank[k + 1] - P.bank[k]) * tc) * Math.sign(d) * P.hw;
+          const o = d > 0 ? P.outR : P.outL, out = o[k] + (o[k + 1] - o[k]) * tc, ys = edge + (out - edge) * ((ad - P.hw) / SKIRT);
+          if (_shoulder === undefined || ys > _shoulder) _shoulder = ys;
+        }
+        continue;
+      }
       const y = P.y[k] + (P.y[k + 1] - P.y[k]) * t + (P.bank[k] + (P.bank[k + 1] - P.bank[k]) * t) * Math.max(-P.hw, Math.min(P.hw, d));
       if (top === undefined || y > top) top = y;
     }
@@ -163,7 +196,8 @@ export function nearestRoad(x, z, out = {}, psi = null) {
       const t = Math.max(0, Math.min(1, ((x - P.x[k]) * ex + (z - P.z[k]) * ez) / l2)), px = P.x[k] + ex * t, pz = P.z[k] + ez * t;
       const dist = Math.hypot(x - px, z - pz); if (dist > 14) continue;
       const l = Math.sqrt(l2), tx = ex / l, tz = ez / l;
-      let score = Math.max(0, dist - P.hw);                                  // anywhere on the tarmac counts as "on it"
+      // the nearest segment wins; between two roads at a junction, the one that runs the way the car wants to go
+      let score = dist * 0.15 + Math.max(0, dist - P.hw);
       if (psi !== null) score += (1 - Math.abs(tx * c + tz * s)) * 9;
       if (score < best) { best = score; found = true; out.p = code >> 16; out.i = k; out.t = t; out.dist = dist; out.d = -(x - px) * tz + (z - pz) * tx; out.tx = tx; out.tz = tz; }
     }
@@ -178,12 +212,10 @@ export function nearestRoad(x, z, out = {}, psi = null) {
 // what a tyre stands on at (x, z) if a road or its shoulder is there, else undefined (world.js asks through EXTRA.top)
 const _top = {};
 function roadTop(x, z) {
-  const on = topAmong(x, z, null); if (on !== undefined) return on;        // on tarmac: the top surface where two roads overlap
-  const h = nearestRoad(x, z, _top); if (!h) return undefined;
-  const ad = Math.abs(h.d);
-  if (ad > h.hw + SKIRT + LOWER * MESH.step) return undefined;
-  const edge = h.y + h.bank * Math.sign(h.d) * h.hw, out = h.d > 0 ? h.outR : h.outL, f = Math.min(1, (ad - h.hw) / SKIRT);
-  return Math.max(edge + (out - edge) * f, meshAt(x, z));
+  const on = topAmong(x, z, null, 0, true); if (on !== undefined) return on;        // on tarmac: the top surface where two roads overlap
+  // beside it: the shoulder strip while it lasts, or the terrain where that stands higher. Past the strip there is
+  // only the ground (holding the strip's last height out there left a ledge a metre high).
+  return _shoulder === undefined ? undefined : Math.max(_shoulder, meshAt(x, z));
 }
 
 /* The road `dist` metres on from a hit, in the direction the car faces (sign = +1 along the stations, -1 against).

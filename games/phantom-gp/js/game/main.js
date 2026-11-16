@@ -157,7 +157,7 @@ async function boot() {
   scene.environment = makeEnvironment(renderer, sky);
   shadows = new SunShadows(scene, q.shadow); shadows.maxPerFrame = 1;
   await step(0.1);
-  TERRAIN.farStep = q.farStep || 1;
+  TERRAIN.farStep = MESH.farStep = q.farStep || 1;
   await roadsP; prepRoads();                // free roam's roads: fitted to the ground before the terrain and trees are built
   terrain = buildTerrain(scene);
   await step(0.35);

@@ -32,8 +32,16 @@ under the same licence.
 
 ## Music and sound
 
-The soundtrack is synthesised in the browser by `js/game/music.js` (an original piece; no samples and no existing
-tune). Engine, tyre and impact sounds are synthesised by `js/game/audio.js`.
+The score is **"Vanguard" by Scott Buckley**, released under Creative Commons Attribution 4.0 International
+(CC BY 4.0), from the composer's own library: https://www.scottbuckley.com.au/library/vanguard/
+Attribution, in the composer's format: 'Vanguard' by Scott Buckley - released under CC-BY 4.0. www.scottbuckley.com.au
+
+Changes made (CC BY asks that they be stated): the piece is cut and joined to fit the opening film
+(`assets/audio/film.mp3`) and looped for the race (`assets/audio/race.mp3`); a camera-shutter sound on each still
+and a sub-bass layer under two hits are added; the level is raised through a limiter. `tools/build_score.py` does
+all of it from the original MP3, which is not kept in this folder. The credit is shown on the title screen.
+
+Engine, tyre, impact and gear-change sounds are synthesised in the browser by `js/game/audio.js`.
 
 ## The car
 

@@ -1,6 +1,6 @@
-// audio.js — everything you hear: two synthesised engines, wind, tyres, impacts, and the soundtrack with a clock the
-// opening film is cut to. All of it is generated in the browser.
-import { renderFilm, renderLoop, BEAT, SR } from './music.js';
+// audio.js — everything you hear: two synthesised engines, wind, tyres, impacts (all generated in the browser), and
+// the score (music.js) with the clock the opening film is cut to.
+import { loadScore, SCORE, BEAT } from './music.js';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
@@ -57,13 +57,13 @@ class Engine {
 }
 
 export class Sound {
-  constructor() { this.ctx = null; this.ready = false; this.opts = { music: true, sound: true }; this.film = null; this.loop = null; this.music = null; }
-  // render the soundtrack while the game loads (plain arrays; needs no audio context and no user gesture)
-  prepare() { if (!this.film) { this.film = renderFilm(); this.loop = renderLoop(); } }
+  constructor() { this.ctx = null; this.ready = false; this.opts = { music: true, sound: true }; this.scoreP = null; this.music = null; }
+  // fetch and decode the score while the game loads (needs no user gesture); the game runs without music if it fails
+  prepare() { return this.scoreP || (this.scoreP = loadScore().catch((e) => { console.warn('music not loaded', e); return null; })); }
 
   async init() {
     if (this.ready) { try { await this.ctx.resume(); } catch (e) { /* fine */ } return; }
-    this.prepare();
+    const score = await this.prepare();
     try {
       const AC = window.AudioContext || window.webkitAudioContext; const ctx = this.ctx = new AC({ latencyHint: 'interactive' });
       try { await ctx.resume(); } catch (e) { /* stays suspended until a later gesture */ }
@@ -76,12 +76,7 @@ export class Sound {
       this.eng = [new Engine(ctx, this.fxG, nb), new Engine(ctx, this.fxG, nb)];
       const band = (type, f, q) => { const src = ctx.createBufferSource(); src.buffer = nb; src.loop = true; const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const g = ctx.createGain(); g.gain.value = 0; src.connect(fl).connect(g).connect(this.fxG); src.start(); return { fl, g }; };
       this.wind = band('lowpass', 500, 0.5); this.skid = band('bandpass', 1250, 5); this.rumble = band('lowpass', 110, 0.8);
-      const mk = (m) => { const b = ctx.createBuffer(2, m.len, SR); b.copyToChannel(m.L, 0); b.copyToChannel(m.R, 1); return b; };
-      this.filmBuf = mk(this.film);
-      // fold the loop's ring-out back onto its start so it repeats without a gap
-      const lp = this.loop, dn = Math.floor(lp.dur * SR); for (let i = dn; i < lp.len; i++) { lp.L[i - dn] += lp.L[i]; lp.R[i - dn] += lp.R[i]; }
-      this.loopBuf = ctx.createBuffer(2, dn, SR); this.loopBuf.copyToChannel(lp.L.subarray(0, dn), 0); this.loopBuf.copyToChannel(lp.R.subarray(0, dn), 1);
-      this.film = this.loop = null;
+      this.filmBuf = score && score.film; this.loopBuf = score && score.race;
       this.ready = true; this.setOptions(this.opts);
     } catch (e) { console.warn('audio unavailable', e); this.ready = false; }
   }
@@ -96,14 +91,21 @@ export class Sound {
     this.stopMusic();
     const t0p = performance.now() / 1000;
     if (!this.ready) return { beats: () => tauAt(performance.now() / 1000 - t0p) / BEAT, rate: () => rateAt(performance.now() / 1000 - t0p), wall: () => performance.now() / 1000 - t0p };
-    const ctx = this.ctx, t0 = ctx.currentTime + 0.12, src = ctx.createBufferSource();
-    src.buffer = this.filmBuf; src.connect(this.musicG);
-    src.playbackRate.setValueAtTime(1, t0);
-    for (const [w, r] of CURVE.slice(1)) src.playbackRate.linearRampToValueAtTime(r, t0 + w);
-    src.start(t0);
-    // the race loop begins on the beat the film ends
-    const wEnd = wallAt(64 * BEAT), lp = ctx.createBufferSource(); lp.buffer = this.loopBuf; lp.loop = true; lp.connect(this.musicG); lp.start(t0 + wEnd);
-    this.music = [src, lp]; this.setMusicLevel(0.95, 0.02);
+    const ctx = this.ctx, t0 = ctx.currentTime + 0.12;
+    if (this.filmBuf && this.loopBuf) {
+      const src = ctx.createBufferSource();
+      src.buffer = this.filmBuf; src.connect(this.musicG);
+      src.playbackRate.setValueAtTime(1, t0);
+      for (const [w, r] of CURVE.slice(1)) src.playbackRate.linearRampToValueAtTime(r, t0 + w);
+      src.start(t0);
+      // The race music takes over on the beat the film ends, 48 beats into its loop: exactly where the film's music
+      // has got to. The film's last 40 ms fade out as these fade in.
+      const wEnd = wallAt(64 * BEAT), lp = ctx.createBufferSource(), lg = ctx.createGain(); lp.buffer = this.loopBuf; lp.loop = true;
+      lg.gain.setValueAtTime(0, t0 + wEnd); lg.gain.linearRampToValueAtTime(1, t0 + wEnd + 0.04);
+      lp.connect(lg).connect(this.musicG); lp.start(t0 + wEnd, SCORE.race.entry);
+      this.music = [src, lp];
+    }
+    this.setMusicLevel(0.95, 0.02);
     const lat = (ctx.outputLatency || ctx.baseLatency || 0);
     const wall = () => ctx.currentTime - t0 - lat;
     return { beats: () => tauAt(Math.max(0, wall())) / BEAT, rate: () => rateAt(Math.max(0, wall())), wall };
@@ -113,10 +115,11 @@ export class Sound {
   // make sure the race loop is playing (it already is when the race follows the film)
   startLoop() {
     if (!this.ready) return;
-    if (!this.music || this.music.length !== 1) { this.stopMusic(); const lp = this.ctx.createBufferSource(); lp.buffer = this.loopBuf; lp.loop = true; lp.connect(this.musicG); lp.start(); this.music = [lp]; }
-    this.setMusicLevel(0.46, 1.2);
+    if ((!this.music || this.music.length !== 1) && this.loopBuf) { this.stopMusic(); const lp = this.ctx.createBufferSource(); lp.buffer = this.loopBuf; lp.loop = true; lp.connect(this.musicG); lp.start(); this.music = [lp]; }
+    this.setMusicLevel(0.6, 1.2);
   }
-  raceLevel() { if (this.music && this.music.length === 2) { try { this.music[0].stop(); } catch (e) { /* done */ } this.music = [this.music[1]]; } this.setMusicLevel(0.46, 1.5); }
+  // the race has begun straight from the film: the film's source is left to ring out its last hit
+  raceLevel() { if (this.music && this.music.length === 2) this.music = [this.music[1]]; this.setMusicLevel(0.6, 2.5); }
 
   /* ---- one-shots ---- */
   tone(f, dur, g = 0.2, type = 'sine', f1 = f) {

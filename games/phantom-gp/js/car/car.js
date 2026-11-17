@@ -576,11 +576,21 @@ export function buildCar(M, opt = {}) {
     for (const sz of [-1, 1]) { const g = new THREE.BoxGeometry(0.006, 0.11, 0.012); g.translate(X(4.217), 0.5, sz * RWZ); add(g, M.ledSmall, { cast: false }); }
     // swan-neck pylon + DRS pod
     add(plate(roundedShape([[X(3.50), 0.50], [X(3.66), 0.40], [X(3.80), 0.40], [X(4.00), 0.712], [X(3.87), 0.712]], [0.02, 0.03, 0.03, 0.006, 0.006]), 0.014, 0.004), M.carbon);
-    add(strut(v3(X(3.925), 0.798, 0), v3(X(4.12), 0.83, 0), 0.05, 0.036, v3(0, 1, 0), 16, 0.7), M.carbon);
+    /* DRS actuator: a teardrop pod on the pylon's head (round nose, long tail), two screws in each side, and the link
+       from its tail up to the flap with a ball joint at one end and a clevis at the other. It used to be one slab. */
+    { const A = v3(X(3.905), 0.795, 0), B = v3(X(4.092), 0.826, 0), d = v3().subVectors(B, A);            // (its tail stops clear of the flap)
+      const prof = [[0, 0.16], [0.03, 0.55], [0.09, 0.86], [0.2, 1], [0.45, 1], [0.66, 0.9], [0.82, 0.68], [0.93, 0.42], [1, 0.2]];
+      add(tube(prof.map(([f]) => v3().copy(A).addScaledVector(d, f)), v3(0, 1, 0), (i) => squircleLoop(0.0235 * prof[i][1], 0.0185 * prof[i][1], 2.5, 24), { exact: true }), M.carbonGloss);
+      for (const f of [0.28, 0.56]) for (const sz of [-1, 1]) { const q = v3().copy(A).addScaledVector(d, f); add(new THREE.CylinderGeometry(0.0024, 0.0024, 0.0022, 12).rotateX(Math.PI / 2).translate(q.x, q.y, sz * 0.0236), M.fastener, { cast: false }); }
+      add(new THREE.SphereGeometry(0.0052, 14, 10).translate(X(4.088), 0.826, 0), M.steel, { cast: false });
+      add(new THREE.BoxGeometry(0.012, 0.010, 0.015).translate(X(4.130), 0.847, 0), M.alu, { cast: false });
+    }
     add(plate(roundedShape([[X(3.94), 0.742], [X(4.03), 0.756], [X(4.04), 0.80], [X(3.95), 0.79]], 0.004), 0.008, 0.002), M.carbon);
-    add(rod(v3(X(4.10), 0.825, 0), v3(X(4.13), 0.853, 0), 0.004), M.steel);
+    add(rod(v3(X(4.086), 0.826, 0), v3(X(4.128), 0.846, 0), 0.0035), M.steel);
     // beam wing
-    for (const [les, ley, c, pt] of [[3.93, 0.335, 0.115, 12], [4.03, 0.372, 0.10, 26]]) {
+    // (both elements pass under the exhaust: the tailpipe's underside is at 0.361 to 0.372 here. Higher and steeper, the
+    // upper one ran through the pipe's wall and stood across its mouth.)
+    for (const [les, ley, c, pt] of [[3.93, 0.318, 0.115, 10], [4.03, 0.345, 0.10, 18]]) {
       const loop = airfoil(18, 0.085, -0.08), rings = [];
       for (let i = 0; i <= 20; i++) rings.push(wingStation(v3(X(les), ley, (RWZ - 0.003) * (2 * i / 20 - 1)), c, pt * DEG, loop));
       add(loft(rings, { capStart: 'strip', capEnd: 'strip' }), M.carbon);
@@ -621,9 +631,26 @@ export function buildCar(M, opt = {}) {
     for (const sz of [-1, 1]) lensOn(xm + 0.0465, yw, sz * 0.098, 0.0105);
     lensOn(xm + 0.0392, yw, 0, 0.0075);
   }
-  for (const sz of [-1, 1]) add(rod(v3(X(0.36), supY(pA(0.36), 0.05) - 0.01, sz * 0.05), v3(X(0.39), supY(pA(0.36), 0.05) + 0.075, sz * 0.05), 0.0028), M.black);
-  add(rod(v3(X(0.16), supY(pA(0.16), 0) - 0.01, 0), v3(X(0.16), supY(pA(0.16), 0) + 0.055, 0), 0.0035), M.alu);
-  add(rod(v3(X(0.165), supY(pA(0.16), 0) + 0.053, 0), v3(X(0.10), supY(pA(0.16), 0) + 0.055, 0), 0.003), M.alu);
+  /* Two radio antennas on the chassis top: a rubber boot on the skin and a whip that tapers to a small ball. They used
+     to be plain rods. */
+  for (const sz of [-1, 1]) {
+    const yb = supY(pA(0.36), 0.05), b = v3(X(0.36), yb - 0.004, sz * 0.05), d = v3(X(0.392) - X(0.36), 0.086, 0).normalize();
+    const prof = [[0, 0.0078], [0.006, 0.0074], [0.011, 0.0052], [0.016, 0.0034], [0.020, 0.0026], [0.050, 0.0020], [0.084, 0.0013]];
+    add(tube(prof.map(([l]) => v3().copy(b).addScaledVector(d, l)), v3(1, 0, 0), (i) => ellipseLoop(prof[i][1], prof[i][1], 14), { exact: true }), M.black, { cast: false });
+    const t = v3().copy(b).addScaledVector(d, 0.0855); add(new THREE.SphereGeometry(0.0021, 12, 8).translate(t.x, t.y, t.z), M.black, { cast: false });
+  }
+  /* Pitot tube ahead of them: an aerofoil mast that flares into the skin (its foot is inside it), and the probe: a
+     tube with a collar, tapering to an open tip that faces forward. It used to be two plain rods. */
+  { const x0 = X(0.16), yb = supY(pA(0.16), 0);
+    const mast = [];
+    for (const [h, ch, tc, fx] of [[-0.008, 0.020, 0.42, 0], [0.002, 0.020, 0.42, 0], [0.006, 0.0155, 0.36, 0.0006], [0.012, 0.0135, 0.32, 0.0015], [0.030, 0.012, 0.30, 0.004], [0.052, 0.0105, 0.30, 0.0075], [0.058, 0.0105, 0.30, 0.0085]]) {
+      mast.push(airfoil(14, tc, 0).map(([xa, ya]) => v3(x0 + fx + (0.5 - xa) * ch, yb + h, ya * ch)));
+    }
+    add(loft(mast, { exact: true }), M.alu);
+    const yh = yb + 0.058, xh = x0 + 0.0085, prof = [[-0.012, 0.0012], [-0.0105, 0.0030], [-0.006, 0.0034], [0.012, 0.0034], [0.014, 0.0043], [0.022, 0.0043], [0.024, 0.0032], [0.040, 0.0026], [0.058, 0.0019], [0.0605, 0.0014]];
+    add(tube(prof.map(([dx]) => v3(xh + dx, yh, 0)), v3(0, 1, 0), (i) => ellipseLoop(prof[i][1], prof[i][1], 16), { exact: true }), M.alu);
+    add(new THREE.CylinderGeometry(0.0009, 0.0009, 0.0006, 10).rotateZ(Math.PI / 2).translate(xh + 0.0607, yh, 0), M.duct, { cast: false });
+  }
   /* Nose cameras: a pod on a short wing each side of the nose. The wing runs on into the nose (its root is inside the
      skin at every height) and thickens into a fillet where it meets it; the pod has a lens at the front. They used
      to be plain slabs that started exactly at the skin: where the nose curves in above them, their inner ends hung

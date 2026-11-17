@@ -600,12 +600,44 @@ export function buildCar(M, opt = {}) {
   // ---------------------------------------------------------- shark fin, T-cam, antennas, cameras, mirrors
   const gFin = plate(roundedShape([[X(2.28), 0.972], [X(2.28), 1.004], [X(3.44), 0.795], [X(3.52), 0.585], [X(3.30), 0.60], [X(2.9), 0.76]], [0.004, 0.012, 0.035, 0.02, 0.01, 0.01]), 0.008, 0.0025);
   add(gFin, M.paint);
-  add(strut(v3(X(2.035), 0.997, 0), v3(X(2.02), 1.049, 0), 0.05, 0.012), M.black);
-  add(strut(v3(X(2.02), 1.049, -0.062), v3(X(2.02), 1.049, 0.062), 0.05, 0.024, v3(1, 0, 0), 16), M.black);
+  /* The T-camera on top of the airbox: a faired pylon that flares into the airbox's skin (its foot is inside it), and
+     across its top a slim wing swelling into a housing at each end, each with a lens in a metal ring looking forward.
+     It used to be two plain slabs. */
+  { const lensOn = (x, y, z, r) => {            // a lens looking forward: dark glass in a ring, a little proud of the housing
+      add(new THREE.CylinderGeometry(r, r, 0.004, 28).rotateZ(Math.PI / 2).translate(x, y, z), M.visor, { cast: false });
+      add(new THREE.TorusGeometry(r + 0.0008, 0.0013, 10, 32).rotateY(Math.PI / 2).translate(x + 0.0016, y, z), M.fastener, { cast: false });
+    };
+    // pylon: aerofoil sections in plan, [height, chord, thickness / chord, how far forward its middle is]
+    const py = [];
+    for (const [y, ch, tc, fx] of [[0.968, 0.100, 0.30, 0], [0.990, 0.100, 0.30, 0.001], [0.999, 0.082, 0.27, 0.003], [1.007, 0.066, 0.23, 0.006], [1.017, 0.057, 0.21, 0.009], [1.036, 0.054, 0.20, 0.014], [1.050, 0.054, 0.20, 0.016]]) {
+      py.push(airfoil(18, tc, 0).map(([xa, ya]) => v3(X(2.035) + fx + (0.5 - xa) * ch, y, ya * ch)));
+    }
+    add(loft(py, { exact: true }), M.halo);
+    // the wing across the top: [distance out, chord, thickness / chord]
+    const ws = [[0, 0.080, 0.34], [0.030, 0.074, 0.30], [0.060, 0.070, 0.30], [0.078, 0.078, 0.36], [0.092, 0.094, 0.40], [0.104, 0.096, 0.40], [0.113, 0.080, 0.36], [0.118, 0.050, 0.30]];
+    const span = [...ws.slice(1).reverse().map(([z, c, t]) => [-z, c, t]), ...ws], wr = [], xm = X(2.035) + 0.016, yw = 1.056;
+    for (const [z, ch, tc] of span) wr.push(wingStation(v3(xm + ch / 2, yw, z), ch, 0, airfoil(18, tc, 0)));
+    add(loft(wr, { capStart: true, capEnd: true, exact: true }), M.halo);
+    for (const sz of [-1, 1]) lensOn(xm + 0.0465, yw, sz * 0.098, 0.0105);
+    lensOn(xm + 0.0392, yw, 0, 0.0075);
+  }
   for (const sz of [-1, 1]) add(rod(v3(X(0.36), supY(pA(0.36), 0.05) - 0.01, sz * 0.05), v3(X(0.39), supY(pA(0.36), 0.05) + 0.075, sz * 0.05), 0.0028), M.black);
   add(rod(v3(X(0.16), supY(pA(0.16), 0) - 0.01, 0), v3(X(0.16), supY(pA(0.16), 0) + 0.055, 0), 0.0035), M.alu);
   add(rod(v3(X(0.165), supY(pA(0.16), 0) + 0.053, 0), v3(X(0.10), supY(pA(0.16), 0) + 0.055, 0), 0.003), M.alu);
-  pair(strut(v3(X(-0.30), 0.405, 0.11), v3(X(-0.30), 0.405, 0.215), 0.10, 0.034, v3(1, 0, 0), 16, 0.75), M.black);
+  /* Nose cameras: a pod on a short wing each side of the nose. The wing runs on into the nose (its root is inside the
+     skin at every height) and thickens into a fillet where it meets it; the pod has a lens at the front. They used
+     to be plain slabs that started exactly at the skin: where the nose curves in above them, their inner ends hung
+     in the air. */
+  { const y = 0.385, zp = 0.198, sLE = -0.342, c0 = 0.072, tc = 0.13, rings = [], pod = [];
+    for (const [z, kc, kt] of [[0.080, 1.55, 2.4], [0.122, 1.55, 2.4], [0.134, 1.36, 1.9], [0.146, 1.16, 1.36], [0.160, 1.04, 1.08], [0.172, 1, 1], [zp + 0.004, 1, 1]]) {
+      const ch = c0 * kc;                                                    // chord and thickness grow towards the nose: the fillet
+      rings.push(wingStation(v3(X(sLE) + (ch - c0) / 2, y, z), ch, 0, airfoil(16, tc * kt / kc, 0)));
+    }
+    pair(loft(rings, { exact: true }), M.halo);
+    for (const [dx, r] of [[0.060, 0.55], [0.0585, 0.84], [0.052, 0.96], [0.032, 1.0], [0.0, 0.98], [-0.03, 0.80], [-0.052, 0.5], [-0.066, 0.16]]) pod.push(squircleLoop(0.0165 * r, 0.0205 * r, 2.6, 24).map(([za, yb]) => v3(X(sLE) - c0 / 2 + dx, y + 0.001 + yb, zp + za)));
+    pair(loft(pod, { capStart: true, capMatStart: 1, capEnd: true, exact: true }), [M.halo, M.visor]);
+    for (const sz of [-1, 1]) add(new THREE.TorusGeometry(0.0105, 0.0013, 10, 32).rotateY(Math.PI / 2).translate(X(sLE) - c0 / 2 + 0.0605, y + 0.001, sz * zp), M.fastener, { cast: false });
+  }
   { // mirrors
     const mx = X(1.14), my = 0.705, mz = 0.50, rings = [];
     for (const [dx, k] of [[0.034, 0.25], [0.028, 0.62], [0.016, 0.9], [0.0, 1.0], [-0.03, 1.0], [-0.036, 0.94]]) rings.push(squircleLoop(0.078 * k, 0.033 * k, 3.4, 28).map(([a, b]) => v3(mx + dx, my + b, mz + a)));

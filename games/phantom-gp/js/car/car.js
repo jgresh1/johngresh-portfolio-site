@@ -367,7 +367,8 @@ export function buildCar(M, opt = {}) {
     for (const s of range(S0, I1, 0.01)) shelf.push(ringYZ(X(s), resample(fullSection({ zc: 0, yc: shelfY(s), hw: Math.min(wide(s), skinZ(s, shelfY(s))) + 0.006, hh: 0.0008 + 0.004 * Math.sqrt(Math.min(1, (s - S0) / 0.03)), n: [6, 6, 6, 6] }), 41)));
     add(shade(loft(shelf, { capStart: true })), M.ductPart, { cast: false });
     // roll-hoop spar: a thin carbon blade standing in the middle of the intake, set back from the lip
-    add(shade(strut(v3(X(2.03), 0.866, 0), v3(X(2.03), 0.984, 0), 0.17, 0.011, v3(1, 0, 0), 20)), M.ductPart, { cast: false });
+    // (it runs from the duct's floor to its roof: it used to stop in mid-air below the shelf)
+    add(shade(strut(v3(X(2.03), floorY(2.03) - 0.006, 0), v3(X(2.03), Math.min(roofY(2.03), pB(2.03).yt - WALL) + 0.004, 0), 0.17, 0.011, v3(1, 0, 0), 20)), M.ductPart, { cast: false });
     // Both cores are cut to the duct's own outline row by row, so nothing reaches the outer skin.
     const lean = (sAt, y0, tilt) => {
       const g = new THREE.Group(); g.position.set(X(sAt), y0, 0); g.rotation.order = 'YXZ'; g.rotation.set(-tilt, Math.PI / 2, 0); car.add(g); g.updateMatrixWorld(true);
@@ -590,7 +591,7 @@ export function buildCar(M, opt = {}) {
     // beam wing
     // (both elements pass under the exhaust: the tailpipe's underside is at 0.361 to 0.372 here. Higher and steeper, the
     // upper one ran through the pipe's wall and stood across its mouth.)
-    for (const [les, ley, c, pt] of [[3.93, 0.318, 0.115, 10], [4.03, 0.345, 0.10, 18]]) {
+    for (const [les, ley, c, pt] of [[3.93, 0.308, 0.115, 9], [4.03, 0.333, 0.10, 14]]) {
       const loop = airfoil(18, 0.085, -0.08), rings = [];
       for (let i = 0; i <= 20; i++) rings.push(wingStation(v3(X(les), ley, (RWZ - 0.003) * (2 * i / 20 - 1)), c, pt * DEG, loop));
       add(loft(rings, { capStart: 'strip', capEnd: 'strip' }), M.carbon);
@@ -598,12 +599,14 @@ export function buildCar(M, opt = {}) {
   }
 
   // ---------------------------------------------------------- tail: crash structure, rain light, exhaust
-  { const rings = range(3.78, 4.275, 0.025).map((s) => { const t = (s - 3.78) / 0.495; return ringYZ(X(s), resample(fullSection({ zc: 0, yc: lerp(0.298, 0.325, t), hw: lerp(0.078, 0.04, t), hh: lerp(0.062, 0.037, t), n: [4, 4, 4, 4] }), 41)); });
+  // (the crash structure's top stays under the exhaust all the way: it used to rise into the pipe at its front)
+  { const rings = range(3.78, 4.275, 0.025).map((s) => { const t = (s - 3.78) / 0.495; return ringYZ(X(s), resample(fullSection({ zc: 0, yc: lerp(0.286, 0.325, t), hw: lerp(0.078, 0.04, t), hh: lerp(0.054, 0.037, t), n: [4, 4, 4, 4] }), 41)); });
     add(loft(rings, { capStart: true, capEnd: true }), M.carbon);
     const rl = new THREE.PlaneGeometry(0.056, 0.058); rl.rotateY(-Math.PI / 2); rl.translate(X(4.2765), 0.325, 0); add(rl, M.led, { cast: false });
     const circ = (s, y, r) => { const ring = []; for (let j = 0; j <= 40; j++) { const a = j / 40 * Math.PI * 2; ring.push(v3(X(s), y + r * Math.cos(a), r * Math.sin(a))); } ring[40] = ring[0].clone(); return ring; };
     const ey = (s) => 0.405 + (s - 3.74) * 0.075;
-    const er = [circ(3.74, ey(3.74), 0.058), circ(3.9, ey(3.9), 0.058), circ(4.062, ey(4.062), 0.058), circ(4.07, ey(4.07), 0.0565), circ(4.066, ey(4.066), 0.054), circ(3.95, ey(3.95), 0.054), circ(3.80, ey(3.80), 0.054)];
+    // (the bore is closed 20 cm in, short of where the wing's pylon crosses the pipe, so nothing shows inside it)
+    const er = [circ(3.74, ey(3.74), 0.058), circ(3.9, ey(3.9), 0.058), circ(4.062, ey(4.062), 0.058), circ(4.07, ey(4.07), 0.0565), circ(4.066, ey(4.066), 0.054), circ(3.95, ey(3.95), 0.054), circ(3.865, ey(3.865), 0.054)];
     add(loft(er, { groups: [{ from: 0, to: 3, mat: 0 }, { from: 3, to: 6, mat: 1 }], capEnd: true, capMatEnd: 1, uvFn: (i, j, p) => [clamp((XF - p.x - 3.86) / 0.21, 0, 1), 0.5] }), [M.exhaust, M.duct]);
   }
 
@@ -617,10 +620,11 @@ export function buildCar(M, opt = {}) {
       add(new THREE.CylinderGeometry(r, r, 0.004, 28).rotateZ(Math.PI / 2).translate(x, y, z), M.visor, { cast: false });
       add(new THREE.TorusGeometry(r + 0.0008, 0.0013, 10, 32).rotateY(Math.PI / 2).translate(x + 0.0016, y, z), M.fastener, { cast: false });
     };
-    // pylon: aerofoil sections in plan, [height, chord, thickness / chord, how far forward its middle is]
-    const py = [];
-    for (const [y, ch, tc, fx] of [[0.968, 0.100, 0.30, 0], [0.990, 0.100, 0.30, 0.001], [0.999, 0.082, 0.27, 0.003], [1.007, 0.066, 0.23, 0.006], [1.017, 0.057, 0.21, 0.009], [1.036, 0.054, 0.20, 0.014], [1.050, 0.054, 0.20, 0.016]]) {
-      py.push(airfoil(18, tc, 0).map(([xa, ya]) => v3(X(2.035) + fx + (0.5 - xa) * ch, y, ya * ch)));
+    // pylon: aerofoil sections in plan, [how far up from the airbox skin to the wing (0..1), chord, thickness / chord,
+    // how far forward its middle is]. Its foot stops 2 mm under the skin: any deeper and it hangs inside the intake.
+    const py = [], yS = pB(2.035).yt - 0.002, yT = 1.050;
+    for (const [f, ch, tc, fx] of [[0, 0.100, 0.30, 0], [0.10, 0.094, 0.29, 0.001], [0.22, 0.078, 0.26, 0.003], [0.38, 0.064, 0.23, 0.006], [0.56, 0.057, 0.21, 0.009], [0.80, 0.054, 0.20, 0.014], [1, 0.054, 0.20, 0.016]]) {
+      py.push(airfoil(18, tc, 0).map(([xa, ya]) => v3(X(2.035) + fx + (0.5 - xa) * ch, lerp(yS, yT, f), ya * ch)));
     }
     add(loft(py, { exact: true }), M.halo);
     // the wing across the top: [distance out, chord, thickness / chord]
@@ -726,8 +730,18 @@ export function buildCar(M, opt = {}) {
     const zi = -hw - 0.022;
     if (front) {
       // brake duct scoop
-      const sc = range(0.19, -0.02, -0.03).map((x) => { const t = (0.19 - x) / 0.21; return squircleLoop(0.03, lerp(0.085, 0.06, t), 4, 24).map(([a, b]) => v3(x, 0.03 + b, zi - 0.028 + a)); });
-      stat(loft(sc, { capStart: true, capMatStart: 1, capEnd: true }), [M.carbonSatin, M.duct]);
+      /* A hollow scoop. Its mouth used to be closed with a flat black cap. Now the skin turns in over a lip, an inner
+         duct runs back and narrows towards the upright, darker the deeper it goes, two turning vanes stand in it and
+         a dark wall closes its far end: you see a little way in, as into a real duct. */
+      // (it stands 12 cm tall, its roof under the track rod: 17 cm tall, the rod ran through it, hidden only by the old cap)
+      const secAt = (x, d) => { const t = (0.19 - x) / 0.21; return squircleLoop(0.03 - d, lerp(0.060, 0.046, t) - d, 4, 24).map(([a, b]) => v3(x, -0.004 + b, zi - 0.028 + a)); };
+      const dark = (geo, k = 1) => { const q = geo.attributes.position, c = new Float32Array(q.count * 3); for (let i = 0; i < q.count; i++) { const a = k * lerp(0.1, 1, Math.pow(smooth(0.03, 0.19, q.getX(i)), 1.4)); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = a; } geo.setAttribute('color', new THREE.BufferAttribute(c, 3)); return geo; };
+      stat(loft(range(0.19, -0.02, -0.03).map((x) => secAt(x, 0)), { capEnd: true }), M.carbonSatin);
+      stat(loft([secAt(0.19, 0), secAt(0.1915, 0.0012), secAt(0.191, 0.0028), secAt(0.188, 0.0036)], { exact: true }), M.carbonSatin);            // the lip
+      const inn = [[0.188, 0.0036], [0.16, 0.0042], [0.12, 0.007], [0.08, 0.011], [0.05, 0.014], [0.03, 0.016]];
+      stat(dark(loft(inn.map(([x, d]) => secAt(x, d)), { exact: true })), M.ductShell);
+      stat(dark(new THREE.PlaneGeometry(0.05, 0.10).rotateY(Math.PI / 2).translate(0.0305, -0.004, zi - 0.028)), M.ductPart);                      // the far wall
+      for (const dy of [-0.019, 0.019]) stat(dark(new THREE.BoxGeometry(0.115, 0.0022, 0.05).translate(0.118, -0.004 + dy, zi - 0.028)), M.ductPart);
       // wake deflector
       const df = plate(roundedShape([[-0.34, -0.27], [0.10, -0.29], [0.17, -0.20], [0.03, 0.06], [-0.20, 0.15], [-0.37, 0.03]], 0.05), 0.005, 0.0015); df.translate(0, 0, zi - 0.012);
       stat(df, M.carbon);

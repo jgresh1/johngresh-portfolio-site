@@ -483,14 +483,19 @@ export function buildCar(M, opt = {}) {
     // tunnel fences
     const fence = (z0, c, sEnd, h, edge) => {
       const path = [], hh = [];
-      for (const s of range(0.705, sEnd, 0.02)) {
+      for (const s of range(0.705, sEnd, 0.008)) {
         const t = (s - 0.705) / (sEnd - 0.705), z = edge ? zE(s) - 0.006 : z0 + c * Math.pow(s - 0.705, 1.7);
-        const yb = yF(s, z) - 0.006, yt = yF(s, z) + h * (1 - t * t) * smooth(0, 0.06, t + 0.03) + 0.004;
+        /* Each fence is a sail: it grows out of the floor's leading edge on a rounded, swept front (a quarter of an
+           ellipse over its first 40%), tops out, and falls away to a low trailing end. They used to stand up almost
+           square at the front, with a sharp corner, and read as a row of saw teeth. */
+        const up = t < 0.4 ? Math.sqrt(Math.max(0, 1 - Math.pow(1 - t / 0.4, 2))) : lerp(1, 0.2, Math.pow(smooth(0.4, 1, t), 1.3));
+        const yb = yF(s, z) - 0.006, yt = yF(s, z) + 0.004 + h * up;
         path.push(v3(X(s), (yb + yt) / 2, z)); hh.push((yt - yb) / 2);
       }
-      return tube(path, v3(0, 1, 0), (i) => squircleLoop(0.003, hh[i], 6, 16));
+      return tube(path, v3(0, 1, 0), (i) => squircleLoop(0.0032, hh[i], 3, 16), { exact: true });
     };
-    for (const f of [[0.275, 0.9, 1.06, 0.115], [0.365, 1.3, 1.03, 0.125], [0.455, 1.8, 0.99, 0.135], [0, 0, 1.2, 0.16, true]]) pair(fence(...f), M.carbon);
+    // (finer steps along each, so the curved top edge is smooth; heights step up towards the floor's edge)
+    for (const f of [[0.275, 0.9, 1.08, 0.105], [0.365, 1.3, 1.06, 0.118], [0.455, 1.8, 1.03, 0.130], [0, 0, 1.2, 0.145, true]]) pair(fence(...f), M.carbon);
     // floor edge wing
     const ew = [];
     for (const s of range(1.52, 2.96, 0.03)) ew.push(v3(X(s), 0.092 + 0.05 * smooth(1.78, 1.52, s), zE(s) + 0.014));
@@ -735,13 +740,15 @@ export function buildCar(M, opt = {}) {
          a dark wall closes its far end: you see a little way in, as into a real duct. */
       // (it stands 12 cm tall, its roof under the track rod: 17 cm tall, the rod ran through it, hidden only by the old cap)
       const secAt = (x, d) => { const t = (0.19 - x) / 0.21; return squircleLoop(0.03 - d, lerp(0.060, 0.046, t) - d, 4, 24).map(([a, b]) => v3(x, -0.004 + b, zi - 0.028 + a)); };
-      const dark = (geo, k = 1) => { const q = geo.attributes.position, c = new Float32Array(q.count * 3); for (let i = 0; i < q.count; i++) { const a = k * lerp(0.1, 1, Math.pow(smooth(0.03, 0.19, q.getX(i)), 1.4)); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = a; } geo.setAttribute('color', new THREE.BufferAttribute(c, 3)); return geo; };
-      stat(loft(range(0.19, -0.02, -0.03).map((x) => secAt(x, 0)), { capEnd: true }), M.carbonSatin);
+      const dark = (geo, k = 1) => { const q = geo.attributes.position, c = new Float32Array(q.count * 3); for (let i = 0; i < q.count; i++) { const a = k * lerp(0.1, 1, Math.pow(smooth(0.065, 0.19, q.getX(i)), 1.4)); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = a; } geo.setAttribute('color', new THREE.BufferAttribute(c, 3)); return geo; };
+      // (behind the axle it tapers to nothing against the deflector plate: its flat end used to stand on the plate as a square block)
+      const tail = [[-0.05, 0.026, 0.040, 0.025], [-0.085, 0.020, 0.031, 0.021], [-0.115, 0.013, 0.021, 0.017], [-0.14, 0.006, 0.010, 0.014], [-0.152, 0.0015, 0.003, 0.012]];      // [x, half width, half height, how far inboard of the drum face its middle is]
+      stat(loft([...range(0.19, -0.02, -0.03).map((x) => secAt(x, 0)), ...tail.map(([x, a, b, dz]) => squircleLoop(a, b, 3.2, 24).map(([p, q]) => v3(x, -0.004 + q, zi - dz + p)))], { capEnd: true }), M.carbonSatin);
       stat(loft([secAt(0.19, 0), secAt(0.1915, 0.0012), secAt(0.191, 0.0028), secAt(0.188, 0.0036)], { exact: true }), M.carbonSatin);            // the lip
-      const inn = [[0.188, 0.0036], [0.16, 0.0042], [0.12, 0.007], [0.08, 0.011], [0.05, 0.014], [0.03, 0.016]];
+      const inn = [[0.188, 0.0036], [0.16, 0.0042], [0.13, 0.0065], [0.10, 0.0095], [0.08, 0.012], [0.068, 0.014]];             // (ends ahead of the deflector plate, which crosses here)
       stat(dark(loft(inn.map(([x, d]) => secAt(x, d)), { exact: true })), M.ductShell);
-      stat(dark(new THREE.PlaneGeometry(0.05, 0.10).rotateY(Math.PI / 2).translate(0.0305, -0.004, zi - 0.028)), M.ductPart);                      // the far wall
-      for (const dy of [-0.019, 0.019]) stat(dark(new THREE.BoxGeometry(0.115, 0.0022, 0.05).translate(0.118, -0.004 + dy, zi - 0.028)), M.ductPart);
+      stat(dark(new THREE.PlaneGeometry(0.05, 0.10).rotateY(Math.PI / 2).translate(0.0685, -0.004, zi - 0.028)), M.ductPart);                      // the far wall
+      for (const dy of [-0.019, 0.019]) stat(dark(new THREE.BoxGeometry(0.095, 0.0022, 0.05).translate(0.122, -0.004 + dy, zi - 0.028)), M.ductPart);
       // wake deflector
       const df = plate(roundedShape([[-0.34, -0.27], [0.10, -0.29], [0.17, -0.20], [0.03, 0.06], [-0.20, 0.15], [-0.37, 0.03]], 0.05), 0.005, 0.0015); df.translate(0, 0, zi - 0.012);
       stat(df, M.carbon);

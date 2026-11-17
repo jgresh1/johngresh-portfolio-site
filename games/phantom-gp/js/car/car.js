@@ -521,9 +521,14 @@ export function buildCar(M, opt = {}) {
       const loop = airfoil(22, e.thick, e.camber), rings = [];
       for (let i = 0; i <= 72; i++) {
         const z = FWZ * (2 * i / 72 - 1), t = Math.abs(z) / FWZ;
-        const cs = e.c * (1 + (k === 0 ? 0.14 : 0) * Math.pow(1 - t, 3)) * (1 - 0.10 * t * t * t);
-        const pitch = e.pitch * DEG * (1 + 0.12 * (1 - t)) * (1 - 0.28 * smooth(0.72, 1, t));
-        rings.push(wingStation(v3(X(e.s0 + 0.20 * t * t), e.y0 + e.rise * (1 - smooth(0.05, 0.42, t)), z), cs, pitch, loop));
+        /* Where the flaps meet the nose. Run straight across, the upper flaps passed through the nose above its
+           middle (the top one above the nose itself) and read as planks pushed through it. Over the inner third of
+           a metre each flap now twists flatter and drops a little, so that it arrives at the nose's flank below its
+           widest line, one slot gap above the flap in front, and the nose stands clear above all of them. */
+        const q = 1 - smooth(0.10, 0.34, t);
+        const cs = e.c * (1 + (k === 0 ? 0.14 : 0) * Math.pow(1 - t, 3)) * (1 - 0.10 * t * t * t) * (1 - [0, 0, 0.06, 0.14][k] * q);
+        const pitch = e.pitch * DEG * (1 + 0.12 * (1 - t)) * (1 - 0.28 * smooth(0.72, 1, t)) * (1 - [0, 0.30, 0.42, 0.55][k] * q);
+        rings.push(wingStation(v3(X(e.s0 + 0.20 * t * t), e.y0 + e.rise * (1 - smooth(0.05, 0.42, t)) - [0, 0, 0.008, 0.028][k] * q, z), cs, pitch, loop));
       }
       add(loft(rings, { capStart: 'strip', capEnd: 'strip' }), k === 3 ? M.paint : M.carbon);
     });

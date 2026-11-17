@@ -92,7 +92,7 @@ export class Intro {
   // squeeze the right hand a few degrees round the grip and pull the paddle towards the driver
   poseHand(k) {
     const v = this.ctx.view;
-    if (v.paddle) v.paddle.position.z = this.paddleZ + 0.007 * k;
+    if (v.paddle) v.paddle.position.z = this.paddleZ + 0.010 * k;
     if (this.hand && this.grip) {
       if (k === 0) { this.hand.matrixAutoUpdate = true; this.hand.matrix.identity(); this.hand.updateMatrix(); return; }
       this.hand.matrixAutoUpdate = false;
@@ -172,9 +172,14 @@ export class Intro {
     } else if (b < 40) {
       // ---- the gear changes: one pull of the right paddle, then one on every beat
       view.pressButton(0, 0);
-      studio.fill.position.set(this.pressLamp[0], this.pressLamp[1], this.pressLamp[2]); studio.fill.intensity = 0.3;
+      // the cockpit lamp: beside the lens for the first camera (lit from the driver's side, the back of the wheel was black on black)
+      if (b < 36) { studio.fill.position.set(1.0, 0.86, 0.14); studio.fill.intensity = 0.5; }
+      else { studio.fill.position.set(this.pressLamp[0], this.pressLamp[1], this.pressLamp[2]); studio.fill.intensity = 0.3; }
       const second = b >= 36; cutTo(second ? 8 : 7);
-      if (!second) this.look(mix3([1.02, 1.08, 0.66], [0.975, 1.06, 0.63], (b - 34) / 2), [0.70, 0.60, 0.10], 34, false);
+      /* First camera: on the deck just ahead of the cockpit, looking back at the driver over the wheel, so the back of
+         the wheel faces it: housing, paddles, quick release, both hands. (It used to stand off to the side, almost
+         in the wheel's own plane, where the wheel is a sliver and half its parts are hidden or lost in the dark.) */
+      if (!second) this.look(mix3([1.00, 0.82, 0.14], [0.985, 0.812, 0.132], (b - 34) / 2), [0.725, 0.60, 0.03], 34, false);
       else this.look(mix3([0.31, 0.97, 0.45], [0.37, 0.94, 0.41], (b - 36) / 4), [0.74, 0.60, 0.11], 40, false);
       const shifts = [35, 37, 38, 39];
       let since = 9, idx = -1; for (let i = 0; i < shifts.length; i++) if (b >= shifts[i]) { since = b - shifts[i]; idx = i; }

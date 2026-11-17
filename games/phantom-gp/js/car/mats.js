@@ -159,7 +159,7 @@ export function makeMaterials(shared) {
   M.fastener = new THREE.MeshPhysicalMaterial({ color: 0x8a8d93, metalness: 1, roughness: 0.42 });
   M.seam = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.8 });
   M.suitDecal = (map) => { const m = new THREE.MeshPhysicalMaterial({ map, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.85 }); m.userData.mk = ['suitDecal', map]; M.suitDecalMats.push(m); return m; };
-  M.grip = new THREE.MeshPhysicalMaterial({ color: 0x101012, roughness: 0.85, sheen: 0.3, sheenColor: new THREE.Color(0x303030) });
+  M.grip = new THREE.MeshPhysicalMaterial({ color: 0x1d1d20, roughness: 0.8, sheen: 0.7, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x5a5a62) });        // suede grip: a dark grey that still reads against a black cockpit
 
   // Decals: white-on-transparent art, tinted by the livery's ink colour.
   M.decal = (map, tinted = true) => {

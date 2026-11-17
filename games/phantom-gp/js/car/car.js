@@ -311,7 +311,7 @@ export function buildCar(M, opt = {}) {
     part(cyl(0.0345, 0.0345, 0.008, 36), M.nut, 0, 0, -0.047);                       // the collar you pull to release the wheel
     for (const z of [-0.0535, -0.0575, -0.0615]) part(cyl(0.0262, 0.0262, 0.0022, 28), M.alu, 0, 0, z);
     part(cyl(0.024, 0.024, 0.018, 24), M.alu, 0, 0, -0.058);
-    add(rod(v3(0, 0, -0.06), v3(0, -0.012, -0.22), 0.017), M.black, { parent: sw });
+    add(rod(v3(0, 0, -0.06), v3(0, -0.012, -0.22), 0.017, 32), M.black, { parent: sw });                    // steering column (round: it was a 12-sided prism)
     { const pts = [], A = v3(-0.052, -0.03, -0.024), B = v3(-0.02, -0.03, -0.15), T = 9;       // curly cable, housing to column
       for (let k = 0; k <= T * 14; k++) { const f = k / (T * 14), a = f * T * 2 * Math.PI, r = 0.0075 * Math.min(1, f * 12, (1 - f) * 12); pts.push(v3(lerp(A.x, B.x, f) + Math.cos(a) * r, lerp(A.y, B.y, f) + Math.sin(a) * r, lerp(A.z, B.z, f))); }
       add(tube(pts, v3(0, 1, 0), () => ellipseLoop(0.0024, 0.0024, 7)), M.grip, { parent: sw, cast: false }); }

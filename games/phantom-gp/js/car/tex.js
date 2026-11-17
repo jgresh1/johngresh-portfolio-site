@@ -265,6 +265,22 @@ export function fabric() {
   g.putImageData(d, 0, 0);
   return tex(c, { srgb: false, repeat: [70, 70] });
 }
+// Race-suit quilting, as a colour multiplier (white = unchanged): rows of stitches with the cloth puffed up between them
+// and pulled a shade darker along each row, and a faint unevenness all over. One tile is one quilted panel.
+export function quilt() {
+  const S = 512, c = mk(S, S), g = c.getContext('2d'), d = g.createImageData(S, S), r = rng(53);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const dy = Math.min(y % (S / 2), S / 2 - (y % (S / 2))), dx = Math.min(x, S - x);            // distance to the nearest row of stitches
+    const pull = 1 - 0.13 * Math.exp(-dy / 9) - 0.09 * Math.exp(-dx / 9);
+    const v = 255 * pull * (0.955 + 0.045 * Math.sin(x * 0.045 + 1.3) * Math.sin(y * 0.038)) + (r() - 0.5) * 9, k = (y * S + x) * 4;
+    d.data[k] = d.data[k + 1] = d.data[k + 2] = Math.max(0, Math.min(255, v)); d.data[k + 3] = 255;
+  }
+  g.putImageData(d, 0, 0);
+  g.fillStyle = 'rgba(40,40,44,0.62)';
+  for (const y of [1, S / 2]) for (let x = 3; x < S; x += 15) g.fillRect(x, y - 1, 9, 2.4);        // the stitches themselves
+  for (let y = 3; y < S; y += 15) g.fillRect(0, y, 2.4, 9);
+  return tex(c, { repeat: [7, 9] });
+}
 // Glove cloth height map (tile = 40 mm): fine knit plus soft creases that run across the fingers.
 export function gloveKnit() {
   const S = 512, c = mk(S, S), g = c.getContext('2d'), d = g.createImageData(S, S), r = rng(77), h = new Float32Array(S * S);

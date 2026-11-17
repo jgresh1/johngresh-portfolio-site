@@ -15,7 +15,7 @@ export const PAINTS = [
 export function makeMaterials(shared) {
   const T = shared ? shared.T : {
     carbon: TX.carbon(0.016), flakes: TX.flakes(), peel: TX.orangePeel(), tread: TX.tireTread(), side: TX.tireSidewall(),
-    cover: TX.wheelCover(), led: TX.ledPanel(), rad: TX.radiator(), heat: TX.heatTint(), fabric: TX.fabric(), knit: TX.gloveKnit(), strip: TX.visorStrip(),
+    cover: TX.wheelCover(), led: TX.ledPanel(), rad: TX.radiator(), heat: TX.heatTint(), fabric: TX.fabric(), quilt: TX.quilt(), knit: TX.gloveKnit(), strip: TX.visorStrip(),
   };
   if (!shared) { const sf = TX.steeringFace(); T.steer = sf.map; T.steerE = sf.emissive; }
   const U = { A: { value: new THREE.Color() }, B: { value: new THREE.Color() }, W: { value: new THREE.Color('#f4f4f2') }, K: { value: new THREE.Color('#08080a') } };
@@ -123,11 +123,16 @@ export function makeMaterials(shared) {
   { const cache = new Map(); M.legend = (map) => { let m = cache.get(map); if (!m) { m = new THREE.MeshStandardMaterial({ map, color: 0xc9ccd0, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.6 }); m.userData.mk = ['legend', map]; cache.set(map, m); } return m; }; }
   M.belt = new THREE.MeshPhysicalMaterial({ color: 0xa3121b, roughness: 0.82, sheen: 0.6, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xff6a60) });
   // driver
-  const cloth = { roughness: 0.9, bumpMap: T.fabric, bumpScale: 0.5, sheen: 0.7, sheenRoughness: 0.6 };
-  M.suit = new THREE.MeshPhysicalMaterial({ ...cloth, color: 0x17181b, sheenColor: new THREE.Color(0x55555a) });
-  M.sleeve = new THREE.MeshPhysicalMaterial({ ...cloth, color: 0xf2b200, sheenColor: new THREE.Color(0x777777) });
-  M.glove = new THREE.MeshPhysicalMaterial({ ...cloth, color: 0x3b3c42, roughness: 0.74, sheen: 0.9, sheenColor: new THREE.Color(0x8a8a90) });
-  M.cuff = new THREE.MeshPhysicalMaterial({ ...cloth, color: 0xe9e9e4, sheenColor: new THREE.Color(0x888888) });
+  /* Cloth that reads as cloth from a hand's width away (the film's cockpit shots): the weave is deeper, and it also
+     lightens and darkens the colour thread by thread (`weave`), since relief alone disappears in flat light; the
+     suit and sleeves are quilted (rows of stitches, T.quilt). */
+  const cloth = { roughness: 0.9, bumpMap: T.fabric, bumpScale: 1.15, sheen: 0.7, sheenRoughness: 0.6 };
+  const WEAVE = '#include <color_fragment>\n#ifdef USE_BUMPMAP\ndiffuseColor.rgb *= 0.80 + 0.40 * texture2D( bumpMap, vBumpMapUv ).r;\n#endif';
+  const weave = (m) => { m.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', WEAVE); }; m.customProgramCacheKey = () => 'weave'; return m; };
+  M.suit = weave(new THREE.MeshPhysicalMaterial({ ...cloth, map: T.quilt, color: 0x17181b, sheenColor: new THREE.Color(0x55555a) }));
+  M.sleeve = weave(new THREE.MeshPhysicalMaterial({ ...cloth, map: T.quilt, color: 0xf2b200, sheenColor: new THREE.Color(0x777777) }));
+  M.glove = weave(new THREE.MeshPhysicalMaterial({ ...cloth, color: 0x3b3c42, roughness: 0.74, sheen: 0.9, sheenColor: new THREE.Color(0x8a8a90) }));
+  M.cuff = weave(new THREE.MeshPhysicalMaterial({ ...cloth, color: 0xe9e9e4, sheenColor: new THREE.Color(0x888888) }));
   // glove on the hand mesh: back panel in the glove colour, side strips in the car colour, palm panel dark.
   // The `palm` vertex value is > 0 on the palm side; the shader thresholds it so the panel edges are clean lines.
   M.gloveU = { uPalm: { value: new THREE.Color(0x2a2b30) }, uAccent: { value: new THREE.Color(0xf2b200) } };
@@ -143,8 +148,12 @@ export function makeMaterials(shared) {
         + 'st = max(st, 1.0 - smoothstep(0.011, 0.011 + fwP, abs(vPalm - 0.075)));\nst = max(st, 1.0 - smoothstep(0.011, 0.011 + fwP, abs(vPalm + 0.075)));\n'
         + 'st = max(st, 1.0 - smoothstep(0.011, 0.011 + fwP, abs(vPalm + 0.265)));\nst = max(st, 1.0 - smoothstep(0.011, 0.011 + fwP, abs(vPalm + 0.405)));\n'
         + '#ifdef USE_BUMPMAP\nst *= step(0.36, fract((vBumpMapUv.x + vBumpMapUv.y) * 12.5));\n#endif\n'
-        + 'diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.42 + vec3(0.035), st * 0.85);')
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.6, palmK);');
+        + 'diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.42 + vec3(0.035), st * 0.85);\n'
+        // the knit shows in the colour as well as the relief; the palm panel carries a print of silicone dots, 3 mm apart,
+        // darker and glossier than the cloth (the grip print of a racing glove)
+        + '#ifdef USE_BUMPMAP\ndiffuseColor.rgb *= 0.82 + 0.36 * texture2D( bumpMap, vBumpMapUv ).r;\nvec2 gq = fract( vBumpMapUv * 13.3 ) - 0.5;\nfloat gDot = ( 1.0 - smoothstep( 0.20, 0.29, length( gq ) ) ) * palmK;\n#else\nfloat gDot = 0.0;\n#endif\n'
+        + 'diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.55 + vec3(0.012), gDot);')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(mix(roughnessFactor, 0.6, palmK), 0.28, gDot);');
   };
   M.gloveDecalMats = [];
   M.gloveDecal = (map) => {
@@ -152,7 +161,7 @@ export function makeMaterials(shared) {
     if (!m) { m = new THREE.MeshPhysicalMaterial({ map, color: M.gloveInk || 0x16171a, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.7 }); m.userData.mk = ['gloveDecal', map]; M.gloveDecalMats.push(m); }
     return m;
   };
-  M.balaclava = new THREE.MeshPhysicalMaterial({ ...cloth, color: 0xd4d4cf, sheenColor: new THREE.Color(0xffffff) });
+  M.balaclava = weave(new THREE.MeshPhysicalMaterial({ ...cloth, color: 0xd4d4cf, sheenColor: new THREE.Color(0xffffff) }));
   M.visor = new THREE.MeshPhysicalMaterial({ color: 0x232936, metalness: 1, roughness: 0.045, iridescence: 0.4, iridescenceIOR: 1.7, iridescenceThicknessRange: [300, 380], clearcoat: 1, clearcoatRoughness: 0.02 });
   M.visorStrip = new THREE.MeshPhysicalMaterial({ color: 0xffffff, map: T.strip, roughness: 0.4, clearcoat: 1, clearcoatRoughness: 0.05 });
   M.halo = new THREE.MeshPhysicalMaterial({ color: 0x08080a, roughness: 0.45, clearcoat: 1, clearcoatRoughness: 0.06, clearcoatNormalMap: T.peel, clearcoatNormalScale: new THREE.Vector2(0.03, 0.03) });

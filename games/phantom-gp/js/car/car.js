@@ -538,8 +538,19 @@ export function buildCar(M, opt = {}) {
       }
       add(loft(rings, { capStart: 'strip', capEnd: 'strip' }), k === 3 ? M.paint : M.carbon);
     });
-    // slot-gap separators
-    for (const t of [0.34, 0.62, 0.86]) pair(strut(v3(X(-0.93 + 0.2 * t * t), 0.115, FWZ * t), v3(X(-0.62 + 0.2 * t * t), 0.265, FWZ * t), 0.045, 0.003, v3(1, 0, 0)), M.steel);
+    /* Slot-gap separators: a small metal plate in each gap, at three places along each side. Its outline runs along
+       the chord line of the flap below and the chord line of the flap above, so everything outside the gap itself is
+       inside one flap or the other and nothing can stand proud of a surface. (They used to be one long blade from the
+       mainplane up through every flap; its top end stood out above the top flap.) */
+    const flapAt = (k, t) => { const e = els[k]; return { s0: e.s0 + 0.20 * t * t, y0: e.y0 + e.rise * (1 - smooth(0.05, 0.42, t)), c: e.c * (1 + (k === 0 ? 0.14 : 0) * Math.pow(1 - t, 3)) * (1 - 0.10 * t * t * t), p: e.pitch * DEG * (1 + 0.12 * (1 - t)) * (1 - 0.28 * smooth(0.72, 1, t)) }; };
+    const onChord = (F, f) => [X(F.s0) - f * F.c * Math.cos(F.p), F.y0 + f * F.c * Math.sin(F.p)];
+    for (const t of [0.34, 0.62, 0.86]) for (let k = 0; k < 3; k++) {
+      const A = flapAt(k, t), B = flapAt(k + 1, t), la = A.c * Math.cos(A.p), lb = B.c * Math.cos(B.p);
+      const fA = clamp((B.s0 - A.s0) / la - 0.12, 0.25, 0.8), fB = clamp((A.s0 + la - B.s0) / lb + 0.14, 0.12, 0.7);       // where the two flaps overlap, and a little beyond
+      // (the corners stop short of each flap's thin edges, where a plate this thick would show through)
+      const g = plate(roundedShape([onChord(A, fA), onChord(A, 0.88), onChord(B, fB), onChord(B, 0.09)], 0.0012), 0.0022, 0.0005);
+      g.translate(0, 0, FWZ * t); pair(g, M.steel);
+    }
     // endplates
     const ep = plate(roundedShape([[X(-1.03), 0.068], [X(-0.40), 0.054], [X(-0.385), 0.315], [X(-0.60), 0.30], [X(-0.93), 0.175], [X(-1.03), 0.12]], [0.02, 0.012, 0.03, 0.09, 0.05, 0.03]), 0.007, 0.002);
     ep.translate(0, 0, FWZ + 0.002);
@@ -594,12 +605,13 @@ export function buildCar(M, opt = {}) {
     add(plate(roundedShape([[X(3.94), 0.742], [X(4.03), 0.756], [X(4.04), 0.80], [X(3.95), 0.79]], 0.004), 0.008, 0.002), M.carbon);
     add(rod(v3(X(4.086), 0.826, 0), v3(X(4.128), 0.846, 0), 0.0035), M.steel);
     // beam wing
-    // (both elements pass under the exhaust: the tailpipe's underside is at 0.361 to 0.372 here. Higher and steeper, the
-    // upper one ran through the pipe's wall and stood across its mouth.)
-    for (const [les, ley, c, pt] of [[3.93, 0.308, 0.115, 9], [4.03, 0.333, 0.10, 14]]) {
+    /* Beam wing: two elements a side, each from the endplate in to the crash structure, where it ends just inside
+       the structure's side wall. Both sit under the exhaust and below the structure's top. (They used to run right
+       across: first through the tailpipe, then, once lowered, over the top of the structure in a tangle.) */
+    for (const [les, ley, c, pt] of [[3.93, 0.300, 0.115, 9], [4.03, 0.325, 0.10, 13]]) {
       const loop = airfoil(18, 0.085, -0.08), rings = [];
-      for (let i = 0; i <= 20; i++) rings.push(wingStation(v3(X(les), ley, (RWZ - 0.003) * (2 * i / 20 - 1)), c, pt * DEG, loop));
-      add(loft(rings, { capStart: 'strip', capEnd: 'strip' }), M.carbon);
+      for (let i = 0; i <= 14; i++) rings.push(wingStation(v3(X(les), ley, lerp(0.042, RWZ - 0.003, i / 14)), c, pt * DEG, loop));
+      pair(loft(rings, { capStart: 'strip', capEnd: 'strip' }), M.carbon);
     }
   }
 

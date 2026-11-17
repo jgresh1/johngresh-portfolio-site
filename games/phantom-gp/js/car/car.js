@@ -539,16 +539,20 @@ export function buildCar(M, opt = {}) {
       add(loft(rings, { capStart: 'strip', capEnd: 'strip' }), k === 3 ? M.paint : M.carbon);
     });
     /* Slot-gap separators: a small metal plate in each gap, at three places along each side. Its outline runs along
-       the chord line of the flap below and the chord line of the flap above, so everything outside the gap itself is
-       inside one flap or the other and nothing can stand proud of a surface. (They used to be one long blade from the
-       mainplane up through every flap; its top end stood out above the top flap.) */
-    const flapAt = (k, t) => { const e = els[k]; return { s0: e.s0 + 0.20 * t * t, y0: e.y0 + e.rise * (1 - smooth(0.05, 0.42, t)), c: e.c * (1 + (k === 0 ? 0.14 : 0) * Math.pow(1 - t, 3)) * (1 - 0.10 * t * t * t), p: e.pitch * DEG * (1 + 0.12 * (1 - t)) * (1 - 0.28 * smooth(0.72, 1, t)) }; };
-    const onChord = (F, f) => [X(F.s0) - f * F.c * Math.cos(F.p), F.y0 + f * F.c * Math.sin(F.p)];
+       the camber line (the curved mid-line) of the flap below and of the flap above, so everything outside the gap
+       itself is inside one flap or the other and nothing can stand proud of a surface. Two earlier versions showed:
+       one long blade from the mainplane up through every flap, whose top end stood out above the top flap; then
+       plates bounded by the flaps' chord lines, but these flaps are cambered and a chord line runs above the upper
+       surface in the middle, so the plates still broke through. */
+    const flapAt = (k, t) => { const e = els[k]; return { s0: e.s0 + 0.20 * t * t, y0: e.y0 + e.rise * (1 - smooth(0.05, 0.42, t)), c: e.c * (1 + (k === 0 ? 0.14 : 0) * Math.pow(1 - t, 3)) * (1 - 0.10 * t * t * t), p: e.pitch * DEG * (1 + 0.12 * (1 - t)) * (1 - 0.28 * smooth(0.72, 1, t)), m: e.camber }; };
+    const onCamber = (F, f) => {                // a point on flap F's camber line, f along its chord (as airfoil() in geo.js draws it)
+      const yc = f < 0.42 ? F.m / (0.42 * 0.42) * (0.84 * f - f * f) : F.m / (0.58 * 0.58) * (0.16 + 0.84 * f - f * f);
+      return [X(F.s0) - f * F.c * Math.cos(F.p) + yc * F.c * Math.sin(F.p), F.y0 + f * F.c * Math.sin(F.p) + yc * F.c * Math.cos(F.p)];
+    };
     for (const t of [0.34, 0.62, 0.86]) for (let k = 0; k < 3; k++) {
       const A = flapAt(k, t), B = flapAt(k + 1, t), la = A.c * Math.cos(A.p), lb = B.c * Math.cos(B.p);
-      const fA = clamp((B.s0 - A.s0) / la - 0.12, 0.25, 0.8), fB = clamp((A.s0 + la - B.s0) / lb + 0.14, 0.12, 0.7);       // where the two flaps overlap, and a little beyond
-      // (the corners stop short of each flap's thin edges, where a plate this thick would show through)
-      const g = plate(roundedShape([onChord(A, fA), onChord(A, 0.88), onChord(B, fB), onChord(B, 0.09)], 0.0012), 0.0022, 0.0005);
+      const fA = clamp((B.s0 - A.s0) / la - 0.12, 0.25, 0.8), fB = clamp((A.s0 + la - B.s0) / lb + 0.14, 0.2, 0.6);       // where the two flaps overlap, and a little beyond
+      const g = plate(roundedShape([onCamber(A, fA), onCamber(A, (fA + 0.86) / 2), onCamber(A, 0.86), onCamber(B, fB), onCamber(B, (fB + 0.10) / 2), onCamber(B, 0.10)], 0.0008), 0.0022, 0.0005);
       g.translate(0, 0, FWZ * t); pair(g, M.steel);
     }
     // endplates

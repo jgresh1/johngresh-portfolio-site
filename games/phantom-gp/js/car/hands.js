@@ -146,7 +146,7 @@ export function buildGripHand(raw, o = {}) {
   const G = o.G || new THREE.Vector3(), place = new THREE.Matrix4().makeTranslation(G.x, G.y, G.z).multiply(R).multiply(new THREE.Matrix4().makeTranslation(-Cm.x, -Cm.y, -Cm.z));
 
   // thumb: searched so that it rests on the bar without passing through it or the index finger
-  let thumb, altD = null;
+  let thumb; const altDs = [];
   { const tm = P('thumb-metacarpal'), tp = P('thumb-phalanx-proximal'), td = P('thumb-phalanx-distal'), tt = P('thumb-tip');
     const nT = nP.clone().multiplyScalar(0.5).addScaledVector(lat.clone().normalize(), 0.85).normalize(), hT = cross(td.clone().sub(tp).normalize(), nT).normalize();
     const mats = (x) => {
@@ -189,12 +189,14 @@ export function buildGripHand(raw, o = {}) {
     D[J['thumb-metacarpal'].i] = A; D[J['thumb-phalanx-proximal'].i] = B; D[J['thumb-phalanx-distal'].i] = C; D[J['thumb-tip'].i] = C;
     const r3 = (p) => p.clone().applyMatrix4(place).toArray().map((v) => +v.toFixed(3));
     thumb = { x: x.map((v) => +v.toFixed(3)), cost: +best.toFixed(4), base: r3(tm), knuckle: r3(tp.clone().applyMatrix4(A)), tip: r3(tt.clone().applyMatrix4(C)) };
-    // a second pose for the thumb (o.alt.thumbTip: where its tip goes, o.alt.thumb: the solved angles, to skip the search)
-    if (o.alt) {
-      tipT = o.alt.thumbTip.clone().applyMatrix4(inv);
-      const [x2, b2] = solve(o.alt.thumb, x.slice(), 1), [A2, B2, C2] = mats(x2);
-      altD = D.slice(); altD[J['thumb-metacarpal'].i] = A2; altD[J['thumb-phalanx-proximal'].i] = B2; altD[J['thumb-phalanx-distal'].i] = C2; altD[J['thumb-tip'].i] = C2;
-      thumb.alt = { x: x2.map((v) => +v.toFixed(3)), cost: +b2.toFixed(4), tip: r3(tt.clone().applyMatrix4(C2)) };
+    // further poses for the thumb (o.alts: [{ thumbTip: where its tip goes, thumb: the solved angles, to skip the search }]);
+    // each search starts from the pose before it
+    thumb.alts = []; let xs = x.slice();
+    for (const al of o.alts || []) {
+      tipT = al.thumbTip.clone().applyMatrix4(inv);
+      const [x2, b2] = solve(al.thumb, xs, 1), [A2, B2, C2] = mats(x2), Dn = D.slice(); xs = x2.slice();
+      Dn[J['thumb-metacarpal'].i] = A2; Dn[J['thumb-phalanx-proximal'].i] = B2; Dn[J['thumb-phalanx-distal'].i] = C2; Dn[J['thumb-tip'].i] = C2;
+      altDs.push(Dn); thumb.alts.push({ x: x2.map((v) => +v.toFixed(3)), cost: +b2.toFixed(4), tip: r3(tt.clone().applyMatrix4(C2)) });
     }
   }
 
@@ -248,12 +250,12 @@ export function buildGripHand(raw, o = {}) {
   for (let i = 0; i < nv; i++) side[i] -= split;
   g.setAttribute('palm', new THREE.BufferAttribute(side, 1)); g.setIndex(m.tris);
   g.applyMatrix4(place); g.computeVertexNormals();
-  if (altD) {
-    // the same hand with the thumb in its second pose, as a morph target (same glove thickness and welt)
+  for (const altD of altDs) {
+    // the same hand with the thumb in another pose, as a morph target (same glove thickness and welt)
     const o2 = skin(altD), n2 = vertexNormals(o2, m.tris);
     for (let i = 0; i < nv; i++) { const s = side[i] + split, sw = o.seamW ?? 0.1, seam = Math.exp(-Math.pow((s - split) / sw, 2)) + Math.exp(-Math.pow((s - split + 0.335) / sw, 2)), k = glove + (o.seamH ?? 0.0005) * seam; o2[i * 3] += n2[i * 3] * k; o2[i * 3 + 1] += n2[i * 3 + 1] * k; o2[i * 3 + 2] += n2[i * 3 + 2] * k; }
     const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.BufferAttribute(o2, 3)); g2.setIndex(m.tris); g2.applyMatrix4(place); g2.computeVertexNormals();
-    g.morphAttributes.position = [g2.attributes.position]; g.morphAttributes.normal = [g2.attributes.normal]; g.morphTargetsRelative = false;
+    (g.morphAttributes.position ||= []).push(g2.attributes.position); (g.morphAttributes.normal ||= []).push(g2.attributes.normal); g.morphTargetsRelative = false;
   }
   const dir = (d) => d.clone().transformDirection(place);
   return {

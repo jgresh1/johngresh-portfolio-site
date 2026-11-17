@@ -209,7 +209,9 @@ export function wheelCover(accent = '#f5c518') {
 // Steering wheel faceplate (0.16 x 0.115 m): printed legends and the LCD. Returns the colour map and an
 // emissive map that holds only the screen and the shift lights.
 export function steeringFace() {
-  const W = 1024, H = 736, c = mk(W, H), g = c.getContext('2d'), e = mk(W, H), ge = e.getContext('2d');
+  // (drawn in 1024 x 736 units; the canvas itself is twice that on the full-detail car, where the film looks at it from 25 cm)
+  const K = DETAIL.tex >= 1 ? 2 : 1, W = 1024, H = 736, c = mk(W * K, H * K), g = c.getContext('2d'), e = mk(W * K, H * K), ge = e.getContext('2d');
+  g.scale(K, K); ge.scale(K, K);
   g.fillStyle = '#0a0a0b'; g.fillRect(0, 0, W, H); ge.fillStyle = '#000'; ge.fillRect(0, 0, W, H);
   const PX = W / 0.16, px = (m) => m * PX, cx = (x) => W / 2 + x * PX, cy = (y) => H / 2 - y * PX;
   const sx = cx(-0.045), sy = cy(0.047), sw = px(0.09), sh = px(0.058);

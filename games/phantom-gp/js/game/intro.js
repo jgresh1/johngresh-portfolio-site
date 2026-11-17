@@ -54,7 +54,7 @@ export class Intro {
     this.paddleZ = v.paddle ? v.paddle.position.z : 0;
     // the button shot: camera and target given in the steering wheel's own frame (x right, y up the wheel, z towards the driver)
     const L = (x, y, z) => (v.sw ? v.sw.localToWorld(V(x, y, z)).toArray() : [0.5, 0.8, 0.2]);
-    this.pressCam = [L(0.012, 0.215, 0.275), L(0.03, 0.2, 0.25)]; this.pressTg = L(0.062, 0.036, 0.012);
+    this.pressCam = [L(0.02, 0.165, 0.235), L(0.035, 0.15, 0.205)]; this.pressTg = L(0.07, 0.04, 0.012); this.pressLamp = L(-0.06, 0.26, 0.3);
     this._m = new THREE.Matrix4(); this._t = new THREE.Matrix4();
   }
 
@@ -63,7 +63,7 @@ export class Intro {
     this.done = false; this.warm = 0; this.tile = 0; this.cut = -1; this.wheel = 0; this.gear = 1; this.lastShift = -1; this.cap = ''; this.last = performance.now() / 1000; this.run = 0; this.runV = 0;
     studio.floorU.uWet.value = 0; studio.floorU.uRun.value = 0; studio.clearSpray(); studio.setLaunch(0); this.prevWheel = 0;
     gfx.clearCollage(); gfx.setLook(LOOKS.studio); gfx.fx.fade = 1; gfx.fx.flash = 0; gfx.fx.blur = 0; gfx.fx.punch = 0; gfx.fx.chroma = 0;
-    view.home(); view.setWheels(0, 0, 0, 0, 0); if (view.dash) view.drawDash('N', 0, 0, 1); this.press(0, 0); this.pressed = false;
+    view.home(); view.setWheels(0, 0, 0, 0, 0); if (view.dash) view.drawDash('N', 0, 0, 1); view.pressButton(0, 0); studio.fill.intensity = 0; this.pressed = false;
     hud.bars(true); hud.caption('', '');
     this.clock = sound.playFilm();
     this.endWall = wallAt(64 * BEAT);
@@ -75,7 +75,7 @@ export class Intro {
     this.done = true; hud.bars(false); hud.caption('', ''); gfx.fx.fade = 0; gfx.fx.punch = 0; gfx.fx.chroma = 0;
     sound.filmEngine(4000, 0, 0); if (skipped) sound.stopFilm();
     studio.floorU.uWet.value = 0; studio.floorU.uRun.value = 0; studio.clearSpray(); studio.setLaunch(0);
-    this.poseHand(0); this.press(0, 0); view.car.position.set(0, 0, 0); view.car.rotation.set(0, 0, 0);
+    this.poseHand(0); view.pressButton(0, 0); studio.fill.intensity = 0; view.car.position.set(0, 0, 0); view.car.rotation.set(0, 0, 0);
     if (this.ctx.mark) this.ctx.mark('filmEnd', tm);
     this.ctx.onCut(skipped);
   }
@@ -90,12 +90,6 @@ export class Intro {
   }
   caption(small, big, center) { const k = small + '|' + big; if (k !== this.cap) { this.cap = k; this.ctx.hud.caption(small, big, center); } }
   // squeeze the right hand a few degrees round the grip and pull the paddle towards the driver
-  // the right thumb on its button: reach 0..1 = from the grip to the button, push 0..1 = the button going down
-  press(reach, push) {
-    const v = this.ctx.view;
-    if (v.handR && v.handR.morphTargetInfluences) v.handR.morphTargetInfluences[0] = reach * (1 + 0.08 * push);
-    if (v.btn) v.btn.position.z = -0.0013 * push;
-  }
   poseHand(k) {
     const v = this.ctx.view;
     if (v.paddle) v.paddle.position.z = this.paddleZ + 0.007 * k;
@@ -116,6 +110,7 @@ export class Intro {
     fx.flash = Math.max(0, fx.flash - dt * 5); fx.punch = 0; fx.chroma = 0; fx.blur = 0; fx.fade = 0;      // (no zoom or colour pulse on the beat: he found the picture pulsing too much)
     // keep the circuit ready for the cut: a few tiny frames of it while the screen is black, and again in the last flash
     if (this.ctx.warmTrack && ((b > 15.55 && b < 16 && this.warm < 5) || (b > 62.9 && this.warm < 10))) { this.warm = Math.max(this.warm, b > 60 ? 5 : 0) + 1; this.ctx.warmTrack(); }
+    studio.fill.intensity = 0;
     let collage = false, vis = 1, spin = 0, eng = null;        // vis: picture speed (1 = real time), spin: rear wheel speed (rad/s)
     const cutTo = (id) => { if (this.cut !== id) { this.cut = id; fx.flash = 0.55; return true; } return false; };
 
@@ -157,19 +152,27 @@ export class Intro {
         this.look([x, 2.9, 0.001], [x, 0, 0], 34, false, [0, 0, -1]);
       }
     } else if (b < 34) {
-      // ---- into gear: the right thumb leaves the grip, finds the button above it and presses it on the beat
+      /* ---- into gear. The right thumb lifts off the grip and over the button, comes down until its skin meets the
+         cap, presses it on the beat, lets it up and goes back. The button is moved by the thumb's skin (pressButton),
+         so it goes down exactly as far as it is pushed; the dash changes when it is most of the way down. */
       cutTo(5);
       this.look(mix3(this.pressCam[0], this.pressCam[1], (b - 32) / 2), this.pressTg, 27, false);
-      const reach = ease(clamp((b - 32.2) / 0.6, 0, 1)) * (1 - ease(clamp((b - 33.4) / 0.5, 0, 1)));
-      const push = ease(clamp((b - 32.92) / 0.08, 0, 1)) * (1 - ease(clamp((b - 33.2) / 0.16, 0, 1)));
-      this.press(reach, push);
-      if (b >= 33 && !this.pressed) { this.pressed = true; sound.sfx('shift', 0.6); fx.flash = 0.18; }
-      const rpm = b < 33 ? 5200 : lerp(6800, 8200, clamp(b - 33, 0, 1));
-      if (view.dash) view.drawDash(b < 33 ? 'N' : 1, 0, (rpm - 6200) / 6100, 1);
-      eng = [rpm, b < 33 ? 0.1 : 0.7, 0.2];
+      studio.fill.position.set(this.pressLamp[0], this.pressLamp[1], this.pressLamp[2]); studio.fill.intensity = 0.42;
+      const bt = view.pressTouch; let pa = 0, pb = 0;
+      if (b < 32.55) pa = ease(clamp((b - 32.12) / 0.43, 0, 1));
+      else if (b < 32.9) { pb = bt * ease((b - 32.55) / 0.35); pa = 1 - pb; }
+      else if (b < 33.2) { pb = lerp(bt, 1, ease(clamp((b - 32.9) / 0.1, 0, 1))); pa = 1 - pb; }
+      else if (b < 33.48) { pb = 1 - ease((b - 33.2) / 0.28); pa = 1 - pb; }
+      else pa = 1 - ease(clamp((b - 33.48) / 0.42, 0, 1));
+      const depth = view.pressButton(pa, pb);
+      if (depth > 0.6 && b > 32.9 && !this.pressed) { this.pressed = true; this.pressB = b; sound.sfx('shift', 0.6); fx.flash = 0.12; }
+      const rpm = !this.pressed ? 5200 : lerp(6800, 8200, clamp(b - this.pressB, 0, 1));
+      if (view.dash) view.drawDash(this.pressed ? 1 : 'N', 0, (rpm - 6200) / 6100, 1);
+      eng = [rpm, this.pressed ? 0.7 : 0.1, 0.2];
     } else if (b < 40) {
       // ---- the gear changes: one pull of the right paddle, then one on every beat
-      this.press(0, 0);
+      view.pressButton(0, 0);
+      studio.fill.position.set(this.pressLamp[0], this.pressLamp[1], this.pressLamp[2]); studio.fill.intensity = 0.3;
       const second = b >= 36; cutTo(second ? 8 : 7);
       if (!second) this.look(mix3([1.02, 1.08, 0.66], [0.975, 1.06, 0.63], (b - 34) / 2), [0.70, 0.60, 0.10], 34, false);
       else this.look(mix3([0.31, 0.97, 0.45], [0.37, 0.94, 0.41], (b - 36) / 4), [0.74, 0.60, 0.11], 40, false);

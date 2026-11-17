@@ -209,6 +209,10 @@ export class Studio {
     this.target = new THREE.Vector3(0.2, 0.42, 0);
     this.mirrorCam = new THREE.PerspectiveCamera();
     const k = q.shadowScale || 1;
+    /* A small lamp for close work in the cockpit (the film's button press and gear changes): the softboxes are out
+       beyond the halo and leave the wheel in its shadow. It is in the scene from the start, at zero, so that
+       switching it on changes no shader. */
+    this.fill = new THREE.PointLight(0xfff1e2, 0, 2.2, 2); this.scene.add(this.fill);
     this.lights = BOXES.map((b) => {
       const l = new THREE.DirectionalLight(new THREE.Color(b.tint[0], b.tint[1], b.tint[2]), b.I);
       l.castShadow = true; l.shadow.mapSize.set(b.map * k, b.map * k); l.shadow.bias = -0.0006; l.shadow.normalBias = 0.007;

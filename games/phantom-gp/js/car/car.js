@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {
   v3, clamp, lerp, smooth, DEG, curve, table, range, uniqSorted, halfSection, fullSection, cutAtZ, resample, symRing, ringYZ,
   airfoil, ellipseLoop, squircleLoop, loft, mirrorZ, sweepRings, tube, strut, rod, roundedShape, plate, projectDecal,
+  DRIVE_BTN,
 } from './geo.js';
 import * as TX from './tex.js';
 import { buildDriver } from './driver.js';
@@ -274,15 +275,27 @@ export function buildCar(M, opt = {}) {
     const part = (geo, mat, x, y, z) => { geo.translate(x, y, z); return add(geo, mat, { parent: sw, cast: false }); };
     const cyl = (r0, r1, h, seg = 20) => new THREE.CylinderGeometry(r0, r1, h, seg).rotateX(Math.PI / 2);
     const bcol = [0xe02a2a, 0x22b455, 0x2f6fe8, 0xf2c21a, 0xf0f0f0, 0xf57a1a, 0x18c4d8, 0xb04ae6];
+    /* Controls, turned (profiles are [height off the wheel's mid-plane, radius]): they are seen from a hand's width
+       away in the film, so each has a chamfered bezel and a cap with a rounded shoulder and a faintly dished top. */
+    const turned = (pts, mat, x, y, S = 40) => { const g = lathe([{ pts }], S, { exact: true }); g.translate(x, y, 0); return add(g, mat, { parent: sw, cast: false }); };
     [[-0.064, 0.0595], [-0.064, 0.0375], [-0.064, 0.0155], [-0.064, -0.0065], [0.064, 0.0595], [0.064, 0.0375], [0.064, 0.0155], [0.064, -0.0065]].forEach(([x, y], i) => {
-      part(cyl(0.0088, 0.0092, 0.004), M.knob, x, y, 0.013); part(cyl(0.0066, 0.007, 0.0075, 18), M.button(bcol[i]), x, y, 0.0155);
+      turned([[0.0112, 0.0096], [0.0140, 0.0096], [0.0148, 0.0091], [0.0150, 0.0079], [0.0136, 0.0074]], M.knob, x, y);
+      turned([[0.0128, 0.0068], [0.0180, 0.0068], [0.0187, 0.0065], [0.0191, 0.0058], [0.01925, 0.0044], [0.0191, 0.0022], [0.01905, 0.00002]], M.button(bcol[i]), x, y);
     });
     for (const [x, y] of [[-0.036, -0.026], [0, -0.031], [0.036, -0.026]]) {
-      part(cyl(0.0105, 0.0112, 0.011, 24), M.knob, x, y, 0.017); part(new THREE.BoxGeometry(0.0022, 0.0085, 0.0015), M.button(0xf0f0f0), x, y + 0.0045, 0.0232);
+      // rotaries: a skirt, a waisted grip with a rounded crown, a white index line
+      turned([[0.0112, 0.0118], [0.0132, 0.0118], [0.0140, 0.0112], [0.0150, 0.0100], [0.0200, 0.0096], [0.0216, 0.0100], [0.0226, 0.0094], [0.0230, 0.0078], [0.0231, 0.00002]], M.knob, x, y, 48);
+      part(new THREE.BoxGeometry(0.0020, 0.0080, 0.0006), M.button(0xf0f0f0), x, y + 0.0048, 0.0233);
     }
     for (const sx of [-1, 1]) {
-      part(cyl(0.0085, 0.0085, 0.009, 18), M.knob, sx * 0.1, 0.055, 0.0155);
-      { const bt = part(cyl(0.0048, 0.0048, 0.0035, 12), M.button(sx > 0 ? 0xe02a2a : 0x22b455), sx * 0.1, 0.055, 0.0215); if (sx > 0) bt.name = 'btnDrive'; }      // the film's driver presses this one
+      // the button above each grip, inside a guard collar; the right one is the film's drive button: its cap is its
+      // own part (the thumb pushes it down) and a legend is printed above it
+      const B = DRIVE_BTN, bx = sx * B.x;
+      turned([[0.0112, 0.0097], [0.0160, 0.0097], [0.0175, 0.0092], [0.0180, 0.0085], [0.0178, 0.0078], [0.0150, 0.0075]], M.knob, bx, B.y, 48);
+      turned([[0.0124, 0.0076], [0.0124, 0.00002]], M.black, bx, B.y, 32);                                    // the floor of the well, so nothing shows under the cap
+      { const t = B.top, bt = turned([[t - 0.0086, B.r], [t - 0.0012, B.r], [t - 0.0005, B.r - 0.0004], [t - 0.0001, B.r - 0.0012], [t, B.r - 0.0028], [t - 0.00025, 0.0022], [t - 0.0003, 0.00002]], M.button(sx > 0 ? 0xd3222a : 0x22b455), bx, B.y, 48);
+        if (sx > 0) bt.name = 'btnDrive'; }
+      if (sx > 0) { const lg = TX.textDecal('DRIVE', { px: 96, spacing: '10px', italic: false, weight: 700 }), m = new THREE.Mesh(new THREE.PlaneGeometry(0.0042 * lg.aspect, 0.0042), M.legend(lg.map)); m.position.set(bx, B.y + 0.0132, 0.01125); m.renderOrder = 2; sw.add(m); }
       for (const pts of [[[0.046, 0.014], [0.15, 0.022], [0.156, 0.05], [0.06, 0.047]], [[0.04, -0.05], [0.136, -0.064], [0.142, -0.038], [0.05, -0.027]]]) part(plate(roundedShape(pts.map(([x, y]) => [sx * x, y]), 0.006), 0.006, 0.002), M.carbon, 0, 0, -0.03).name = 'paddle' + (pts[0][1] > 0 ? 'U' : 'L') + (sx > 0 ? 'R' : 'L');
       // each paddle hangs on a pivot block bolted to the rear housing
       for (const [py, ph] of [[0.031, 0.02], [-0.04, 0.018]]) { part(new THREE.BoxGeometry(0.016, ph, 0.012), M.alu, sx * 0.058, py, -0.0235); part(cyl(0.0026, 0.0026, 0.02, 10).rotateY(Math.PI / 2), M.fastener, sx * 0.058, py, -0.0235); }

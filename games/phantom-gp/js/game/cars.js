@@ -1,7 +1,7 @@
 // cars.js — builds the car once and gives the game two of them (shared geometry, separate paint), with the moving
 // parts wired up: wheels, tyre blur, the dash display, and a ground shadow that needs no shadow-map refresh.
 import * as THREE from 'three';
-import { DETAIL } from '../car/geo.js';
+import { DETAIL, DRIVE_BTN } from '../car/geo.js';
 import { makeMaterials, PAINTS } from '../car/mats.js';
 import { buildCar } from '../car/car.js';
 import { loadHand } from '../car/hands.js';
@@ -65,6 +65,7 @@ export class CarView {
     });
     this.paddle = this.sw ? this.sw.getObjectByName('paddleUR') : null;
     this.btn = this.sw ? this.sw.getObjectByName('btnDrive') : null; this.handR = car.getObjectByName('handR') || null;      // for the film's button press
+    this.pressInit();
     // deep = parts only seen when you look into an inlet (radiator cores, the air filter): not drawn on the circuit
     const DEEP = { coreFin: 1, coreTube: 1, filter: 1, ductFrame: 1 };
     this.meshes = []; car.traverse((o) => { if (o.isMesh) { const m = Array.isArray(o.material) ? o.material[0] : o.material; this.meshes.push([o, o.castShadow, !!DEEP[m.userData.key]]); } });
@@ -107,6 +108,44 @@ export class CarView {
     }
   }
 
+  /* The film's button press. The right hand has two extra thumb poses (morph targets): held over the drive button,
+     and down on it. Here the thumb's skin near the button is kept, in the steering wheel's frame, for all three
+     poses, so that the button can be put exactly where the skin pushes it: it goes down when touched, and the thumb
+     never passes through it. */
+  pressInit() {
+    const h = this.handR, sw = this.sw; this.pressV = null; this.pressTouch = 0.5;
+    if (!h || !sw || !this.btn || !h.geometry.morphAttributes.position || h.geometry.morphAttributes.position.length < 2) return;
+    this.car.updateMatrixWorld(true);
+    const M = new THREE.Matrix4().copy(sw.matrixWorld).invert().multiply(h.matrixWorld), v = new THREE.Vector3(), B = DRIVE_BTN;
+    const src = [h.geometry.attributes.position, ...h.geometry.morphAttributes.position], keep = [], R2 = (B.r + 0.012) ** 2;
+    for (let i = 0; i < src[0].count; i++) {
+      const p = []; let near = false;
+      for (const a of src) { v.fromBufferAttribute(a, i).applyMatrix4(M); p.push(v.x, v.y, v.z); if ((v.x - B.x) ** 2 + (v.y - B.y) ** 2 < R2 && v.z < B.top + 0.03) near = true; }
+      if (near) keep.push(p);
+    }
+    this.pressV = keep;
+    // how far towards the pressed pose the thumb is when it first touches the cap
+    for (let b = 0; b <= 1.0001; b += 0.02) if (this.thumbZ(1 - b, b) <= B.top) { this.pressTouch = Math.max(0, b - 0.02); break; }
+    this.pressButton(0, 0);
+  }
+  // the lowest point of the thumb's skin over the cap, for a blend of the poses (a: over the button, b: down on it)
+  thumbZ(a, b) {
+    const B = DRIVE_BTN, r2 = (B.r + 0.0004) ** 2, k = 1 - a - b; let z = 1e9;
+    for (const p of this.pressV) {
+      const x = p[0] * k + p[3] * a + p[6] * b - B.x, y = p[1] * k + p[4] * a + p[7] * b - B.y;
+      if (x * x + y * y < r2) { const zz = p[2] * k + p[5] * a + p[8] * b; if (zz < z) z = zz; }
+    }
+    return z;
+  }
+  // set the thumb's pose; the button follows the skin. Returns how far down the button is, 0..1 of its travel.
+  pressButton(a, b) {
+    if (!this.pressV) return 0;
+    this.handR.morphTargetInfluences[0] = a; this.handR.morphTargetInfluences[1] = b;
+    const d = Math.min(DRIVE_BTN.travel, Math.max(0, DRIVE_BTN.top - (this.thumbZ(a, b) - 0.00015)));
+    this.btn.position.z = -d;
+    return d / DRIVE_BTN.travel;
+  }
+
   // wheels: angles in radians (front axle, rear axle), steer in radians (+ = right), blur = fraction of a turn per exposure
   setWheels(angF, angR, steer, blurF, blurR) {
     for (const w of this.wheels) {
@@ -141,11 +180,11 @@ export class CarView {
   /* ---- dash display on the steering wheel (the player's car) ---- */
   makeDash() {
     if (!this.sw || this.dash) return;
-    const c = document.createElement('canvas'); c.width = 470; c.height = 338;
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    const K = DETAIL.tex >= 1 ? 2 : 1, c = document.createElement('canvas'); c.width = 470 * K; c.height = 338 * K;      // drawn in 470 x 338 units
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.094, 0.0676), new THREE.MeshBasicMaterial({ map: t, transparent: true, color: new THREE.Color(1.5, 1.5, 1.5) }));
     m.position.set(0, 0.0307, 0.0119); this.sw.add(m);
-    this.dash = { c, g: c.getContext('2d'), t, key: '' };
+    this.dash = { c, g: c.getContext('2d'), t, key: '' }; this.dash.g.scale(K, K);
     this.drawDash(1, 0, 0, 1);
   }
   // gear: a number, or 'N' (the film, before the driver presses the button)

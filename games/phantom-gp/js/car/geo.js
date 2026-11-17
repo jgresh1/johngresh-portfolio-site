@@ -151,6 +151,9 @@ export function squircleLoop(a, b, e = 4, n = 32) {
 // and columns are dropped while the surface stays within `tol` metres of the full one (and within a tenth of the
 // part's own radius, so thin tubes stay round). hand = Loop subdivision levels of the hand mesh, tex = mask scale.
 export const DETAIL = { tol: 0, hand: 2, tex: 1 };
+// The button above the right grip that the film's driver presses, in the steering wheel's own frame (x right, y up
+// the wheel, z towards the driver): its axis, the height of its cap when up, the cap's radius and how far it travels.
+export const DRIVE_BTN = { x: 0.1, y: 0.058, top: 0.0215, r: 0.0068, travel: 0.0026 };
 function segDist2(p, a, b) {
   const ex = b.x - a.x, ey = b.y - a.y, ez = b.z - a.z, l2 = ex * ex + ey * ey + ez * ez;
   let t = l2 > 0 ? ((p.x - a.x) * ex + (p.y - a.y) * ey + (p.z - a.z) * ez) / l2 : 0; t = t < 0 ? 0 : t > 1 ? 1 : t;

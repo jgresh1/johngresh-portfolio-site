@@ -117,8 +117,10 @@ export function makeMaterials(shared) {
   M.ledSmall = new THREE.MeshStandardMaterial({ color: 0x1a0000, emissive: 0xff2412, emissiveIntensity: 1.2, roughness: 0.35 });
   M.radiator = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.rad, metalness: 0.7, roughness: 0.55 });
   M.screen = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.steer, emissive: 0xffffff, emissiveMap: T.steerE, emissiveIntensity: 1.3, roughness: 0.42 });
-  M.knob = new THREE.MeshPhysicalMaterial({ color: 0x0e0e10, metalness: 0.7, roughness: 0.42 });
-  { const cache = {}; M.button = (hex) => cache[hex] || (cache[hex] = Object.assign(new THREE.MeshPhysicalMaterial({ color: hex, roughness: 0.35, clearcoat: 0.6, clearcoatRoughness: 0.2, emissive: hex, emissiveIntensity: 0.22 }), { userData: { mk: ['button', hex] } })); }
+  M.knob = new THREE.MeshPhysicalMaterial({ color: 0x17181b, metalness: 0.85, roughness: 0.36 });                 // black anodised aluminium
+  { const cache = {}; M.button = (hex) => cache[hex] || (cache[hex] = Object.assign(new THREE.MeshPhysicalMaterial({ color: hex, roughness: 0.46, clearcoat: 0.35, clearcoatRoughness: 0.3, emissive: hex, emissiveIntensity: 0.05 }), { userData: { mk: ['button', hex] } })); }
+  // white print on the wheel's carbon (art is white on transparent)
+  { const cache = new Map(); M.legend = (map) => { let m = cache.get(map); if (!m) { m = new THREE.MeshStandardMaterial({ map, color: 0xc9ccd0, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.6 }); m.userData.mk = ['legend', map]; cache.set(map, m); } return m; }; }
   M.belt = new THREE.MeshPhysicalMaterial({ color: 0xa3121b, roughness: 0.82, sheen: 0.6, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xff6a60) });
   // driver
   const cloth = { roughness: 0.9, bumpMap: T.fabric, bumpScale: 0.5, sheen: 0.7, sheenRoughness: 0.6 };
@@ -129,12 +131,19 @@ export function makeMaterials(shared) {
   // glove on the hand mesh: back panel in the glove colour, side strips in the car colour, palm panel dark.
   // The `palm` vertex value is > 0 on the palm side; the shader thresholds it so the panel edges are clean lines.
   M.gloveU = { uPalm: { value: new THREE.Color(0x2a2b30) }, uAccent: { value: new THREE.Color(0xf2b200) } };
-  M.gloveHand = new THREE.MeshPhysicalMaterial({ ...cloth, bumpMap: T.knit, bumpScale: 0.7, color: 0xe9e9e4, roughness: 0.84, vertexColors: true, sheenColor: new THREE.Color(0x888888) });
+  M.gloveHand = new THREE.MeshPhysicalMaterial({ ...cloth, bumpMap: T.knit, bumpScale: 1.6, color: 0xe9e9e4, roughness: 0.84, vertexColors: true, sheenColor: new THREE.Color(0x888888) });
   M.gloveHand.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, M.gloveU);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float palm;\nvarying float vPalm;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvPalm = palm;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uPalm;\nuniform vec3 uAccent;\nvarying float vPalm;')
-      .replace('#include <color_fragment>', '#include <color_fragment>\nfloat palmK = smoothstep(-0.03, 0.03, vPalm);\nfloat sideK = smoothstep(-0.36, -0.31, vPalm) * (1.0 - palmK);\ndiffuseColor.rgb = mix(mix(diffuseColor.rgb, uAccent * vColor.rgb, sideK), uPalm * vColor.rgb, palmK);')
+      .replace('#include <color_fragment>', '#include <color_fragment>\nfloat palmK = smoothstep(-0.03, 0.03, vPalm);\nfloat sideK = smoothstep(-0.36, -0.31, vPalm) * (1.0 - palmK);\ndiffuseColor.rgb = mix(mix(diffuseColor.rgb, uAccent * vColor.rgb, sideK), uPalm * vColor.rgb, palmK);\n'
+        // a row of stitches a little inside each panel edge (dashes of thread along the cloth's own coordinates):
+        // what the film's close shot of the thumb needs to read as a sewn glove
+        + 'float fwP = fwidth(vPalm) * 1.2 + 1e-5, st = 0.0;\n'
+        + 'st = max(st, 1.0 - smoothstep(0.011, 0.011 + fwP, abs(vPalm - 0.075)));\nst = max(st, 1.0 - smoothstep(0.011, 0.011 + fwP, abs(vPalm + 0.075)));\n'
+        + 'st = max(st, 1.0 - smoothstep(0.011, 0.011 + fwP, abs(vPalm + 0.265)));\nst = max(st, 1.0 - smoothstep(0.011, 0.011 + fwP, abs(vPalm + 0.405)));\n'
+        + '#ifdef USE_BUMPMAP\nst *= step(0.36, fract((vBumpMapUv.x + vBumpMapUv.y) * 12.5));\n#endif\n'
+        + 'diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.42 + vec3(0.035), st * 0.85);')
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.6, palmK);');
   };
   M.gloveDecalMats = [];

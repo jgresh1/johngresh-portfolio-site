@@ -11,7 +11,7 @@
 })();
 </script>
 <base href="games/phantom-gp/">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#08090b">
 <title>Phantom GP — Duel at Spa-Francorchamps</title>
 <meta name="description" content="A one-on-one race round the full Spa-Francorchamps circuit, in the browser. By John Gresh, co-produced by Luke Carlan.">
@@ -26,7 +26,8 @@
 <link rel="preload" href="./vendor/hands/right.glb" as="fetch" crossorigin>
 <script>
   // The visible height of the page in px, as --app-h (the CSS below sizes every layer with it). Read again on every
-  // resize and every frame by the game (main.js): phones report the old height for a while after a rotation.
+  // resize, a few times after it (phones report the old size for a while after a rotation), and every frame by the
+  // game (main.js).
   (function () {
     var last = -1;
     window.__appH = function () {
@@ -34,7 +35,10 @@
       if (h !== last && h > 0) { last = h; document.documentElement.style.setProperty('--app-h', h + 'px'); }
       return last;
     };
+    var again = function () { window.__appH(); [60, 200, 500, 1000, 2000].forEach(function (ms) { setTimeout(window.__appH, ms); }); };
     window.__appH();
+    addEventListener('resize', again); addEventListener('orientationchange', again);
+    if (window.visualViewport) visualViewport.addEventListener('resize', again);
   })();
 </script>
 <style>
@@ -191,8 +195,14 @@
   .btns .cta { margin-top: 0; padding: 14px 30px 12px; font-size: 15px; flex: 1 1 auto; text-align: center; }
   .keys { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; letter-spacing: .08em; color: var(--dim); line-height: 1.9; }
   .keys kbd { font: inherit; padding: 1px 6px; border: 1px solid rgba(255,255,255,.26); border-radius: 4px; color: var(--ink); margin: 0 2px; }
-  #rotate { position: fixed; left: 0; top: 0; width: 100%; height: var(--app-h, 100vh); z-index: 20; background: #050607; display: none; align-items: center; justify-content: center; text-align: center; padding: 30px; font-size: 15px; letter-spacing: .22em; text-transform: uppercase; line-height: 1.8; }
-  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+  /* The prompt to turn a phone sideways. For a moment after a rotation a phone can still lay the page out for the
+     way it was held before, and its own report of the visible area can be just as late. So nothing here depends on
+     which way round the page thinks it is: the sheet covers everything (its shadow is a second sheet 100 screens
+     wide), and the words are centred with the screen's short side across and its long side down (vmin, vmax), which
+     are the same numbers either way up. Centred on the page's width instead, they stood half off the screen. */
+  #rotate { position: fixed; inset: 0; z-index: 20; background: #050607; box-shadow: 0 0 0 100vmax #050607; display: none; }
+  #rotate > div { position: fixed; left: 50vmin; top: 50vmax; transform: translate(-50%, -50%); width: max-content; max-width: 86vmin; text-align: center; font-size: 15px; letter-spacing: .22em; text-transform: uppercase; line-height: 1.8; }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: block; } }
   @media (max-height: 520px) {
     #title { padding-top: 12px; } #title .logo { font-size: clamp(34px, min(9vw, calc(var(--vh) * 17)), 140px); margin-top: 5px !important; } #title .eyebrow { font-size: 10.5px; }
     #title .cta { padding: 12px 38px 10px; font-size: 16px; } #title .fine { margin-top: 8px; font-size: 11px; } #title .credit { margin-top: 6px; font-size: 10px; } .attr { margin-top: 4px; font-size: 8.5px; }

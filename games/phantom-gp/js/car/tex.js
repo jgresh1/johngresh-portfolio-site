@@ -164,6 +164,19 @@ export function textDecal(text, o = {}) {
   if (o.underline) { g.fillStyle = o.underline; g.fillRect(pad, H - px * 0.16, tw, px * 0.05); }
   return { map: tex(c), aspect: W / H };
 }
+// A stuck-on legend label: white lettering on a matt charcoal sticker with a pale keyline, corners rounded (clear
+// outside them). For the wheel's thumb buttons, where the legend has to read as something lying on the surface.
+export function labelDecal(text, o = {}) {
+  const px = o.px || 96, sp = Math.round(px * 0.1), font = `700 ${px}px ${FONT_HEAVY}`;
+  const m = mk(8, 8).getContext('2d'); m.font = font; m.letterSpacing = sp + 'px';
+  const tw = Math.ceil(m.measureText(text).width), pad = Math.round(px * 0.42), W = tw + pad * 2, H = Math.round(px * 1.5);
+  const c = mk(W, H), g = c.getContext('2d');
+  g.fillStyle = '#2b2d32'; g.beginPath(); g.roundRect(2, 2, W - 4, H - 4, px * 0.27); g.fill();
+  g.strokeStyle = '#8d9199'; g.lineWidth = px * 0.045; g.beginPath(); g.roundRect(px * 0.1, px * 0.1, W - px * 0.2, H - px * 0.2, px * 0.2); g.stroke();
+  g.font = font; g.letterSpacing = sp + 'px'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ffffff';
+  g.fillText(text, W / 2 + sp / 2, H / 2 + px * 0.04);
+  return { map: tex(c), aspect: W / H };
+}
 export function numberRoundel(num, o = {}) {
   const S = 512, c = mk(S, S), g = c.getContext('2d');
   g.fillStyle = o.bg || '#ffffff'; g.beginPath(); g.arc(S / 2, S / 2, S * 0.47, 0, Math.PI * 2); g.fill();

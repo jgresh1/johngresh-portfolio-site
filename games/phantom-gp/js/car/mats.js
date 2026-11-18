@@ -113,11 +113,19 @@ export function makeMaterials(shared) {
   M.duct = new THREE.MeshStandardMaterial({ color: 0x030303, roughness: 0.95, side: THREE.DoubleSide });      // double sided so the back wall of a duct shows from the mouth
   M.foam = new THREE.MeshPhysicalMaterial({ color: 0x232327, roughness: 0.92, sheen: 0.4, sheenRoughness: 0.7, sheenColor: new THREE.Color(0x333338) });
   M.exhaust = new THREE.MeshPhysicalMaterial({ color: 0xffffff, map: T.heat, metalness: 1, roughness: 0.34 });
+  // the inside of the exhaust: soot, seen from within, darkened with depth by vertex colour, and taking no light from
+  // the sky (a 4% sheen of sky on a black wall is what made the bore read as grey)
+  M.bore = new THREE.MeshStandardMaterial({ color: 0x3d3632, roughness: 1, metalness: 0, envMapIntensity: 0, vertexColors: true, side: THREE.BackSide });
+  // (the depth shading scales all the light the wall sends back, glints included: scaling its colour alone left the
+  // sun's glint on the walls and the end, and the bore still read as a grey disc from behind)
+  M.bore.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', 'outgoingLight *= vColor.r;\n#include <opaque_fragment>'); };
+  M.bore.customProgramCacheKey = () => 'bore';
   M.led = new THREE.MeshStandardMaterial({ color: 0x1a0000, emissive: 0xff2412, emissiveMap: T.led, emissiveIntensity: 1.6, roughness: 0.35 });
   M.ledSmall = new THREE.MeshStandardMaterial({ color: 0x1a0000, emissive: 0xff2412, emissiveIntensity: 1.2, roughness: 0.35 });
   M.radiator = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.rad, metalness: 0.7, roughness: 0.55 });
   M.screen = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.steer, emissive: 0xffffff, emissiveMap: T.steerE, emissiveIntensity: 1.3, roughness: 0.42 });
   M.knob = new THREE.MeshPhysicalMaterial({ color: 0x17181b, metalness: 0.85, roughness: 0.36 });                 // black anodised aluminium
+  M.bezel = new THREE.MeshPhysicalMaterial({ color: 0x767a82, metalness: 0.6, roughness: 0.42 });                  // grey anodised: the flange a thumb button is mounted on
   { const cache = {}; M.button = (hex) => cache[hex] || (cache[hex] = Object.assign(new THREE.MeshPhysicalMaterial({ color: hex, roughness: 0.46, clearcoat: 0.35, clearcoatRoughness: 0.3, emissive: hex, emissiveIntensity: 0.05 }), { userData: { mk: ['button', hex] } })); }
   // white print on the wheel's carbon (art is white on transparent)
   { const cache = new Map(); M.legend = (map) => { let m = cache.get(map); if (!m) { m = new THREE.MeshStandardMaterial({ map, color: 0xc9ccd0, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.6 }); m.userData.mk = ['legend', map]; cache.set(map, m); } return m; }; }

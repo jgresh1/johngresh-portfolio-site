@@ -264,13 +264,16 @@ export function buildCar(M, opt = {}) {
   }
   // steering wheel: carbon plate, LCD faceplate, real buttons and rotaries, paddles, quick release
   { const sw = new THREE.Group();
-    const outline = [[-0.142, -0.03], [-0.126, -0.076], [-0.092, -0.086], [-0.05, -0.062], [0.05, -0.062], [0.092, -0.086], [0.126, -0.076], [0.142, -0.03], [0.14, 0.036], [0.124, 0.07], [0.072, 0.079], [-0.072, 0.079], [-0.124, 0.07], [-0.14, 0.036]];
+    /* The top corners stand up as two ears, each with room for a thumb button, its flange and its label and a clear
+       centimetre of carbon round them. (The corners used to be cut away right behind the buttons: the collar stood on
+       the plate's very edge and the DRIVE legend hung past it, over nothing.) */
+    const outline = [[-0.142, -0.03], [-0.126, -0.076], [-0.092, -0.086], [-0.05, -0.062], [0.05, -0.062], [0.092, -0.086], [0.126, -0.076], [0.142, -0.03], [0.142, 0.046], [0.132, 0.086], [0.084, 0.092], [0.054, 0.082], [-0.054, 0.082], [-0.084, 0.092], [-0.132, 0.086], [-0.142, 0.046]];
     const sh = roundedShape(outline, 0.016);
     for (const sx of [-1, 1]) {                                                         // finger slots, long enough for four gloved fingers
       const h = new THREE.Path(), x0 = sx * 0.1, r = 0.0165, y0 = -0.041, y1 = 0.024;
       h.moveTo(x0 + r, y1); h.lineTo(x0 + r, y0); h.absarc(x0, y0, r, 0, -Math.PI, true); h.lineTo(x0 - r, y1); h.absarc(x0, y1, r, Math.PI, 0, true); sh.holes.push(h);
     }
-    add(plate(sh, 0.022, 0.004, 12), M.carbonGloss, { parent: sw });
+    add(plate(sh, 0.022, 0.004, 12, 38, 6), M.carbonGloss, { parent: sw });                 // (edges rounded over: they were two flat chamfers)
     const face = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.115), M.screen); face.position.set(0, 0.008, 0.0114); sw.add(face);
     const part = (geo, mat, x, y, z) => { geo.translate(x, y, z); return add(geo, mat, { parent: sw, cast: false }); };
     const cyl = (r0, r1, h, seg = 20) => new THREE.CylinderGeometry(r0, r1, h, seg).rotateX(Math.PI / 2);
@@ -291,15 +294,25 @@ export function buildCar(M, opt = {}) {
       // the button above each grip, inside a guard collar; the right one is the film's drive button: its cap is its
       // own part (the thumb pushes it down) and a legend is printed above it
       const B = DRIVE_BTN, bx = sx * B.x;
+      // (it stands on a grey flange let into the carbon, so its foot is something you can see)
+      turned([[0.0104, 0.0127], [0.0119, 0.0127], [0.0125, 0.0121], [0.0126, 0.0106], [0.0126, 0.0094]], M.bezel, bx, B.y, 56);
       turned([[0.0112, 0.0097], [0.0160, 0.0097], [0.0175, 0.0092], [0.0180, 0.0085], [0.0178, 0.0078], [0.0150, 0.0075]], M.knob, bx, B.y, 48);
       turned([[0.0124, 0.0076], [0.0124, 0.00002]], M.black, bx, B.y, 32);                                    // the floor of the well, so nothing shows under the cap
       { const t = B.top, bt = turned([[t - 0.0086, B.r], [t - 0.0012, B.r], [t - 0.0005, B.r - 0.0004], [t - 0.0001, B.r - 0.0012], [t, B.r - 0.0028], [t - 0.00025, 0.0022], [t - 0.0003, 0.00002]], M.button(sx > 0 ? 0xd3222a : 0x22b455), bx, B.y, 48);
         if (sx > 0) bt.name = 'btnDrive'; }
-      if (sx > 0) { const lg = TX.textDecal('DRIVE', { px: 96, spacing: '10px', italic: false, weight: 700 }), m = new THREE.Mesh(new THREE.PlaneGeometry(0.0042 * lg.aspect, 0.0042), M.legend(lg.map)); m.position.set(bx, B.y + 0.0132, 0.01125); m.renderOrder = 2; sw.add(m); }
+      // each has its legend on a label stuck to the carbon above it
+      { const lg = TX.labelDecal(sx > 0 ? 'DRIVE' : 'NEUTRAL'), hgt = 0.0054, m = new THREE.Mesh(new THREE.PlaneGeometry(hgt * lg.aspect, hgt), M.legend(lg.map)); m.position.set(bx, B.y + 0.0182, 0.01108); m.renderOrder = 2; sw.add(m); }
       for (const pts of [[[0.046, 0.014], [0.15, 0.022], [0.156, 0.05], [0.06, 0.047]], [[0.04, -0.05], [0.136, -0.064], [0.142, -0.038], [0.05, -0.027]]]) part(plate(roundedShape(pts.map(([x, y]) => [sx * x, y]), 0.006), 0.006, 0.002), M.carbon, 0, 0, -0.03).name = 'paddle' + (pts[0][1] > 0 ? 'U' : 'L') + (sx > 0 ? 'R' : 'L');
       // each paddle hangs on a pivot block bolted to the rear housing
       for (const [py, ph] of [[0.031, 0.02], [-0.04, 0.018]]) { part(new THREE.BoxGeometry(0.016, ph, 0.012), M.alu, sx * 0.058, py, -0.0235); part(cyl(0.0026, 0.0026, 0.02, 10).rotateY(Math.PI / 2), M.fastener, sx * 0.058, py, -0.0235); }
-      add(tube([v3(sx * 0.129, -0.074, 0.002), v3(sx * 0.1345, -0.034, 0.004), v3(sx * 0.1335, 0.008, 0.004), v3(sx * 0.127, 0.047, 0.001)], v3(0, 0, 1), (i, f) => ellipseLoop(0.0165 + 0.002 * Math.sin(Math.PI * f), 0.0195 + 0.0015 * Math.sin(Math.PI * f), 18)), M.grip, { parent: sw });
+      /* The suede grip: swept along a smooth curve through its four stations, with domed ends. (It was four rings
+         joined by straight runs and cut off flat, and its flat top stood beside the thumb button like a sawn pipe.) */
+      { const gc = new THREE.CatmullRomCurve3([v3(sx * 0.129, -0.074, 0.002), v3(sx * 0.1345, -0.034, 0.004), v3(sx * 0.1335, 0.008, 0.004), v3(sx * 0.127, 0.047, 0.001)], false, 'centripetal');
+        const E = 0.1, us = [0, 0.05, 0.13, 0.25, 0.4, 0.58, 0.78, 1], fs = us.map((u) => u * E);
+        for (let k = 1; k < 22; k++) fs.push(E + (1 - 2 * E) * k / 22);
+        for (let k = us.length - 1; k >= 0; k--) fs.push(1 - us[k] * E);
+        const dome = (f) => { const u = Math.min(f, 1 - f) / E; return u >= 1 ? 1 : Math.max(0.04, Math.sqrt(1 - (1 - u) * (1 - u))); };
+        add(tube(fs.map((f) => gc.getPointAt(f)), v3(0, 0, 1), (i) => { const f = fs[i], k = dome(f); return ellipseLoop(k * (0.0165 + 0.002 * Math.sin(Math.PI * f)), k * (0.0195 + 0.0015 * Math.sin(Math.PI * f)), 24); }), M.grip, { parent: sw }); }
     }
     /* The back of the wheel (the side the film's gear-change shot looks at). A moulded housing for the electronics,
        the hub flange with its six bolts, the quick-release with its sliding collar and grooves, and the curly
@@ -596,7 +609,8 @@ export function buildCar(M, opt = {}) {
     // endplate tail lights
     for (const sz of [-1, 1]) { const g = new THREE.BoxGeometry(0.006, 0.11, 0.012); g.translate(X(4.217), 0.5, sz * RWZ); add(g, M.ledSmall, { cast: false }); }
     // swan-neck pylon + DRS pod
-    add(plate(roundedShape([[X(3.50), 0.50], [X(3.66), 0.40], [X(3.80), 0.40], [X(4.00), 0.712], [X(3.87), 0.712]], [0.02, 0.03, 0.03, 0.006, 0.006]), 0.014, 0.004), M.carbon);
+    // (its foot runs along the top of the exhaust: it used to dip to 0.40 and cross the pipe's bore)
+    add(plate(roundedShape([[X(3.50), 0.52], [X(3.60), 0.503], [X(3.866), 0.503], [X(4.00), 0.712], [X(3.87), 0.712]], [0.02, 0.02, 0.008, 0.006, 0.006]), 0.014, 0.004), M.carbon);      // (its foot ends inside the tail's skin, which is 18 mm thick here: nothing hangs into the duct round the exhaust)
     /* DRS actuator: a teardrop pod on the pylon's head (round nose, long tail), two screws in each side, and the link
        from its tail up to the flap with a ball joint at one end and a clevis at the other. It used to be one slab. */
     { const A = v3(X(3.905), 0.795, 0), B = v3(X(4.092), 0.826, 0), d = v3().subVectors(B, A);            // (its tail stops clear of the flap)
@@ -626,9 +640,17 @@ export function buildCar(M, opt = {}) {
     const rl = new THREE.PlaneGeometry(0.056, 0.058); rl.rotateY(-Math.PI / 2); rl.translate(X(4.2765), 0.325, 0); add(rl, M.led, { cast: false });
     const circ = (s, y, r) => { const ring = []; for (let j = 0; j <= 40; j++) { const a = j / 40 * Math.PI * 2; ring.push(v3(X(s), y + r * Math.cos(a), r * Math.sin(a))); } ring[40] = ring[0].clone(); return ring; };
     const ey = (s) => 0.405 + (s - 3.74) * 0.075;
-    // (the bore is closed 20 cm in, short of where the wing's pylon crosses the pipe, so nothing shows inside it)
-    const er = [circ(3.74, ey(3.74), 0.058), circ(3.9, ey(3.9), 0.058), circ(4.062, ey(4.062), 0.058), circ(4.07, ey(4.07), 0.0565), circ(4.066, ey(4.066), 0.054), circ(3.95, ey(3.95), 0.054), circ(3.865, ey(3.865), 0.054)];
-    add(loft(er, { groups: [{ from: 0, to: 3, mat: 0 }, { from: 3, to: 6, mat: 1 }], capEnd: true, capMatEnd: 1, uvFn: (i, j, p) => [clamp((XF - p.x - 3.86) / 0.21, 0, 1), 0.5] }), [M.exhaust, M.duct]);
+    /* The exhaust. Outside: the titanium pipe, from inside the bodywork to its lip. Inside: a sooty bore that darkens
+       with depth and is black before its end (a quarter of a metre in, just short of the wall that closes the
+       bodywork's cooling duct), so from behind you look down a pipe that runs on into the dark. (It used to be one flat dark grey 20 cm in: on the circuit the sky lit its walls and its end
+       cap alike, and from the chase camera it read as a grey disc.) */
+    const uvHeat = (i, j, p) => [clamp((XF - p.x - 3.86) / 0.21, 0, 1), 0.5];
+    add(loft([circ(3.74, ey(3.74), 0.058), circ(3.9, ey(3.9), 0.058), circ(4.062, ey(4.062), 0.058), circ(4.07, ey(4.07), 0.0565), circ(4.066, ey(4.066), 0.054)], { uvFn: uvHeat }), M.exhaust);
+    { const bore = loft([4.066, 4.052, 4.03, 4.0, 3.96, 3.91, 3.86, 3.82].map((sAt) => circ(sAt, ey(sAt), 0.054)), { capEnd: true, exact: true });
+      const q = bore.attributes.position, c = new Float32Array(q.count * 3);
+      for (let i = 0; i < q.count; i++) { const a = 1 - smooth(0, 0.2, 4.066 - (XF - q.getX(i))); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = a; }
+      bore.setAttribute('color', new THREE.BufferAttribute(c, 3));
+      add(bore, M.bore, { cast: false }); }
   }
 
   // ---------------------------------------------------------- shark fin, T-cam, antennas, cameras, mirrors

@@ -363,13 +363,19 @@ export function roundedShape(pts, radius = 0.01) {
   return sh;
 }
 // Extruded plate in the shape's XY plane, thickness centred on z=0.
-export function plate(shape, thick, bevel = 0.0015, curveSegments = 14, crease = 38) {
+// (bevelSegs > 2 gives a rounded edge instead of two flat chamfers: the rounding is shaded smooth, and the two flat
+//  faces keep their own normal right up to where it starts, so they stay flat)
+export function plate(shape, thick, bevel = 0.0015, curveSegments = 14, crease = 38, bevelSegs = 2) {
   const b = Math.min(bevel, thick * 0.45);
   const g = new THREE.ExtrudeGeometry(shape, {
-    depth: thick - 2 * b, bevelEnabled: b > 0, bevelThickness: b, bevelSize: b, bevelOffset: -b, bevelSegments: 2, curveSegments,
+    depth: thick - 2 * b, bevelEnabled: b > 0, bevelThickness: b, bevelSize: b, bevelOffset: -b, bevelSegments: bevelSegs, curveSegments,
   });
   g.translate(0, 0, -(thick - 2 * b) / 2);
   const out = toCreasedNormals(g, crease * DEG);
+  if (bevelSegs > 2) {
+    const p = out.attributes.position, n = out.attributes.normal, h = thick / 2 - 1e-6;
+    for (let i = 0; i < p.count; i++) if (Math.abs(p.getZ(i)) > h) n.setXYZ(i, 0, 0, Math.sign(p.getZ(i)));
+  }
   out.computeBoundingSphere(); out.computeBoundingBox();
   return out;
 }

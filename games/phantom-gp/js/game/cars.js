@@ -219,7 +219,12 @@ function mergeInto(parent, meshes) {
   for (const m of meshes) {
     const g = m.geometry, mats = Array.isArray(m.material) ? m.material : [m.material];
     const total = g.index ? g.index.count : g.attributes.position.count;
-    const groups = g.groups.length ? g.groups : [{ start: 0, count: total, materialIndex: 0 }];
+    /* A mesh with ONE material draws its whole geometry, whatever groups the geometry carries (three.js only looks at
+       groups when the material is an array). Boxes, cylinders and extruded plates all come with groups (one per face,
+       side/caps, caps/walls); honouring them here used to keep group 0 and drop the rest, so every merged box was a
+       single face, every cylinder had no ends and every plate had no edge: the steering wheel had no rim wall, and
+       from in front you saw through it to the buttons. */
+    const groups = Array.isArray(m.material) && g.groups.length ? g.groups : [{ start: 0, count: total, materialIndex: 0 }];
     rel.multiplyMatrices(inv, m.matrixWorld); nm.getNormalMatrix(rel);
     const flip = rel.determinant() < 0;
     for (const gr of groups) {

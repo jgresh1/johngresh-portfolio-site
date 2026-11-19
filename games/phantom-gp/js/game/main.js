@@ -301,7 +301,7 @@ function startRace(o = {}) {
   chase.snap(); chase.update(0.016, cars.player, P); mark('placed', tm);
   input.enabled = true; input.autoThrottle = S.autoThrottle;
   lineMesh.visible = S.line;
-  G.state = 'race'; G.paused = false; hud.screen('race'); hud.lights(race.lights); hud.hint(true);
+  G.state = 'race'; G.paused = false; hud.screen('race'); hud.lights(race.lights); gantry(race.lights); hud.hint(true);
   if (o.fromFilm) sound.raceLevel(); else sound.startLoop();
   if (mode === 'rolling') { gfx.fx.flash = 1.0; hud.toast('Tuck in behind Voss, then pull out and pass', 'Your race', 3.6); }
   gov.reset(); mark('started', tm);
@@ -331,7 +331,7 @@ function startRoam() {
   chase.snap(); chase.update(0.016, cars.player, P);
   input.enabled = true; input.autoThrottle = false;          // free roam: the throttle is yours, on every device
   lineMesh.visible = false;
-  G.state = 'race'; G.paused = false; hud.screen('race'); hud.lights(-1); hud.hint(true); hud.refresh(true);
+  G.state = 'race'; G.paused = false; hud.screen('race'); hud.lights(-1); gantry(0); hud.hint(true); hud.refresh(true);
   sound.startLoop();
   hud.toast(sp && sp.name ? sp.name : 'The roads round the circuit', 'Free roam', 3.6);
   gov.reset();
@@ -403,10 +403,12 @@ function simulate(dt) {
   }
 }
 const IDLE = { steer: 0, throttle: 0, brake: 0, boost: false };
+// the red lamps on the start gantry follow the same count as the lights on the screen
+const gantry = (n) => { if (props && props.setLights) props.setLights(n); };
 function onRaceEvent(e) {
   if (G.state !== 'race') return;
-  if (e === 'light') { hud.lights(race.lights); sound.sfx('beep'); }
-  else if (e === 'go') { hud.lights(0); setTimeout(() => hud.lights(-1), 700); sound.sfx('go'); hud.toast('', 'Go', 1.0); }
+  if (e === 'light') { hud.lights(race.lights); gantry(race.lights); sound.sfx('beep'); }
+  else if (e === 'go') { hud.lights(0); gantry(0); setTimeout(() => hud.lights(-1), 700); sound.sfx('go'); hud.toast('', 'Go', 1.0); }
   else if (e === 'final') hud.toast('', 'Final lap', 2);
   else if (e === 'lap') hud.toast('Lap ' + fmtLap(P.laps[P.laps.length - 1]), 'Lap ' + (P.lap + 1), 2);
   else if (e === 'win') { hud.toast('Chequered flag', 'You win', 3.5); sound.sfx('win'); P.auto = autopilot(0.7); G.finishCam = 0.001; }

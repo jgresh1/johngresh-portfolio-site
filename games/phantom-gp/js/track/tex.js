@@ -318,58 +318,8 @@ function pane(x, hx, ox, X, Y, Wd, Ht, rand, o = {}) {
     ox.fillStyle = orm(0.35, 0.1); ox.fillRect(X + 2, Y + 2, Wd - 4, bh);
   }
 }
-function frame(x, hx, ox, X, Y, Wd, Ht, lw, col, hgt = 0.72) {
-  x.strokeStyle = col; x.lineWidth = lw; x.strokeRect(X, Y, Wd, Ht);
-  hx.strokeStyle = grey(hgt); hx.lineWidth = lw; hx.strokeRect(X, Y, Wd, Ht);
-  ox.strokeStyle = orm(0.45, 0.5); ox.lineWidth = lw; ox.strokeRect(X, Y, Wd, Ht);
-}
-
-/* Facades for the ordinary buildings. u = metres / 12 (six bays), v = one storey per tile.
-   0, 2: rendered walls with punched windows, sills and stains   1: ribbon glazing between metal panels
-   3: profiled metal cladding (big sheds) with a strip of high windows */
-export function facadeMaps(size = 512, style = 0) {
-  const S = size, rand = rng32(180 + style), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
-  const wall = ['#b6b1a6', '#a4a9ae', '#d3cfc4', '#858a8f'][style % 4];
-  x.fillStyle = wall; x.fillRect(0, 0, S, S);
-  hx.fillStyle = grey(0.56); hx.fillRect(0, 0, S, S);
-  ox.fillStyle = orm(style === 1 || style === 3 ? 0.5 : 0.9, style === 1 || style === 3 ? 0.35 : 0); ox.fillRect(0, 0, S, S);
-  const cols = 6, cw = S / cols;
-  if (style === 3) {
-    // ribs every 0.25 m, sheet laps every storey
-    for (let i = 0; i < 48; i++) { const X = i * S / 48; hx.fillStyle = grey(0.44); hx.fillRect(X, 0, S / 96, S); x.fillStyle = 'rgba(0,0,0,0.10)'; x.fillRect(X, 0, S / 96, S); }
-    grain(x, hx, S, 190, 0.10, 0.02);
-    const Y = S * 0.16, Ht = S * 0.16;
-    for (let i = 0; i < cols; i++) if (i % 3 !== 2) { pane(x, hx, ox, i * cw + 3, Y, cw - 6, Ht, rand, { blinds: false }); frame(x, hx, ox, i * cw + 3, Y, cw - 6, Ht, 3, '#3a3d42'); }
-    x.fillStyle = 'rgba(0,0,0,0.22)'; x.fillRect(0, S - 5, S, 5); hx.fillStyle = grey(0.42); hx.fillRect(0, S - 5, S, 5);
-  } else if (style === 1) {
-    grain(x, hx, S, 191, 0.06, 0.01);
-    const Y = S * 0.20, Ht = S * 0.56;
-    for (let i = 0; i < cols * 2; i++) { const X = i * cw / 2; pane(x, hx, ox, X + 1, Y, cw / 2 - 2, Ht, rand, { blindP: 0.18, tint: [96, 128, 138] }); frame(x, hx, ox, X + 1, Y, cw / 2 - 2, Ht, 3, '#c9ccce'); }
-    // metal spandrel panels: a joint at every second mullion and along the floor line
-    for (let i = 0; i < cols; i++) { x.fillStyle = 'rgba(0,0,0,0.30)'; x.fillRect(i * cw - 1, 0, 2, S); hx.fillStyle = grey(0.40); hx.fillRect(i * cw - 1, 0, 2, S); }
-    x.fillStyle = 'rgba(0,0,0,0.30)'; x.fillRect(0, S - 3, S, 3); hx.fillStyle = grey(0.40); hx.fillRect(0, S - 3, S, 3);
-  } else {
-    grain(x, hx, S, 192 + style, 0.16, 0.035);
-    const X0 = cw * 0.17, Wd = cw * 0.66, Y = S * 0.22, Ht = S * 0.52;
-    for (let i = 0; i < cols; i++) {
-      const X = i * cw + X0;
-      // a stain under each sill, darker on the pale wall
-      const g = x.createLinearGradient(0, Y + Ht, 0, S); g.addColorStop(0, 'rgba(50,46,40,0.30)'); g.addColorStop(1, 'rgba(50,46,40,0)');
-      x.fillStyle = g; x.fillRect(X + rand() * 6, Y + Ht, Wd * (0.5 + rand() * 0.5), S - Y - Ht);
-      x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(X - 3, Y - 3, Wd + 6, Ht + 6);                    // the reveal's shadow
-      pane(x, hx, ox, X, Y, Wd, Ht, rand);
-      frame(x, hx, ox, X, Y, Wd, Ht, 4, style === 0 ? '#e7e6e1' : '#34373b');
-      x.fillStyle = style === 0 ? '#e7e6e1' : '#34373b'; x.fillRect(X + Wd / 2 - 1.5, Y, 3, Ht); hx.fillStyle = grey(0.72); hx.fillRect(X + Wd / 2 - 1.5, Y, 3, Ht);
-      x.fillStyle = '#c9c6bd'; x.fillRect(X - 6, Y + Ht + 2, Wd + 12, 6); hx.fillStyle = grey(0.86); hx.fillRect(X - 6, Y + Ht + 2, Wd + 12, 6);      // sill
-    }
-    // the floor line: a shallow groove with a dirt line below it
-    x.fillStyle = 'rgba(0,0,0,0.20)'; x.fillRect(0, S - 4, S, 4); hx.fillStyle = grey(0.44); hx.fillRect(0, S - 4, S, 4);
-  }
-  return finish(c, hc, oc, S, 2.4);
-}
-
-/* Curtain wall of the pit buildings. u = one 6 m bay per tile (four panes), v = one floor per tile: a solid spandrel
-   panel at the bottom, vision glass above, aluminium mullions. */
+/* Curtain wall of the pit buildings, drawn (phone tier only: the other tiers build it pane by pane). u = one 6 m bay
+   per tile (four panes), v = one floor per tile: a solid spandrel panel at the bottom, vision glass above, mullions. */
 export function curtainWallMaps(size = 512) {
   const S = size, rand = rng32(210), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
   x.fillStyle = '#1b2228'; x.fillRect(0, 0, S, S); hx.fillStyle = grey(0.5); hx.fillRect(0, 0, S, S); ox.fillStyle = orm(0.4, 0.5); ox.fillRect(0, 0, S, S);
@@ -386,7 +336,7 @@ export function curtainWallMaps(size = 512) {
   return finish(c, hc, oc, S, 2.0);
 }
 
-/* Roller shutter of a pit garage. A 0.8 m tile: eight slats (the piers frame the door, so no guide rails are drawn). */
+/* Roller shutter of a pit garage, drawn (phone tier only). A 0.8 m tile: eight slats (the piers frame the door). */
 export function shutterMaps(size = 256) {
   const S = size, [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
   x.fillStyle = '#d9dbdb'; x.fillRect(0, 0, S, S); ox.fillStyle = orm(0.5, 0.35); ox.fillRect(0, 0, S, S);
@@ -429,3 +379,76 @@ export function concreteMaps(size = 512) {
   }
   return finish(c, hc, oc, S, 2.6);
 }
+
+/* ============================================================================================================
+   Plain surfaces for the modelled buildings (arch.js). Their windows, doors and trim are geometry, so these maps
+   carry only the material itself. Render, cladding and panels are near white: a building's colour is its vertex
+   colour. Brick and slate are drawn in their own colours and only shaded by the vertex colour.
+   ============================================================================================================ */
+// painted render, a 3 m tile: fine grain, soft weather streaks that fade in and out (so the tile repeats cleanly)
+export function renderMaps(size = 512) {
+  const S = size, rand = rng32(300), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
+  x.fillStyle = '#ecebe6'; x.fillRect(0, 0, S, S); hx.fillStyle = grey(0.6); hx.fillRect(0, 0, S, S); ox.fillStyle = orm(0.93, 0); ox.fillRect(0, 0, S, S);
+  for (let i = 0; i < 16; i++) {
+    const X = rand() * S, w = 20 + rand() * 70, a = 0.012 + rand() * 0.022, g = x.createLinearGradient(0, 0, 0, S);
+    g.addColorStop(0, 'rgba(72,66,56,0)'); g.addColorStop(0.2 + rand() * 0.3, `rgba(72,66,56,${a})`); g.addColorStop(1, 'rgba(72,66,56,0)');
+    x.fillStyle = g; x.fillRect(X, 0, w, S); x.fillRect(X - S, 0, w, S);
+  }
+  grain(x, hx, S, 301, 0.09, 0.06);
+  return finish(c, hc, oc, S, 1.5);
+}
+
+// facing brick in stretcher bond, a tile of six bricks by sixteen courses (1.32 m x 1.2 m)
+export function brickMaps(size = 512) {
+  const S = size, rand = rng32(310), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
+  x.fillStyle = '#aaa59a'; x.fillRect(0, 0, S, S); hx.fillStyle = grey(0.4); hx.fillRect(0, 0, S, S); ox.fillStyle = orm(0.96, 0); ox.fillRect(0, 0, S, S);
+  const rows = 16, cols = 6, ch = S / rows, bw = S / cols, m = Math.max(2, S / 128);
+  for (let j = 0; j < rows; j++) for (let i = -1; i < cols; i++) {
+    const X = (i + (j % 2 ? 0.5 : 0)) * bw + m / 2, Y = j * ch + m / 2, k = 0.86 + rand() * 0.24, burnt = rand() < 0.12 ? 0.78 : 1;
+    const r = 146 * k * burnt, g = (88 + rand() * 12) * k * burnt, b = (72 + rand() * 10) * k * burnt, hh = 0.62 + rand() * 0.08;
+    for (const dx of [0, S]) {
+      x.fillStyle = `rgb(${r},${g},${b})`; x.fillRect(X + dx, Y, bw - m, ch - m);
+      hx.fillStyle = grey(hh); hx.fillRect(X + dx, Y, bw - m, ch - m);
+      ox.fillStyle = orm(0.86 + rand() * 0.08, 0); ox.fillRect(X + dx, Y, bw - m, ch - m);
+    }
+  }
+  grain(x, hx, S, 311, 0.12, 0.05);
+  return finish(c, hc, oc, S, 2.6);
+}
+
+// profiled steel cladding, a 1.6 m x 3 m tile: eight trapezoid ribs, a sheet lap along the top edge, fixings
+export function claddingMaps(size = 512) {
+  const S = size, rand = rng32(320), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
+  x.fillStyle = '#e4e6e6'; x.fillRect(0, 0, S, S); ox.fillStyle = orm(0.44, 0.3); ox.fillRect(0, 0, S, S);
+  const a = hx.createImageData(S, S), d = a.data, prof = (f) => (f < 0.36 ? 0.76 : f < 0.46 ? 0.76 - (f - 0.36) * 3.2 : f < 0.9 ? 0.44 : 0.44 + (f - 0.9) * 3.2);
+  for (let X = 0; X < S; X++) { const h = px(prof((X / S * 8) % 1)); for (let Y = 0; Y < S; Y++) { const i = (Y * S + X) * 4; d[i] = d[i + 1] = d[i + 2] = h; d[i + 3] = 255; } }
+  hx.putImageData(a, 0, 0);
+  for (let k = 0; k < 8; k++) { x.fillStyle = 'rgba(0,0,0,0.085)'; x.fillRect((k + 0.46) * S / 8, 0, 0.44 * S / 8, S); }
+  for (let i = 0; i < 10; i++) { const X = rand() * S, g = x.createLinearGradient(0, 0, 0, S); g.addColorStop(0, 'rgba(60,62,60,0)'); g.addColorStop(0.3, `rgba(60,62,60,${0.03 + rand() * 0.05})`); g.addColorStop(1, 'rgba(60,62,60,0)'); x.fillStyle = g; x.fillRect(X, 0, 2 + rand() * 7, S); }
+  x.fillStyle = 'rgba(0,0,0,0.22)'; x.fillRect(0, 0, S, 2); hx.fillStyle = grey(0.36); hx.fillRect(0, 0, S, 2);
+  for (let k = 0; k < 8; k++) for (const Y of [S * 0.08, S * 0.42, S * 0.75]) { x.fillStyle = 'rgba(40,42,44,0.55)'; x.beginPath(); x.arc((k + 0.18) * S / 8, Y, S / 300, 0, 7); x.fill(); }
+  grain(x, hx, S, 321, 0.05, 0.0);
+  return finish(c, hc, oc, S, 3.2);
+}
+
+// roof slates, a 1.2 m tile: six courses, each slate its own shade, the lower edge of every course standing proud
+export function slateMaps(size = 512) {
+  const S = size, rand = rng32(330), [c, x] = canvas(S, S), [hc, hx] = canvas(S, S), [oc, ox] = canvas(S, S);
+  x.fillStyle = '#34363a'; x.fillRect(0, 0, S, S); ox.fillStyle = orm(0.7, 0); ox.fillRect(0, 0, S, S);
+  const rows = 6, cols = 4, ch = S / rows, sw = S / cols;
+  for (let j = 0; j < rows; j++) {
+    const g = hx.createLinearGradient(0, j * ch, 0, (j + 1) * ch); g.addColorStop(0, grey(0.34)); g.addColorStop(0.92, grey(0.7)); g.addColorStop(1, grey(0.2));
+    hx.fillStyle = g; hx.fillRect(0, j * ch, S, ch);
+    for (let i = -1; i < cols; i++) {
+      const X = (i + (j % 2 ? 0.5 : 0)) * sw, k = 0.9 + rand() * 0.2, v = [58 * k, 60 * k, (63 + rand() * 4) * k];
+      for (const dx of [0, S]) {
+        x.fillStyle = `rgb(${v[0]},${v[1]},${v[2]})`; x.fillRect(X + dx + 1, j * ch, sw - 2, ch - 1);
+        hx.fillStyle = grey(0.24); hx.fillRect(X + dx - 1, j * ch, 2, ch);
+      }
+    }
+    x.fillStyle = 'rgba(0,0,0,0.42)'; x.fillRect(0, (j + 1) * ch - 2, S, 2);
+  }
+  grain(x, hx, S, 331, 0.14, 0.03);
+  return finish(c, hc, oc, S, 2.8);
+}
+

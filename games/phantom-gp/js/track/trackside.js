@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { W, groundAt, nearestStation, frameAt, hardAt } from './world.js';
 import { Buf, Tiles } from './props.js';
+import { SIGNS } from './signs.js';
 import { speedProfile } from './rig.js';
 import { canvas, toTex, rng32, periodicNoise, steelTex } from './tex.js';
 
@@ -73,6 +74,8 @@ function bannerTex() {
   x.putImageData(img, 0, 0);
   return toTex(c, { srgb: true, repeat: false });
 }
+
+const POST_NO = { bg: '#f1f1ee', fg: '#15171a', h: 64, pad: 0.4, size: 0.62, weight: 800 };
 
 /* ---------------- build ---------------- */
 export function buildTrackside(scene, qual) {
@@ -151,7 +154,7 @@ export function buildTrackside(scene, qual) {
   if (boards.idx.length) { group.add(boards.mesh(boardMat)); group.add(posts.mesh(steelMat)); }
 
   /* ---------------- marshal posts + light panels ---------------- */
-  const cab = new Tiles(), roof = new Tiles(), dark = new Tiles(), panel = new Tiles(), poles = new Tiles();
+  const cab = new Tiles(), roof = new Tiles(), dark = new Tiles(), panel = new Tiles(), poles = new Tiles(), red = new Tiles();
   let post = 0;
   for (let s0 = 130; s0 < W.L - 60; s0 += 265) {
     // behind the barrier on the outside of the bend (or the left on straights), never on tarmac (a pit road, a service road):
@@ -178,14 +181,29 @@ export function buildTrackside(scene, qual) {
     for (const e of [-1.26, 1.26]) cab.at(x, z).box(x + fr.dx * e, y + 1.25, z + fr.dz * e, 0.08, 2.1, 1.6, ang);
     dark.at(x, z).box(bx - fr.rx * side * 0.06, y + 1.2, bz - fr.rz * side * 0.06, 2.4, 1.9, 0.02, ang);  // shadowed interior
     roof.at(x, z).box(x, y + 2.36, z, 2.9, 0.1, 2.0, ang);
+    {
+      /* What a manned post has: its number on a board over the opening, a rail across the open front, a shelf
+         along the back wall, two fire extinguishers standing at the front corners, flags in a holder. */
+      const tw = [-fr.rx * side, 0, -fr.rz * side], fx = x - fr.rx * side * 0.82, fz = z - fr.rz * side * 0.82;          // tw: towards the track; (fx, fz): the open front
+      const cl = SIGNS.cell('POST ' + (post + 1), POST_NO), hw = 0.26 * cl.aspect / 2;
+      SIGNS.board([fx - fr.dx * hw, fz - fr.dz * hw], [fx + fr.dx * hw, fz + fr.dz * hw], y + 2.42, y + 2.68, tw, 0.16, cl);
+      cab.at(x, z).box(fx + tw[0] * 0.14, y + 2.55, fz + tw[2] * 0.14, hw * 2 + 0.06, 0.3, 0.03, ang);
+      poles.at(x, z).box(fx, y + 1.12, fz, 2.5, 0.05, 0.05, ang); for (const e of [-1.24, 1.24]) poles.at(x, z).box(fx + fr.dx * e, y + 0.68, fz + fr.dz * e, 0.05, 0.9, 0.05, ang);
+      cab.at(x, z).box(bx - fr.rx * side * 0.22, y + 0.95, bz - fr.rz * side * 0.22, 2.3, 0.04, 0.36, ang);
+      for (const e of [-1.02, 1.02]) { const ex = fx + fr.dx * e - tw[0] * 0.18, ez = fz + fr.dz * e - tw[2] * 0.18; red.at(x, z).box(ex, y + 0.5, ez, 0.15, 0.52, 0.15, ang); dark.at(x, z).box(ex, y + 0.8, ez, 0.07, 0.1, 0.07, ang); }
+      for (const [e, col] of [[0.5, red], [0.62, roof], [0.74, cab]]) col.at(x, z).box(bx - fr.rx * side * 0.1 + fr.dx * e, y + 1.55, bz - fr.rz * side * 0.1 + fr.dz * e, 0.06, 0.9, 0.06, ang);
+    }
     // light panel on a pole at the barrier, facing oncoming cars
     const px = fr.x + fr.rx * (wd + 0.5) * side - fr.dx * 2.2, pz = fr.z + fr.rz * (wd + 0.5) * side - fr.dz * 2.2, py = groundAt(px, pz);
     poles.at(px, pz).box(px, py + 1.5, pz, 0.08, 3.0, 0.08, ang);
     panel.at(px, pz).box(px - fr.dx * 0.06, py + 3.0, pz - fr.dz * 0.06, 0.12, 0.8, 0.8, ang);
+    panel.at(px, pz).box(px - fr.dx * 0.2, py + 3.44, pz - fr.dz * 0.2, 0.3, 0.03, 0.9, ang);                      // a hood over the lamps
+    poles.at(px, pz).box(px + fr.dx * 0.04, py + 3.0, pz + fr.dz * 0.04, 0.06, 0.9, 0.9, ang);                      // the panel's back frame
     post++;
   }
   cab.add(group, new THREE.MeshStandardMaterial({ color: 0xe9e9e4, roughness: 0.7 }));
   roof.add(group, new THREE.MeshStandardMaterial({ color: 0xd9601a, roughness: 0.6 }));
+  red.add(group, new THREE.MeshStandardMaterial({ color: 0xb3121a, roughness: 0.4 }), { cast: false });
   dark.add(group, new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.9 }), { cast: false });
   panel.add(group, new THREE.MeshStandardMaterial({ color: 0x0b0c0d, roughness: 0.35, metalness: 0.2 }));
   poles.add(group, steelMat, { cast: false });
@@ -231,6 +249,7 @@ export function buildTrackside(scene, qual) {
   banners.add(group, new THREE.MeshStandardMaterial({ map: bannerTex(), roughness: 0.75 }), { cast: false });
   backs.add(group, new THREE.MeshStandardMaterial({ color: 0xb9bbb8, roughness: 0.85 }), { cast: false });
 
+  SIGNS.flush(group);
   scene.add(group);
 
   return {

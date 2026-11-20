@@ -4,6 +4,7 @@ import { W, groundAt, naturalAt, nearestStation, frameAt, isStand } from './worl
 import { groundUniforms } from './terrain.js';
 import { steelTex, fenceTex, curtainWallMaps, shutterMaps, panelMaps, concreteMaps, rng32 } from './tex.js';
 import { makeArch } from './arch.js';
+import { SIGNS } from './signs.js';
 
 export class Buf {
   constructor() { this.pos = []; this.nor = []; this.uv = []; this.idx = []; }
@@ -117,8 +118,8 @@ export function buildProps(scene, qual) {
   // which way the circuit lies from a point, and how far off it is
   const trackDir = (x, z) => { const nn = nearestStation(x, z, ns); if (!nn) return null; const fr = frameAt(nn.s, {}), dx = fr.x - x, dz = fr.z - z, d = Math.hypot(dx, dz) || 1; return [dx / d, dz / d, d]; };
   // the ordinary buildings are modelled wall by wall in arch.js; the two pit buildings and the stands are built below
-  const arch = makeArch({ Buf, Tiles, face, beam, groundAt, qual, conc, rails, shedRoof: standRoof, trackDir });
-  let bi = -1;
+  const arch = makeArch({ Buf, Tiles, face, beam, groundAt, qual, conc, rails, shedRoof: standRoof, trackDir, signs: SIGNS });
+  let bi = -1, standNo = 0, garage = 0, flagNo = 0;
   for (const b of W.buildings) {
     bi++;
     const name = b.name || '';
@@ -141,6 +142,18 @@ export function buildProps(scene, qual) {
     for (const t of tri) R.idx.push(base + t[0], base + t[2], base + t[1]);
   }
 
+  /* A flag on a pole standing on a roof at p ([x, z]), its foot at height y0. The cloth is a strip of six panels
+     caught in mid-ripple and hanging a little at the fly (it does not move). */
+  function flag(p, y0, rnd) {
+    const hgt = 5.2, wx = 0.83, wz = 0.56, nth = flagNo++, cols = nth % 4 === 1 ? BELGIUM : FLAGS[(nth - (nth >> 2)) % FLAGS.length], ph = rnd() * 6.3, len = 1.7, hh = 1.05, N = 6;
+    rails.at(p[0], p[1]).box(p[0], y0 + hgt / 2, p[1], 0.07, hgt, 0.07, 0); rails.at(p[0], p[1]).box(p[0], y0 + hgt + 0.05, p[1], 0.12, 0.1, 0.12, 0);
+    const at2 = (u, v) => { const t = u / N, rip = 0.09 * Math.sin(t * 5.2 + ph) * t; return [p[0] + wx * len * t - wz * rip, y0 + hgt - 0.08 - hh * v - 0.16 * t * t, p[1] + wz * len * t + wx * rip]; };
+    for (let u = 0; u < N; u++) for (let v = 0; v < 2; v++) {
+      const a = at2(u, (v + 1) / 2), c = at2(u + 1, (v + 1) / 2), d = at2(u + 1, v / 2), e = at2(u, v / 2), col = cols.length === 3 ? cols[Math.min(2, Math.floor(u / 2))] : cols[u === 0 ? 1 : 0];
+      face(arch.paint(p[0], p[1], col), a, c, d, e, [-wz, 0, wx], Q1); face(arch.paint(p[0], p[1], col), a, c, d, e, [wz, 0, -wx], Q1);
+    }
+  }
+
   /* A pit building, built bay by bay from its surveyed outline. Every wall of 5 m or more is a run of 6 m bays in
      groups of four. A group stands level on the ground under it: the pit lane slopes, so the building steps down the
      hill group by group, as the real ones do. Bottom to top: roller doors set back between piers, a red fascia with a
@@ -159,6 +172,10 @@ export function buildProps(scene, qual) {
     const turn = (a, c) => Math.atan2(a[0] * c[1] - a[1] * c[0], a[0] * c[0] + a[1] * c[1]);            // > 0: an outside corner
     const ext = (th, o) => (th > 0.15 ? Math.min(o * 1.6, o * Math.tan(th / 2)) : 0);                // how far a part that projects o m must run on to close an outside corner
     const topA = new Array(n).fill(null), topB = new Array(n).fill(null), Q4 = [[0, 0], [1, 0], [1, 1], [0, 1]];
+    garage = 0;                                              // each building numbers its own garages from 1
+    // the circuit's name goes on the cornice of the longest wall that looks at the circuit
+    let nameWall = -1, nameL = 20;
+    pts.forEach((p, i) => { const d = dir[i]; if (!d || d[2] <= nameL) return; const mx = p.x + d[0] * d[2] / 2, mz = p.y + d[1] * d[2] / 2, td = trackDir(mx, mz); if (td && d[1] * td[0] - d[0] * td[1] > 0.3) { nameWall = i; nameL = d[2]; } });
     const prnd = rng32(4100 + Math.round(b.area)), inPoly = (x, z) => { let c = false; for (let i = 0, j = n - 1; i < n; j = i++) { const a = pts[i], d = pts[j]; if ((a.y > z) !== (d.y > z) && x < (d.x - a.x) * (z - a.y) / (d.y - a.y) + a.x) c = !c; } return c; };
     for (let i = 0; i < n; i++) {
       if (!dir[i]) continue;
@@ -214,7 +231,7 @@ export function buildProps(scene, qual) {
           face(PN, V3(s0, -0.5, yb), V3(s0, 0, yb), V3(s0, 0, yG), V3(s0, -0.5, yG), fw, rv);
           face(PN, V3(s1, -0.5, yb), V3(s1, 0, yb), V3(s1, 0, yG), V3(s1, -0.5, yG), bk, rv);
           face(PN, V3(s0, -0.5, yG), V3(s1, -0.5, yG), V3(s1, 0, yG), V3(s0, 0, yG), [0, -1, 0], [[0, 0], [(s1 - s0) / 3, 0], [(s1 - s0) / 3, 0.33], [0, 0.33]]);
-          const sc = (k + 0.5) * w; wq(TR, sc - 0.9, sc + 0.9, 0.18, yG + 0.14, yG + 0.66, 0, 1, 0, 1);
+          const sc = (k + 0.5) * w; SIGNS.board(pt(sc - 0.9, 0), pt(sc + 0.9, 0), yG + 0.14, yG + 0.66, out, 0.18, SIGNS.cell(String(++garage), GARAGE_NO));
         }
         for (let k = k0; k <= k1; k++) { const a = Math.max(sA, k * w - 0.3), c = Math.min(sB, k * w + 0.3); wq(PN, a, c, 0, base - 3, yG, a / 3, c / 3, (base - 3) / 1.5, yG / 1.5); }      // piers
         // fascia
@@ -242,7 +259,13 @@ export function buildProps(scene, qual) {
           if (!qual.lo) { const np = Math.max(2, Math.round((r1 - r0) / 2)); for (let q = 0; q <= np; q++) { const sd = r0 + (r1 - r0) * q / np; bx(RL, sd - 0.02, sd + 0.02, 0.865, 0.905, y0 + 0.02, y0 + 1.02, false); } }
         }
         for (let k = k0; k <= k1; k++) { const sd = Math.min(sB - 0.11, Math.max(sA + 0.11, k * w)); bx(TR, sd - 0.11, sd + 0.11, -0.08, 0.45, yF, yC, false); }      // fins on the bay lines
-        bx(TR, sA - eA * ext(thA, 1.1), sB + eB * ext(thB, 1.1), -0.3, 1.1, yC, top, true);                                                                  // cornice
+        bx(TR, sA - eA * ext(thA, 1.1), sB + eB * ext(thB, 1.1), -0.3, 1.1, yC, top, true);
+        if (i === nameWall && sA <= L / 2 && L / 2 < sB) { const cl = SIGNS.cell('SPA-FRANCORCHAMPS', CORNICE_NAME), hh = 0.62, ww = hh * cl.aspect, sc = (sA + sB) / 2; SIGNS.board(pt(sc - ww / 2, 0), pt(sc + ww / 2, 0), yC + 0.14, yC + 0.14 + hh, out, 1.112, cl); }
+        if (L >= 40 && !qual.lo) {
+          // floodlights on arms under the cornice, one over every bay line; a flagpole on the roof over the middle of the group
+          for (let k = k0; k <= k1; k++) { const sd = Math.min(sB - 0.3, Math.max(sA + 0.3, k * w)); bx(RL, sd - 0.03, sd + 0.03, 1.1, 1.52, yC - 0.2, yC - 0.14, true); bx(arch.paint(mid[0], mid[1], I_DARK), sd - 0.24, sd + 0.24, 1.42, 1.74, yC - 0.4, yC - 0.2, true); bx(arch.paint(mid[0], mid[1], I_LIGHT), sd - 0.2, sd + 0.2, 1.46, 1.7, yC - 0.415, yC - 0.4, true); }
+          flag(pt((sA + sB) / 2, -0.9), top, prnd);
+        }                                                                  // cornice
       }
     }
     // the roof sits just under the lowest wall top that meets each corner
@@ -256,6 +279,7 @@ export function buildProps(scene, qual) {
   function grandstand(b) {
     if (!b.stand) return false;
     const open = b.temp || /Silver|RX/i.test(b.name || ''), { P, mods } = b.stand, photo = photoSampler(P);
+    const letter = String.fromCharCode(65 + (standNo++ % 26)); let blockNo = 0;      // every stand has a letter, every bay of it a number
     // seat colour: under a roof, blue; open stands, from the photo; a scaffold stand, the colour its seats have in the photo
     const lin = (v) => Math.pow(v, 2.2) * 0.62;
     const seatTint = b.temp ? [lin(b.seat[0]), lin(b.seat[1]), lin(b.seat[2]), 1] : (open ? [0, 0, 0, 0] : SEAT_BLUE);
@@ -317,6 +341,7 @@ export function buildProps(scene, qual) {
           face(S, V(b0, h0 + 0.40), V(b1, h1 + 0.40), V(b1, h1 + 0.84), V(b0, h0 + 0.84), out, [[0, 0.5], [sw, 0.5], [sw, 1], [0, 1]], tintB);
         }
         // front wall, with a parapet standing a little above the first row
+        if (!b.temp) SIGNS.board(at(m, (f0 + f1) / 2 - 0.75, 0), at(m, (f0 + f1) / 2 + 0.75, 0), Fk - 0.02, Fk + 0.46, out, 0.04, SIGNS.cell(letter + String(++blockNo).padStart(2, '0'), BLOCK_NO));
         wall(C, A0, A1, yb, Fk + 0.55, yb, Fk + 0.55, out); wall(C, A0, A1, Fk, Fk + 0.55, Fk, Fk + 0.55, inw);
         { // steel handrail on the parapet
           const rc = at(m, (f0 + f1) / 2, 0.08); RLs.box(rc[0], Fk + 1.1, rc[1], m.bw - 0.1, 0.05, 0.05, angE);
@@ -435,12 +460,22 @@ export function buildProps(scene, qual) {
   // n red columns alight (0..5; anything below 1 is all out)
   const setLights = (n) => { lampMats.forEach((m, i) => { const on = i < n; m.emissiveIntensity = on ? 0.95 : 0; m.color.setHex(on ? 0x8c0000 : 0x2a0505); }); };
 
+  SIGNS.flush(group);
   conc.add(group, concMat);
   rails.add(group, new THREE.MeshStandardMaterial({ color: 0x9aa0a6, metalness: 0.85, roughness: 0.38 }), { cast: false });
   scene.add(group);
   return { group, archStats, setLights };
 }
 
+// lettering: the number over a pit garage, the block code on a stand, the circuit's name on the pit cornice
+const GARAGE_NO = { bg: '#f1f1ee', fg: '#15171a', h: 64, minW: 3.46, size: 0.78, weight: 800 }, BLOCK_NO = { bg: '#12305a', fg: '#ffffff', border: '#ffffff', h: 64, minW: 3.1, size: 0.6 };
+const CORNICE_NAME = { bg: '#e9eae6', fg: '#1a1d21', h: 96, pad: 0.3, size: 0.7, weight: 800 };
+/* Flags (linear RGB). The circuit's own are a plain field with a narrow band at the hoist: [field, band]. They are
+   made up, and laid out so that none can be read as a country's. Every fourth pole flies the host country's:
+   three upright bands, black, yellow, red. */
+const FLAGS = [[[0.85, 0.85, 0.82], [0.55, 0.02, 0.03]], [[0.8, 0.6, 0.04], [0.02, 0.02, 0.02]], [[0.03, 0.08, 0.3], [0.85, 0.85, 0.82]], [[0.03, 0.25, 0.1], [0.8, 0.6, 0.04]], [[0.55, 0.02, 0.03], [0.02, 0.02, 0.02]], [[0.85, 0.85, 0.82], [0.03, 0.08, 0.3]]];
+const BELGIUM = [[0.02, 0.02, 0.02], [0.82, 0.62, 0.03], [0.6, 0.03, 0.04]];
+const Q1 = [[0, 0], [1, 0], [1, 1], [0, 1]];
 // pit garages: the door curtain, a blind, and the dim colours of a garage seen through a raised door (linear RGB)
 const DOOR_COL = [0.58, 0.6, 0.61], BLIND_COL = [0.78, 0.76, 0.7], I_FLOOR = [0.07, 0.07, 0.075], I_WALL = [0.2, 0.2, 0.2], I_SIDE = [0.15, 0.15, 0.155], I_CEIL = [0.09, 0.09, 0.09];
 const I_LIGHT = [1.6, 1.6, 1.5], I_DARK = [0.02, 0.02, 0.022], I_RED = [0.3, 0.03, 0.03], I_BLUE = [0.04, 0.09, 0.26], I_TYRE = [0.012, 0.012, 0.013];

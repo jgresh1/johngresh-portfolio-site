@@ -20,11 +20,19 @@ const PAL = {
   blind: [0xe9e6dc, 0xd8d4c6, 0xc9ced2].map(lin),
   stone: lin(0xb4b0a5), dark: lin(0x25282c), white: lin(0xf0f0ec), ac: lin(0xcfd2d3), zinc: lin(0x7f878d), yellow: lin(0xe2b21c), pot: lin(0x9a4f37),
 };
+// what is written on a named building (plain words; the survey's own names stay out of it), and how
+const LABELS = [
+  [/Karting (annex|terrace)/i, null],
+  [/Karting/i, 'KARTING', { bg: '#111317', fg: '#ffd21f' }], [/Hotel|H.tel/i, 'HOTEL', { bg: '#12233f', fg: '#ffffff' }],
+  [/Salons/i, 'HOSPITALITY', { bg: '#23262b', fg: '#f1efe8' }], [/Fan Shop/i, 'FAN SHOP', { bg: '#b3121a', fg: '#ffffff' }],
+  [/Paddock/i, 'PADDOCK', { bg: '#f1f1ee', fg: '#15171a' }], [/Virtex/i, 'SIMULATOR', { bg: '#15171a', fg: '#8fe3ff' }],
+  [/Campus/i, 'CAMPUS', { bg: '#0d5c63', fg: '#ffffff' }], [/Conciergerie/i, 'RECEPTION', { bg: '#f1f1ee', fg: '#12233f' }],
+];
 // tile size in metres of each wall material (u, v)
 const SC = { render: [3, 3], brick: [1.32, 1.2], clad: [1.6, 3], panel: [3, 1.5] };
 
 export function makeArch(env) {
-  const { Buf, Tiles, face, groundAt, qual, conc, rails, shedRoof, trackDir } = env;
+  const { Buf, Tiles, face, groundAt, qual, conc, rails, shedRoof, trackDir, signs } = env;
   const lo = !!qual.lo;
   // a buffer whose quads each carry a colour (set `c` before adding to it)
   class CBuf extends Buf {
@@ -170,7 +178,7 @@ export function makeArch(env) {
       }
       // steps: from the threshold down to the ground outside
       const gx = k.XZ((s0 + s1) / 2, 0.9), g = groundAt(gx[0], gx[1]), dh = y0 - g;
-      if (dh > 0.05) {
+      if (dh > 0.05 && !c.nosteps) {
         const ns = Math.min(5, Math.ceil(dh / 0.18)), r = dh / ns;
         for (let i = 0; i < ns; i++) wbox(CC, k, s0 - 0.35, s1 + 0.35, g - 0.4, y0 - i * r, 0, 0.9 + i * 0.3, '', 4);
       }
@@ -226,6 +234,13 @@ export function makeArch(env) {
     // entrance: the middle bay of the wall that faces the circuit, or the nearest bay to it that meets the ground
     let entry = null;
     for (const k of order) { const nb = k.bays.length, mid = Math.floor(nb / 2); for (let dj = 0; dj < nb && !entry; dj++) for (const j of [mid + dj, mid - dj]) if (j >= 0 && j < nb && doorOK(k, j)) { entry = [k, j]; break; } if (entry) break; }
+    // a block of three floors or more has a fire escape on the wall that faces away from the circuit: a door on
+    // every upper floor at its last bay
+    let esc = null;
+    if (type === 'office' && nS >= 3 && !lite) {
+      const cand = E.filter((k) => k.bays.length >= 2 && k.L >= 8).sort((a, c) => a.facing - c.facing)[0];
+      if (cand) { const j = cand.bays.length - 1; if (Math.abs(cand.g[j] - FL) < 0.9 && !(entry && entry[0] === cand && entry[1] === j)) esc = [cand, j]; }
+    }
     for (const k of E) {
       const nb = k.bays.length;
       for (let j = 0; j < nb; j++) {
@@ -245,6 +260,7 @@ export function makeArch(env) {
             if (k === order[0] && (f > 0 || g < y0 - 0.2)) k.ops.push({ kind: 'win', s0: a, s1: e, y0, y1, cfg: { d: tp.d, mull: 1, sill: true } });
             continue;
           }
+          if (esc && esc[0] === k && esc[1] === j && f >= 1) { k.ops.push({ kind: 'door', s0: c - 0.46, s1: c + 0.46, y0: F, y1: F + 2.08, cfg: { d: tp.d + 0.02, col: doorCol, nosteps: true } }); continue; }
           if (f === 0 && isEntry) {
             if (glazedAll) k.ops.push({ kind: 'win', s0: a, s1: e, y0: FL + 0.02, y1, cfg: { d: tp.d, mull: 2, trans: FL + doorH, entrance: true } });
             else { const dw = type === 'office' ? 0.9 : 0.5, hw = Math.min(dw, (k.bays[j][1] - k.bays[j][0]) / 2 + 0.2); k.ops.push({ kind: 'door', s0: c - hw, s1: c + hw, y0: FL, y1: FL + doorH, cfg: { d: tp.d + 0.04, col: doorCol, double: hw > 0.7, glazed: type === 'office' || rnd() < 0.3, canopy: type === 'cabin' ? 0 : (type === 'office' ? 1.3 : 0.7) } }); }
@@ -324,6 +340,40 @@ export function makeArch(env) {
       }
     }
 
+    /* ---- the fire escape: a steel landing at every upper floor, a straight flight outboard of it down to the
+       landing below (the last one to the ground), stringers, treads, handrails, four posts ---- */
+    if (esc) {
+      const [k, j] = esc, [a, e] = k.bays[j], c = (a + e) / 2, s0 = Math.max(0.15, c - 2.0), s1 = Math.min(k.L - 0.05, c + 1.3), W1 = 1.05, W2 = 1.95, pl = 0.5;
+      const gp = k.XZ(s0 + 0.2, W2 - 0.4), g = groundAt(gp[0], gp[1]), run = s1 - s0 - 2 * pl, top = FL + (nS - 1) * sh;
+      for (let f = 1; f < nS; f++) {
+        const F = FL + f * sh, lowY = f === 1 ? g : F - sh, nt = Math.max(8, Math.round((F - lowY) / 0.185));
+        wbox(RL, k, s0, s1, F - 0.05, F, 0.02, W1, '');                                                       // landing
+        wbox(RL, k, s1 - pl, s1, F - 0.05, F, W1, W2, 'l'); if (f > 1) wbox(RL, k, s0, s0 + pl, F - sh - 0.05, F - sh, W1, W2, 'r');      // the head and foot of the flight
+        for (let t = 0; t < nt; t++) { const y = F - (F - lowY) * (t + 1) / nt, sx = s1 - pl - run * (t + 0.5) / nt, hw = run / nt / 2 + 0.015; wbox(RL, k, sx - hw, sx + hw, y - 0.03, y, W1 + 0.04, W2 - 0.04, ''); }
+        for (const o of [W1 + 0.02, W2 - 0.02]) env.beam(RL, k.P(s1 - pl, o, F - 0.13), k.P(s0 + pl, o, lowY - 0.13), 0.04, 0.2);
+        for (const o of [W1 + 0.02, W2 - 0.02]) env.beam(RL, k.P(s1 - pl, o, F + 0.95), k.P(s0 + pl, o, lowY + 0.95), 0.04, 0.04);
+        for (const sx of [s0 + 0.02, s1 - 0.02]) for (const y of [F + 1.0, F + 0.5]) env.beam(RL, k.P(sx, 0.04, y), k.P(sx, W2 - 0.02, y), 0.035, 0.035);     // guard rails across the landing's ends
+        wbox(RL, k, s1 - pl, s1, F + 0.98, F + 1.02, W2 - 0.04, W2, ''); wbox(RL, k, s0 + pl + 0.3, s1 - pl - 0.9, F + 0.98, F + 1.02, W1 - 0.04, W1, '');
+      }
+      for (const sx of [s0 + 0.03, s1 - 0.03]) wbox(RL, k, sx - 0.035, sx + 0.035, g - 0.3, top + 1.02, W2 - 0.07, W2, 'b');
+      for (const sx of [s0 + 0.03, s1 - 0.03]) wbox(RL, k, sx - 0.035, sx + 0.035, g - 0.3, top + 1.02, W1 - 0.07, W1, 'b');
+    }
+
+    /* ---- the name of a named building, on the fascia of a single-storey one or in the band over the ground
+       floor's glazing, above the entrance ---- */
+    const lab = signs ? LABELS.find((l) => l[0].test(name)) : null;
+    if (lab && lab[1]) {
+      const k = entry ? entry[0] : order[0];
+      if (k && k.L > 2.2) {
+        const cl = signs.cell(lab[1], { h: 96, pad: 0.55, ...lab[2] }), onF = nS === 1 && type === 'modern';
+        let hS = onF ? 0.44 : 0.4, w = hS * cl.aspect; if (w > k.L - 0.8) { w = k.L - 0.8; hS = w / cl.aspect; }
+        const bc = entry ? (k.bays[entry[1]][0] + k.bays[entry[1]][1]) / 2 : k.L / 2, sc = Math.min(k.L - 0.4 - w / 2, Math.max(0.4 + w / 2, bc));
+        const yc = onF ? yt + 0.15 : FL + sh - 0.32, off = onF ? 0.612 : 0.05;
+        if (!onF) wbox(PT(PAL.dark), k, sc - w / 2 - 0.03, sc + w / 2 + 0.03, yc - hS / 2 - 0.03, yc + hS / 2 + 0.03, 0, 0.045, '');      // its casing
+        signs.board(k.XZ(sc - w / 2, 0), k.XZ(sc + w / 2, 0), yc - hS / 2, yc + hS / 2, k.out, off, cl);
+      }
+    }
+
     /* ---- a tower's cabin stands on a slab with a railed walkway round it, and carries a mast ---- */
     if (type === 'tower') {
       for (const k of E) {
@@ -375,6 +425,12 @@ export function makeArch(env) {
           ch.c = wallKind === 'brick' ? wallCol : PAL.render[2]; ch.box(px, yr + 0.15, pz, 0.85, 1.9, 0.5, ang);
           PT(PAL.stone).box(px, yr + 1.14, pz, 0.97, 0.08, 0.62, ang);
           if (!lite) for (const dd of [-0.2, 0.2]) PT(PAL.pot).box(px + ux * dd, yr + 1.33, pz + uz * dd, 0.2, 0.3, 0.2, ang);
+          if (!lite && rnd() < 0.6) {          // a television aerial strapped to it
+            const ax = px - ux * 0.36, az = pz - uz * 0.36, a2 = ang + 0.5 + rnd();
+            RL.box(ax, yr + 1.9, az, 0.03, 2.0, 0.03, ang);
+            for (const [yy, ln] of [[2.85, 0.9], [2.65, 0.7], [2.45, 0.7], [2.25, 0.55]]) RL.box(ax, yr + yy, az, ln, 0.02, 0.02, a2);
+            RL.box(ax, yr + 2.55, az, 0.02, 0.02, 0.75, a2);
+          }
         }
       }
       return { flatY: null, type };

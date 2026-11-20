@@ -15,6 +15,10 @@ export const ATMO = {
   haze: 0.80e-4,          // extinction at ground level (1/m)
   cloudAlt: 1500,         // metres above y = 0
   cloudCover: 0.47,
+  // Light from the sky into the shadows. Left alone it is as blue as the zenith and a little weak: a camera sees
+  // shadows greyer and more open than that, because broken cloud and everything the sun lights bounce white light in.
+  fillGrey: 0.34,         // share of the sky light's colour taken out
+  fillGain: 1.22,
 };
 
 export function setSun(azimuthDeg, elevationDeg) {
@@ -78,7 +82,16 @@ let baseChunks = null;
 // (then flag every material .needsUpdate).
 export function installAtmosphere() {
   const C = THREE.ShaderChunk;
-  if (!baseChunks) baseChunks = { lights: C.lights_fragment_begin, fpv: C.fog_pars_vertex, fv: C.fog_vertex, fpf: C.fog_pars_fragment, ff: C.fog_fragment };
+  if (!baseChunks) baseChunks = { lights: C.lights_fragment_begin, fpv: C.fog_pars_vertex, fv: C.fog_vertex, fpf: C.fog_pars_fragment, ff: C.fog_fragment, env: C.envmap_physical_pars_fragment };
+
+  // sky light into the shadows (only where there is haze, i.e. on the circuit: the studio has none)
+  const irr = 'return PI * envMapColor.rgb * envMapIntensity;';
+  if (!baseChunks.env.includes(irr)) console.warn('atmo: sky-light line not found; shadows keep the stock fill');
+  C.envmap_physical_pars_fragment = baseChunks.env.replace(irr, `vec3 apIrr = PI * envMapColor.rgb * envMapIntensity;
+			#ifdef USE_FOG
+				apIrr = mix( apIrr, vec3( dot( apIrr, vec3( 0.2126, 0.7152, 0.0722 ) ) ), ${f(ATMO.fillGrey)} ) * ${f(ATMO.fillGain)};
+			#endif
+			return apIrr;`);
 
   C.fog_pars_vertex = /* glsl */`
 #ifdef USE_FOG

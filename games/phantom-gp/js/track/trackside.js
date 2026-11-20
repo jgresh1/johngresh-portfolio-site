@@ -107,12 +107,15 @@ export function buildTrackside(scene, qual) {
       const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], L = Math.hypot(x1 - x0, z1 - z0); if (L < 0.05) continue;
       let nx = -(z1 - z0) / L, nz = (x1 - x0) / L;
       const n = nearestStation((x0 + x1) / 2, (z0 + z1) / 2, ns);
-      if (n) { const fr = frameAt(n.s, {}); if ((fr.x - x0) * nx + (fr.z - z0) * nz < 0) { nx = -nx; nz = -nz; } }
+      let flip = false;
+      if (n) { const fr = frameAt(n.s, {}); if ((fr.x - x0) * nx + (fr.z - z0) * nz < 0) { nx = -nx; nz = -nz; flip = true; } }
       const y0 = groundAt(x0, z0) - 0.04, y1 = groundAt(x1, z1) - 0.04, B = belts.at(x0, z0);
       for (let k = 0; k < PROF.length - 1; k++) {
         const [h0, o0] = PROF[k], [h1, o1] = PROF[k + 1], sl = Math.atan2(o1 - o0, h1 - h0);
-        B.quad([x0 + nx * o0, y0 + h0, z0 + nz * o0], [x1 + nx * o0, y1 + h0, z1 + nz * o0], [x1 + nx * o1, y1 + h1, z1 + nz * o1], [x0 + nx * o1, y0 + h1, z0 + nz * o1],
-          [nx * Math.cos(sl), -Math.sin(sl), nz * Math.cos(sl)], [[acc / 6, h0 / 1.04], [(acc + L) / 6, h0 / 1.04], [(acc + L) / 6, h1 / 1.04], [acc / 6, h1 / 1.04]]);
+        // wound so its front is the side the normal is on (the material is double-sided, and turns the normal round on the back)
+        const qa = [x0 + nx * o0, y0 + h0, z0 + nz * o0], qb = [x1 + nx * o0, y1 + h0, z1 + nz * o0], qc = [x1 + nx * o1, y1 + h1, z1 + nz * o1], qd = [x0 + nx * o1, y0 + h1, z0 + nz * o1];
+        const fn = [nx * Math.cos(sl), -Math.sin(sl), nz * Math.cos(sl)], ua = [acc / 6, h0 / 1.04], ub = [(acc + L) / 6, h0 / 1.04], uc = [(acc + L) / 6, h1 / 1.04], ud = [acc / 6, h1 / 1.04];
+        if (flip) B.quad(qb, qa, qd, qc, fn, [ub, ua, ud, uc]); else B.quad(qa, qb, qc, qd, fn, [ua, ub, uc, ud]);
       }
       const d = 1.3;                                 // two rows of tyres behind the belt
       tops.at(x0, z0).quad([x0, y0 + 1.04, z0], [x1, y1 + 1.04, z1], [x1 - nx * d, y1 + 1.0, z1 - nz * d], [x0 - nx * d, y0 + 1.0, z0 - nz * d], [0, 1, 0],

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { W, groundAt, naturalAt, nearestStation, frameAt, isStand } from './world.js';
 import { groundUniforms } from './terrain.js';
-import { steelTex, fenceTex, curtainWallMaps, shutterMaps, panelMaps, concreteMaps, rng32 } from './tex.js';
+import { steelTex, fenceTex, armcoMaps, curtainWallMaps, shutterMaps, panelMaps, concreteMaps, rng32 } from './tex.js';
 import { makeArch } from './arch.js';
 import { SIGNS } from './signs.js';
 
@@ -56,9 +56,13 @@ export function buildProps(scene, qual) {
 
   /* ---------------- Armco + catch fences ---------------- */
   const armco = new Tiles(), posts = new Tiles(), mesh = new Tiles(), fencePosts = new Tiles(), meshFar = new Tiles();
-  // W-beam profile: [height above ground, outward offset toward the track]
-  const PROF = [];
-  for (let b = 0; b < 3; b++) { const y = 0.14 + b * 0.31; PROF.push([y, 0], [y + 0.07, 0.04], [y + 0.15, 0.012], [y + 0.23, 0.04], [y + 0.30, 0]); }
+  /* Guardrail: three W-beams, one over the other, on steel posts. The beam is the real section (312 mm tall, two
+     crests standing 83 mm proud, a valley between them), shaded smooth across the section and round the bends; each
+     span between posts is one beam length, and the drawn map puts the lap joint and its bolts at the post. */
+  const WB = qual.lo ? [[0, 0], [0.068, 0.08], [0.156, 0.03], [0.244, 0.08], [0.312, 0]]
+    : [[0, 0], [0.03, 0.046], [0.066, 0.083], [0.112, 0.074], [0.156, 0.03], [0.2, 0.074], [0.246, 0.083], [0.282, 0.046], [0.312, 0]];
+  const WN = WB.map((q, j) => { const q0 = WB[Math.max(0, j - 1)], q1 = WB[Math.min(WB.length - 1, j + 1)], th = q1[0] - q0[0], to = q1[1] - q0[1], l = Math.hypot(th, to); return [th / l, -to / l]; });   // [outward, upward]
+  const BEAMS = [0.13, 0.45, 0.77];
   for (const bar of W.barriers) {
     const pts = resample(bar.pts, 4);
     if (pts.length < 2) continue;
@@ -66,20 +70,38 @@ export function buildProps(scene, qual) {
     const trackside = bar.dmean < 75;
     if (!isFence) {
       if (bar.dmean > 140) continue;
+      // the side each span faces (towards the circuit), then one direction per post: the mean of the spans it joins
+      const seg = [];
       for (let i = 0; i < pts.length - 1; i++) {
-        const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], L = Math.hypot(x1 - x0, z1 - z0); if (L < 0.2) continue;
-        let nx = -(z1 - z0) / L, nz = (x1 - x0) / L;
+        const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], L = Math.hypot(x1 - x0, z1 - z0);
+        let nx = L > 1e-6 ? -(z1 - z0) / L : 0, nz = L > 1e-6 ? (x1 - x0) / L : 1;
         const n = nearestStation((x0 + x1) / 2, (z0 + z1) / 2, ns);
-        if (n) { const fr = frameAt(n.s, {}); if ((fr.x - x0) * nx + (fr.z - z0) * nz < 0) { nx = -nx; nz = -nz; } }
-        const y0 = groundAt(x0, z0) - 0.03, y1 = groundAt(x1, z1) - 0.03, B = armco.at(x0, z0);
-        for (let k = 0; k < PROF.length - 1; k++) {
-          if (k % 5 === 4) continue;
-          const [h0, o0] = PROF[k], [h1, o1] = PROF[k + 1];
-          const sl = Math.atan2(o1 - o0, h1 - h0), fn = [nx * Math.cos(sl), -Math.sin(sl), nz * Math.cos(sl)];
-          const a = [x0 + nx * o0, y0 + h0, z0 + nz * o0], b = [x1 + nx * o0, y1 + h0, z1 + nz * o0], c = [x1 + nx * o1, y1 + h1, z1 + nz * o1], d = [x0 + nx * o1, y0 + h1, z0 + nz * o1];
-          B.quad(a, b, c, d, fn, [[0, h0], [L / 2, h0], [L / 2, h1], [0, h1]]);
+        let flip = false;
+        if (n) { const fr = frameAt(n.s, {}); if ((fr.x - x0) * nx + (fr.z - z0) * nz < 0) { nx = -nx; nz = -nz; flip = true; } }
+        seg.push([nx, nz, L, flip]);
+      }
+      const vn = pts.map((q, i) => { const a = seg[Math.max(0, i - 1)], c = seg[Math.min(seg.length - 1, i)]; let nx = a[0] + c[0], nz = a[1] + c[1]; const l = Math.hypot(nx, nz); return l > 0.2 ? [nx / l, nz / l] : [c[0], c[1]]; });
+      const gy = pts.map((q) => groundAt(q[0], q[1]) - 0.03);
+      for (let i = 0; i < pts.length - 1; i++) {
+        if (seg[i][2] < 0.2) continue;
+        const B = armco.at(pts[i][0], pts[i][1]);
+        for (const yb of BEAMS) {
+          const base = B.pos.length / 3;
+          for (let j = 0; j < WB.length; j++) {
+            const [h, o] = WB[j], [no, nu] = WN[j];
+            for (const e of [0, 1]) {
+              const [x, z] = pts[i + e], [nx, nz] = vn[i + e];
+              B.pos.push(x + nx * o, gy[i + e] + yb + h, z + nz * o); B.nor.push(nx * no, nu, nz * no); B.uv.push(e, h / 0.312);
+            }
+          }
+          // wound so the front of every face is the side the shading normal is on (a double-sided material turns the normal round on the back)
+          for (let j = 0; j < WB.length - 1; j++) { const q = base + j * 2; if (seg[i][3]) B.idx.push(q, q + 3, q + 1, q, q + 2, q + 3); else B.idx.push(q, q + 1, q + 3, q, q + 3, q + 2); }
         }
-        posts.at(x0, z0).box(x0 - nx * 0.07, y0 + 0.55, z0 - nz * 0.07, 0.09, 1.1, 0.12, Math.atan2(nz, nx));
+      }
+      for (let i = 0; i < pts.length; i++) {
+        const [x, z] = pts[i], [nx, nz] = vn[i], ang = Math.atan2(nz, nx), P = posts.at(x, z);
+        P.box(x - nx * 0.085, gy[i] + 0.57, z - nz * 0.085, 0.11, 1.14, 0.06, ang);                                   // the post
+        if (!qual.lo) for (const yb of BEAMS) P.box(x - nx * 0.022, gy[i] + yb + 0.156, z - nz * 0.022, 0.05, 0.2, 0.09, ang);   // the block that holds each beam off it
       }
     } else {
       const H = trackside ? 3.3 : 2.0, T = trackside ? mesh : meshFar;
@@ -95,8 +117,9 @@ export function buildProps(scene, qual) {
       }
     }
   }
-  const armcoMat = new THREE.MeshStandardMaterial({ map: steel, color: 0x9aa0a6, metalness: 0.3, roughness: 0.62, side: THREE.DoubleSide, envMapIntensity: 0.7 });
-  const postMat = new THREE.MeshStandardMaterial({ map: steel, color: 0x8d9196, metalness: 0.7, roughness: 0.55 });
+  const aM = armcoMaps();
+  const armcoMat = new THREE.MeshStandardMaterial({ map: aM.map, normalMap: aM.normalMap, normalScale: new THREE.Vector2(0.7, -0.7), metalness: 0.36, roughness: 0.56, side: THREE.DoubleSide });
+  const postMat = new THREE.MeshStandardMaterial({ map: steel, color: 0xb2b6ba, metalness: 0.2, roughness: 0.6 });
   const fT = fenceTex();
   const meshMat = new THREE.MeshStandardMaterial({ map: fT, color: 0xd0d4d8, metalness: 0.55, roughness: 0.5, side: THREE.DoubleSide, transparent: false });
   // wire mesh relies on alpha-to-coverage; without multisampling fall back to a plain cut-out

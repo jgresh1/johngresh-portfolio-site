@@ -164,7 +164,7 @@ async function boot() {
   await roadsP; prepRoads();                // free roam's roads: fitted to the ground before the terrain and trees are built
   terrain = buildTerrain(scene);
   await step(0.35);
-  road = buildRoad(scene);
+  road = buildRoad(scene, q);
   buildRoadMeshes(scene);
   await step(0.45);
   trees = (await import('../track/trees.js')).buildTrees(scene, renderer, q);

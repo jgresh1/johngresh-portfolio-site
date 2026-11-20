@@ -30,6 +30,46 @@ function layers(texs, srgb) {
 }
 
 export const groundUniforms = {};
+
+/* How far every point near the circuit is from its centre line (metres, to 90), on a 2 m grid over the near
+   rectangle. The mowing stripes and the raked lines in the gravel run along its contours, so they follow the track
+   the way a mower and a rake do. Each station first marks the cells across from it, then every marked cell takes
+   its exact distance to the centre line close to that station. */
+function distanceTex() {
+  const n = W.meta.near, w = Math.round(n.w / 2), h = Math.round(n.h / 2), FAR = 90, N = W.N;
+  const near = new Int32Array(w * h).fill(-1), best = new Float32Array(w * h).fill(FAR);
+  for (let i = 0; i < N; i++) {
+    const rx = -W.dz[i], rz = W.dx[i];
+    for (let d = -FAR; d <= FAR; d += 1) {
+      const px = Math.floor((W.tx[i] + rx * d - n.x0) / 2), pz = Math.floor((W.tz[i] + rz * d - n.z0) / 2);
+      if (px < 0 || pz < 0 || px >= w || pz >= h) continue;
+      const q = pz * w + px, a = Math.abs(d); if (a < best[q]) { best[q] = a; near[q] = i; }
+    }
+  }
+  for (let pass = 0; pass < 2; pass++) {                    // cells the fans of rays stepped over (outside of bends)
+    const add = [];
+    for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++) {
+      const q = j * w + i; if (near[q] >= 0) continue;
+      const m = Math.max(near[q - 1], near[q + 1], near[q - w], near[q + w]); if (m >= 0) add.push(q, m);
+    }
+    for (let k = 0; k < add.length; k += 2) near[add[k]] = add[k + 1];
+  }
+  const out = new Uint16Array(w * h), far16 = THREE.DataUtils.toHalfFloat(FAR);
+  for (let q = 0; q < w * h; q++) {
+    const i0 = near[q]; if (i0 < 0) { out[q] = far16; continue; }
+    const x = n.x0 + (q % w + 0.5) * 2, z = n.z0 + (Math.floor(q / w) + 0.5) * 2;
+    let m = 1e9;
+    for (let k = -5; k < 5; k++) {
+      const a = (i0 + k + N) % N, b = (a + 1) % N, ex = W.tx[b] - W.tx[a], ez = W.tz[b] - W.tz[a];
+      const t = Math.min(1, Math.max(0, ((x - W.tx[a]) * ex + (z - W.tz[a]) * ez) / (ex * ex + ez * ez || 1)));
+      m = Math.min(m, Math.hypot(x - W.tx[a] - ex * t, z - W.tz[a] - ez * t));
+    }
+    out[q] = THREE.DataUtils.toHalfFloat(Math.min(m, FAR));
+  }
+  const t = new THREE.DataTexture(out, w, h, THREE.RedFormat, THREE.HalfFloatType);
+  t.magFilter = t.minFilter = THREE.LinearFilter; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.generateMipmaps = false; t.needsUpdate = true;
+  return t;
+}
 // farStep: far grid, 1 = every 20 m survey point, n = every n-th away from the circuit (phones).
 // detail: size of the close-up grain maps (1, or 0.5 on phones). The near grid's spacing is MESH.step in world.js.
 export const TERRAIN = { farStep: 1, detail: 1 };
@@ -59,6 +99,7 @@ export function makeGroundMaterial(near, shoulder = false) {
       uNearRect: { value: new THREE.Vector4(n.x0, n.z0, 1 / n.w, 1 / n.h) },
       uFarRect: { value: new THREE.Vector4(q.x0, q.z0, 1 / q.w, 1 / q.h) },
       uGrassMean: { value: meanLinear(g.map) }, uAsphMean: { value: meanLinear(a.map) }, uGravelMean: { value: meanLinear(gr.map) },
+      tDist: { value: TERRAIN.detail === 1 ? distanceTex() : null },          // not on phones
     });
     W.detail = { grass: g, asphalt: a, gravel: gr };
   }
@@ -66,6 +107,7 @@ export function makeGroundMaterial(near, shoulder = false) {
   mat.polygonOffset = true; mat.polygonOffsetFactor = 1; mat.polygonOffsetUnits = 6;
   mat.defines = near ? { GROUND_NEAR: 1 } : {};
   if (shoulder) mat.defines.GROUND_SHOULDER = 1;
+  if (near && U.tDist.value) mat.defines.GROUND_MOW = 1;
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     // shoulder strips read the photo / masks a little further out, so the photo's own edge line and kerb never bleed onto the verge
@@ -75,6 +117,9 @@ export function makeGroundMaterial(near, shoulder = false) {
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', /* glsl */`#include <common>
         uniform sampler2D tNear, tFar, tMask, tPaint, tTone, tNoise;
+        #ifdef GROUND_MOW
+        uniform sampler2D tDist;
+        #endif
         uniform sampler2DArray tDet, tDetN;                // close-up grain: layer 0 grass, 1 tarmac, 2 gravel (one unit each; the fragment stage has 16)
         uniform vec4 uNearRect, uFarRect;
         uniform vec3 uGrassMean, uAsphMean, uGravelMean;
@@ -98,6 +143,7 @@ export function makeGroundMaterial(near, shoulder = false) {
         vec4 tone = vec4( 0.5, 0.0, 0.62, 0.0 );
         vec3 pnt = vec3( 0.0 );
         float zone = 0.0, kM = 0.1, kP = 0.1;                // zone: 1 = ground drawn from the surface classes, 0 = from the photo
+        float mowD = 90.0, mowK = 1.0;                       // metres from the circuit's centre line, and how fast that changes across a pixel
         float gDist = length( gwp - cameraPosition );
         float gDet = 1.0 - smoothstep( 30.0, 240.0, gDist );
         float gDetFar = 1.0 - smoothstep( 300.0, 1400.0, gDist );
@@ -116,6 +162,9 @@ export function makeGroundMaterial(near, shoulder = false) {
           vec2 fw = fwidth( uvN );
           kM = clamp( 0.5 * max( fw.x * uMaskPx.x, fw.y * uMaskPx.y ), 0.035, 0.5 );
           kP = clamp( 0.5 * max( fw.x * uPaintPx.x, fw.y * uPaintPx.y ), 0.035, 0.5 );
+          #ifdef GROUND_MOW
+            mowD = texture2D( tDist, uvN ).r; mowK = max( fwidth( mowD ), 1e-3 );
+          #endif
         #endif
         float paved = gEdge( msk.r, kM );
         float gravel = gEdge( msk.g, kM ) * ( 1.0 - paved );
@@ -131,7 +180,7 @@ export function makeGroundMaterial(near, shoulder = false) {
         float pmx = max( photo.r, max( photo.g, photo.b ) ), pmn = min( photo.r, min( photo.g, photo.b ) );
         float painted = smoothstep( 0.09, 0.22, ( pmx - pmn ) / max( pmx, 1e-3 ) );
         float pavP = 0.082 + 0.15 * dot( alb, vec3( 0.30, 0.59, 0.11 ) );
-        alb = mix( alb, vec3( pavP ) * vec3( 0.80, 0.80, 0.83 ), paved * ( 1.0 - painted ) * 0.88 );
+        alb = mix( alb, vec3( pavP ) * vec3( 0.80, 0.795, 0.79 ), paved * ( 1.0 - painted ) * 0.88 );
         vec3 turf = vec3( 0.050, 0.082, 0.024 ) * ( 0.78 + 0.5 * nz.b );
         float pl = dot( photo, vec3( 0.3, 0.6, 0.1 ) );
         float green = smoothstep( 0.0, 0.035, photo.g - max( photo.r, photo.b ) );
@@ -141,18 +190,37 @@ export function makeGroundMaterial(near, shoulder = false) {
 
         // ---- near the circuit: every surface is a material, the photo is not used
         vec3 grassC = mix( vec3( 0.058, 0.096, 0.028 ), vec3( 0.110, 0.104, 0.046 ), tone.g * 0.85 ) * mix( 1.0, tone.r * 1.992, 0.75 ) * ( 0.86 + 0.28 * nz.b );
+        // a lawn is not one colour: thick and thin growth, drier patches, darker clover
+        vec3 nzm = texture2D( tNoise, gwp.xz / 27.0 + 0.19 ).rgb;
+        grassC *= 0.86 + 0.28 * nzm.r;
+        grassC = mix( grassC, grassC * vec3( 1.16, 1.06, 0.78 ), 0.4 * smoothstep( 0.55, 0.8, nzm.b ) );
+        grassC = mix( grassC, grassC * vec3( 0.74, 0.93, 0.80 ), 0.6 * smoothstep( 0.58, 0.8, texture2D( tNoise, gwp.xz / 61.0 + 0.4 ).g ) );
+        #ifdef GROUND_MOW
+        {
+          // mown in passes that follow the track; the grass lies the other way on every second pass
+          float tri = abs( fract( mowD / 2.7 ) - 0.5 ) * 2.0;
+          float stripe = smoothstep( 0.5 - mowK / 1.35, 0.5 + mowK / 1.35, tri ) - 0.5;
+          grassC *= 1.0 + 0.15 * stripe * ( 1.0 - smoothstep( 34.0, 52.0, mowD ) );
+        }
+        #endif
         grassC = mix( grassC, turf * 0.9, under );
         float pavL = 0.082 + 0.09 * pow( tone.b, 2.2 );
-        vec3 hardC = vec3( pavL ) * vec3( 0.80, 0.80, 0.83 );
+        vec3 hardC = vec3( pavL ) * vec3( 0.80, 0.795, 0.79 );
         float pl2 = dot( pnt, pnt );
         if ( pl2 > 0.0004 ) {
           vec3 pd = pnt * inversesqrt( pl2 ), pc = uPal[ 0 ];
           float best = -1.0;
           for ( int i = 0; i < 4; i ++ ) { float d = dot( pd, uPalDir[ i ] ); if ( d > best ) { best = d; pc = uPal[ i ]; } }
           float pa = gEdge( clamp( dot( pnt, pc ) / dot( pc, pc ), 0.0, 1.0 ), kP );
-          hardC = mix( hardC, pc * 0.60 * ( 0.84 + 0.26 * nz.r ), pa );
+          // run-off paint: worn thin in patches, so the tarmac greys it
+          float pw = smoothstep( 0.42, 0.72, texture2D( tNoise, gwp.xz / 9.0 ).g * 0.55 + nz.r * 0.55 );
+          hardC = mix( hardC, pc * 0.52 * ( 0.84 + 0.26 * nz.r ), pa * ( 1.0 - 0.5 * pw ) );
         }
         vec3 gravC = vec3( 0.275, 0.258, 0.225 ) * ( 0.9 + 0.2 * nz.g );
+        #ifdef GROUND_MOW
+          // a gravel bed is raked along the track: ridges every 40 cm, lit on one side
+          gravC *= 1.0 + 0.16 * sin( mowD * 15.708 ) * gDet * ( 1.0 - smoothstep( 0.1, 0.25, mowK ) );
+        #endif
         vec3 soilC = vec3( 0.128, 0.104, 0.074 ) * ( 0.78 + 0.44 * nz.g );
         vec3 made = grassC * open + hardC * paved + gravC * gravel + soilC * soil;
         alb = mix( alb, made, zone );

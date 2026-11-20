@@ -91,7 +91,7 @@ export function asphaltMaps(size = 1024) {
   const n = periodicNoise(size, 6, 5, 3);
   const img = ctx.createImageData(size, size), d = img.data;
   for (let i = 0; i < size * size; i++) {
-    const v = 104 + (n[i] - 0.5) * 46 + (rand() - 0.5) * 22;
+    const v = 104 + (n[i] - 0.5) * 16 + (rand() - 0.5) * 26;
     d[i * 4] = v; d[i * 4 + 1] = v; d[i * 4 + 2] = v + 1; d[i * 4 + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
@@ -181,6 +181,49 @@ export function steelTex(size = 256) {
   }
   ctx.putImageData(img, 0, 0);
   return toTex(c, { srgb: true });
+}
+
+/* ---------- one beam of guardrail: u = along the beam (4 m), v = up its section. Weathered zinc, the lap joint and
+   its bolts at the start, rain streaks, splash dirt along the bottom ---------- */
+export function armcoMaps(W = 1024, H = 128) {
+  const rand = rng32(83), n = periodicNoise(256, 6, 4, 84), n2 = periodicNoise(256, 24, 3, 85), [c, x] = canvas(W, H), [hc, hx] = canvas(W, H);
+  const img = x.createImageData(W, H), d = img.data;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const a = n[(j * 2 % 256) * 256 + (i % 256)], b = n2[(j % 256) * 256 + ((i * 2) % 256)];
+    const v = 158 + (a - 0.5) * 44 + (b - 0.5) * 20 + (rand() - 0.5) * 9, k = (j * W + i) * 4;
+    d[k] = v - 2; d[k + 1] = v; d[k + 2] = v + 4; d[k + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+  hx.fillStyle = '#808080'; hx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 150; i++) {                    // rain streaks down the face
+    const px = rand() * W, y0 = rand() * H * 0.6, len = 14 + rand() * 70, g = x.createLinearGradient(0, y0, 0, y0 + len);
+    const dark = rand() < 0.7; g.addColorStop(0, dark ? `rgba(52,50,46,${0.1 + rand() * 0.22})` : 'rgba(232,234,236,0.16)'); g.addColorStop(1, 'rgba(60,58,52,0)');
+    x.fillStyle = g; x.fillRect(px, y0, 1 + rand() * 3.5, len);
+  }
+  const g2 = x.createLinearGradient(0, H * 0.62, 0, H); g2.addColorStop(0, 'rgba(70,62,50,0)'); g2.addColorStop(1, 'rgba(70,62,50,0.42)');
+  x.fillStyle = g2; x.fillRect(0, H * 0.62, W, H * 0.38);                       // dirt thrown up from the ground
+  // the lap joint: the next beam's end lies over this one for 0.3 m
+  const lap = Math.round(W * 0.078);
+  x.fillStyle = 'rgba(255,255,255,0.05)'; x.fillRect(0, 0, lap, H);
+  x.fillStyle = 'rgba(20,20,22,0.6)'; x.fillRect(lap, 0, 2, H); x.fillStyle = 'rgba(240,240,244,0.3)'; x.fillRect(lap - 2, 0, 2, H);
+  hx.fillStyle = '#b0b0b0'; hx.fillRect(0, 0, lap, H);
+  const bolt = (bx, by, r) => {
+    x.fillStyle = 'rgba(110,70,40,0.22)'; x.fillRect(bx - r * 0.6, by, r * 1.2, r * 4.5);                 // a rust run under it
+    x.beginPath(); x.arc(bx, by, r + 1.5, 0, 6.283); x.fillStyle = 'rgba(30,30,32,0.55)'; x.fill();
+    x.beginPath(); x.arc(bx, by, r, 0, 6.283); x.fillStyle = '#8f9498'; x.fill();
+    x.beginPath(); x.arc(bx - r * 0.25, by - r * 0.3, r * 0.45, 0, 6.283); x.fillStyle = 'rgba(235,238,240,0.6)'; x.fill();
+    hx.beginPath(); hx.arc(bx, by, r, 0, 6.283); hx.fillStyle = '#ffffff'; hx.fill();
+  };
+  for (const u of [0.014, 0.062]) for (const v of [0.22, 0.4, 0.6, 0.78]) bolt(u * W, v * H, 4.2);
+  bolt(0.038 * W, 0.5 * H, 5.2);                                                 // the one through the post
+  const hd = hx.getImageData(0, 0, W, H).data, [nc, nx2] = canvas(W, H), ni = nx2.createImageData(W, H), o = ni.data;
+  const hm = (i, j) => hd[(Math.min(H - 1, Math.max(0, j)) * W + ((i + W) % W)) * 4] / 255;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const dx = (hm(i + 1, j) - hm(i - 1, j)) * 2.4, dy = (hm(i, j + 1) - hm(i, j - 1)) * 2.4, l = Math.sqrt(dx * dx + dy * dy + 1), k = (j * W + i) * 4;
+    o[k] = (-dx / l * 0.5 + 0.5) * 255; o[k + 1] = (-dy / l * 0.5 + 0.5) * 255; o[k + 2] = (1 / l * 0.5 + 0.5) * 255; o[k + 3] = 255;
+  }
+  nx2.putImageData(ni, 0, 0);
+  return { map: toTex(c, { srgb: true }), normalMap: toTex(nc) };
 }
 
 /* ---------- catch-fence mesh (alpha): diamond wire + cables. tile = 1 m x 1 m ---------- */

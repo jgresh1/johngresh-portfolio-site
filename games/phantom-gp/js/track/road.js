@@ -3,11 +3,12 @@
 import * as THREE from 'three';
 import { W, VERGE, naturalAt, meshAt, KERB_KP, kerbRamps } from './world.js';
 import { groundUniforms, makeGroundMaterial } from './terrain.js';
+import { lapLoads, buildMarks } from './marks.js';
 
 const COLS = 11;                       // vertices across the asphalt
 
-export function buildRoad(scene) {
-  const N = W.N, L = W.L;
+export function buildRoad(scene, qual = {}) {
+  const N = W.N, L = W.L, wear = lapLoads().wear;
   const group = new THREE.Group(); group.name = 'road';
 
   /* ---------------- asphalt ---------------- */
@@ -26,7 +27,7 @@ export function buildRoad(scene) {
       pos[k * 3] = W.tx[i] + rx * d; pos[k * 3 + 1] = W.ty[i] + bank * d; pos[k * 3 + 2] = W.tz[i] + rz * d;
       nor[k * 3] = nx; nor[k * 3 + 1] = ny; nor[k * 3 + 2] = nz;
       aux[k * 4] = d; aux[k * 4 + 1] = hw; aux[k * 4 + 2] = W.line[i]; aux[k * 4 + 3] = W.tone[i];
-      aux2[k * 2] = r * W.ds; aux2[k * 2 + 1] = Math.min(1, Math.abs(W.kappa[i]) * 60);
+      aux2[k * 2] = r * W.ds; aux2[k * 2 + 1] = wear[i];
     }
   }
   const idx = new Uint32Array(N * (COLS - 1) * 6); let q = 0;
@@ -35,7 +36,7 @@ export function buildRoad(scene) {
     idx[q++] = a; idx[q++] = b; idx[q++] = d; idx[q++] = a; idx[q++] = d; idx[q++] = cc;
   }
   // split into ~250 m pieces so frustum culling and shadow cascades stay tight
-  const mat = makeRoadMaterial(L);
+  const mat = makeRoadMaterial(L, !!qual.lo);
   const PIECE = 250;
   for (let r0 = 0; r0 < N; r0 += PIECE) {
     const r1 = Math.min(N, r0 + PIECE);
@@ -166,12 +167,20 @@ export function buildRoad(scene) {
     group.add(m);
   }
 
+  const marks = buildMarks(group);
+
   scene.add(group);
-  return { group, mat, vergeLifted: lifted };
+  return { group, mat, vergeLifted: lifted, marks };
 }
 
-function makeRoadMaterial(L) {
+/* The asphalt. What is drawn, in order: the stone-and-binder grain; paver lanes, each a slightly different batch,
+   with the joint between them; the joints across the road where a day's paving stopped; patches of newer, darker
+   surface with a sealed edge; cracks sealed with tar; the rubbered line (heaviest where lapLoads() says the cars
+   brake, turn and put their power down), dust and marbles off it; then the paint. `lite` (phones) leaves out the
+   patches and the sealed cracks. */
+function makeRoadMaterial(L, lite = false) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.86, metalness: 0 });
+  if (lite) mat.defines = { ROAD_LITE: 1 };
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, groundUniforms, { uLap: { value: L } });
     sh.vertexShader = sh.vertexShader
@@ -182,6 +191,7 @@ function makeRoadMaterial(L) {
         uniform sampler2D tAsph, tAsphN, tNoise; uniform vec3 uAsphMean; uniform float uLap;
         varying vec4 vRoad; varying vec2 vRoad2;
         float rRough; vec3 rDetailN;
+        float rHash( float n ) { return fract( sin( n * 127.1 + 3.7 ) * 43758.5453 ); }
         vec4 noTile( sampler2D smp, vec2 uv ) {
           float k = texture2D( tNoise, uv * 0.031 ).r * 8.0;
           float ia = floor( k ), f = fract( k );
@@ -190,32 +200,70 @@ function makeRoadMaterial(L) {
           return mix( textureGrad( smp, uv + oa, dx, dy ), textureGrad( smp, uv + ob, dx, dy ), smoothstep( 0.2, 0.8, f ) );
         }`)
       .replace('#include <map_fragment>', /* glsl */`
-        float d = vRoad.x, hw = vRoad.y, s = vRoad2.x;
+        float d = vRoad.x, hw = vRoad.y, s = vRoad2.x, wear = vRoad2.y;
         vec2 wuv = vFogWorld.xz;
         float rDist = length( vFogWorld - cameraPosition );
         float rDet = 1.0 - smoothstep( 25.0, 160.0, rDist );
+        float rNear = 1.0 - smoothstep( 70.0, 260.0, rDist );             // thin lines are not drawn far away
+        float aa = max( fwidth( d ), 1e-4 ) * 0.75, as = max( fwidth( s ), 1e-4 ) * 0.75, ad = abs( d );
         vec3 tA = noTile( tAsph, wuv / 2.0 ).rgb / uAsphMean;
-        vec3 base = vec3( 0.105, 0.105, 0.11 ) * mix( vec3( 1.0 ), tA, 0.35 + 0.65 * rDet ) * vRoad.w;
+        vec3 base = vec3( 0.073, 0.072, 0.071 ) * mix( vec3( 1.0 ), tA, 0.35 + 0.65 * rDet ) * vRoad.w;
         vec3 n1 = texture2D( tNoise, vec2( d / 29.0, s / 83.0 ) ).rgb;
         vec3 n2 = texture2D( tNoise, vec2( d / 3.7, s / 240.0 ) ).rgb;      // long streaks along the lap
-        base *= 0.86 + 0.28 * n1.r;
-        // paving joint near the crown and faint lane-width paver bands
-        float joint = 1.0 - smoothstep( 0.0, 0.035, abs( d - 0.4 ) );
-        base *= 1.0 - 0.22 * joint * smoothstep( 0.35, 0.6, n1.b );
-        base *= 0.97 + 0.06 * step( 0.5, fract( ( d + hw ) / 3.9 ) );
-        // rubbered racing line: two tyre tracks, heavier in corners
+        vec3 n3 = texture2D( tNoise, vec2( d / 1.1, s / 520.0 ) ).rgb;      // fine ones: each car's tyres leave their own
+        base *= 0.93 + 0.14 * n1.r;
+        // paver lanes and the joints between them
+        float lane = ( d + hw ) / 3.9, lf = fract( lane );
+        base *= 0.955 + 0.09 * rHash( floor( lane ) + floor( s / 640.0 ) * 7.0 );
+        float jd = min( lf, 1.0 - lf ) * 3.9;
+        float joint = ( 1.0 - smoothstep( 0.010, 0.022 + aa, jd ) ) * step( 0.5, lane ) * step( lane, 2.0 * hw / 3.9 - 0.4 );
+        base *= 1.0 - 0.34 * joint * ( 0.45 + 0.55 * smoothstep( 0.3, 0.6, n1.b ) ) * ( 0.3 + 0.7 * rNear );
+        // where a day's paving stopped: a joint across the road, and the next batch a shade different
+        float tj = s / 217.0, tjd = abs( fract( tj + 0.5 ) - 0.5 ) * 217.0;
+        base *= 0.955 + 0.09 * rHash( floor( tj ) * 3.1 + 2.0 );
+        base *= 1.0 - 0.30 * ( 1.0 - smoothstep( 0.012, 0.026 + as, tjd ) ) * rNear;
+        float tar = 0.0;
+        #ifndef ROAD_LITE
+        {
+          // patches: a rectangle cut out and relaid, darker for being newer, its edge sealed with tar
+          float pc = floor( s / 61.0 ), ph = rHash( pc ), ph2 = rHash( pc + 17.3 ), ph3 = rHash( pc + 41.7 );
+          float ps0 = pc * 61.0 + 3.0 + ph2 * 16.0, ps1 = ps0 + 6.0 + ph3 * 30.0;
+          float pd0 = mix( - hw - 1.0, hw * 0.15, ph3 ), pd1 = ph2 > 0.55 ? hw + 1.0 : pd0 + 2.8 + 3.4 * ph;
+          float on = step( 0.6, ph );
+          float pe = min( min( s - ps0, ps1 - s ), min( d - pd0, pd1 - d ) );           // metres inside the patch
+          float pk = max( aa, as );
+          float inP = on * smoothstep( - pk, pk, pe );
+          base *= mix( 1.0, 0.78 + 0.16 * ph2, inP );
+          tar = on * ( 1.0 - smoothstep( 0.022, 0.04 + pk, abs( pe ) ) ) * rNear * step( ad, hw - 0.3 );
+          // cracks sealed with tar, in some stretches of the lap only: long ones that wander along the road ...
+          float cc = floor( s / 83.0 ), cf = fract( s / 83.0 );
+          float cOn = step( 0.5, rHash( cc + 9.0 ) );
+          float cd = hw * ( rHash( cc + 5.0 ) * 1.3 - 0.65 ) + ( texture2D( tNoise, vec2( s / 31.0, 0.61 ) ).r - 0.5 ) * 2.2 + ( texture2D( tNoise, vec2( s / 3.3, 0.23 ) ).g - 0.5 ) * 0.06;
+          float crack = ( 1.0 - smoothstep( 0.011, 0.022 + aa, abs( d - cd ) ) ) * cOn * step( 0.04 + 0.3 * rHash( cc + 2.0 ), cf ) * step( cf, 0.97 - 0.4 * rHash( cc + 3.0 ) );
+          // ... and short ones across it
+          float tq = s / 17.0, tc = floor( tq );
+          float ts = ( fract( tq ) - 0.5 ) * 17.0 - ( texture2D( tNoise, vec2( d / 11.0, tc * 0.137 ) ).r - 0.5 ) * 1.6;
+          float tcr = ( 1.0 - smoothstep( 0.011, 0.022 + as, abs( ts ) ) ) * step( 0.7, rHash( tc + 23.0 ) ) * step( 0.35, rHash( floor( s / 170.0 ) + 4.0 ) );
+          tcr *= step( d, mix( - hw * 0.3, hw + 1.0, rHash( tc + 31.0 ) ) );
+          tar = max( tar, max( crack, tcr ) * rNear * step( ad, hw - 0.25 ) );
+        }
+        #endif
+        // the rubbered line: the width the cars sweep, darker in the two wheel tracks, laid in streaks
         float rl = abs( d - vRoad.z );
-        float tracks = ( 1.0 - smoothstep( 0.25, 0.75, abs( rl - 0.82 ) ) ) * 0.65 + ( 1.0 - smoothstep( 0.6, 2.4, rl ) ) * 0.55;
-        float rub = clamp( tracks * ( 0.35 + 0.65 * n2.g ) * ( 0.42 + 0.58 * vRoad2.y ), 0.0, 1.0 );
-        base = mix( base, base * vec3( 0.56, 0.56, 0.585 ), rub );
-        rRough = mix( 0.88, 0.60, rub * 0.9 );
-        // marbles / dust off line toward the edges
-        base *= 1.0 + 0.10 * smoothstep( hw - 2.2, hw - 0.4, abs( d ) ) * n2.r;
+        float band = 1.0 - smoothstep( 0.5, 2.7, rl );
+        float tracks = 1.0 - smoothstep( 0.2, 0.75, abs( rl - 0.82 ) );
+        float streak = smoothstep( 0.2, 0.8, n3.g * 0.55 + n2.g * 0.55 );
+        float rub = clamp( ( band * 0.72 + tracks * 0.34 ) * ( 0.4 + 0.8 * streak ) * ( 0.26 + 0.74 * wear ), 0.0, 1.0 );
+        base = mix( base, base * vec3( 0.40, 0.40, 0.425 ), rub );
+        rRough = mix( 0.90, 0.55, rub );
+        // off the line: dust, and the marbles the tyres throw out in the corners
+        base *= 1.0 + ( 0.07 + 0.16 * wear ) * smoothstep( 1.8, 4.6, rl ) * ( 0.4 + 0.9 * n2.r );
+        base = mix( base, vec3( 0.014, 0.014, 0.015 ), tar * 0.9 );
+        rRough = mix( rRough, 0.62, tar );
         // paint
-        float aa = max( fwidth( d ), 1e-4 ) * 0.75, ad = abs( d );
         float eLine = smoothstep( hw - 0.19 - aa, hw - 0.19 + aa, ad ) * ( 1.0 - smoothstep( hw - 0.035 - aa, hw - 0.035 + aa, ad ) );
         float paintWear = 0.72 + 0.28 * smoothstep( 0.25, 0.6, texture2D( tNoise, vec2( d * 2.3, s / 2.9 ) ).g );
-        float ds = min( s, uLap - s ), as = max( fwidth( s ), 1e-4 ) * 0.75;
+        float ds = min( s, uLap - s );
         float sf = 1.0 - smoothstep( 0.19 - as, 0.19 + as, ds );
         // F1 grid: 22 staggered boxes behind the line, 8 m apart
         float gq = ( uLap - 9.0 - s ) / 8.0, gk = floor( gq + 0.5 );
@@ -226,16 +274,17 @@ function makeRoadMaterial(L) {
         float gBar = ( 1.0 - smoothstep( 0.065 - as, 0.065 + as, abs( gs ) ) ) * ( 1.0 - smoothstep( 1.28 - aa, 1.28 + aa, gdl ) );
         float gLeg = ( 1.0 - smoothstep( 0.055 - aa, 0.055 + aa, abs( gdl - 1.225 ) ) ) * step( 0.0, gs ) * ( 1.0 - smoothstep( 0.62 - as, 0.62 + as, gs ) );
         float paint = max( max( eLine, sf ), max( gBar, gLeg ) * gOn );
-        base = mix( base, vec3( 0.80, 0.80, 0.78 ) * paintWear, paint * ( 0.86 + 0.14 * paintWear ) );
+        // paint the tyres run over is grey with rubber
+        base = mix( base, vec3( 0.80, 0.80, 0.78 ) * paintWear * ( 1.0 - 0.55 * rub ), paint * ( 0.86 + 0.14 * paintWear ) );
         rRough = mix( rRough, 0.52, paint );
         diffuseColor.rgb = base;
-        rDetailN = ( noTile( tAsphN, wuv / 2.0 ).xyz * 2.0 - 1.0 ) * rDet * ( 1.0 - 0.6 * paint ) * ( 1.0 - 0.45 * rub );
+        rDetailN = ( noTile( tAsphN, wuv / 2.0 ).xyz * 2.0 - 1.0 ) * rDet * ( 1.0 - 0.6 * paint ) * ( 1.0 - 0.5 * rub ) * ( 1.0 - tar );
       `)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = rRough;')
       .replace('#include <normal_fragment_maps>', /* glsl */`#include <normal_fragment_maps>
         normal = normalize( normal + ( viewMatrix * vec4( rDetailN.x, 0.0, rDetailN.y, 0.0 ) ).xyz * 0.42 );`);
   };
-  mat.customProgramCacheKey = () => 'road';
+  mat.customProgramCacheKey = () => 'road' + (lite ? 'L' : '');
   return mat;
 }
 

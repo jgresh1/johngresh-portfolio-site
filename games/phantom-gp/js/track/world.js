@@ -174,6 +174,18 @@ function buildVerge() {
    The elevation survey is meant to be bare ground, but under and in front of the stands it still holds pieces of
    the structures (a ribbed mound where a stand should be). Each stand's ground is replaced by a smooth surface
    stretched between the real ground around it; props.js then builds the stand on that slope. */
+/* What is drawn and what is solid must be the same list: props.js draws exactly these, sim.js makes exactly these
+   walls. (A 2.8 m hut in the map data, too small to be drawn, once stood as an invisible wall on the road out of
+   La Source.) A building whose middle lies on the racing surface is a mapping error: neither drawn nor solid. */
+const _on = {};
+export function onRoad(b) {
+  let x = 0, z = 0; for (const p of b.pts) { x += p[0]; z += p[1]; } x /= b.pts.length; z /= b.pts.length;
+  const n = nearestStation(x, z, _on); if (!n || n.dist > 40) return false;
+  const i = Math.floor(n.s / W.ds) % W.N, kerb = n.d < 0 ? W.kerbL[i] : W.kerbR[i];
+  return Math.abs(n.d) < W.hw[i] + kerb + 0.3;
+}
+export const drawnBuilding = (b) => !!b.pts && b.pts.length >= 3 && b.area >= 14 && !onRoad(b);
+export const drawnBarrier = (b) => b.pts.length >= 2 && (b.kind === 'fence' ? b.dmean <= 420 : b.dmean <= 140);
 export const isStand = (b) => (b.kind === 'grandstand' || /Tribune|Grandstand/i.test(b.name || '')) && b.area >= 14 && b.pts.length >= 3;
 
 // drop outline points that deviate less than tol from their neighbours' line

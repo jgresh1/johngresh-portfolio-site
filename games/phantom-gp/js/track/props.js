@@ -1,6 +1,6 @@
 // props.js — trackside structures from the map survey: Armco, catch fences, buildings, grandstands, start gantry.
 import * as THREE from 'three';
-import { W, groundAt, naturalAt, nearestStation, frameAt, isStand } from './world.js';
+import { W, groundAt, naturalAt, nearestStation, frameAt, isStand, drawnBuilding, drawnBarrier } from './world.js';
 import { groundUniforms } from './terrain.js';
 import { steelTex, fenceTex, armcoMaps, curtainWallMaps, shutterMaps, panelMaps, concreteMaps, rng32 } from './tex.js';
 import { makeArch } from './arch.js';
@@ -64,6 +64,7 @@ export function buildProps(scene, qual) {
   const WN = WB.map((q, j) => { const q0 = WB[Math.max(0, j - 1)], q1 = WB[Math.min(WB.length - 1, j + 1)], th = q1[0] - q0[0], to = q1[1] - q0[1], l = Math.hypot(th, to); return [th / l, -to / l]; });   // [outward, upward]
   const BEAMS = [0.13, 0.45, 0.77];
   for (const bar of W.barriers) {
+    if (!drawnBarrier(bar)) continue;                        // the same test decides what is solid (sim.js)
     const pts = resample(bar.pts, 4);
     if (pts.length < 2) continue;
     const isFence = bar.kind === 'fence';
@@ -146,7 +147,7 @@ export function buildProps(scene, qual) {
   for (const b of W.buildings) {
     bi++;
     const name = b.name || '';
-    if (b.area < 14 || b.pts.length < 3) continue;
+    if (!drawnBuilding(b)) continue;                         // the same test decides what is solid (sim.js)
     let pts = b.pts.map(([x, z]) => new THREE.Vector2(x, z));
     if (THREE.ShapeUtils.isClockWise(pts)) pts.reverse();
     const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length, cz = pts.reduce((s, p) => s + p.y, 0) / pts.length;

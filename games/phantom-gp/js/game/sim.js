@@ -1,6 +1,6 @@
 // sim.js — the driving model, the rival driver and the race. Both cars share one set of performance numbers, so the
 // rival is fast because it drives well, not because it has a better car.
-import { W, frameAt, nearestStation, surfaceAt, contactAt, groundClass, treeWithin } from '../track/world.js';
+import { W, frameAt, nearestStation, surfaceAt, contactAt, groundClass, treeWithin, drawnBuilding, drawnBarrier } from '../track/world.js';
 import { nearestRoad, roadAhead, roadSpeed } from '../track/roads.js';
 
 // tyre contact points in the car frame (x forward, z right): front axle 1.8 m ahead of the middle, rear 1.8 m behind;
@@ -49,8 +49,9 @@ export function buildTrack() {
       }
     }
   };
-  for (const b of W.barriers) scan(b.pts, false);
-  for (const b of W.buildings) if (b.pts && b.pts.length >= 3) scan(b.pts, true);
+  // only what is drawn can limit the road (world.js: drawnBarrier, drawnBuilding)
+  for (const b of W.barriers) if (drawnBarrier(b)) scan(b.pts, false);
+  for (const b of W.buildings) if (drawnBuilding(b)) scan(b.pts, true);
   const spread = (a, r, f) => { const o = new Float32Array(N); for (let i = 0; i < N; i++) { let v = f === Math.min ? 1e9 : 0, c = 0; for (let j = -r; j <= r; j++) { const x = a[(i + j + N) % N]; if (f === Math.min) v = Math.min(v, x); else { v += x; c++; } } o[i] = f === Math.min ? v : v / c; } return o; };
   let dMax = new Float32Array(N), dMin = new Float32Array(N);
   for (let i = 0; i < N; i++) { dMax[i] = Math.min(W.hw[i] - 1.15, wr[i] - 1.7); dMin[i] = Math.min(W.hw[i] - 1.15, wl[i] - 1.7); }
@@ -111,8 +112,9 @@ function buildWalls() {
       segs.push(a[0], a[1], b[0], b[1]);
     }
   };
-  for (const b of W.barriers) addLine(b.pts, false);
-  for (const b of W.buildings) if (b.pts && b.pts.length >= 3) addLine(b.pts, true);
+  // only what is drawn is solid: a wall nobody can see is a trap
+  for (const b of W.barriers) if (drawnBarrier(b)) addLine(b.pts, false);
+  for (const b of W.buildings) if (drawnBuilding(b)) addLine(b.pts, true);
   wallSeg = new Float32Array(segs); wallGrid = new Map();
   for (let k = 0; k < wallSeg.length; k += 4) {
     const x0 = Math.floor(Math.min(wallSeg[k], wallSeg[k + 2]) / CELL), x1 = Math.floor(Math.max(wallSeg[k], wallSeg[k + 2]) / CELL);

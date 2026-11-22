@@ -3,7 +3,8 @@
 //   16-24  the drop: the whole car      24-28   a low sweep along the side, in from ahead of the nose
 //   28-32  overhead, nose to tail, speed-ramped (fast, slow over the cockpit, fast)
 //   32-34  the thumb presses a button: N becomes 1         34-40   the gear changes
-//   40-56  wet floor, wheelspin, two slow-motion looks at the tyre lettering
+//   40-42  wet floor, wheelspin      42-48, 48-54  the two names on the tyre, six beats each: the picture is
+//          speed-ramped down to a crawl, held, and whipped back up to speed before the cut      54-56  from the front
 //   56-64  the camera drops in behind the car, the hall's lights come up, the car runs out through the door, cut to the circuit
 // The burn-out (40-56) is shot locked off: neither the car nor any camera in it moves.
 import * as THREE from 'three';
@@ -42,6 +43,27 @@ const RAMP = (() => {
 })();
 const CHASE = { pos: [-6.38, 1.58, 0], tg: [12.6, 0.95, 0], fov: 70.9 };     // where the race camera sits at 290 km/h
 
+/* ---- the slow motion on the two names (beats 42-54) ----
+   slowAt: how far into one slow motion (an entry of SLOW) the film is at film time w: 0 = real time, 1 = held. */
+const slowAt = (s, w) => { const w0 = s.beat * BEAT, a = w0 + s.in, c = a + s.hold, d = c + s.out; return w <= w0 || w >= d ? 0 : w < a ? ease((w - w0) / s.in) : w < c ? 1 : 1 - ease((w - c) / s.out); };
+/* Speed is a power of its floor: floor ** slow. It then falls by the same ratio in every instant of the ramp, the way
+   a camera's speed ramp does: a tenth of full speed by the middle of the ramp, a soft landing, a crawl, and a whip
+   back up. (A straight blend from 1 to the floor is still at half speed in the middle and then stops dead; that is
+   how it was, with a quarter-second ramp.) The water falls at 1.2% of real time in the hold. The wheel turns at
+   0.18%, so the lettering creeps half a radian across the top of the tyre while it is held. */
+const SPIN = 175, SLOW_PIC = 0.012, SLOW_WHEEL = 0.0018;
+/* TURN[i](w): how far the rear wheel has turned (rad) at film time w, counted from the middle of slow motion i's
+   hold, where the name stands at the top of the tyre. It is the sum of the same speed curve, worked out once, so the
+   wheel's angle through the whole shot is a function of the film clock: it spins, slows until the name arrives,
+   creeps, and spins away, with nothing snapped into place and no drift at any frame rate. */
+const TURN = SLOW.map((s) => {
+  const h = 1 / 2000, w0 = s.beat * BEAT, n = Math.ceil((s.in + s.hold + s.out) / h), A = new Float64Array(n + 1);
+  for (let k = 1; k <= n; k++) A[k] = A[k - 1] + SPIN * Math.pow(SLOW_WHEEL, slowAt(s, w0 + (k - 0.5) * h)) * h;
+  const at = (w) => { if (w <= w0) return SPIN * (w - w0); if (w >= w0 + n * h) return A[n] + SPIN * (w - w0 - n * h); const x = (w - w0) / h, k = Math.floor(x); return lerp(A[k], A[k + 1], x - k); };
+  const mid = at(w0 + s.in + s.hold / 2);
+  return (w) => at(w) - mid;
+});
+
 export class Intro {
   constructor(ctx) {
     this.ctx = ctx; this.done = true; this.clock = null; this.tile = 0; this.beat = 0; this.cut = -1; this.wheel = 0; this.gear = 1; this.lastShift = -1; this.cap = '';
@@ -60,7 +82,7 @@ export class Intro {
 
   start() {
     const { studio, hud, gfx, sound, view } = this.ctx;
-    this.done = false; this.warm = 0; this.tile = 0; this.cut = -1; this.wheel = 0; this.gear = 1; this.lastShift = -1; this.cap = ''; this.last = performance.now() / 1000; this.run = 0; this.runV = 0;
+    this.done = false; this.warm = 0; this.tile = 0; this.cut = -1; this.wheel = 0; this.gear = 1; this.lastShift = -1; this.cap = ''; this.last = performance.now() / 1000; this.run = 0; this.runV = 0; this.nameShot = -1; this.prevShot = -1; this.slow = 0; this.filmW = 0;
     studio.floorU.uWet.value = 0; studio.floorU.uRun.value = 0; studio.clearSpray(); studio.setLaunch(0); this.prevWheel = 0;
     gfx.clearCollage(); gfx.setLook(LOOKS.studio); gfx.fx.fade = 1; gfx.fx.flash = 0; gfx.fx.blur = 0; gfx.fx.punch = 0; gfx.fx.chroma = 0;
     view.home(); view.setWheels(0, 0, 0, 0, 0); if (view.dash) view.drawDash('N', 0, 0, 1); view.pressButton(0, 0); studio.fill.intensity = 0; this.pressed = false;
@@ -190,23 +212,24 @@ export class Intro {
       if (view.dash) view.drawDash(this.gear, 60 + this.gear * 34 + rev * 30, (rpm - 6200) / 6100, 1);
       eng = [rpm, since < 0.12 ? 0.1 : 1, 0.2];
     } else if (b < 56) {
-      // ---- wet floor, wheelspin, and the two slow looks at the tyre
+      // ---- wet floor, wheelspin, and the two long slow looks at the tyre
       this.poseHand(0);
       studio.floorU.uWet.value = 1;
-      const w = this.clock.wall();
-      // picture speed: twice (SLOW in audio.js) the picture drops almost to a stop; the music carries on at full speed
+      const w = wallAt(b * BEAT);
+      // picture speed: twice (SLOW in audio.js) the picture is ramped down almost to a stop, held there while the
+      // name is read, and ramped back up; the music carries on at full speed
       let slow = 0, hold = -1;
-      SLOW.forEach((s, i) => { const w0 = wallAt(s.beat * BEAT), a = w0 + s.in, c = a + s.hold, d = c + s.out; if (w > w0 && w < d) { slow = w < a ? ease((w - w0) / s.in) : w < c ? 1 : 1 - ease((w - c) / s.out); hold = i; this.holdU = clamp((w - a) / s.hold, 0, 1); } });
-      vis = lerp(1, 0.012, slow);
-      const up = clamp((b - 40) / 2.5, 0, 1);
-      spin = 175 * ease(up);
+      SLOW.forEach((s, i) => { const k = slowAt(s, w); if (k > 0) { slow = k; hold = i; } });
+      vis = Math.pow(SLOW_PIC, slow);
+      const up = clamp((b - 40) / 2, 0, 1);
+      spin = SPIN * ease(up);
       // locked off: the car stands still, held on its brakes, and so does every camera in this part
-      if (b < 44) { cutTo(9); this.look([-4.7, 0.38, 2.95], [-1.5, 0.36, 0.45], 28); }
+      if (b < 42) { cutTo(9); this.caption('', ''); this.look([-4.7, 0.38, 2.95], [-1.5, 0.36, 0.45], 28); }
       else if (b < 48) { cutTo(10); this.look([-1.74, 0.69, 2.02], [-1.8, 0.585, 1.0], 19, false); if (hold === 0 && slow > 0.6) this.caption('Created by', 'John Gresh'); else this.caption('', ''); }
-      else if (b < 52) { cutTo(11); this.look([-1.95, 0.66, 1.72], [-1.8, 0.607, 1.0], 12.5, false); if (hold === 1 && slow > 0.6) this.caption('Co-producer', 'Luke Carlan'); else this.caption('', ''); }
+      else if (b < 54) { cutTo(11); this.look([-1.95, 0.66, 1.72], [-1.8, 0.607, 1.0], 12.5, false); if (hold === 1 && slow > 0.6) this.caption('Co-producer', 'Luke Carlan'); else this.caption('', ''); }
       else { cutTo(12); this.caption('', ''); this.look([5.35, 0.28, 1.3], [0, 0.45, 0], 24); }
-      // while the picture is held, the lettering sits at the top of the tyre and drifts through the frame
-      this.nameAt = hold === 0 ? 0 : hold === 1 ? Math.PI / 2 : null; this.slow = slow;
+      // in the two name shots the wheel's angle comes from the film clock (TURN): the name arrives at the top of the tyre as the picture lands
+      this.nameShot = b >= 42 && b < 48 ? 0 : b >= 48 && b < 54 ? 1 : -1; this.slow = slow; this.filmW = w;
       eng = [lerp(9000, 12400, 0.5 + 0.5 * Math.sin(b * 1.7)) * lerp(1, 0.5, slow), 1, 0.2 * lerp(1, 0.6, slow)];     // the engine slows with the picture; the music does not
       fx.chroma = 0;                         // locked off and clean: no lens tricks on the burn-out
     } else {
@@ -231,14 +254,14 @@ export class Intro {
     // ---- wheels and the water they throw
     if (b >= 40) {
       const R = 0.36;
-      if (this.nameAt !== null && this.slow > 0.02 && b < 52) {
-        // right rear wheel: rotation.z = -angle; the big name is at the top at 0, the small one a quarter turn on
-        const target = -(this.nameAt + lerp(0.34, -0.34, this.holdU || 0));
-        this.wheel = lerp(this.wheel + spin * vis * dt, -target, this.slow > 0.98 ? 1 : 0);
-        if (this.slow > 0.98) this.wheel = -target;
-      } else this.wheel += spin * vis * dt;
+      const named = b < 56 ? this.nameShot : -1, cut = named !== this.prevShot; this.prevShot = named;
+      // right rear wheel: rotation.z = -angle; the big name is at the top at 0, the small one a quarter turn on
+      if (named >= 0) this.wheel = (named ? Math.PI / 2 : 0) + TURN[named](this.filmW);
+      else this.wheel += spin * vis * dt;
       const roll = b >= 56 ? this.run / R : 0;
-      const wr = Math.abs(this.wheel + roll - this.prevWheel) / dt; this.prevWheel = this.wheel + roll;
+      // how fast the tyre is turning, for its blur: known exactly in the name shots; at a cut the angle jumps, so not measured there
+      const wr = named >= 0 ? SPIN * Math.pow(SLOW_WHEEL, this.slow) : cut ? spin * vis : Math.abs(this.wheel + roll - this.prevWheel) / dt;
+      this.prevWheel = this.wheel + roll;
       view.setWheels(roll, this.wheel + roll, 0, Math.min(0.5, this.runV / R / 90 / 6.283), Math.min(0.5, wr / 90 / 6.283));
       view.car.position.set(0, 0, 0); view.car.rotation.set(0, 0, 0);      // the car itself does not move: no shudder, no sway
       // water off the rear tyres: fewer, finer drops, each leaving along the tread (studio.emitTyre)

@@ -5,8 +5,9 @@ import { loadScore, SCORE, BEAT } from './music.js';
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 // Slow motion in the film: the picture slows so the names on the tyre can be read; the music does not. Each: the
-// beat it starts on, then seconds to ease in, hold and ease out. Both fit inside their four-beat shots (intro.js).
-export const SLOW = [{ beat: 44.2, in: 0.25, hold: 1.15, out: 0.28 }, { beat: 48.2, in: 0.25, hold: 1.15, out: 0.28 }];
+// beat it starts on, then seconds to slow down, hold, and come back up to speed. Each fits inside its six-beat shot
+// (intro.js, beats 42-48 and 48-54): the shot opens at full speed, and is back at full speed just before the cut.
+export const SLOW = [{ beat: 42.25, in: 0.5, hold: 1.6, out: 0.42 }, { beat: 48.25, in: 0.5, hold: 1.6, out: 0.42 }];
 // The music plays at one speed from start to finish, so film time and music time are the same thing. (They were not
 // while the music slowed with the picture; these two stay so the film's code reads the same either way.)
 export const tauAt = (w) => w;

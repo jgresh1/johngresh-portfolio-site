@@ -114,6 +114,11 @@ async function boot() {
   studio.setSize(gfx.w, gfx.h);
   toStudio();
   while (studio.bakeN < q.studio.bake) { studio.bakeStep(8); hud.load('Lighting the studio', 0.7 + 0.28 * studio.bakeN / q.studio.bake); await yieldNow(); }
+  /* Build the film's own shaders now, behind the loading bar. They used to be built on the beat that first showed
+     them (the collage at beat 4, the tyre spray at 40, the hall at 56): each a hitch in the film on a phone. The
+     render target is set first because a shader built for the screen is a different one from the same material's
+     shader for the HDR target, and everything here is drawn to the HDR target. */
+  renderer.setRenderTarget(gfx.rt); renderer.compile(studio.scene, studio.camera); gfx.warm();
 
   intro = new Intro({ gfx, studio, view: cars.player, sound, hud, q, mark, warmTrack, onCut: (skipped) => startRace({ mode: 'rolling', laps: 1, fromFilm: !skipped }) });
   // the ladder the governor walks down when frames run long: geometry first (it costs the most on the circuit), then pixels
@@ -121,7 +126,7 @@ async function boot() {
   const treeCut = (k, hero) => { if (!trees) return; const U = trees.uniforms; U.uNear.value = Math.max(26, U.uNear.value * k); if (U.uHero.value > 0) U.uHero.value = hero ? Math.max(14, U.uHero.value * k) : -1000; };
   const LADDER = [
     () => treeCut(0.72, true), () => setScale(0.86), () => { treeCut(0.7, true); gfx.noBloom = true; }, () => setScale(0.74),
-    () => { treeCut(0.7, false); q.lod = Math.min(q.lod, 240); }, () => setScale(0.64), () => { for (const l of shadows.lights) l.castShadow = false; }, () => setScale(0.55),
+    () => { treeCut(0.7, false); q.lod = Math.min(q.lod, 240); }, () => setScale(0.64), () => shadows.setEnabled(false), () => setScale(0.55),      // (no step may change a shader: see SunShadows.setEnabled)
   ];
   gov = new Governor(q, (what, v) => {
     if (what === 'scale') setScale(v); else LADDER[v - 1]();
@@ -143,7 +148,18 @@ async function boot() {
   G.state = 'title'; hud.screen('title'); hud.startProgress(0.7 * netP);
   G.bootT = Math.round(performance.now());
   let last = performance.now();
-  const loop = (now) => { const dt = (now - last) / 1000; last = now; if (G.trackReady) gov.sample(dt); frame(Math.min(0.05, Math.max(0.001, dt))); requestAnimationFrame(loop); };
+  /* The governor's ladder is the circuit's (trees, terrain, shadows, pixels), so it only watches frames that draw the
+     circuit. It used to watch the title and the film too: a phone that ran the studio under 46 frames a second had
+     gone all the way down the ladder before the race began. */
+  const onCircuit = () => G.trackReady && (G.state === 'race' || G.state === 'menu' || G.state === 'result');
+  let held = 0;
+  const loop = (now) => {
+    const dt = (now - last) / 1000; last = now;
+    gov.see(dt);
+    if (held < 8) { held++; requestAnimationFrame(loop); return; }      // the first frames draw nothing: they time the screen itself (Governor.see)
+    if (onCircuit()) gov.sample(dt);
+    frame(Math.min(0.05, Math.max(0.001, dt))); requestAnimationFrame(loop);
+  };
   requestAnimationFrame(loop);
 
   // ---- the circuit, behind the title
@@ -185,6 +201,9 @@ async function boot() {
   P.settle(0); R.settle(0); cars.player.sync(P, ATMO.sunDir, 0); cars.rival.sync(R, ATMO.sunDir, 0); chase.snap(); chase.update(0.016, cars.player, P);
   // compile the circuit's shaders without blocking the page where the browser can (parallel shader compile)
   // (raced against a timer: if a program never reports ready the wait must not hang the load)
+  // (for the HDR target the circuit is drawn to: with no target set this built every program for the screen instead,
+  // which nothing uses, and left the real ones, hidden objects' included, to the first frame that drew them)
+  renderer.setRenderTarget(gfx.rt);
   try { await Promise.race([renderer.compileAsync(scene, camera), new Promise((r) => setTimeout(r, 5000))]); } catch (e) { /* the first frame compiles them */ }
   for (let i = 0; i < 5; i++) { frameRace(1 / 60, true); await step(0.8 + 0.04 * i); }
   G.startPose = { p: camera.position.clone(), q: camera.quaternion.clone(), fov: camera.fov, focus: cars.player.pos.clone() };

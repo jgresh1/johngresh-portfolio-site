@@ -350,6 +350,7 @@ export class SunShadows {
 
   // focus: optional world point the near cascades should centre on (telephoto / chase cameras)
   update(camera, focus = null) {
+    if (this.off) return;
     const d = ATMO.sunDir, c = this._c, fwd = this._f;
     camera.getWorldDirection(fwd);
     let used = 0;
@@ -373,6 +374,18 @@ export class SunShadows {
   }
 
   invalidate() { this.keys.fill(''); }
+
+  /* Shadows off (and on again) without touching the lights' castShadow. That flag is part of every material's shader:
+     clearing it in the middle of a race made the game build 48 programs in one frame, which froze it for many seconds
+     (13 s measured on a desktop; this was the long pause phones had soon after the start). Instead the maps stop
+     being redrawn and each cascade's matrix is parked where no point falls inside its map, so the test the shader
+     already makes skips every lookup. Same programs, no shadow passes. */
+  setEnabled(on) {
+    if (on === !this.off) return;
+    this.off = !on;
+    if (on) this.invalidate();
+    else for (const l of this.lights) { l.shadow.needsUpdate = false; l.shadow.matrix.makeScale(0, 0, 0).setPosition(9, 9, 9); }
+  }
 
   // force the n nearest cascades to re-render this frame (moving shadow casters)
   touch(n) { for (let i = 0; i < n && i < this.lights.length; i++) this.lights[i].shadow.needsUpdate = true; }

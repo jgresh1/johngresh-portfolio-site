@@ -141,9 +141,12 @@ export class Gfx {
   }
   setSize(cssW, cssH, scale = this.scale) {
     this.cssW = Math.max(2, cssW); this.cssH = Math.max(2, cssH); this.scale = scale;
-    let pr = Math.min(window.devicePixelRatio || 1, this.dprCap) * scale;
+    let pr = Math.min(window.devicePixelRatio || 1, this.dprCap);
     const px = this.cssW * this.cssH * pr * pr, cap = this.q.maxPixels || 1e9;
     if (px > cap) pr *= Math.sqrt(cap / px);
+    // the governor's scale comes after the pixel cap. Before the cap it did nothing on a dense or big screen (a phone,
+    // a 4K monitor): the cap had already cut further than the first steps asked, so those steps changed no pixels
+    pr *= scale;
     this.pr = pr;
     this.renderer.setPixelRatio(pr); this.renderer.setSize(this.cssW, this.cssH, false);
     const w = Math.max(2, Math.round(this.cssW * pr)), h = Math.max(2, Math.round(this.cssH * pr));
@@ -175,6 +178,8 @@ export class Gfx {
     u.uBirth.value[idx] = t;
   }
   clearCollage() { this.matCollage.uniforms.uBirth.value.fill(1e9); }
+  // run the collage's two passes once while the game loads, so their shaders are built before the film's first still (beat 4)
+  warm() { this.stampTile(0, 3, 0); this.drawCollage(0); this.clearCollage(); }
   drawCollage(t, zoom = 1, strobe = 0) {
     const r = this.renderer, u = this.matCollage.uniforms;
     u.uTime.value = t; u.uZoom.value = zoom; u.uStrobe.value = strobe;

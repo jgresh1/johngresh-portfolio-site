@@ -1122,7 +1122,7 @@ const SPIRAL = { R0: 46, R1: 11, H0: 5, H1: 36, TH: TAU, phi0: 0, hw: 1.8 };
 const POND = { x: -76, z: 54, r: 8 };
 const LAIR = { x: -120, z: 40, r: 17 };
 const LOC = {
-  start: { x: 2.4, z: 104 },
+  start: { x: 3.4, z: 102.6 },  // on the road a few steps past the bus's nose, the arch straight ahead (startGame frames it)
   flag: { x: 0, z: 0 },
   bruno: { x: 3.2, z: 89.5 },  // on the Lodge Green, just inside the arch, until the campfire
   board: { x: -3.2, z: 7.5 },
@@ -2522,6 +2522,8 @@ function buildCampGrounds() {
   for (const [a, c] of [[-1.15, 3.6], [1.15, 3.6], [-1.15, -2.8], [1.15, -2.8]]) Q(G.cyl, '#2f2420', a, 0.5, c, 0.5, 0.36, 0.5, undefined, Math.PI / 2);
   Q(G.box, '#2f2420', 0, 1.7, 0.0, 2.52, 0.12, 8.22, { outline: false });
   addBox(Bu.x, Bu.z - 0.5, 1.35, 4.9, -0.04);
+  // the camera treats the bus like a cabin, so the lens never parks on its roof or behind it
+  addOccBox({ x: Bu.x, z: Bu.z - 0.5, y0: buy - 1, y1: buy + 3.2, hw: 1.7, hd: 5.35, c: Math.cos(-0.04), s: Math.sin(-0.04) });
   KEEP_CLEAR.push([Bu.x, Bu.z, 7], [A.x, A.z, 5]);
   buildSignpost(4.2, 10.5, [['Lake + Dock', 30, 8], ['Summit Trail', 8, -40], ['Archery', LOC.range.x, LOC.range.z], ['Campfire', LOC.campfire.x, LOC.campfire.z]]);
   buildSignpost(LOC.trailhead.x - 2.4, LOC.trailhead.z + 4, [['Summit 36 m', 8, -60], ['Camp', 0, 4]]);
@@ -8439,7 +8441,7 @@ const NPC_DEFS = {
 function setupActors() {
   player.rig = makeCamper(); scene.add(player.rig.root);
   player.pos.set(LOC.start.x, terrainH(LOC.start.x, LOC.start.z), LOC.start.z); player.lastSafe.copy(player.pos);
-  player.rig.yaw = Math.PI; player.rig.root.position.copy(player.pos);
+  player.rig.yaw = Math.atan2(LOC.arch.x - LOC.start.x, LOC.arch.z - LOC.start.z); player.rig.root.position.copy(player.pos);  // facing the arch
   for (const [id, d] of Object.entries(NPC_DEFS)) {
     const rig = d.make(); scene.add(rig.root);
     NPC[id] = { id, ...d, rig, pos: rig.root.position, face: 0, lookT: 0, walking: false, mode: 'idle', marker: makeMarker(), r: id === 'bruno' ? 0.62 : 0.4 };
@@ -9110,7 +9112,9 @@ function startGame() {
   AU.init(); AU.resume();
   $('title').classList.add('off'); $('startBtn').blur(); canvas.focus();
   S.phase = 'play'; S.time = S.timeTarget = 0; S.timeRate = 0.3;
-  cam.yaw = -0.62; cam.pitch = 0.3; cam.dist = 7.6; cam.distT = null; cam.target.copy(player.pos);
+  // opening shot: from the open side of the road, the arch dead ahead and the bus at the edge of frame (Nov 22 2026:
+  // the old angle put the lens on the bus roof with the camper hidden behind it)
+  cam.yaw = 0.42; cam.pitch = 0.28; cam.dist = 7.6; cam.distT = null; cam.target.copy(player.pos);
   followCamera(1, player.pos, {}); toFollow(); cam.blend = 0;
   $('left').classList.remove('off'); $('topright').classList.remove('off'); $('hint').classList.remove('off');
   setTimeout(() => $('hint').classList.add('off'), 16000);

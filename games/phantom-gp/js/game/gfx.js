@@ -33,11 +33,11 @@ export class Gfx {
       uniforms: {
         tDiffuse: { value: null }, uTM: { value: 0 }, uExposure: { value: 1 }, uVig: { value: 0.34 }, uGrade: { value: 1 }, uFlash: { value: 0 }, uFade: { value: 0 },
         uBlur: { value: 0 }, uChroma: { value: 0 }, uPunch: { value: 0 }, uCenter: { value: new THREE.Vector2(0.5, 0.5) }, uTime: { value: 0 }, uTint: { value: new THREE.Vector3(1, 1, 1) },
-        uCar: { value: [new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0)] },      // each car on screen: centre (uv) and half size; 0 = not there
+        uCar: { value: [0, 1, 2, 3, 4].map(() => new THREE.Vector4(0, 0, 0, 0)) },      // each car on screen: centre (uv) and half size; 0 = not there
       },
       vertexShader: QUAD_VERT,
       fragmentShader: /* glsl */`
-        uniform sampler2D tDiffuse; uniform float uTM, uExposure, uVig, uGrade, uFlash, uFade, uBlur, uChroma, uPunch, uTime; uniform vec2 uCenter; uniform vec3 uTint; uniform vec4 uCar[2];
+        uniform sampler2D tDiffuse; uniform float uTM, uExposure, uVig, uGrade, uFlash, uFade, uBlur, uChroma, uPunch, uTime; uniform vec2 uCenter; uniform vec3 uTint; uniform vec4 uCar[5];
         varying vec2 vUv;
         float h(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
         vec3 RRTAndODTFit(vec3 v) { vec3 a = v * (v + 0.0245786) - 0.000090537; vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081; return a / b; }
@@ -58,7 +58,7 @@ export class Gfx {
         // 1 inside the rectangle round a car, falling to 0 a third of its size outside it
         float carMask(vec2 p) {
           float m = 0.0;
-          for (int i = 0; i < 2; i++) { vec2 q = abs(p - uCar[i].xy) / max(uCar[i].zw, vec2(1e-5)); m = max(m, 1.0 - smoothstep(1.0, 1.35, max(q.x, q.y))); }
+          for (int i = 0; i < 5; i++) { vec2 q = abs(p - uCar[i].xy) / max(uCar[i].zw, vec2(1e-5)); m = max(m, 1.0 - smoothstep(1.0, 1.35, max(q.x, q.y))); }
           return m;
         }
         /* Speed blur: the picture smeared outward from the centre, more towards the edges. A camera travelling with the

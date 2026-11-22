@@ -199,7 +199,13 @@ class Body {
   }
   lapCheck(t, race) {
     const L = W.L, lap = Math.floor(this.prog / L);
-    if (lap > this.lap) { this.laps.push(t - this.lapStart); this.lapStart = t; this.lap = lap; if (lap >= race.laps && !this.done) { this.done = true; this.finishT = t; } return true; }
+    if (lap > this.lap) {
+      // from the grid the cars start behind the line: crossing it the first time begins lap 1, it is not a lap done
+      const full = this.lap >= 0;
+      if (full) this.laps.push(t - this.lapStart);
+      this.lapStart = t; this.lap = lap; if (lap >= race.laps && !this.done) { this.done = true; this.finishT = t; }
+      return full;
+    }
     return false;
   }
 }
@@ -383,7 +389,7 @@ export class Car extends Body {
 // clear in front (so a mistake does not end the race). push: how much it finds when it is behind.
 export const SKILL = { rookie: { pace: 0.915, ease: 0.11, push: 0.035 }, pro: { pace: 0.965, ease: 0.085, push: 0.045 }, legend: { pace: 1.005, ease: 0.045, push: 0.04 } };
 export class Rival extends Body {
-  constructor() { super('rival'); this.dOff = 0; this.dRate = 0; this.skill = SKILL.pro; this.pace = 1; this.hold = 0; }
+  constructor(label = 'Voss', idx = 0) { super('rival'); this.label = label; this.idx = idx; this.active = idx === 0; this.dOff = 0; this.dRate = 0; this.skill = SKILL.pro; this.pace = 1; this.hold = 0; }
   place(s, d, v) {
     this.s = ((s % W.L) + W.L) % W.L; this.dOff = d - lineAt(s); this.u = v; this.w = 0; this.dRate = 0;
     this.gear = gearFor(v, 1); this.rpm = rpmFor(v, this.gear); this.pose(0); this.y = surfaceAt(this.x, this.z); this.slope = undefined; this.bank = undefined; this.settle(0);
@@ -416,21 +422,25 @@ export class Rival extends Body {
     const offLine = Math.abs(this.dOff);
     vt *= 1 - clamp(offLine / 6, 0, 1) * clamp(Math.abs(T.kl[i]) * 60, 0, 1) * 0.07;
 
-    // ---- where to put the car relative to the player
+    // ---- where to put the car. The car it deals with (A) is the nearest one ahead within 45 m, the player or
+    // another rival; with nobody that close ahead it is the player, wherever the player is.
+    let A = P, gapA = gap;
+    if (race.rivals.length > 1) for (const o of race.rivals) { if (o === this) continue; const g = o.prog - this.prog; if (g > 0 && g < 45 && (gapA <= 0 || g < gapA)) { A = o; gapA = g; } }
     let dTarget = 0;                                             // offset from the racing line
-    const near = Math.abs(gap) < 7, lineD = this.d - this.dOff, pd = P.d - lineD;   // player's offset from the line
-    const closing = v - P.u;
-    if (gap > 0 && gap < 45 && (closing > -1.5 || gap < 12)) {
+    const lineD = this.d - this.dOff, pd = A.d - lineD;          // that car's offset from the line
+    const closing = v - A.u;
+    if (gapA > 0 && gapA < 45 && (closing > -1.5 || gapA < 12)) {
       // attack: go for the side with more room
-      const roomR = T.dMax[i] + 1.15 - P.d, roomL = P.d - T.dMin[i] + 1.15, side = roomR > roomL ? 1 : -1, room = side > 0 ? roomR : roomL;
+      const roomR = T.dMax[i] + 1.15 - A.d, roomL = A.d - T.dMin[i] + 1.15, side = roomR > roomL ? 1 : -1, room = side > 0 ? roomR : roomL;
       if (room > 3.5) dTarget = pd + side * 2.7;
-      else if (gap < 9) vt = Math.min(vt, P.u + 0.3 + gap * 0.25);        // no room: sit behind
-      if (gap < 9 && Math.abs(this.d - P.d) < 2.2) vt = Math.min(vt, P.u + (gap - 5.6) * 0.8);
-    } else if (gap < 0 && gap > -30 && closing < 1.5) {
-      // defend: one move towards the side the player is on, kept gentle
-      dTarget = clamp(pd, -1.6, 1.6) * 0.75;
+      else if (gapA < 9) vt = Math.min(vt, A.u + 0.3 + gapA * 0.25);        // no room: sit behind
+      if (gapA < 9 && Math.abs(this.d - A.d) < 2.2) vt = Math.min(vt, A.u + (gapA - 5.6) * 0.8);
+    } else if (gap < 0 && gap > -30 && v - P.u < 1.5) {
+      // defend against the player: one move towards the side the player is on, kept gentle
+      dTarget = clamp(P.d - lineD, -1.6, 1.6) * 0.75;
     }
-    if (near && Math.abs(this.d - P.d) < 2.4) dTarget = this.dOff + Math.sign(this.d - P.d || 1) * 1.2;   // alongside: give room
+    // alongside any car: give it room
+    for (const o of race.cars) { if (o === this) continue; if (Math.abs(o.prog - this.prog) < 7 && Math.abs(this.d - o.d) < 2.4) { dTarget = this.dOff + Math.sign(this.d - o.d || (this.idx % 2 ? -1 : 1)) * 1.2; break; } }
     dTarget = clamp(dTarget, T.dMin[i] - lineD, T.dMax[i] - lineD);
     // A car moves sideways only by driving forward: about 8 degrees off the road's direction at most, and not at all
     // before the lights go out. (It used to cross the grid sideways, standing still, while the lights counted down.)
@@ -441,7 +451,7 @@ export class Rival extends Body {
 
     // ---- speed
     let draft = 0;
-    if (gap > 3 && gap < 70 && Math.abs(this.d - P.d) < 2.6) draft = clamp((70 - gap) / 45, 0, 1) * clamp((v - 40) / 25, 0, 1);
+    if (gapA > 3 && gapA < 70 && Math.abs(this.d - A.d) < 2.6) draft = clamp((70 - gapA) / 45, 0, 1) * clamp((v - 40) / 25, 0, 1);
     this.draft = damp(this.draft, draft, 3, dt);
     const wantBoost = (gap > 2 && gap < 60) || (gap < 0 && gap > -18);
     this.boost = wantBoost && this.energy > 0.05 && v < vt - 1 && v > 45 ? 1 : 0;
@@ -507,57 +517,100 @@ export function touch(P, R, dt) {
   return hit;
 }
 
+/* contact between two rivals. Both run on the racing line with an offset, so they are parted along it and across it:
+   side by side each gives way sideways; nose to tail the one behind drops back and they trade a little speed. */
+export function bump(A, B) {
+  const c = Math.cos(B.psi), s = Math.sin(B.psi), dx = A.x - B.x, dz = A.z - B.z;
+  const lon = dx * c + dz * s, lat = -dx * s + dz * c;
+  const pl = 5.5 - Math.abs(lon), pw = 1.95 - Math.abs(lat);
+  if (pl <= 0 || pw <= 0) return;
+  if (pw < pl * 0.5) { const k = Math.sign(lat) || (A.idx < B.idx ? 1 : -1); A.dOff += k * pw * 0.5; B.dOff -= k * pw * 0.5; return; }
+  const back = lon < 0 ? A : B, front = lon < 0 ? B : A;
+  back.s = (back.s - pl + W.L) % W.L; back.prog -= pl;
+  if (back.u > front.u - 0.5) { const m = (back.u + front.u) / 2; back.u = Math.min(back.u, m - 0.6); front.u = Math.max(front.u, m + 0.3); back.hold = 0.15; }
+}
+
 /* ------------------------------------------------------------------ the race */
+// A race is the player and one to four rivals. The first rival is the one the opening film cuts to.
+export const RIVALS = ['Voss', 'Halden', 'Marek', 'Ilves'];
 export class Race {
-  constructor(P, R) { this.P = P; this.R = R; this.state = 'idle'; this.t = 0; this.laps = 1; this.lights = 0; this.events = []; }
-  // rolling: both cars already at speed (the cut from the opening film). grid: standing start under the lights.
-  start({ laps = 1, mode = 'grid', s0 = 560, skill = 'pro' } = {}) {
-    const P = this.P, R = this.R, L = W.L;
+  // R: one rival or the list of all that exist; `rivals` is the ones in this race, `cars` everyone in it
+  constructor(P, R) { this.P = P; this.all = Array.isArray(R) ? R : [R]; this.R = this.all[0]; this.rivals = [this.R]; this.cars = [P, this.R]; this.state = 'idle'; this.t = 0; this.laps = 1; this.lights = 0; this.events = []; }
+  // rolling: the player and the first rival already at speed (the cut from the opening film). grid: standing start
+  // under the lights, `cars` cars in two columns, the rivals in order from pole and the player on the last slot.
+  start({ laps = 1, mode = 'grid', s0 = 560, skill = 'pro', cars = 2 } = {}) {
+    const P = this.P, L = W.L, n = mode === 'rolling' ? 1 : clamp(Math.round(cars) - 1, 1, this.all.length);
+    this.all.forEach((r, k) => { r.active = k < n; });
+    this.rivals = this.all.slice(0, n); this.cars = [P, ...this.rivals]; const R = this.R = this.rivals[0];
     this.laps = laps; this.t = 0; this.mode = mode; this.events.length = 0; this.result = null;
-    for (const c of [P, R]) { c.lap = 0; c.laps = []; c.lapStart = 0; c.done = false; c.finishT = 0; c.energy = 1; c.boost = 0; c.draft = 0; c.impact = 0; c.rev = false; }
-    R.skill = SKILL[skill] || SKILL.pro; R.pace = R.skill.pace; R.hold = 0;
+    for (const c of this.cars) { c.lap = 0; c.laps = []; c.lapStart = 0; c.done = false; c.finishT = 0; c.energy = 1; c.boost = 0; c.draft = 0; c.impact = 0; c.rev = false; }
+    // the first rival drives at the chosen level; each one after it gives a little away in the corners and finds a little more when it is behind
+    const base = SKILL[skill] || SKILL.pro;
+    this.rivals.forEach((r, k) => { r.skill = k ? { pace: base.pace - 0.012 * k, ease: base.ease, push: base.push + 0.006 * k } : base; r.pace = r.skill.pace; r.hold = 0; });
     if (mode === 'rolling') {
       const v = vpAt(s0) * 0.97;
       P.place(s0, lineAt(s0), v); P.prog = s0;
       R.place(s0 + 17, lineAt(s0 + 17), v); R.prog = s0 + 17;
       this.state = 'green'; this.lights = -1;
     } else {
-      const f = frameAt(L - 9, {});
-      R.place(L - 9, -Math.min(2.6, f.hw - 2), 0); R.prog = -9;
-      P.place(L - 17, Math.min(2.6, f.hw - 2), 0); P.prog = -17;
+      // grid slot k: 9 m behind the line and 8 m a row, left then right
+      const slot = (c, k) => { const sk = L - 9 - 8 * k, f = frameAt(sk, {}); c.place(sk, (k % 2 ? 1 : -1) * Math.min(2.6, f.hw - 2), 0); c.prog = -9 - 8 * k; };
+      this.rivals.forEach(slot); slot(P, n);
       this.state = 'lights'; this.lights = 0; this.lightT = -0.8;
     }
-    P.lap = Math.floor(P.prog / L); R.lap = Math.floor(R.prog / L);
+    for (const c of this.cars) c.lap = Math.floor(c.prog / L);
   }
   update(dt) {
-    const P = this.P, R = this.R;
+    const P = this.P;
     if (this.state === 'lights') {
       this.lightT += dt;
       const n = clamp(Math.floor(this.lightT / 0.9) + 1, 0, 5);
       if (n !== this.lights) { this.lights = n; this.events.push('light'); }
-      if (this.lightT > 0.9 * 4 + 1.1) { this.state = 'green'; this.lights = -1; this.events.push('go'); R.hold = 0.22; }
+      if (this.lightT > 0.9 * 4 + 1.1) { this.state = 'green'; this.lights = -1; this.events.push('go'); this.rivals.forEach((r, k) => { r.hold = 0.22 + 0.06 * k; }); }
       return;
     }
     if (this.state !== 'green') return;
     this.t += dt;
     if (P.lapCheck(this.t, this)) this.events.push(P.done ? 'finish' : P.lap === this.laps - 1 ? 'final' : 'lap');
-    R.lapCheck(this.t, this);
-    if (!this.result && (P.done || R.done)) {
-      const won = P.done && (!R.done || P.finishT <= R.finishT);
-      this.result = { won, t: this.t, gap: 0, first: won ? P : R };
-      this.endT = this.t + (won ? 4.5 : 7);
-      this.events.push(won ? 'win' : 'lose');
+    for (const r of this.rivals) r.lapCheck(this.t, this);
+    if (!this.result) {
+      let first = null; for (const c of this.cars) if (c.done && (!first || c.finishT < first.finishT)) first = c;
+      if (first) {
+        const won = first === P;
+        this.result = { won, t: this.t, gap: 0, first, pos: 0, n: this.cars.length };
+        this.endT = this.t + (won ? 4.5 : this.rivals.length > 1 ? 10 : 7);
+        this.events.push(won ? 'win' : 'lose');
+      }
     }
     if (this.result) {
-      const a = this.result.first, b = a === P ? R : P;
+      // the gap that is told afterwards: the player to the winner, or the winner (the player) to the best of the rest
+      const a = this.result.first, b = a === P ? this.best() : P;
       if (b.done && !this.result.gap) this.result.gap = b.finishT - a.finishT;
-      if (this.t > this.endT || (P.done && R.done && this.t > Math.max(P.finishT, R.finishT) + 3.2)) {
+      const settled = P.done && this.t > P.finishT + 3.2 && (a !== P || this.rivals.every((r) => r.done));
+      if (this.t > this.endT || settled) {
         if (!this.result.gap) this.result.gap = Math.max(0.1, (a.prog - b.prog) / Math.max(20, b.speed));
+        this.result.pos = this.pos;
         this.state = 'done'; this.events.push('done');
       }
     }
   }
-  // seconds the player is ahead (+) or behind (-)
-  get gap() { const P = this.P, R = this.R, d = P.prog - R.prog; return d / Math.max(18, d > 0 ? R.speed : P.speed); }
-  get pos() { return this.P.prog >= this.R.prog ? 1 : 2; }
+  // is rival r ahead of the player? (a finished car is ahead of one still running)
+  ahead(r) { const P = this.P; return r.done ? !P.done || r.finishT < P.finishT : !P.done && r.prog > P.prog; }
+  // the rival furthest on
+  best() { let b = this.rivals[0]; for (const r of this.rivals) if (r.done ? !b.done || r.finishT < b.finishT : !b.done && r.prog > b.prog) b = r; return b; }
+  // the rival the gap on the screen is to: the one just ahead of the player, or just behind when the player leads
+  get ref() {
+    const P = this.P; let up = null, dn = null;
+    for (const r of this.rivals) { if (this.ahead(r)) { if (!up || r.prog < up.prog) up = r; } else if (!dn || r.prog > dn.prog) dn = r; }
+    return up || dn || this.R;
+  }
+  // seconds the player is ahead (+) of that rival or behind (-)
+  get gap() { const P = this.P, R = this.ref, d = P.prog - R.prog; return d / Math.max(18, d > 0 ? R.speed : P.speed); }
+  get pos() { let p = 1; for (const r of this.rivals) if (this.ahead(r)) p++; return p; }
+  // the rival the player's own car reacts to (the tow, and the help that will not ram): the nearest one in front of its nose
+  near() {
+    const P = this.P, c = Math.cos(P.psi), s = Math.sin(P.psi); let b = this.R, bd = 1e9;
+    for (const r of this.rivals) { const dx = r.x - P.x, dz = r.z - P.z, f = dx * c + dz * s; if (f > -2 && f < bd && Math.abs(-dx * s + dz * c) < 6) { bd = f; b = r; } }
+    return b;
+  }
 }

@@ -6,7 +6,7 @@ const $ = (id) => document.getElementById(id);
 const fmtTime = (t) => { const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1); };
 export const fmtLap = (t) => { const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(3); };
 
-export const DEFAULTS = { laps: 1, skill: 'pro', paint: 0, assist: 1, autoThrottle: false, music: true, sound: true, quality: 'auto', line: true };
+export const DEFAULTS = { laps: 1, cars: 2, skill: 'pro', paint: 0, assist: 1, autoThrottle: false, music: true, sound: true, quality: 'auto', line: true };
 export function loadSettings(touch) {
   const s = { ...DEFAULTS, assist: touch ? 2 : 1, autoThrottle: touch };
   try { Object.assign(s, JSON.parse(localStorage.getItem('phantom-gp') || '{}')); } catch (e) { /* private window: defaults */ }
@@ -16,7 +16,8 @@ const save = (s) => { try { localStorage.setItem('phantom-gp', JSON.stringify(s)
 
 const OPTIONS = {
   laps: ['Laps', [['1', 1], ['2', 2], ['3', 3]]],
-  skill: ['Rival', [['Rookie', 'rookie'], ['Pro', 'pro'], ['Legend', 'legend']]],
+  cars: ['Cars', [['2', 2], ['3', 3], ['4', 4], ['5', 5]]],
+  skill: ['Rivals', [['Rookie', 'rookie'], ['Pro', 'pro'], ['Legend', 'legend']]],
   paint: ['Livery', PAINTS.map((p, i) => [p.name, i])],
   assist: ['Driving help', [['Off', 0], ['Standard', 1], ['Full', 2]]],
   autoThrottle: ['Throttle', [['Auto', true], ['Manual', false]]],
@@ -32,7 +33,7 @@ export class Hud {
     this.layers = { load: $('load'), title: $('title'), cine: $('cine'), race: $('hud'), pause: $('pause'), result: $('result'), menu: $('menu') };
     const rev = $('h-rev'); for (let i = 0; i < 15; i++) rev.appendChild(document.createElement('i'));
     this.revEls = [...rev.children];
-    this.rows($('menu-rows'), ['laps', 'skill', 'paint', 'assist', 'autoThrottle', 'line', 'music', 'quality']);
+    this.rows($('menu-rows'), ['cars', 'laps', 'skill', 'paint', 'assist', 'autoThrottle', 'line', 'music', 'quality']);
     this.rows($('pause-rows'), ['assist', 'autoThrottle', 'line', 'music', 'sound']);
     const click = (id, fn) => $(id).addEventListener('click', (e) => { e.preventDefault(); fn(); });
     click('b-start', () => on.start()); click('skip', () => on.skip()); click('b-resume', () => on.resume()); click('b-restart', () => on.restart()); click('b-quit', () => on.quit());
@@ -67,6 +68,12 @@ export class Hud {
       if (row.dataset.key === 'autoThrottle') row.style.display = document.body.classList.contains('touch') && !roam ? '' : 'none';
     }
     document.body.classList.toggle('manual', !this.s.autoThrottle || roam);
+    // the menu says what the race will be: a duel, or a field of up to five
+    const n = this.s.cars || 2, go = $('b-duel'), mt = $('menu-title'), ml = $('menu-line');
+    if (go) go.textContent = n > 2 ? 'Start race' : 'Start duel';
+    if (mt) mt.textContent = n > 2 ? `Race · ${n} cars` : 'Duel · 1 v 1';
+    if (ml) ml.textContent = n > 2 ? `You and ${['', '', 'two', 'three', 'four'][n - 1]} rivals in identical cars, from the lights to the flag. You start at the back. Stay in the slipstream, save your boost, and pick your moment.`
+      : 'You and one rival in identical cars, from the lights to the flag. Stay in the slipstream, save your boost, and pick your moment.';
   }
 
   screen(name) {
@@ -94,7 +101,7 @@ export class Hud {
   toast(small, big, sec = 1.8) { const t = $('h-toast'); t.firstElementChild.textContent = small || ''; t.lastElementChild.textContent = big || ''; t.classList.add('on'); this.toastT = sec; }
   lights(n) { const L = $('h-lights'); L.classList.toggle('on', n >= 0); [...L.children].forEach((el, i) => el.classList.toggle('lit', i < n)); }
   hint(on) { $('h-hint').classList.toggle('off', !on); }
-  rivalName(n) { $('h-rname').textContent = n; }
+  rivalName(n) { $('h-rname').textContent = n; this.last.ref = n; }
 
   initMap(roads = []) {
     const c = $('h-map'); this.mapCtx = c.getContext('2d');
@@ -116,6 +123,7 @@ export class Hud {
   }
 
   // per frame while racing
+  // R: the rivals in the race
   race(dt, P, R, race, top) {
     if (this.toastT > 0) { this.toastT -= dt; if (this.toastT <= 0) $('h-toast').classList.remove('on'); }
     const L = this.last, kmh = Math.round(Math.abs(P.u) * 3.6);
@@ -126,9 +134,10 @@ export class Hud {
     const en = Math.round(P.energy * 100); if (en !== L.en) { $('h-boost').firstElementChild.style.transform = `scaleX(${P.energy.toFixed(3)})`; L.en = en; }
     if (P.boost !== L.boost) { $('h-boost').classList.toggle('on', !!P.boost); L.boost = P.boost; }
     this.acc += dt; if (this.acc < 0.1) return; this.acc = 0;
-    const pos = race.pos; if (pos !== L.pos) { const el = $('h-p'); el.textContent = 'P' + pos; el.classList.toggle('p2', pos === 2); L.pos = pos; }
+    const pos = race.pos; if (pos !== L.pos) { const el = $('h-p'); el.textContent = 'P' + pos; el.classList.toggle('p2', pos > 1); L.pos = pos; }
     const lapN = Math.min(race.laps, Math.max(1, P.lap + 1)), lapS = lapN + '/' + race.laps; if (lapS !== L.lapS) { $('h-lap').textContent = lapS; L.lapS = lapS; }
     $('h-time').textContent = fmtTime(race.t);
+    const ref = race.ref.label; if (ref !== L.ref) this.rivalName(ref);          // the gap is to the car just ahead, or just behind when leading
     const g = race.gap, gv = $('h-gapv'); gv.textContent = (g >= 0 ? '+' : '−') + Math.min(99.9, Math.abs(g)).toFixed(2); gv.className = g >= 0 ? 'ahead' : 'behind';
     const tags = (P.draft > 0.25 ? '<b>Slipstream</b>' : '') + (P.boost ? '<b>Boost</b>' : '') + (top.assist ? '<b>' + top.assist + '</b>' : '');
     if (tags !== L.tags) { $('h-tags').innerHTML = tags; L.tags = tags; }
@@ -141,12 +150,13 @@ export class Hud {
     const c = this.mapCtx, { sc, ox, oz, w, h } = this.mapT;
     c.clearRect(0, 0, w, h); c.drawImage(this.mapBg, 0, 0);
     const dot = (b, col, r) => { c.beginPath(); c.arc(b.x * sc + ox, b.z * sc + oz, r, 0, 6.283); c.fillStyle = col; c.fill(); c.lineWidth = 3; c.strokeStyle = '#0b0b0c'; c.stroke(); };
-    if (!top.roam) dot(R, top.rivalColor || '#ff3b2f', 7);
+    if (!top.roam) for (let k = R.length - 1; k >= 0; k--) dot(R[k], (top.dots && top.dots[k]) || '#ff3b2f', 7);
     dot(P, top.playerColor || '#f2b200', 8.5);
   }
 
   result(r) {
-    $('r-title').textContent = r.won ? 'Victory' : 'Beaten'; $('r-title').className = r.won ? 'win' : 'lose';
+    $('r-title').textContent = r.title || (r.won ? 'Victory' : 'Beaten');
+    const eb = $('r-eyebrow'); if (eb) eb.textContent = (r.n > 2 ? `Race · ${r.n} cars` : 'Duel') + ' · Spa-Francorchamps'; $('r-title').className = r.won ? 'win' : 'lose';
     $('r-line').textContent = r.line;
     $('r-stats').innerHTML = r.stats.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join('');
   }

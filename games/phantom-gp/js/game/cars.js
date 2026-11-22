@@ -298,5 +298,19 @@ export async function buildCars(renderer, q) {
   c2.traverse((o) => { if (o.isMesh) o.material = Array.isArray(o.material) ? o.material.map(M2.twin) : M2.twin(o.material); });
   const rival = new CarView(c2, M2, heightTex, q);
   player.makeDash();
-  return { player, rival, tris: Math.round(tris), meshes, ms: Math.round(performance.now() - t0) };
+  /* Further rivals, made when a race first needs them: each a copy of the first rival's car (the player's has the
+     dash display on it) with its own set of materials, so it carries its own paint. The copy shares every
+     geometry and texture, so it costs draw calls, not memory. The first rival is stood square first: a copy
+     takes its wheels' rest positions from where they are. */
+  const rivals = [rival];
+  const ensure = (n) => {
+    while (rivals.length < n) {
+      rival.home();
+      const M = makeMaterials(M1), c = rival.car.clone(true);
+      c.traverse((o) => { if (o.isMesh) o.material = Array.isArray(o.material) ? o.material.map(M.twin) : M.twin(o.material); });
+      rivals.push(new CarView(c, M, heightTex, q));
+    }
+    return rivals;
+  };
+  return { player, rival, rivals, ensure, tris: Math.round(tris), meshes, ms: Math.round(performance.now() - t0) };
 }

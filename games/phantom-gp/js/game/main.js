@@ -9,7 +9,7 @@ import { buildTerrain, TERRAIN, groundUniforms } from '../track/terrain.js';
 import { buildRoad } from '../track/road.js';
 import { ROADS, loadRoads, prepRoads, buildRoadMeshes } from '../track/roads.js';
 import { buildCars, loadHands, PAINTS } from './cars.js';
-import { TRACK, buildTrack, Car, Rival, Race, touch, autopilot, lineAt, vpAt } from './sim.js';
+import { TRACK, buildTrack, Car, Rival, Race, RIVALS, touch, bump, autopilot, lineAt, vpAt } from './sim.js';
 import { Chase, CAM_MODES } from './chase.js';
 import { Input } from './input.js';
 import { Hud, loadSettings, fmtLap } from './hud.js';
@@ -58,7 +58,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, 1, 0.3, 26000);
 const sound = new Sound();
 const G = { state: 'boot', paused: false, time: 0, acc: 0, top: 0, hits: 0, ctrl: 1, orbit: 0, finishCam: 0, lastWrong: 0, hintT: 0, firstRace: true };
-let studio, shadows, terrain, road, trees, props, trackside, cars, P, R, race, chase, intro, hud, gov, lineMesh, sky;
+let studio, shadows, terrain, road, trees, props, trackside, cars, P, R, Rs = [], race, chase, intro, hud, gov, lineMesh, sky;
 
 const handlers = {
   start: () => { sound.unlock(); begin(); }, skip: () => { if (G.state === 'film') intro.skip(); },
@@ -74,13 +74,37 @@ input.on.any = (e) => { if (G.state === 'title' && (e.code === 'Enter' || e.code
 for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, () => sound.unlock(), { passive: true, capture: true });
 
 function applySetting(k, v) {
-  if (k === 'paint' && cars) { cars.player.setPaint(v); cars.rival.setPaint(rivalPaint()); }
+  if (k === 'paint' && cars) { cars.player.setPaint(v); paintRivals(); }
   if (k === 'autoThrottle') input.autoThrottle = v;
   if (k === 'music' || k === 'sound') sound.setOptions(S);
   if (k === 'line' && lineMesh) lineMesh.visible = v && G.state === 'race';
   if (k === 'quality') { const u = new URL(location.href); u.searchParams.delete('q'); location.href = u.toString(); }
 }
-const rivalPaint = () => (S.paint === 6 ? 5 : 6);        // the rival runs in black, or in crimson if the player took the black car
+// the rivals' paints: the first runs in black (crimson if the player took the black car), the rest each in their own, never the player's
+const RIVAL_PAINTS = [6, 5, 1, 3, 4, 2, 0];
+const rivalPaint = (k = 0) => RIVAL_PAINTS.filter((p) => p !== S.paint)[k];
+const paintRivals = () => cars.rivals.forEach((v, k) => v.setPaint(rivalPaint(k)));
+/* The rival cars a race needs. Only the first exists from the start; the others are made the first time a race
+   asks for them (each a copy of the car with its own paint), then shown or hidden race by race. */
+function fieldViews(n) {
+  const had = cars.rivals.length; cars.ensure(n);
+  for (let k = had; k < cars.rivals.length; k++) { const v = cars.rivals[k]; v.setStage(false); v.setPaint(rivalPaint(k)); scene.add(v.root, v.shadow); }
+}
+function showField() {
+  if (!cars || !race) return;
+  cars.rivals.forEach((v, k) => { const on = !G.roam && k < race.rivals.length; v.root.visible = on; if (!on) v.shadow.visible = false; });
+  G.dots = race.rivals.map((r, k) => { const c = PAINTS[rivalPaint(k)].a; return c === '#26282c' ? '#111' : c; });      // their colours on the map
+}
+// the rival nearest the camera: the one whose engine is heard
+function loudest() { let b = R, bd = 1e12; for (const r of race.rivals) { const d = (r.x - camera.position.x) ** 2 + (r.z - camera.position.z) ** 2; if (d < bd) { bd = d; b = r; } } return b; }
+/* The rivals' share of one step: drive them, then part any two cars that overlap (the player against each rival,
+   and the rivals against each other). Returns the hardest knock the player took. */
+function stepField(h) {
+  const rs = race.rivals, live = race.state === 'green' || race.state === 'done'; let hit = 0;
+  for (const r of rs) r.step(h, P, race);
+  if (live) { for (const r of rs) hit = Math.max(hit, touch(P, r, h)); for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) bump(rs[i], rs[j]); }
+  return hit;
+}
 
 function resize() {
   G.appH = window.__appH ? window.__appH() : 0;               // the visible height, in px, into the page's CSS (index.html)
@@ -108,7 +132,7 @@ async function boot() {
 
   await yieldNow();
   cars = await buildCars(renderer, q);
-  cars.player.setPaint(S.paint); cars.rival.setPaint(rivalPaint());
+  cars.player.setPaint(S.paint); paintRivals();
   hud.load('Lighting the studio', 0.7); await yieldNow();
   studio = new Studio(renderer, q.studio);
   studio.setSize(gfx.w, gfx.h);
@@ -191,7 +215,7 @@ async function boot() {
   buildTrack();
   lineMesh = buildLine(); scene.add(lineMesh);
   console.log(`[phantom] tier ${tierName}, car ${cars.tris.toLocaleString()} triangles in ${cars.meshes} meshes, ${cars.ms} ms, lap at the limit ${TRACK.lapTime.toFixed(1)} s, ${TRACK.walls} wall segments`);
-  P = new Car(); R = new Rival(); race = new Race(P, R); chase = new Chase(camera);
+  P = new Car(); Rs = RIVALS.map((name, k) => new Rival(name, k)); R = Rs[0]; race = new Race(P, Rs); chase = new Chase(camera);
   scene.add(cars.rival.root, cars.rival.shadow, cars.player.shadow);
   hud.initMap(ROADS.pieces); hud.rivalName('Voss');
   await step(0.8);
@@ -211,7 +235,7 @@ async function boot() {
   releaseStatic();
   G.trackReady = true; G.readyT = Math.round(performance.now());
   hud.startProgress(1);
-  window.__game = { THREE, G, gfx, scene, camera, studio, cars, P, R, race, chase, input, hud, sound, intro, gov, q, S, W, TRACK, tierName, frame, startRace, startRoam, toMenu, playFilm, begin, setPaused, shot, step: stepFrames, START_S, ROADS };
+  window.__game = { THREE, G, gfx, scene, camera, studio, cars, P, R, Rs, race, chase, input, hud, sound, intro, gov, q, S, W, TRACK, tierName, frame, startRace, startRoam, toMenu, playFilm, begin, setPaused, shot, step: stepFrames, START_S, ROADS };
   if (Q.has('race')) { await sound.init(); startRace({ mode: Q.get('race') === 'grid' ? 'grid' : 'rolling' }); }
   else if (G.wantStart) { G.wantStart = false; begin(); }
   // full-size ground photos (desktops): swapped in at a calm moment, see frameBody
@@ -276,7 +300,7 @@ function toStudio() {
   for (const l of studio.lights) l.shadow.needsUpdate = true;
 }
 function toTrack() {
-  scene.add(cars.player.root); cars.player.setStage(false); cars.rival.setStage(false);
+  scene.add(cars.player.root); cars.player.setStage(false); for (const v of cars.rivals) v.setStage(false);
   gfx.setLook(LOOKS.track); shadows.invalidate();
 }
 
@@ -311,12 +335,16 @@ function playFilm() {
 function startRace(o = {}) {
   if (o.mode === 'roam') return startRoam();
   const laps = o.laps || S.laps, mode = o.mode || 'grid', tm = performance.now();
-  G.lastRace = { mode: 'grid' }; setRoam(false);
+  G.lastRace = { mode: 'grid' };
+  const n = mode === 'rolling' ? 2 : clamp(Math.round(o.cars || S.cars || 2), 2, 5);        // the race from the film is the duel; after it, up to five cars
+  fieldViews(n - 1);
   toTrack(); mark('toTrack', tm);
-  race.start({ laps, mode, s0: START_S, skill: S.skill });
+  race.start({ laps, mode, s0: START_S, skill: S.skill, cars: n }); R = race.R; setRoam(false);
+  for (const r of Rs) r.behindP = null;
+  hud.rivalName(race.ref.label);
   P.auto = null; G.ctrl = mode === 'rolling' ? 0 : 1; G.top = 0; G.hits = 0; G.finishCam = 0; G.acc = 0; G.hintT = 9; G.leading = null; G.passes = 0; G.inTow = false;
-  P.settle(0); R.settle(0);
-  cars.player.sync(P, ATMO.sunDir, 0); cars.rival.sync(R, ATMO.sunDir, 0);
+  P.settle(0); cars.player.sync(P, ATMO.sunDir, 0);
+  race.rivals.forEach((r, k) => { r.settle(0); cars.rivals[k].sync(r, ATMO.sunDir, 0); });
   chase.snap(); chase.update(0.016, cars.player, P); mark('placed', tm);
   input.enabled = true; input.autoThrottle = S.autoThrottle;
   lineMesh.visible = S.line;
@@ -328,7 +356,7 @@ function startRace(o = {}) {
 // free roam: no rival, no laps, the whole place to drive in
 function setRoam(on) {
   G.roam = on; P.roam = on; document.body.classList.toggle('roam', on);
-  cars.rival.root.visible = !on; if (on) cars.rival.shadow.visible = false;
+  showField();
 }
 function roamSpawn() {
   // a main road close to La Source, well clear of the circuit: the longest piece of the biggest road class there is
@@ -365,8 +393,8 @@ function toMenu() {
   toTrack();
   if (G.roam) { setRoam(false); race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill }); hud.refresh(); }
   if (race.state === 'idle' || race.state === 'lights') race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill });
-  race.state = 'green'; race.laps = 1e9; race.result = null; P.done = R.done = false;
-  P.auto = autopilot(0.6); R.skill = { pace: 0.6, ease: 0.02, push: 0.02 }; R.pace = 0.6;
+  race.state = 'green'; race.laps = 1e9; race.result = null; P.done = false; showField();
+  P.auto = autopilot(0.6); for (const r of race.rivals) { r.done = false; r.skill = { pace: 0.6, ease: 0.02, push: 0.02 }; r.pace = 0.6; }
   input.enabled = false; lineMesh.visible = false;
   G.state = 'menu'; hud.screen('menu'); G.orbit = 0;
   sound.startLoop(true);
@@ -376,7 +404,8 @@ function finish() {
   const gap = r.gap || 0;
   hud.result({
     won: r.won,
-    line: r.won ? `You beat Voss by ${gap.toFixed(2)} s.` : (P.done ? `Voss took it by ${gap.toFixed(2)} s.` : 'Voss reached the flag first.'),
+    n: r.n, title: r.won ? 'Victory' : r.n > 2 ? `P${r.pos} of ${r.n}` : 'Beaten',
+    line: r.won ? `You beat ${race.best().label} by ${gap.toFixed(2)} s.` : (P.done ? `${r.first.label} took it by ${gap.toFixed(2)} s.` : `${r.first.label} reached the flag first.`),
     stats: [['Race time', P.done ? fmtLap(P.finishT) : '—'], ['Best lap', race.mode === 'grid' && best ? fmtLap(best) : '—'], ['Top speed', Math.round(G.top * 3.6) + ' km/h'], ['Overtakes', String(G.passes || 0)]],
   });
   G.state = 'result'; hud.screen('result'); input.enabled = false; lineMesh.visible = false;
@@ -395,20 +424,22 @@ function simulate(dt) {
   const T = Math.min(dt, 8 * H), n = Math.max(1, Math.ceil(T / H - 1e-6)), h = T / n;
   for (let k = 0; k < n; k++) {
     const racing = G.state === 'race' && race.state === 'green';
-    if (race.state === 'green' || race.state === 'done') { P.step(h, racing && !P.done ? input : IDLE, G.state === 'race' ? S.assist : 0, G.roam ? null : R); }
+    if (race.state === 'green' || race.state === 'done') { P.step(h, racing && !P.done ? input : IDLE, G.state === 'race' ? S.assist : 0, G.roam ? null : race.near()); }
     if (G.roam) continue;
-    R.step(h, P, race);
-    if (race.state === 'green' || race.state === 'done') { const hit = touch(P, R, h); if (hit > 0.15) { G.hits++; sound.sfx('hit', hit); } }
+    const hit = stepField(h); if (hit > 0.15) { G.hits++; sound.sfx('hit', hit); }
     race.update(h);
   }
-  P.settle(dt); R.settle(dt);
+  P.settle(dt); for (const r of race.rivals) r.settle(dt);
   G.top = Math.max(G.top, P.speed);
   // the lead changing hands, and the tow catching: say so (2 m of hysteresis so a side-by-side fight does not chatter)
-  if (G.state === 'race' && race.state === 'green' && !P.done && !R.done && !G.roam) {
-    const lead = P.prog - R.prog, was = G.leading;
-    if (was === undefined || was === null) G.leading = lead >= 0;
-    else if (!was && lead > 2) { G.leading = true; G.passes = (G.passes || 0) + 1; hud.toast('You lead', 'Overtake', 1.6); sound.sfx('pass'); gfx.fx.flash = Math.max(gfx.fx.flash, 0.25); }
-    else if (was && lead < -2) { G.leading = false; hud.toast('Take it back', 'Voss is through', 1.6); sound.sfx('passed'); }
+  if (G.state === 'race' && race.state === 'green' && !P.done && !G.roam) {
+    for (const r of race.rivals) {
+      if (r.done) continue;
+      const lead = P.prog - r.prog, was = r.behindP;
+      if (was === undefined || was === null) r.behindP = lead >= 0;
+      else if (!was && lead > 2) { r.behindP = true; G.passes = (G.passes || 0) + 1; const p = race.pos; hud.toast(p === 1 ? 'You lead' : 'Up to P' + p, 'Overtake', 1.6); sound.sfx('pass'); gfx.fx.flash = Math.max(gfx.fx.flash, 0.25); }
+      else if (was && lead < -2) { r.behindP = false; hud.toast(race.rivals.length === 1 ? 'Take it back' : 'Down to P' + race.pos, r.label + ' is through', 1.6); sound.sfx('passed'); }
+    }
     const tow = P.draft > 0.3; if (tow && !G.inTow) sound.sfx('tow'); G.inTow = tow;
   }
   for (const e of race.events) onRaceEvent(e);
@@ -431,7 +462,7 @@ function onRaceEvent(e) {
   else if (e === 'final') hud.toast('', 'Final lap', 2);
   else if (e === 'lap') hud.toast('Lap ' + fmtLap(P.laps[P.laps.length - 1]), 'Lap ' + (P.lap + 1), 2);
   else if (e === 'win') { hud.toast('Chequered flag', 'You win', 3.5); sound.sfx('win'); P.auto = autopilot(0.7); G.finishCam = 0.001; }
-  else if (e === 'lose') { hud.toast('Voss takes the flag', 'Second', 3.5); sound.sfx('lose'); }
+  else if (e === 'lose') { hud.toast(race.result.first.label + ' takes the flag', race.rivals.length > 1 ? 'Finish the lap' : 'Second', 3.5); sound.sfx('lose'); }
   else if (e === 'finish') { P.auto = autopilot(0.7); G.finishCam = 0.001; }
   else if (e === 'done') { P.auto = autopilot(0.6); finish(); }
 }
@@ -439,8 +470,8 @@ function onRaceEvent(e) {
 const _o = new THREE.Vector3();
 function frameRace(dt, warm = false) {
   if (!G.paused && !warm) simulate(dt);
-  const pv = cars.player, rv = cars.rival, sun = ATMO.sunDir;
-  pv.sync(P, sun, dt); if (!G.roam) rv.sync(R, sun, dt);
+  const pv = cars.player, sun = ATMO.sunDir;
+  pv.sync(P, sun, dt); if (!G.roam) race.rivals.forEach((r, k) => cars.rivals[k].sync(r, sun, dt));
   const orbiting = G.state === 'menu' || G.state === 'result' || G.finishCam > 0;
   if (orbiting && !warm) {
     // slow orbit round the player's car behind the menus and after the flag
@@ -461,7 +492,7 @@ function frameRace(dt, warm = false) {
   shadows.update(camera, pv.pos);
   const v = P.speed;
   // the two cars stay sharp inside the speed blur (onboard, the player's own car is all round the lens: only the rival)
-  gfx.carRect(0, orbiting || chase.mode > 1 ? null : pv, camera); gfx.carRect(1, G.roam ? null : rv, camera);
+  gfx.carRect(0, orbiting || chase.mode > 1 ? null : pv, camera); for (let k = 0; k < 4; k++) gfx.carRect(1 + k, !G.roam && k < race.rivals.length ? cars.rivals[k] : null, camera);
   gfx.fx.blur = orbiting ? 0 : (chase.mode <= 1 ? 1 : 0.6) * (0.006 + 0.046 * (v / 95) ** 2 + 0.03 * chase.boost);
   gfx.fx.flash = Math.max(0, gfx.fx.flash - dt * 2.6);
   gfx.fx.chroma = 0.0025 * chase.boost + 0.01 * P.impact;
@@ -470,10 +501,10 @@ function frameRace(dt, warm = false) {
   gfx.renderScene(scene, camera);
   if (!warm) gfx.present(dt);
   if (G.state === 'race') {
-    hud.race(G.paused ? 0 : dt, P, R, race, { assist: S.assist === 2 ? 'Full help' : '', playerColor: PAINTS[S.paint].a, rivalColor: S.paint === 6 ? '#e23a3a' : '#111', roam: G.roam, label: G.roam && P.road ? (P.road.name || 'Service road') : undefined });
+    hud.race(G.paused ? 0 : dt, P, race.rivals, race, { assist: S.assist === 2 ? 'Full help' : '', playerColor: PAINTS[S.paint].a, dots: G.dots, roam: G.roam, label: G.roam && P.road ? (P.road.name || 'Service road') : undefined });
     if (G.hintT > 0) { G.hintT -= dt; if (G.hintT <= 0) hud.hint(false); }
   }
-  if (!warm) sound.update(dt, P, R, camera, G);
+  if (!warm) sound.update(dt, P, G.roam ? R : loudest(), camera, G);
 }
 
 function frame(dt) {
@@ -519,18 +550,18 @@ async function shot(name, w = 1600, h = 900, frames = 2) {
 }
 
 // drive the player's car by autopilot with no rendering (checks the physics and the rival against each other)
-function simTest(pace = 1, secs = 150, laps = 1, skill = 'pro', mode = 'rolling') {
-  race.start({ mode, laps, s0: START_S, skill }); P.auto = autopilot(pace);
+function simTest(pace = 1, secs = 150, laps = 1, skill = 'pro', mode = 'rolling', cars = 2) {
+  race.start({ mode, laps, s0: START_S, skill, cars }); R = race.R; P.auto = autopilot(pace);
   let t = 0, off = 0, wall = 0; const offAt = [], gaps = [], wallAt = [];
   while (t < secs && race.state !== 'done') {
-    if (race.state === 'green') P.step(H, IDLE, 0, R);
-    R.step(H, P, race); if (race.state === 'green') touch(P, R, H); race.update(H); t += H;
+    if (race.state === 'green') P.step(H, IDLE, 0, race.near());
+    stepField(H); race.update(H); t += H;
     if (P.surface !== 1) { off += H; if (!offAt.length || Math.abs(offAt[offAt.length - 1] - P.s) > 60) offAt.push(Math.round(P.s)); }
     if (P.impact > 0.3) { wall++; if (!wallAt.length || Math.abs(wallAt[wallAt.length - 1] - P.s) > 60) wallAt.push(Math.round(P.s)); }
     if (Math.round(t / H) % 1200 === 0) gaps.push(+(P.prog - R.prog).toFixed(0));
   }
   race.events.length = 0;
-  return { t: +t.toFixed(1), state: race.state, result: race.result && { won: race.result.won, gap: +(race.result.gap || 0).toFixed(2) }, pT: P.finishT && +P.finishT.toFixed(2), rT: R.finishT && +R.finishT.toFixed(2), off: +off.toFixed(1), offAt, wall, wallAt, gaps, top: Math.round(P.speed * 3.6) };
+  return { t: +t.toFixed(1), state: race.state, result: race.result && { won: race.result.won, pos: race.result.pos, n: race.result.n, first: race.result.first.label || 'you', gap: +(race.result.gap || 0).toFixed(2) }, order: race.rivals.map((r) => r.label + ':' + (r.done ? r.finishT.toFixed(1) : Math.round(r.prog - P.prog) + 'm')).join(' '), pT: P.finishT && +P.finishT.toFixed(2), rT: R.finishT && +R.finishT.toFixed(2), off: +off.toFixed(1), offAt, wall, wallAt, gaps, top: Math.round(P.speed * 3.6) };
 }
 window.__simTest = simTest;
 // A keyboard player, for tuning: it sees a point ahead on the racing line (or beside the rival when close behind it),
@@ -538,16 +569,16 @@ window.__simTest = simTest;
 // It is a clumsy driver on purpose: if it can lap cleanly and the result is close, a person can too.
 //   __keyTest({ assist: 1, skill: 'pro', mode: 'rolling' | 'grid', laps: 1, style: 'racer' | 'line' | 'none', delay: 0.16, deadM: 0.7 })
 window.__keyTest = (o = {}) => {
-  const { assist = 1, skill = 'pro', secs = 300, delay = 0.16, look = 0.55, deadM = 0.7, mode = 'rolling', brakes = assist === 0, laps = 1, style = 'racer' } = o;
+  const { assist = 1, skill = 'pro', secs = 300, delay = 0.16, look = 0.55, deadM = 0.7, mode = 'rolling', brakes = assist === 0, laps = 1, style = 'racer', cars = 2 } = o;
   const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a)), shape = (x, p) => Math.sign(x) * Math.pow(Math.abs(x), p);
-  race.start({ mode, laps, s0: START_S, skill }); P.auto = null;
-  let t = 0, k = 0, key = 0, off = 0, bumps = 0, lead = 0, close = 0, passes = 0, was = null, resets = 0, tG = 0;
+  race.start({ mode, laps, s0: START_S, skill, cars }); P.auto = null;
+  let R = race.R, t = 0, k = 0, key = 0, off = 0, bumps = 0, lead = 0, close = 0, passes = 0, was = null, resets = 0, tG = 0;
   const q = [], f2 = {}, gaps = [], inp = { steer: 0, throttle: 1, brake: 0, boost: false };
   while (t < secs && race.state !== 'done') {
     const v = Math.abs(P.u), la = clamp(v * look, 9, 60); frameAt(P.s + la, f2);
     let want = 0;
     if (style !== 'none') {
-      let ln = lineAt(P.s + la); const gp = R.prog - P.prog, i = Math.floor(P.s / TRACK.ds) % TRACK.N;
+      R = race.near(); let ln = lineAt(P.s + la); const gp = R.prog - P.prog, i = Math.floor(P.s / TRACK.ds) % TRACK.N;
       if (style === 'racer' && gp > 0 && gp < 34 && Math.abs(R.d - P.d) < 3.2) ln = clamp(R.d + (TRACK.dMax[i] - R.d > R.d - TRACK.dMin[i] ? 2.9 : -2.9), TRACK.dMin[i] + 0.4, TRACK.dMax[i] - 0.4);
       const e = la * Math.sin(wrap(Math.atan2(f2.z + f2.rz * ln - P.z, f2.x + f2.rx * ln - P.x) - P.psi)); want = e > deadM ? 1 : e < -deadM ? -1 : 0;
     }
@@ -556,17 +587,17 @@ window.__keyTest = (o = {}) => {
     const rate = key === 0 ? 8 : (Math.sign(key) !== Math.sign(k) && k !== 0 ? 7 : 3.225);       // as input.js
     k += clamp(key - k, -rate * H, rate * H);
     inp.steer = shape(k, 1.32); inp.brake = brk; inp.throttle = brk ? 0 : 1; inp.boost = P.energy > 0.3 && v > 50 && Math.abs(k) < 0.2;
-    if (race.state === 'green') P.step(H, inp, assist, R);
-    R.step(H, P, race); if (race.state === 'green' && touch(P, R, H) > 0.15) bumps++; race.update(H); t += H;
+    if (race.state === 'green') P.step(H, inp, assist, race.near());
+    if (stepField(H) > 0.15) bumps++; race.update(H); t += H;
     if (race.state !== 'green') continue;
     tG += H; if (P.surface !== 1) off += H;
     if (P.offT > 2.2 || P.wrongT > 4.5) { P.reset(); resets++; }
-    const ahead = P.prog > R.prog; if (was !== null && ahead !== was) passes++; was = ahead; if (ahead) lead += H;
-    if (Math.abs(P.prog - R.prog) < 40) close += H;
-    if (Math.round(t / H) % 1200 === 0) gaps.push(Math.round(P.prog - R.prog));
+    const B = race.best(), ahead = race.pos === 1; if (was !== null && ahead !== was) passes++; was = ahead; if (ahead) lead += H;
+    if (Math.abs(P.prog - race.ref.prog) < 40) close += H;
+    if (Math.round(t / H) % 1200 === 0) gaps.push(Math.round(P.prog - B.prog));
   }
   race.events.length = 0;
-  return { won: race.result && race.result.won, gap: race.result && +(race.result.gap || 0).toFixed(2), pT: +(P.finishT || 0).toFixed(1), rT: +(R.finishT || 0).toFixed(1), offS: +off.toFixed(1), bumps, resets, leadPct: Math.round(100 * lead / Math.max(tG, 1)), closePct: Math.round(100 * close / Math.max(tG, 1)), passes, gaps: gaps.join(' ') };
+  return { won: race.result && race.result.won, pos: race.result && race.result.pos, n: race.cars.length, gap: race.result && +(race.result.gap || 0).toFixed(2), pT: +(P.finishT || 0).toFixed(1), rT: +(R.finishT || 0).toFixed(1), offS: +off.toFixed(1), bumps, resets, leadPct: Math.round(100 * lead / Math.max(tG, 1)), closePct: Math.round(100 * close / Math.max(tG, 1)), passes, gaps: gaps.join(' ') };
 };
 // film test: run the film on a hand-driven clock up to `beat` and capture a frame there
 window.__filmAt = async (beat, name, w = 1280, h = 720, from = null) => {

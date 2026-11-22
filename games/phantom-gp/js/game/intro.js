@@ -54,7 +54,7 @@ const slowAt = (s, w) => { const w0 = s.beat * BEAT, a = w0 + s.in, c = a + s.ho
 const SPIN = 175, SLOW_PIC = 0.012, SLOW_WHEEL = 0.0018;
 // The height each name shot's camera looks at (m). Chosen so the name stands in the middle of the frame's height
 // when it is at the top of the tyre: it used to sit in the upper third (the big name) and the upper quarter (the small one).
-const NAME_Y = [0.626, 0.644];
+const NAME_Y = [0.609, 0.634];
 /* TURN[i](w): how far the rear wheel has turned (rad) at film time w, counted from the middle of slow motion i's
    hold, where the name stands at the top of the tyre. It is the sum of the same speed curve, worked out once, so the
    wheel's angle through the whole shot is a function of the film clock: it spins, slows until the name arrives,

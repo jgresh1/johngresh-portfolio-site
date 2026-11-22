@@ -8,12 +8,12 @@
 <meta name="theme-color" content="#1c1d20">
 <meta property="og:title" content="John Gresh · Projects">
 <meta property="og:description" content="Games, websites and client work, newest first.">
-<meta property="og:image" content="https://johngresh.org/assets/home/phantom-hero.webp">
+<meta property="og:image" content="https://johngresh.org/assets/home/tokyo-hero.webp">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a2c30'/%3E%3Cg fill='%23e9ebee'%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2' fill='%23ffb44f'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="preload" as="image" href="assets/home/phantom-hero.webp" fetchpriority="high">
+<link rel="preload" as="image" href="assets/home/tokyo-hero.webp" fetchpriority="high">
 <style>
 /* One committed look: a graphite console menu. Grey does the work; amber marks only what is new or playable. */
 :root {
@@ -217,22 +217,22 @@ footer a:hover { color: var(--text); }
       <button type="button" data-f="games" aria-pressed="false">Games<span class="n" id="nGames"></span></button>
       <button type="button" data-f="websites" aria-pressed="false">Websites<span class="n" id="nWeb"></span></button>
     </nav>
-    <a class="play" href="./"><i><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M0 0l8 4-8 4z" fill="#eceef1"/></svg></i><span class="lbl-long">Play Phantom GP</span><span class="lbl-short">Play</span></a>
+    <a class="play" href="./"><i><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M0 0l8 4-8 4z" fill="#eceef1"/></svg></i><span class="lbl-long">Fly Tokyo Flight</span><span class="lbl-short">Play</span></a>
   </div>
 </header>
 
 <main>
   <section class="hero wrap" id="featured" aria-label="Newest project">
-    <div class="glow" aria-hidden="true"><img src="assets/home/phantom-hero.webp" alt=""></div>
+    <div class="glow" aria-hidden="true"><img src="assets/home/tokyo-hero.webp" alt=""></div>
     <a class="feature" href="./">
-      <img src="assets/home/phantom-hero.webp" width="1600" height="900" alt="Phantom GP: a yellow single-seater spinning its rear wheels on a wet black floor, spray flying" fetchpriority="high">
+      <img src="assets/home/tokyo-hero.webp" width="1600" height="900" alt="Tokyo Flight: a small silver delta-wing jet seen from behind, flying over Rainbow Bridge towards the Tokyo skyline" fetchpriority="high">
       <div class="copy">
         <div class="eyebrow"><span class="tag" data-k="game">Game</span><span class="new" id="heroNew" hidden>New</span><span class="when" id="heroWhen"></span></div>
-        <h1>Phantom GP</h1>
-        <p>One rival, identical cars, the whole of Spa-Francorchamps. It opens with a short film cut to its own soundtrack, then drops you into the race at 290 km/h.</p>
+        <h1>Tokyo Flight</h1>
+        <p>A 1954 jet five metres long, and every surveyed building in Tokyo. It opens with a short film in a hangar, then hands you the stick over Tokyo Bay, or on the runway at Haneda.</p>
         <div class="actions">
-          <span class="btn"><i><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M0 0l8 4-8 4z" fill="#ffb44f"/></svg></i>Play now</span>
-          <small>Runs in the browser · keyboard, mouse or touch</small>
+          <span class="btn"><i><svg viewBox="0 0 8 8" aria-hidden="true"><path d="M0 0l8 4-8 4z" fill="#ffb44f"/></svg></i>Fly now</span>
+          <small>Runs in the browser · keyboard, gamepad or touch</small>
         </div>
       </div>
     </a>
@@ -259,8 +259,10 @@ footer a:hover { color: var(--text); }
 <script>
 /* Every project, one line each. Dates are the last real work on it; sections sort newest first. */
 const PROJECTS = [
-  { id: 'phantom', kind: 'game', title: 'Phantom GP', date: '2026-11-15', url: './', featured: true,
-    text: 'A one-on-one race round the full Spa-Francorchamps circuit, built from survey data.' },
+  { id: 'tokyo', kind: 'game', title: 'Tokyo Flight', date: '2026-11-22', url: './', featured: true,
+    text: 'Fly a small 1954 jet over every surveyed building in Tokyo, streamed from Japan\'s national 3D city model.' },
+  { id: 'phantom', kind: 'game', title: 'Phantom GP', date: '2026-11-15', url: 'games/phantom-gp/',
+    text: 'A one-on-one race round the full Spa-Francorchamps circuit, built from survey data. It opens with a short film, then drops you into the race at 290 km/h.' },
   { id: 'camp', kind: 'game', title: 'Camp Hollowpine', date: '2026-11-07', url: 'games/camp-hollowpine/',
     text: 'Summer camp with a secret. Earn four badges, then go into the Hollow.' },
   { id: 'lamplight', kind: 'game', title: 'Lamplight Cove', date: '2026-11-05', url: 'games/lamplight-cove/',

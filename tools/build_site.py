@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Copies the web games into the site and adds the site menu button to each.
 
-  index.html                  <- ../phantom-gp/index.html       (the front page; it loads its files from games/phantom-gp/)
+  index.html                  <- ../tokyo-3d/site/index.html    (the front page; it loads its files from games/tokyo-flight/)
+  games/tokyo-flight/         <- ../tokyo-3d/site (index.html, js, vendor, assets, data/tilesets.json)
   games/phantom-gp/           <- ../phantom-gp (index.html, js, vendor, assets)
   games/camp-hollowpine/      <- ../camp-hollowpine/game.html
   games/lamplight-cove/       <- ../lamplight-cove/game.html
@@ -58,8 +59,30 @@ def main():
     ap.add_argument('--src', default=os.path.dirname(ROOT), help='folder holding the game projects')
     src = ap.parse_args().src
 
-    # Phantom GP is the front page. The game's files live in games/phantom-gp/; the root page is the same document
-    # with a <base> pointing there (the old-link redirect runs before the <base>, so it still resolves at the root).
+    # Tokyo Flight is the front page. Its files live in games/tokyo-flight/; the root page is the same document with a
+    # <base> pointing there (the old-link redirect runs before the <base>, so it still resolves at the root).
+    # Its map tiles come from the Cloudflare cache at tokyo.johngresh.org, which also hosts the map page (explore.html):
+    # that page and its 14 MB of place names are not copied here.
+    tk = os.path.join(src, 'tokyo-3d', 'site')
+    tdst = os.path.join(ROOT, 'games', 'tokyo-flight')
+    for d in ('js', 'vendor', 'assets'):
+        shutil.rmtree(os.path.join(tdst, d), ignore_errors=True)
+        shutil.copytree(os.path.join(tk, d), os.path.join(tdst, d), ignore=shutil.ignore_patterns('__pycache__', '*.py'))
+    os.makedirs(os.path.join(tdst, 'data'), exist_ok=True)
+    shutil.copy(os.path.join(tk, 'data', 'tilesets.json'), os.path.join(tdst, 'data', 'tilesets.json'))
+    shutil.copy(os.path.join(src, 'tokyo-3d', 'LICENSES.md'), os.path.join(tdst, 'LICENSES.md'))
+    html = open(os.path.join(tk, 'index.html'), encoding='utf-8').read()
+    menu = '<script src="../../assets/site-menu.js" data-corner="tr" data-dock="#top" defer></script>\n'
+    head = ('<meta property="og:title" content="Tokyo Flight">\n'
+            '<meta property="og:description" content="Fly a 1954 jet over every surveyed building in Tokyo, in the browser.">\n'
+            '<meta property="og:image" content="https://johngresh.org/assets/home/tokyo-hero.webp">\n'
+            f'<link rel="icon" href="{ICON}">\n')
+    assert '</body>' in html and '<meta charset="utf-8">' in html and '</head>' in html
+    sub = html.replace('</head>', head + '</head>', 1).replace('</body>', menu + '</body>', 1)
+    write(os.path.join(tdst, 'index.html'), sub)
+    write(os.path.join(ROOT, 'index.html'), sub.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n' + LEGACY + '<base href="games/tokyo-flight/">', 1))
+
+    # Phantom GP: its own folder.
     ph = os.path.join(src, 'phantom-gp')
     pdst = os.path.join(ROOT, 'games', 'phantom-gp')
     for d in ('js', 'vendor', 'assets'):
@@ -75,7 +98,6 @@ def main():
     assert '</body>' in html and '<meta charset="UTF-8">' in html and '</head>' in html
     sub = html.replace('</head>', head + '</head>', 1).replace('</body>', menu + '</body>', 1)
     write(os.path.join(pdst, 'index.html'), sub)
-    write(os.path.join(ROOT, 'index.html'), sub.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n' + LEGACY + '<base href="games/phantom-gp/">', 1))
 
     camp = open(os.path.join(src, 'camp-hollowpine', 'game.html'), encoding='utf-8').read()
     write(os.path.join(ROOT, 'games', 'camp-hollowpine', 'index.html'), page(

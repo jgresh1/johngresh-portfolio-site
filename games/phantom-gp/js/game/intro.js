@@ -52,6 +52,9 @@ const slowAt = (s, w) => { const w0 = s.beat * BEAT, a = w0 + s.in, c = a + s.ho
    how it was, with a quarter-second ramp.) The water falls at 1.2% of real time in the hold. The wheel turns at
    0.18%, so the lettering creeps half a radian across the top of the tyre while it is held. */
 const SPIN = 175, SLOW_PIC = 0.012, SLOW_WHEEL = 0.0018;
+// The height each name shot's camera looks at (m). Chosen so the name stands in the middle of the frame's height
+// when it is at the top of the tyre: it used to sit in the upper third (the big name) and the upper quarter (the small one).
+const NAME_Y = [0.626, 0.644];
 /* TURN[i](w): how far the rear wheel has turned (rad) at film time w, counted from the middle of slow motion i's
    hold, where the name stands at the top of the tyre. It is the sum of the same speed curve, worked out once, so the
    wheel's angle through the whole shot is a function of the film clock: it spins, slows until the name arrives,
@@ -67,7 +70,7 @@ const TURN = SLOW.map((s) => {
 export class Intro {
   constructor(ctx) {
     this.ctx = ctx; this.done = true; this.clock = null; this.tile = 0; this.beat = 0; this.cut = -1; this.wheel = 0; this.gear = 1; this.lastShift = -1; this.cap = '';
-    this.cam = ctx.studio.camera; this.tg = V(0, 0.4, 0);
+    this.cam = ctx.studio.camera; this.tg = V(0, 0.4, 0); this.nameY = NAME_Y;
     const v = ctx.view;
     // right hand and its paddle, for the gear change
     v.root.updateMatrixWorld(true);
@@ -225,8 +228,8 @@ export class Intro {
       spin = SPIN * ease(up);
       // locked off: the car stands still, held on its brakes, and so does every camera in this part
       if (b < 42) { cutTo(9); this.caption('', ''); this.look([-4.7, 0.38, 2.95], [-1.5, 0.36, 0.45], 28); }
-      else if (b < 48) { cutTo(10); this.look([-1.74, 0.69, 2.02], [-1.8, 0.585, 1.0], 19, false); if (hold === 0 && slow > 0.6) this.caption('Created by', 'John Gresh'); else this.caption('', ''); }
-      else if (b < 54) { cutTo(11); this.look([-1.95, 0.66, 1.72], [-1.8, 0.607, 1.0], 12.5, false); if (hold === 1 && slow > 0.6) this.caption('Co-producer', 'Luke Carlan'); else this.caption('', ''); }
+      else if (b < 48) { cutTo(10); this.look([-1.74, 0.69, 2.02], [-1.8, this.nameY[0], 1.0], 19, false); if (hold === 0 && slow > 0.6) this.caption('Created by', 'John Gresh'); else this.caption('', ''); }
+      else if (b < 54) { cutTo(11); this.look([-1.95, 0.66, 1.72], [-1.8, this.nameY[1], 1.0], 12.5, false); if (hold === 1 && slow > 0.6) this.caption('Co-producer', 'Luke Carlan'); else this.caption('', ''); }
       else { cutTo(12); this.caption('', ''); this.look([5.35, 0.28, 1.3], [0, 0.45, 0], 24); }
       // in the two name shots the wheel's angle comes from the film clock (TURN): the name arrives at the top of the tyre as the picture lands
       this.nameShot = b >= 42 && b < 48 ? 0 : b >= 48 && b < 54 ? 1 : -1; this.slow = slow; this.filmW = w;

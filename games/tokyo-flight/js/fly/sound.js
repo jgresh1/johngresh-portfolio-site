@@ -3,13 +3,15 @@
 //   air      wind over the airframe, by speed; quieter and duller from the cockpit
 //   fly-by   heard from a camera standing still: level by distance, pitch by how fast the aircraft closes or leaves
 //   film     hangar lamps, the door, with a hall's echo
+//   music    a slow ambient bed: four held chords on soft strings through a long hall (see `music`)
 // None of this has been heard by its author (it was written without ears); levels were set by reasoning.
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 
 export class Sound {
   constructor() {
     this.ctx = null; this.muted = false; this.level = 0.85;
-    try { this.muted = localStorage.getItem('tokyo.mute') === '1'; } catch { /* private window */ }
+    this.musicOn = true;
+    try { this.muted = localStorage.getItem('tokyo.mute') === '1'; this.musicOn = localStorage.getItem('tokyo.music') !== '0'; } catch { /* private window */ }
   }
 
   // must be called from inside a tap or key press, or phones stay silent
@@ -84,6 +86,43 @@ export class Sound {
     else if (kind === 'click') { burst(0.03, 'highpass', 3000, 0.7, 0.2); tone(180, 120, 0.05, 0.12); }
     else if (kind === 'touch') { burst(0.35, 'bandpass', 1500, 1.2, 0.5, 0); tone(70, 40, 0.3, 0.6); }
     else if (kind === 'crash') { tone(120, 28, 0.9, 0.9); burst(1.2, 'lowpass', 900, 0.5, 0.9, 0); burst(0.25, 'highpass', 1800, 0.5, 0.5, 0); }
+  }
+
+  /* ---------------------------------------------------------------- ambient music */
+  // A slow bed under the film and, much lower, under the flying: no tune and no beat, only four chords held for
+  // twelve seconds each and gliding into one another (D minor 9, B flat major 7, F add 9, C sus 2), played by soft
+  // detuned strings through a long hall, with a little air on top. `level` 0..1 is how loud it sits; `open` 0..1
+  // brightens it (the film opens it up as the hangar doors part).
+  setMusic(on) { this.musicOn = on; try { localStorage.setItem('tokyo.music', on ? '1' : '0'); } catch { /* private window */ } }
+  music(level = 0.5, open = 0.3) {
+    const c = this.ctx; if (!c || c.state !== 'running') return;
+    if (!this.musicOn) { if (!this.pad) return; level = 0; }
+    if (!this.pad) {
+      const CH = [[73.42, 110.0, 146.83, 174.61, 220.0, 329.63], [58.27, 116.54, 146.83, 174.61, 220.0, 293.66], [87.31, 130.81, 174.61, 196.0, 261.63, 349.23], [65.41, 98.0, 130.81, 146.83, 196.0, 293.66]];
+      const out = c.createGain(); out.gain.value = 0;
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500; lp.Q.value = 0.4;
+      // a long hall of its own: five seconds of dying noise
+      const ir = c.createBuffer(2, c.sampleRate * 5, c.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const x = ir.getChannelData(ch); for (let i = 0; i < x.length; i++) x[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / x.length, 3.2); }
+      const hall = c.createConvolver(); hall.buffer = ir;
+      const wet = c.createGain(); wet.gain.value = 0.9; const dry = c.createGain(); dry.gain.value = 0.35;
+      lp.connect(dry).connect(out); lp.connect(hall).connect(wet).connect(out); out.connect(this.master);
+      const voices = CH[0].map((f, i) => {
+        const g = c.createGain(); g.gain.value = [0.16, 0.13, 0.11, 0.09, 0.075, 0.05][i]; g.connect(lp);
+        const os = [-7, 0, 6].map((cents) => { const o = c.createOscillator(); o.type = i < 2 ? 'triangle' : 'sawtooth'; o.frequency.value = f; o.detune.value = cents + (Math.random() * 4 - 2); o.connect(g); o.start(); return o; });
+        // each voice breathes at its own slow rate
+        const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = 0.05 + 0.03 * i; lg.gain.value = g.gain.value * 0.35; l.connect(lg).connect(g.gain); l.start();
+        return os;
+      });
+      const air = c.createBufferSource(); air.buffer = this.noiseBuf; air.loop = true;
+      const af = c.createBiquadFilter(); af.type = 'bandpass'; af.frequency.value = 5200; af.Q.value = 0.8; const ag = c.createGain(); ag.gain.value = 0.012;
+      air.connect(af).connect(ag).connect(hall); air.start();
+      this.pad = { out, lp, voices, CH, at: -1, t0: c.currentTime };
+    }
+    const P = this.pad, t = c.currentTime, k = Math.floor((t - P.t0) / 12) % P.CH.length;
+    if (k !== P.at) { P.at = k; P.voices.forEach((os, i) => os.forEach((o) => o.frequency.setTargetAtTime(P.CH[k][i], t, 1.6))); }      // glide to the next chord
+    P.out.gain.setTargetAtTime(level * 0.34, t, 0.8);
+    P.lp.frequency.setTargetAtTime(380 + 1900 * open * open, t, 1.2);
   }
 
   // the hangar door running: a motor hum and rattle for `dur` seconds

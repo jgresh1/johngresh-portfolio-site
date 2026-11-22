@@ -36,5 +36,11 @@ Building names, heights and uses shown in the info card come from the PLATEAU at
 - **Map data** is the same as the map page's (above): Project PLATEAU (CC BY 4.0) and GSI Japan. On the
   published site the tiles pass through a cache on the site's own address (`worker/index.js`); they are not
   altered, and the credit line stays on screen.
+- **Pilot's hands**: the gloved hands are the WebXR Input Profiles generic hand meshes (`site/assets/hands/`,
+  MIT licence, text beside them), the same files Phantom GP uses.
+- **Airfield layout**: Haneda's taxiway centre lines, stand lead-in lines, apron outlines, windsocks and
+  holding positions (`site/assets/airfield/`, built by `tools/build_airfield.py`) are from OpenStreetMap
+  (© OpenStreetMap contributors, ODbL 1.0), credited on the page. The light, sign and aerial models are original.
+- **Music**: the bed under the film is synthesised in the browser (`site/js/fly/sound.js`); no recording is used.
 - **Runway position**: the centre line of Haneda's runway 16L/34R is from OpenStreetMap (© OpenStreetMap
   contributors, ODbL), credited on the page. Its markings are drawn to the published ICAO pattern.

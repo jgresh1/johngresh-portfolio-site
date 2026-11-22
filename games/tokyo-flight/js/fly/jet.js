@@ -3,6 +3,8 @@
 // the page uses: -Z forward, +Y up, +X starboard, origin at the centre of gravity.
 import * as THREE from 'three';
 import { patch } from '../atmo.js';
+import { buildPilot, loadHands } from './pilot.js';
+import { buildExhaust, ZC as PIPE_Z, BORE } from './engine.js';
 
 export const CG = new THREE.Vector3(2.74, 0, 1.16);      // Blender coordinates; the main wheels are at x = 2.97
 export const GEAR_H = 1.16;                              // centre of gravity above the ground when standing on its wheels
@@ -10,6 +12,7 @@ export const EYE = new THREE.Vector3(1.99, 0, 1.815);    // pilot's eye point, h
 const D2R = Math.PI / 180;
 const LIMIT = { ail: 17, elev: 19, rud: 22 };           // degrees
 
+const MODEL_V = 2;            // 2: the jet pipe's old internals left out (engine.js builds them)
 async function fetchBin(url) {
   const r = await fetch(url);
   if (!r.ok) throw new Error('jet model: http ' + r.status);
@@ -51,10 +54,13 @@ float klip(vec3 p){
 function paintParts(kind, C) {
   const RED = v3(C.RED), BLUE = v3(C.BLUE), BLACK = v3(C.BLACK);
   const p = { vertPars: 'varying vec3 vKp;', vert: 'vKp = position;', fragPars: 'varying vec3 vKp;' + NOISE };
+  // nothing painted may show inside the jet pipe: the fuselage's end cap and the fin's base both run through its bore
+  const CUT = `if ( vKp.x > 4.296 && length( vec2( vKp.y, vKp.z - ${f(PIPE_Z)} ) ) < ${f(BORE)} ) discard;
+`;
   if (kind === 'fuselage') {
     // red cone and intake lip; matt black anti-glare panel; nose cone and engine cowl are sheet metal
     p.fragPars += lipFn(C);
-    p.color = /* glsl */`
+    p.color = CUT + /* glsl */`
       float kCone = 1.0 - kaa(${f(C.CONE_S)}, vKp.x);
       float kRed = max(kCone, klip(vKp));
       float kZe = mix(1.375, 1.436, kmapr(vKp.x, 0.33, 0.93)) + 0.031 * kmapr(vKp.x, 0.93, 1.62);
@@ -80,7 +86,7 @@ function paintParts(kind, C) {
     p.color = 'float kOx = smoothstep(0.42, 0.66, kfbm(vKp * 5.0)); diffuseColor.rgb *= mix(1.0, 0.70, kOx * 0.8);';
     p.rough = 'roughnessFactor = clamp(roughnessFactor + 0.22 * kOx + 0.10 * (kfbm(vKp * 14.0) - 0.5), 0.05, 1.0);';
   } else {
-    p.color = 'diffuseColor.rgb *= 0.93 + 0.10 * kfbm(vKp * 2.6);';
+    p.color = CUT + 'diffuseColor.rgb *= 0.93 + 0.10 * kfbm(vKp * 2.6);';
     p.rough = 'roughnessFactor = clamp(roughnessFactor + 0.12 * (kfbm(vKp * 6.0) - 0.5), 0.05, 1.0);';
   }
   return p;
@@ -127,7 +133,9 @@ class JetModel {
       if (g.part) { const p = this.parts[g.part]; mesh.position.copy(p.pivot.position).negate(); p.pivot.add(mesh); }
       else this.model.add(mesh);
     }
-    this.pilot = buildPilot(); this.model.add(this.pilot);
+    this.pilot = jet.newPilot(); this.head = this.pilot.userData.head; this.model.add(this.pilot);
+    this.materials.push(...this.pilot.userData.materials);
+    const ex = buildExhaust(jet.uHeat); this.model.add(ex); this.materials.push(...ex.userData.materials);
     this.tris = man.groups.reduce((s, g) => s + g.tris, 0);
     this._q = new THREE.Quaternion(); this._q2 = new THREE.Quaternion(); this._ax = new THREE.Vector3(1, 0, 0);
     // the aircraft has a pass of its own (layer 1); the glass is drawn only there, so it is blended once
@@ -138,17 +146,44 @@ class JetModel {
   material(m, C) {
     let mat;
     if (m.kind === 'glass' || m.kind === 'thin') {
-      mat = new THREE.MeshPhysicalMaterial({ color: 0x050607, metalness: 0, roughness: 0.03, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      // acrylic 3 mm thick: clear straight through, more and more mirror towards its edges, with the faint film every canopy carries
+      mat = new THREE.MeshPhysicalMaterial({ color: 0x0b0e10, metalness: 0, roughness: 0.035, ior: 1.49, specularIntensity: 1, clearcoat: 1, clearcoatRoughness: 0.02, transparent: true, depthWrite: false, side: THREE.DoubleSide,
         blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor });
-      patch(mat, 'jet-' + m.kind, GLASS, { uGlass: { value: m.kind === 'glass' ? new THREE.Vector2(0.10, 0.62) : new THREE.Vector2(0.03, 0.4) } });
+      patch(mat, 'jet-' + m.kind, GLASS, { uGlass: { value: m.kind === 'glass' ? new THREE.Vector2(0.13, 0.86) : new THREE.Vector2(0.03, 0.4) } });
     } else {
       const p = { color: new THREE.Color().setRGB(m.color[0], m.color[1], m.color[2]), metalness: m.metal, roughness: m.rough, side: THREE.DoubleSide };
       mat = m.coat > 0 ? new THREE.MeshPhysicalMaterial({ ...p, clearcoat: m.coat, clearcoatRoughness: 0.05 }) : new THREE.MeshStandardMaterial(p);
       if (m.decal) { mat.polygonOffset = true; mat.polygonOffsetFactor = -2; mat.polygonOffsetUnits = -2; }
       if (['fuselage', 'wing', 'silver', 'bare'].includes(m.kind)) patch(mat, 'jet-' + m.kind, paintParts(m.kind, C));
-      else if (m.name === 'Katy_hotsteel' || m.name === 'Katy_dark') {
-        // the jet pipe: the metal glows a dull orange as the engine runs up
-        patch(mat, 'jet-hot', { fragPars: 'uniform float uHeat;', emissive: 'totalEmissiveRadiance += vec3( 1.0, 0.30, 0.06 ) * uHeat;' }, { uHeat: this.uHeat });
+      else if (m.name === 'Katy_hotsteel') {
+        // the jet pipe's outer skin: stainless, straw then purple then blue towards the lip where it runs hottest
+        patch(mat, 'jet-pipe', { vertPars: 'varying vec3 vKp;', vert: 'vKp = position;', fragPars: 'varying vec3 vKp;',
+          color: `float pT = smoothstep( 4.30, 4.60, vKp.x ), pN = apNoise( vec2( atan( vKp.z - 1.198, vKp.y ) * 6.0, vKp.x * 70.0 ) );
+            vec3 pC = mix( vec3( 0.46, 0.45, 0.44 ), vec3( 0.50, 0.40, 0.24 ), smoothstep( 0.25, 0.55, pT + 0.12 * pN ) );
+            pC = mix( pC, vec3( 0.34, 0.22, 0.30 ), smoothstep( 0.55, 0.78, pT + 0.10 * pN ) );
+            pC = mix( pC, vec3( 0.17, 0.21, 0.31 ), smoothstep( 0.78, 0.97, pT + 0.08 * pN ) );
+            diffuseColor.rgb = pC * ( 0.85 + 0.3 * pN );`,
+          rough: 'roughnessFactor = 0.30 + 0.25 * pN;', metal: 'metalnessFactor = 0.92;' });
+      } else if (m.name === 'KatyBareRamp' || m.name === 'Katy_dark') {
+        // the intake: a dished ramp of beaten sheet that deepens into a duct. Past the lip the duct is riveted up in
+        // three rings and less and less light reaches it; the duct turns inboard to the engine, so its far end is dark.
+        const ramp = m.name === 'KatyBareRamp';
+        patch(mat, 'jet-' + (ramp ? 'ramp' : 'dark'), { vertPars: 'varying vec3 vKp;', vert: 'vKp = position;', fragPars: 'varying vec3 vKp;' + NOISE,
+          color: ramp ? /* glsl */`
+            float kOx = smoothstep( 0.42, 0.66, kfbm( vKp * 5.0 ) ); diffuseColor.rgb *= mix( 1.0, 0.72, kOx * 0.8 );
+            float dA = atan( vKp.z - 1.135, abs( vKp.y ) - 0.444 ), dSeam = 0.0, dRiv = 0.0;
+            for ( int i = 0; i < 3; i ++ ) {
+              float dx = vKp.x - ( 1.585 + 0.150 * float( i ) );
+              dSeam = max( dSeam, 1.0 - smoothstep( 0.0005, 0.0014, abs( dx ) ) );
+              float u = ( fract( dA * 4.4563 ) - 0.5 ) * 0.0168;
+              dRiv = max( dRiv, 1.0 - smoothstep( 0.0021, 0.0030, length( vec2( dx - 0.009, u ) ) ) );
+            }
+            float kIn = step( 1.50, vKp.x );
+            diffuseColor.rgb *= 1.0 - 0.5 * dSeam * kIn; diffuseColor.rgb *= 1.0 + 0.22 * dRiv * kIn;
+            // streaks drawn back along the duct by the air
+            diffuseColor.rgb *= 1.0 - 0.16 * kIn * kvn( vec3( dA * 9.0, vKp.x * 3.0, 1.0 ) );` : '',
+          rough: ramp ? 'roughnessFactor = clamp( roughnessFactor + 0.22 * kOx + 0.10 * ( kfbm( vKp * 14.0 ) - 0.5 ) - 0.12 * dRiv * kIn, 0.05, 1.0 );' : '',
+          final: 'gl_FragColor.rgb *= mix( 1.0, 0.015, smoothstep( 1.49, 1.93, vKp.x ) * step( 0.30, abs( vKp.y ) ) * step( vKp.x, 2.06 ) * step( vKp.z, 1.30 ) );' });
       } else if (/Lamp|RedGlass|GreenGlass|AmberGlass/.test(m.name)) {
         patch(mat, 'jet-lamp', { fragPars: 'uniform float uLamp;', emissive: 'totalEmissiveRadiance += diffuseColor.rgb * uLamp;' }, { uLamp: this.uLamp });
       } else patch(mat, 'jet-std', {});
@@ -180,7 +215,7 @@ class JetModel {
       const p = this.parts[n]; if (!p) continue;
       p.pivot.quaternion.setFromAxisAngle(p.axis, ((c.rolled / p.radius) * p.sign) % (Math.PI * 2));
     }
-    this.pilot.userData.head.rotation.z = c.look * 0.6;                           // the pilot looks into the turn
+    this.head.rotation.y = -c.look * 0.55;                                        // the pilot looks into the turn
   }
 }
 
@@ -195,6 +230,12 @@ export class Jet {
     this.uHeat = { value: 0 }; this.uLamp = { value: 0 };
     this.models = {}; this.active = null; this.lod = null; this.env = null; this.envK = 1; this.inside = false;
     this.ctl = { ail: 0, elev: 0, rud: 0, thr: 0, parked: 1, look: 0, rolled: 0 };
+    this.hands = null; this._pilot = null;
+  }
+  // one pilot is built; each level of detail gets its own copy of him (same meshes)
+  newPilot() {
+    if (!this._pilot) { this._pilot = buildPilot(this.hands); return this._pilot; }
+    const c = this._pilot.clone(true); c.userData.head = c.getObjectByName('head'); c.userData.materials = this._pilot.userData.materials; return c;
   }
   add(lod, man, buf) {
     const m = new JetModel(man, buf, lod, this);
@@ -236,47 +277,13 @@ export class Jet {
   cockpit(on) { this.inside = on; for (const k in this.models) this.models[k].pilot.visible = !on; }
 }
 
-/* ------------------------------------------------------------------ the pilot: enough to read as a person through the canopy */
-function buildPilot() {
-  const g = new THREE.Group(); g.name = 'pilot';
-  const mat = (color, rough, metal = 0) => patch(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal }), 'jet-std', {});
-  const suit = mat(0x3a4030, 0.85), vest = mat(0xb8791c, 0.8), white = mat(0xd9d6cc, 0.32), dark = mat(0x0b0c0d, 0.25), strap = mat(0x15140f, 0.7), skin = mat(0x9a6a50, 0.6), hose = mat(0x1b1c1c, 0.55);
-  const add = (geo, m, x, y, z, sx = 1, sy = 1, sz = 1, parent = g) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.scale.set(sx, sy, sz); o.castShadow = true; o.receiveShadow = true; parent.add(o); return o; };
-  const sph = new THREE.SphereGeometry(1, 28, 20);
-  // torso and shoulders (Blender axes: x aft, y starboard, z up); seat back is at about x = 2.13
-  add(sph, suit, 2.06, 0, 1.36, 0.125, 0.175, 0.22);
-  add(sph, vest, 2.035, 0, 1.40, 0.105, 0.150, 0.150);
-  add(sph, suit, 2.06, 0.19, 1.50, 0.075, 0.07, 0.075); add(sph, suit, 2.06, -0.19, 1.50, 0.075, 0.07, 0.075);
-  const arm = new THREE.CapsuleGeometry(0.048, 0.30, 6, 14); arm.rotateX(Math.PI / 2);
-  // upper arms down and forward, forearms in to the stick and out to the throttle
-  const limb = (x0, y0, z0, x1, y1, z1, r = 1) => {
-    const a = new THREE.Vector3(x0, y0, z0), b = new THREE.Vector3(x1, y1, z1), o = new THREE.Mesh(arm, suit);
-    o.position.copy(a).add(b).multiplyScalar(0.5); o.scale.set(r, r, a.distanceTo(b) / 0.396); o.lookAt(b); o.castShadow = true; g.add(o);
-  };
-  limb(2.06, 0.20, 1.49, 1.93, 0.21, 1.27); limb(1.93, 0.21, 1.27, 1.80, 0.03, 1.37, 0.85);
-  limb(2.06, -0.20, 1.49, 1.92, -0.24, 1.29); limb(1.92, -0.24, 1.29, 1.75, -0.24, 1.38, 0.85);
-  add(sph, dark, 1.79, 0.012, 1.385, 0.05, 0.045, 0.055); add(sph, dark, 1.73, -0.24, 1.39, 0.05, 0.045, 0.05);      // gloves
-  // straps over the vest
-  const band = new THREE.BoxGeometry(0.012, 0.045, 0.30);
-  for (const s of [-1, 1]) { const o = add(band, strap, 1.945, s * 0.075, 1.44); o.rotation.y = 0.32; }
-  // head: hard helmet with ear cups, goggles, oxygen mask and its hose down to the chest
-  const head = new THREE.Group(); head.position.set(2.035, 0, 1.745); g.add(head); g.userData.head = head;
-  add(sph, white, 0.012, 0, 0.012, 0.118, 0.108, 0.112, head);
-  add(sph, white, 0.02, 0.098, -0.03, 0.05, 0.026, 0.056, head); add(sph, white, 0.02, -0.098, -0.03, 0.05, 0.026, 0.056, head);
-  add(sph, skin, -0.035, 0, -0.022, 0.085, 0.082, 0.092, head);
-  add(sph, dark, -0.078, 0, 0.004, 0.045, 0.082, 0.034, head);
-  add(sph, hose, -0.098, 0, -0.058, 0.042, 0.05, 0.048, head);
-  add(sph, suit, 2.045, 0, 1.615, 0.06, 0.062, 0.07);                    // neck and collar
-  const pipe = (x0, y0, z0, x1, y1, z1) => { const a = new THREE.Vector3(x0, y0, z0), b = new THREE.Vector3(x1, y1, z1), o = new THREE.Mesh(arm, hose); o.position.copy(a).add(b).multiplyScalar(0.5); o.scale.set(0.36, 0.36, a.distanceTo(b) / 0.396); o.lookAt(b); o.castShadow = true; g.add(o); };
-  pipe(1.935, 0.01, 1.66, 1.925, 0.05, 1.55); pipe(1.925, 0.05, 1.55, 1.95, 0.085, 1.46);
-  return g;
-}
-
 async function fetchLod(lod, base) {
-  return Promise.all([fetch(base + 'jet-' + lod + '.json').then((r) => { if (!r.ok) throw new Error('jet model: http ' + r.status); return r.json(); }), fetchBin(base + 'jet-' + lod + '.bin.gz')]);
+  // browsers keep the model for a day: the number on the end changes when the export does, so nobody flies an old one
+  return Promise.all([fetch(base + 'jet-' + lod + '.json?v=' + MODEL_V).then((r) => { if (!r.ok) throw new Error('jet model: http ' + r.status); return r.json(); }), fetchBin(base + 'jet-' + lod + '.bin.gz?v=' + MODEL_V)]);
 }
 export async function loadJet(lod = 'hi', base = './assets/jet/') {
-  const jet = new Jet(), [man, buf] = await fetchLod(lod, base);
+  const jet = new Jet(), [[man, buf], hands] = await Promise.all([fetchLod(lod, base), loadHands()]);
+  jet.hands = hands;
   jet.add(lod, man, buf);
   return jet;
 }

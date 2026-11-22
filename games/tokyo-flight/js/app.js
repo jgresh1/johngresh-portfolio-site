@@ -17,6 +17,7 @@ import { Hangar } from './fly/hangar.js';
 import { Film, T as FILM, RAIL } from './fly/film.js';
 import { Roofs } from './fly/roofs.js';
 import { Runway } from './fly/runway.js';
+import { loadAirfield } from './fly/airfield.js';
 
 const Q = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
@@ -84,6 +85,7 @@ async function boot() {
   const runway = new Runway();                              // Haneda 16L/34R, modelled; the ground is pressed down under it
   terrain.flatten = (lat, lon, h) => runway.flatten(lat, lon, h);
   scene.add(runway.mesh);
+  loadAirfield(runway).then((g) => { g.traverse((o) => o.layers.enable(0)); scene.add(g); }).catch((e) => console.warn('airfield', e));      // taxiways, aprons, lights, signs
   terrain.errPx = tier.terrPx; terrain.maxZ = tier.maxZ; terrain.maxActive = tier.terrActive; terrain.aniso = tier.aniso;
   scene.add(terrain.group);
   const bake = new GroundBake(renderer, terrain, tier.bake);
@@ -290,6 +292,8 @@ async function boot() {
   $('mUnits').onclick = () => { units = units === 'ft' ? 'm' : 'ft'; store.set('units', units); unitsUI(); };
   const soundUI = () => { $('mSound').textContent = sound.muted ? 'Sound off' : 'Sound on'; };
   $('mSound').onclick = () => { sound.mute(!sound.muted); soundUI(); };
+  const musicUI = () => { $('mMusic').textContent = sound.musicOn ? 'Music on' : 'Music off'; };
+  $('mMusic').onclick = () => { sound.setMusic(!sound.musicOn); musicUI(); }; musicUI();
   for (const [k, t] of Object.entries(TIERS)) { const b = document.createElement('button'); b.className = 'opt' + (k === tierName ? ' on' : ''); b.textContent = t.label; b.onclick = () => { if (k === tierName) return; store.set('tier', k); const u = new URL(location.href); u.searchParams.delete('q'); location.href = u.href; }; $('tiers').appendChild(b); }
   $('gfx').textContent = `Drawing with: ${GFX.name}. Detail is also eased automatically if frames run slow.`;
   $('keys').innerHTML = touch ? 'Left thumb: fly (it works wherever the thumb lands). Right lever: power. Turn and pull together for a tight turn. Drag anywhere else to look, pinch to move the camera in or out, double tap to look ahead again.'
@@ -364,6 +368,7 @@ async function boot() {
         const d = camera.position.distanceTo(flight.pos);
         sound.update({ spool: 0.3 + 0.7 * flight.spool, speed: flight.V, where: rig.mode, dist: d, closing: rig.mode === 'flyby' ? (rig._d0 - d) / Math.max(dt, 1e-3) : 0, buffet: flight.buffet, ground: flight.onGround });
         rig._d0 = d;
+        sound.music(0.3, 0.5);                        // the bed stays on under the flying, well back
       }
       drawWorld(rig.near, exposure); hud(now);
     }
@@ -391,6 +396,24 @@ async function boot() {
     begin(variant = film.variant) { if (mode !== 'fly') { film.setVariant(variant); $('title').style.display = 'none'; film.at(film.end, 0); beginFlight(); } },
     // draw one moment of the film (hidden panes do not run the frame loop)
     filmAt(t, extra = -1) { cancelAnimationFrame(raf); $('title').style.display = 'none'; hangar.camera.clearViewOffset(); mode = 'film'; film.playing = false; film.t = t; const s = extra >= 0 ? film.atExtra(extra, t, 0) : film.at(t, 0); setBars(s.bars); setHud(s.hud); if (s.stage) { toStage(); drawStage(s.exposure); } else { toWorld(); drawWorld(s.near ?? 0.3, exposure * s.exposure); hud(performance.now()); } return { stage: s.stage, exposure: +s.exposure.toFixed(2) }; },
+    // draw the hangar from any camera: position, look-at point (hangar metres), lens; lamps 0..4, doors 0..1, engine heat 0..1
+    stageAt(pos, look, fov = 30, lamps = 4, door = 0, heat = 0) {
+      cancelAnimationFrame(raf); $('title').style.display = 'none'; toStage(); mode = 'film'; film.playing = false;
+      hangar.setLamps(lamps); hangar.setDoor(door); jet.root.position.set(0, GEAR_H, 0); jet.root.quaternion.identity(); hangar.blob.position.z = 0.4;
+      jet.uHeat.value = heat; jet.uLamp.value = 0.9; jet.pose(0, { parked: 0 });
+      const c = hangar.camera; c.clearViewOffset(); c.position.set(...pos); c.lookAt(new THREE.Vector3(...look)); c.fov = fov; c.updateProjectionMatrix(); c.updateMatrixWorld();
+      setBars(0); setHud(0); drawStage(hangar.exposure * (1 - 0.5 * door));
+      return true;
+    },
+    // draw the world from anywhere near the runway: [metres along it, metres across, metres above its surface] for the camera and for what it looks at
+    worldAt(from, to, fov = 40, near = 0.5) {
+      cancelAnimationFrame(raf); $('title').style.display = 'none'; toWorld(); setBars(0); setHud(0);
+      const a = runway.point(from[0], from[1]); a.y += from[2]; const b = runway.point(to[0], to[1]); b.y += to[2];
+      camera.position.copy(a); camera.up.set(0, 1, 0); camera.lookAt(b); camera.fov = fov; camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+      renderer.getSize(size); terrain.update(camera, size.y); city.update(); city.pushQueues(); for (let i = 0; i < 8 && turns.length; i++) turns.shift()();
+      drawWorld(near, exposure);
+      return { loading: terrain.stats.loading, pending: city.pending };
+    },
     // run n frames of `dt` seconds by hand
     run(n = 1, dt = 1 / 60) { cancelAnimationFrame(raf); for (let i = 0; i < n; i++) { step(dt, performance.now()); city.pushQueues(); } return { mode, V: flight.V, agl: flight.agl, crashed: flight.crashed }; },
     resume() { cancelAnimationFrame(raf); last = performance.now(); raf = requestAnimationFrame(frame); },

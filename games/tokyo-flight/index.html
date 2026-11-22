@@ -21,6 +21,8 @@
   /* ---- film bars and fade */
   #bars i { position: absolute; left: 0; right: 0; height: 11.5%; background: #000; transform: scaleY(var(--bars, 0)); }
   #bars i:first-child { top: 0; transform-origin: top; } #bars i:last-child { bottom: 0; transform-origin: bottom; }
+  /* the lens darkens towards its corners: fully in the film, a little while flying */
+  #bars::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 78% 78% at 50% 50%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.44) 100%); opacity: calc(0.3 + 0.7 * var(--bars, 0)); }
   #fade { background: #000; opacity: 0; transition: opacity 0.22s linear; }
   #fade.on { opacity: 1; }
   #skip { position: absolute; right: calc(18px + var(--sr)); bottom: calc(3.2% + var(--sb)); pointer-events: auto; background: none; border: 0; color: rgba(255, 255, 255, 0.72); letter-spacing: 0.14em; font-size: 12px; padding: 10px 12px; cursor: pointer; display: none; }
@@ -167,7 +169,7 @@
   <div id="menu" class="layer">
     <div id="card">
       <h2>PAUSED</h2>
-      <div class="row"><button class="opt main" id="mResume">RESUME</button><button class="opt" id="mFilm">Watch the opening</button><button class="opt" id="mSound">Sound on</button></div>
+      <div class="row"><button class="opt main" id="mResume">RESUME</button><button class="opt" id="mFilm">Watch the opening</button><button class="opt" id="mSound">Sound on</button><button class="opt" id="mMusic">Music on</button></div>
       <h3>FLY TO</h3>
       <div class="row" id="places"></div>
       <h3>TIME OF DAY</h3>
@@ -188,7 +190,7 @@
 
   <div id="fade" class="layer"></div>
   <div id="warn"></div>
-  <div id="credit">Buildings: <a href="https://www.mlit.go.jp/plateau/" target="_blank" rel="noopener">Project PLATEAU</a>, MLIT Japan (CC BY 4.0) · Ground photo and elevation: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">GSI Japan</a> · Runway position: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
+  <div id="credit">Buildings: <a href="https://www.mlit.go.jp/plateau/" target="_blank" rel="noopener">Project PLATEAU</a>, MLIT Japan (CC BY 4.0) · Ground photo and elevation: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">GSI Japan</a> · Runway and airfield layout: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
   <div id="fail"></div>
 </div>
 <script type="module" src="./js/app.js"></script>

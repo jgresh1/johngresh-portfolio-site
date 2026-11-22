@@ -67,7 +67,8 @@ function quadIsSea(view) {
 /* ------------------------------------------------------------------ ground material */
 const GROUND = {
   fragPars: /* glsl */`
-    uniform vec3 uPhotoST; uniform vec3 uMaskST; uniform sampler2D tMask;`,
+    uniform vec3 uPhotoST; uniform vec3 uMaskST; uniform sampler2D tMask;
+    uniform sampler2D tField; uniform vec3 uFieldA, uFieldB; uniform vec4 uFieldL; uniform float uFieldOn, uFieldRun;`,
   map: /* glsl */`
     vec2 gUv = vMapUv * uPhotoST.x + uPhotoST.yz;
     vec4 sampledDiffuseColor = texture2D( map, gUv );
@@ -108,7 +109,46 @@ const GROUND = {
     // fine grain close up, so the half-metre photo does not read as a smear
     float gNear = ( 1.0 - smoothstep( 30.0, 320.0, gDist ) ) * ( 1.0 - gWater );
     float gGrain = apNoise( vWp.xz * 3.1 ) * 0.35 + apNoise( vWp.xz * 13.0 ) * 0.35 + apNoise( vWp.xz * 47.0 ) * 0.30;
-    diffuseColor.rgb *= 1.0 + ( gGrain - 0.5 ) * 0.13 * gNear;`,
+    diffuseColor.rgb *= 1.0 + ( gGrain - 0.5 ) * 0.13 * gNear;
+    // Haneda round runway C, drawn by rule from the map of its taxiway centre lines and aprons (fly/airfield.js)
+    float fGlow = 0.0;
+    vec2 fUv = vec2( dot( uFieldA.xy, vWp.xz ) + uFieldA.z, dot( uFieldB.xy, vWp.xz ) + uFieldB.z );
+    vec2 fL = fUv * uFieldL.xy + uFieldL.zw;                                   // metres along the runway, metres across
+    float fw = clamp( ( fwidth( fL.x ) + fwidth( fL.y ) ) * 0.6, 0.002, 6.0 );
+    vec2 fE = min( fUv, 1.0 - fUv ) * uFieldL.xy;
+    float fIn = uFieldOn * smoothstep( 4.0, 44.0, min( fE.x, fE.y ) );
+    if ( fIn > 0.0 ) {
+      vec4 fT = texture2D( tField, fUv );
+      float fTaxi = fT.r < 3.0 ? length( fT.gb ) : fT.r;                       // metres to the nearest centre line
+      float fPave = 1.0 - smoothstep( 15.0 - fw, 15.0 + fw, fTaxi );
+      float fShld = 1.0 - smoothstep( 22.0 - fw, 22.0 + fw, fTaxi );
+      float fApron = 1.0 - smoothstep( - fw, fw, fT.a );
+      float fRun = max( max( - fL.x - 60.0, fL.x - uFieldRun - 60.0 ), abs( fL.y ) - 37.5 );
+      float fNear = 1.0 - smoothstep( 70.0, 130.0, min( min( fTaxi, max( fT.a, 0.0 ) ), max( fRun, 0.0 ) ) );
+      vec2 fq = vWp.xz;
+      float fN = apFbm( fq * 0.09 ), fF = apNoise( fq * 9.0 ), fM = apNoise( fq * 1.7 );
+      // grass: the photo's own tone, with the detail the photo cannot hold; mown in strips along the runway
+      float fGreen = smoothstep( -0.03, 0.02, gPhoto.g - 0.5 * ( gPhoto.r + gPhoto.b ) );
+      vec3 fGrass = mix( gPhoto, vec3( 0.085, 0.125, 0.045 ) * ( 0.75 + 0.5 * fN ), 0.5 ) * ( 0.82 + 0.36 * fM ) * ( 0.86 + 0.28 * apNoise( fq * 21.0 ) );
+      fGrass *= 0.95 + 0.07 * step( 0.5, fract( fL.y / 9.0 ) );
+      vec3 fCol = mix( diffuseColor.rgb, fGrass, fNear * ( 0.35 + 0.65 * fGreen ) * ( 1.0 - gWater ) );
+      vec3 fAsph = vec3( 0.118, 0.120, 0.124 ) * ( 0.80 + 0.32 * fN ) * ( 0.93 + 0.14 * fF );
+      vec3 fOld = vec3( 0.165, 0.163, 0.157 ) * ( 0.82 + 0.30 * fN ) * ( 0.93 + 0.14 * fF );
+      vec2 fJ2 = abs( fract( fL / 7.5 ) - 0.5 ) * 7.5;
+      float fJoint = 1.0 - smoothstep( 0.03, 0.06 + fw, 3.75 - max( fJ2.x, fJ2.y ) );
+      vec3 fConc = vec3( 0.40, 0.39, 0.37 ) * ( 0.84 + 0.22 * fN ) * ( 0.94 + 0.12 * fF ) * ( 1.0 - 0.4 * fJoint );
+      fConc *= 1.0 - 0.25 * exp( - fTaxi * fTaxi / 18.0 ) * apFbm( fq * 0.7 );              // tyres and oil along the lines
+      fCol = mix( fCol, fOld, fShld );
+      fCol = mix( fCol, fAsph * ( 1.0 + 0.10 * exp( - pow( ( fTaxi - 3.0 ) / 2.5, 2.0 ) ) ), fPave );
+      fCol = mix( fCol, fConc, fApron );
+      // paint: yellow centre lines, and the double yellow line along each taxiway edge
+      float fThin = max( min( 1.0, 0.15 / ( 2.0 * fw ) ), 0.22 );
+      float fLine = 1.0 - smoothstep( 0.075 - fw, 0.075 + fw, fTaxi );
+      float fEdge = ( 1.0 - smoothstep( 0.075 - fw, 0.075 + fw, abs( abs( fTaxi - 14.55 ) - 0.15 ) ) ) * ( 1.0 - fApron );
+      fCol = mix( fCol, vec3( 0.70, 0.54, 0.07 ) * ( 0.8 + 0.2 * fF ), max( fLine, fEdge ) * fThin * 0.9 );
+      diffuseColor.rgb = mix( diffuseColor.rgb, fCol, fIn );
+      fGlow = fIn * ( 1.0 - smoothstep( 0.1, 0.5 + fw, fTaxi ) );
+    }`,
   rough: /* glsl */`
     roughnessFactor = mix( 0.95, mix( 0.06, 0.24, smoothstep( 400.0, 9000.0, gDist ) ), gWater );`,
   normal: /* glsl */`
@@ -123,7 +163,8 @@ const GROUND = {
     }`,
   // city glow after dark: lit streets show as a dim warm copy of the photo
   emissive: /* glsl */`
-    totalEmissiveRadiance += gPhoto * vec3( 1.0, 0.74, 0.46 ) * ( 0.055 * uNight ) * ( 1.0 - gWater ) * smoothstep( 0.05, 0.35, gLum );`,
+    totalEmissiveRadiance += gPhoto * vec3( 1.0, 0.74, 0.46 ) * ( 0.055 * uNight ) * ( 1.0 - gWater ) * smoothstep( 0.05, 0.35, gLum );
+    totalEmissiveRadiance += vec3( 0.10, 1.0, 0.36 ) * fGlow * uNight * 0.7;`,                                  // taxiway centre-line lights
   final: /* glsl */`
     if ( uBake > 0.5 ) gl_FragColor = vec4( gPhoto, 1.0 );`,
 };
@@ -297,7 +338,7 @@ export class Terrain {
     g.attributes.position.needsUpdate = true;
     g.computeBoundingBox(); g.computeBoundingSphere();
     const mat = patch(new THREE.MeshStandardMaterial({ map: n.tex, color: n.tex ? 0xffffff : 0x1a2c33, roughness: 0.95, metalness: 0 }), n.tex ? 'ground' : 'ground-bare', n.tex ? GROUND : {
-      ...GROUND, map: 'vec3 gPhoto = diffuseColor.rgb; float gDist = length( vWp - cameraPosition ); float gLum = 0.0; float gWater = 1.0; diffuseColor.rgb = vec3( 0.010, 0.032, 0.038 );',
+      ...GROUND, map: 'vec3 gPhoto = diffuseColor.rgb; float gDist = length( vWp - cameraPosition ); float gLum = 0.0; float gWater = 1.0; float fGlow = 0.0; diffuseColor.rgb = vec3( 0.010, 0.032, 0.038 );',
     }, { uPhotoST: { value: n.photoST }, uMaskST: { value: new THREE.Vector3(n.dem.s, n.dem.ox, n.dem.oy) }, tMask: { value: n.dem.rec.tex } });
     const m = new THREE.Mesh(g, mat);
     m.position.copy(c); m.updateMatrixWorld();

@@ -26,6 +26,8 @@ export const ATMO = {
     uRelief: { value: new THREE.Vector4(1, 0.11, 0.22, 0.4) },   // window relief on photo walls: strength, how much darker than the wall counts (from, to), glass roughness
     tGroundA: { value: null }, uGroundA: { value: new THREE.Vector4(0, 0, 1, 0) },
     tGroundB: { value: null }, uGroundB: { value: new THREE.Vector4(0, 0, 1, 0) },
+    // the airfield ground map (fly/airfield.js): the texture, world xz -> its u and v, its size and origin in metres, the runway's length
+    tField: { value: null }, uFieldA: { value: new THREE.Vector3() }, uFieldB: { value: new THREE.Vector3() }, uFieldL: { value: new THREE.Vector4(1, 1, 0, 0) }, uFieldOn: { value: 0 }, uFieldRun: { value: 0 },
   },
 };
 const U = ATMO.uniforms;

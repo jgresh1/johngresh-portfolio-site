@@ -54,10 +54,11 @@ export class Rig {
     this.t += dt;
     if (!this.ready) this.snap();
     const acc = dt > 0 ? (F.V - this.vPrev) / dt : 0; this.vPrev = F.V;
-    // what the air is doing to the airframe, felt as a tremor in the picture
-    const amp = 0.012 * F.buffet + 0.0025 * F.spool + 0.004 * clamp((F.n - 2.5) / 3, 0, 1) + (F.onGround ? 0.006 * Math.min(F.V / 40, 1) : 0);
+    // The picture stays steady. Only when the airframe itself shakes (wing near the stall, air brake out) does a
+    // slow, small tremor come through.
+    const amp = 0.0035 * Math.min(F.buffet, 1.5);
     const t = this.t;
-    this.shake.set(Math.sin(t * 61) + Math.sin(t * 37.3 + 1), Math.sin(t * 53 + 2) + Math.sin(t * 43.1), Math.sin(t * 47 + 4)).multiplyScalar(amp);
+    this.shake.set(Math.sin(t * 19) + Math.sin(t * 13.3 + 1), Math.sin(t * 17 + 2) + Math.sin(t * 11.1), Math.sin(t * 15 + 4)).multiplyScalar(amp);
 
     if (this.mode === 'cockpit') {
       const p = this._p.copy(this.eye);
@@ -96,7 +97,7 @@ export class Rig {
       const p = this._p.set(0, this.height * (1 - 0.6 * looking), this.dist + this.pull).applyQuaternion(q).add(J.position);
       const floor = this.world.ground(p.x, p.z).y + 0.9;
       if (p.y < floor) p.y = floor;
-      cam.position.copy(p).add(this.shake.multiplyScalar(6));
+      cam.position.copy(p).add(this.shake.multiplyScalar(2.5));
       // look past the aircraft, at a point ahead of it
       const aim = this._f.set(0, 0.9, -14 * (1 - looking)).applyQuaternion(q).add(J.position);
       this._m.lookAt(cam.position, aim, this._u.set(0, 1, 0).applyQuaternion(q));

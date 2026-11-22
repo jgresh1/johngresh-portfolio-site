@@ -52,7 +52,7 @@ export class Flight {
     this.heading = 0; this.pitch = 0; this.bank = 0; this.vs = 0; this.auth = 0; this.buffet = 0;
     this._f = new Vector3(); this._u = new Vector3(); this._r = new Vector3(); this._a = new Vector3(); this._l = new Vector3();
     this._vb = new Vector3(); this._qi = new Quaternion(); this._dq = new Quaternion(); this._w = new Vector3(); this._pt = new Vector3();
-    this._gust = [0, 1, 2, 3, 4, 5].map((i) => ({ f: 0.31 + i * 0.37, ph: i * 2.1 }));
+    this._gust = [0, 1, 2, 3].map((i) => ({ f: 0.19 + i * 0.23, ph: i * 2.1 }));        // slow swells of air, a few seconds each
   }
 
   // heading in degrees clockwise from north; speed in m/s along the nose
@@ -128,8 +128,8 @@ export class Flight {
     // rough air: a few slow waves, stronger low over the city, plus the shake of a wing near the stall
     let gx = 0, gy = 0;
     for (const w of this._gust) { gx += Math.sin(this.t * w.f + w.ph); gy += Math.sin(this.t * w.f * 1.31 + w.ph * 1.7); }
-    const rough = (0.10 + 0.25 * smooth(600, 60, agl)) * Math.min(V / 60, 1.4) * (this.onGround ? 0 : 1);
-    a.addScaledVector(u, gy * rough * 0.35); a.addScaledVector(r, gx * rough * 0.2);
+    const rough = (0.05 + 0.08 * smooth(600, 60, agl)) * Math.min(V / 60, 1.4) * (this.onGround ? 0 : 1);
+    a.addScaledVector(u, gy * rough * 0.3); a.addScaledVector(r, gx * rough * 0.15);
     this.buffet = st * Math.min(qd / 900, 1) + 0.25 * I.brake * Math.min(qd / S.qRef, 1.5);
 
     /* ---- what the stick asks for */

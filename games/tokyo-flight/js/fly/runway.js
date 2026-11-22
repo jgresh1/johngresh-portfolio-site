@@ -15,6 +15,7 @@ import { patch } from '../atmo.js';
 
 const A = [35.5397123, 139.8051189], B = [35.5658659, 139.7865593];        // 34R end (take-offs start here), 16L end
 const WIDTH = 60, SHOULDER = 7.5, HALF = WIDTH / 2 + SHOULDER;
+const PAD = 60, BANK = 6.5;                        // paved overrun at each end; the earth bank along each side, metres
 const STEP = 60, PROFILE = [7.44, 7.27, 7.08, 6.7, 6.4, 6.13, 5.93, 5.82, 5.77, 5.78, 5.82, 5.86, 5.88, 5.92, 5.94, 5.97, 6.0, 6.04, 6.08, 6.13, 6.16, 6.17, 6.14, 6.07, 5.99, 5.91, 5.84, 5.81, 5.8, 5.76,
   5.71, 5.65, 5.61, 5.57, 5.56, 5.57, 5.59, 5.59, 5.59, 5.59, 5.59, 5.58, 5.56, 5.54, 5.52, 5.46, 5.43, 5.41, 5.43, 5.53, 5.71, 5.92, 6.14, 6.34, 6.45, 6.5, 6.54];       // metres above sea level, every 60 m from the 34R end
 const M_LAT = 110946, M_LON = 111320 * Math.cos(A[0] * Math.PI / 180);        // metres per degree here
@@ -54,6 +55,10 @@ const RUNWAY = {
     rCol *= 1.0 - 0.22 * rBox( abs( fract( rd / 7.5 ) - 0.5 ), 0.49, 0.6, rw.y / 7.5 + 0.004 );          // paving joints
     rCol *= 1.0 + 0.10 * exp( - pow( ( ra - 4.2 ) / 3.0, 2.0 ) );
     rCol = mix( rCol, vec3( 0.085, 0.087, 0.09 ) * ( 0.85 + 0.25 * rN ), smoothstep( 30.0, 30.3, ra ) );
+    // the overruns: older, paler asphalt with yellow chevrons pointing at the threshold
+    float rPad = 1.0 - smoothstep( -0.3, 0.3, rse );
+    rCol = mix( rCol, vec3( 0.150, 0.150, 0.146 ) * ( 0.82 + 0.3 * rN ) * ( 0.94 + 0.12 * rF ), rPad );
+    float rChev = rPad * rBox( mod( - rse + ra * 0.8, 15.0 ), 0.0, 0.9, rw.x + rw.y ) * ( 1.0 - step( 30.0, ra ) ) * step( rse, -2.0 );
     // paint
     float rP = max( rEnd( rs, rd, rw, tRwA ), rEnd( rsB, - rd, rw, tRwB ) );
     rP = max( rP, rBox( mod( rs - 110.0, 50.0 ), 0.0, 30.0, rw.x ) * rBox( rd, -0.45, 0.45, rw.y ) * step( 110.0, rs ) * step( 110.0, rsB ) );      // centre line
@@ -62,14 +67,18 @@ const RUNWAY = {
     float rRub = smoothstep( 110.0, 320.0, rse ) * ( 1.0 - smoothstep( 650.0, 1150.0, rse ) ) * exp( - pow( ( ra - 4.6 ) / 4.6, 2.0 ) ) * ( 0.35 + 0.65 * apFbm( vec2( rd * 2.3, rs * 0.021 ) ) );
     rCol *= 1.0 - 0.42 * rRub;
     vec3 rPaint = vec3( 0.80, 0.80, 0.76 ) * ( 0.78 + 0.22 * apNoise( vec2( rd, rs ) * 2.6 ) ) * ( 1.0 - 0.72 * rRub );
-    diffuseColor.rgb = mix( rCol, rPaint, rP * ( 0.86 + 0.14 * rF ) );`,
+    diffuseColor.rgb = mix( rCol, rPaint, rP * ( 0.86 + 0.14 * rF ) );
+    diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.66, 0.50, 0.07 ) * ( 0.8 + 0.2 * rF ), rChev * 0.85 );
+    // beyond the shoulder the surface turns down into a grass bank
+    float rBank = smoothstep( 37.4, 37.9, ra );
+    diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.100, 0.122, 0.070 ) * ( 0.8 + 0.4 * rN ) * ( 0.8 + 0.4 * apNoise( vec2( rd, rs ) * 2.3 ) ) * ( 0.86 + 0.28 * rF ), rBank );`,
   rough: 'roughnessFactor = mix( 0.92, 0.72, max( rP * 0.6, rRub ) );',
   // after dark: white edge lights every 60 m, centre-line lights every 15 m, a bar across each end
   emissive: /* glsl */`
     if ( uNight > 0.01 ) {
       float rr = max( 0.32, max( rw.x, rw.y ) * 1.3 );
-      float rE = 1.0 - smoothstep( rr * 0.6, rr, length( vec2( mod( rs + 30.0, 60.0 ) - 30.0, ra - 30.7 ) ) );
-      float rC = 1.0 - smoothstep( rr * 0.4, rr * 0.75, length( vec2( mod( rs + 7.5, 15.0 ) - 7.5, rd ) ) );
+      float rE = ( 1.0 - smoothstep( rr * 0.6, rr, length( vec2( mod( rs + 30.0, 60.0 ) - 30.0, ra - 30.7 ) ) ) ) * step( -1.0, rse );
+      float rC = ( 1.0 - smoothstep( rr * 0.4, rr * 0.75, length( vec2( mod( rs + 7.5, 15.0 ) - 7.5, rd ) ) ) ) * step( 0.0, rse );
       float rT = ( 1.0 - smoothstep( rr * 0.5, rr * 0.9, length( vec2( rse - 3.0, mod( ra + 1.5, 3.0 ) - 1.5 ) ) ) ) * ( 1.0 - step( 30.0, ra ) );
       float rK = 0.1024 / ( rr * rr );                                   // a far light covers more of a pixel than it should: dim it to match
       totalEmissiveRadiance += ( vec3( 1.0, 0.93, 0.80 ) * ( rE * 7.0 + rC * 4.0 ) + vec3( 0.25, 1.0, 0.45 ) * rT * 5.0 ) * uNight * rK;
@@ -97,12 +106,13 @@ export class Runway {
     this.heading = ((Math.atan2(de, dn) * 180) / Math.PI + 360) % 360;          // degrees clockwise from north, 34R end to 16L end
     this.name = 'Haneda 34R';
     // surface mesh: a strip every 20 m along, seven lines across (edges, shoulders, centre)
-    const rows = Math.ceil(this.length / 20), across = [-HALF, -30, -15, 0, 15, 30, HALF];
+    const s0 = -PAD, rows = Math.ceil((this.length + 2 * PAD) / 20), across = [-HALF - BANK, -HALF, -30, -15, 0, 15, 30, HALF, HALF + BANK];
     const c = this.point(this.length / 2, 0), n = (rows + 1) * across.length;
     const pos = new Float32Array(n * 3), rw = new Float32Array(n * 2), idx = [], v = new THREE.Vector3();
     for (let i = 0; i <= rows; i++) for (let j = 0; j < across.length; j++) {
-      const s = Math.min(i * 20, this.length), d = across[j], k = i * across.length + j;
+      const s = Math.min(s0 + i * 20, this.length + PAD), d = across[j], k = i * across.length + j;
       this.point(s, d, v);
+      if (Math.abs(d) > HALF) v.y -= 0.55;                              // the bank ends under the ground beside it
       pos[k * 3] = v.x - c.x; pos[k * 3 + 1] = v.y - c.y; pos[k * 3 + 2] = v.z - c.z; rw[k * 2] = s; rw[k * 2 + 1] = d;
       if (i < rows && j < across.length - 1) { const a = k, b = k + 1, e = k + across.length, f = e + 1; idx.push(a, b, e, b, f, e); }
     }
@@ -133,14 +143,14 @@ export class Runway {
   // the surface height at a place on the runway or its shoulders, else null
   at(lat, lon) {
     const [s, d] = this.local(lat, lon);
-    return s >= 0 && s <= this.length && Math.abs(d) <= HALF ? this.elev(s, d) : null;
+    return s >= -PAD && s <= this.length + PAD && Math.abs(d) <= HALF ? this.elev(s, d) : null;
   }
   // for the ground model: the survey height h, pressed down to 30 cm under the runway and eased back over 40 m around it
   flatten(lat, lon, h) {
     const [s, d] = this.local(lat, lon);
-    const out = Math.max(-s, s - this.length, Math.abs(d) - HALF) - 8;           // metres outside the surface, with 8 m to spare
+    const out = Math.max(-s - PAD, s - this.length - PAD, Math.abs(d) - HALF) - 8;           // metres outside the surface, with 8 m to spare
     if (out > 40) return h;
-    const under = this.elev(clamp(s, 0, this.length), d) - 0.3;
+    const under = this.elev(clamp(s, -PAD, this.length + PAD), d) - 0.3;
     if (out <= 0) return under;
     const k = out / 40, w = k * k * (3 - 2 * k);
     return under * (1 - w) + h * w;

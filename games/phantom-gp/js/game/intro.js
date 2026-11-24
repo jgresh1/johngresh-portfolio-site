@@ -86,7 +86,7 @@ export class Intro {
   start() {
     const { studio, hud, gfx, sound, view } = this.ctx;
     this.done = false; this.warm = 0; this.tile = 0; this.cut = -1; this.wheel = 0; this.gear = 1; this.lastShift = -1; this.cap = ''; this.last = performance.now() / 1000; this.run = 0; this.runV = 0; this.nameShot = -1; this.prevShot = -1; this.slow = 0; this.filmW = 0;
-    studio.floorU.uWet.value = 0; studio.floorU.uRun.value = 0; studio.clearSpray(); studio.setLaunch(0); this.prevWheel = 0;
+    studio.floorU.uWet.value = 0; studio.floorU.uRun.value = 0; studio.clearSpray(); studio.setLaunch(0, 0, 0, 60, 0, 1); this.prevWheel = 0;      // (the hall's small lights are on from the first shot)
     gfx.clearCollage(); gfx.setLook(LOOKS.studio); gfx.fx.fade = 1; gfx.fx.flash = 0; gfx.fx.blur = 0; gfx.fx.punch = 0; gfx.fx.chroma = 0;
     view.home(); view.setWheels(0, 0, 0, 0, 0); if (view.dash) view.drawDash('N', 0, 0, 1); view.pressButton(0, 0); studio.fill.intensity = 0; this.pressed = false;
     hud.bars(true); hud.caption('', '');
@@ -247,7 +247,7 @@ export class Intro {
       // distance run is worked out from the beat, not added up frame by frame, so the door arrives exactly on the cut
       const go = clamp((b - 58.5) / 5.5, 0, 1), T = 5.5 * BEAT, total = 86 * T / 3;
       this.runV = 86 * go * go; this.run = total * go * go * go;
-      studio.setLaunch(ease(clamp((b - 56) / 1.5, 0, 1)), this.run, this.runV, total - 6.4 - this.run, ease(clamp((b - 56.4) / 2.0, 0, 1)));
+      studio.setLaunch(ease(clamp((b - 56) / 1.5, 0, 1)), this.run, this.runV, total - 6.4 - this.run, ease(clamp((b - 56.4) / 2.0, 0, 1)), 1);
       spin = lerp(175, 60, go);
       fx.blur = 0.018 * go * go; fx.chroma = 0.0006 * go;      // the smear is in the scene now (road, lights); the lens adds very little
       if (b > 63.2) fx.flash = Math.max(fx.flash, ease((b - 63.2) / 0.8) * 1.0);

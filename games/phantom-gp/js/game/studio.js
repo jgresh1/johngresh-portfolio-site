@@ -23,6 +23,7 @@ const BOXES = [
   { name: 'right', c: [0.0, 1.75, -4.7], u: [3.4, 0, 0], v: [0, 0.6, -0.14], emit: 4.4, I: 1.15, tint: [0.955, 0.985, 1.0], up: [0, 1, 0], map: 2048 },
   { name: 'front', c: [7.4, 1.9, 0], u: [0, 0, 1.6], v: [0, 0.85, 0], emit: 4.5, I: 0.55, tint: [1, 1, 1], up: [0, 1, 0], map: 1024 },
 ];
+const HALL_LOW = 0.2;          // the side strips before the launch, as a share of their full brightness
 const KICKERS = [
   { c: [-6.6, 1.5, 3.0], w: 0.55, h: 2.4, emit: 7 }, { c: [-6.6, 1.5, -3.0], w: 0.55, h: 2.4, emit: 7 },
   { c: [-7.8, 2.6, 0], w: 3.2, h: 0.5, emit: 3 },
@@ -58,7 +59,7 @@ const FLOOR_VERT = /* glsl */`
   }`;
 const FLOOR_FRAG = /* glsl */`
   uniform sampler2D tBake, tRefl, tReflH;
-  uniform float uE0, uReflK, uRough, uFpx, uWet, uTime, uRun, uBlur, uPools, uReach;
+  uniform float uE0, uReflK, uRough, uFpx, uWet, uTime, uRun, uBlur, uPools, uReach, uHall;
   uniform vec3 uCenter; uniform vec2 uSeed, uReflTexel;
   float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
   float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash12(i), hash12(i + vec2(1.0, 0.0)), f.x), mix(hash12(i + vec2(0.0, 1.0)), hash12(i + vec2(1.0, 1.0)), f.x), f.y); }
@@ -121,7 +122,9 @@ const FLOOR_FRAG = /* glsl */`
     rc /= 7.0;
     float fres = 0.05 + 0.95 * pow(1.0 - cosT, 5.0);
     float reflK = mix(uReflK, 0.16 + 0.62 * pud, uWet);
-    col += rc.rgb * reflK * (0.55 + 1.7 * fres) * mix(0.3 + 0.7 * pool, 1.0, uWet);
+    // (uHall: the hall is showing. Its polished floor then mirrors the lights along its whole length, not only
+    //  in the pool of light under the car, and a little more strongly out there where nothing else lights it.)
+    col += rc.rgb * (reflK + 0.30 * uHall * (1.0 - pool) * (1.0 - uWet)) * (0.55 + 1.7 * fres) * mix(0.3 + 0.7 * pool, 1.0, max(uWet, uHall));
     float a = smoothstep(14.0, 5.0, r) * smoothstep(mix(0.012, 0.003, uReach), mix(0.10, 0.03, uReach), cosT);
     gl_FragColor = vec4(col, a);
   }`;
@@ -224,7 +227,7 @@ export class Studio {
       tBake: { value: null }, tRefl: { value: null }, tReflH: { value: null }, uE0: { value: 0 }, uRough: { value: 0.021 }, uFpx: { value: 1000 },
       uReflK: { value: 0.12 }, uCenter: { value: new THREE.Color(0.1, 0.103, 0.11) }, uSeed: { value: new THREE.Vector2() }, uReflTexel: { value: new THREE.Vector2(1, 1) },
       uReflMat: { value: new THREE.Matrix4() }, uBakeMat: { value: new THREE.Matrix4() }, uWet: { value: 0 }, uTime: { value: 0 }, uRun: { value: 0 },
-      uBlur: { value: 0 }, uPools: { value: 0 }, uReach: { value: 0 },
+      uBlur: { value: 0 }, uPools: { value: 0 }, uReach: { value: 0 }, uHall: { value: 0 },
     };
     this.floor = new THREE.Mesh(new THREE.PlaneGeometry(70, 70).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ uniforms: this.floorU, vertexShader: FLOOR_VERT, fragmentShader: FLOOR_FRAG, transparent: true, depthWrite: false,
       defines: { FLOOR_TAPS: (q.spray || 900) >= 1000 ? 6 : (q.spray || 900) >= 700 ? 4 : 3 } }));
@@ -291,7 +294,19 @@ export class Studio {
       for (let i = 0; i < 12; i++) {
         const m = new THREE.Mesh(top, this.gantryMat); m.position.set(i * 12 - 36, 4.6, 0); m.userData.x0 = m.position.x; m.frustumCulled = false; this.gantry.add(m);
         for (const z of [5.0, -5.0]) { const t = new THREE.Mesh(side, this.stripMat); t.position.set(i * 12 - 30, 1.25, z); t.userData.x0 = t.position.x; t.frustumCulled = false; this.gantry.add(t); }
-      } }
+      }
+      /* Before the launch only the side strips burn, low, and nothing moves: they are drawn as one mesh. (As the
+         thirty-six separate lights of the launch they cost 180 draw calls a frame in every shot of the film, the
+         mirror and its height pass included, which a laptop feels.) The launch swaps in the separate ones, which
+         it slides and smears one by one; they stand in the same places at that moment. */
+      const P = [], Uv = [], I = [], sp = side.attributes.position, su = side.attributes.uv, si = side.index;
+      for (let i = 0; i < 12; i++) for (const z of [5.0, -5.0]) {
+        const o = P.length / 3;
+        for (let k = 0; k < sp.count; k++) { P.push(sp.getX(k) + i * 12 - 30, sp.getY(k) + 1.25, sp.getZ(k) + z); Uv.push(su.getX(k), su.getY(k)); }
+        for (let k = 0; k < si.count; k++) I.push(si.getX(k) + o);
+      }
+      const hg = new THREE.BufferGeometry(); hg.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); hg.setAttribute('uv', new THREE.Float32BufferAttribute(Uv, 2)); hg.setIndex(I);
+      this.hallLights = new THREE.Mesh(hg, this.stripMat); this.hallLights.frustumCulled = false; this.hallLights.visible = false; this.scene.add(this.hallLights); }
     { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d');
       g.fillStyle = '#000'; g.fillRect(0, 0, 256, 128); g.filter = 'blur(5px)'; g.fillStyle = '#fff'; g.fillRect(12, 10, 232, 118); g.filter = 'none';
       const dt = new THREE.CanvasTexture(c); dt.colorSpace = THREE.SRGBColorSpace;
@@ -448,25 +463,30 @@ export class Studio {
   }
   clearSpray() { this.dr.age.fill(1e9); this.sp.age.fill(1e9); this.drops.visible = false; this.spray.visible = false; }
 
-  /* The launch. k: 0..1 how far the hall's lights have come up; run: metres the road has moved under the car;
-     v: its speed (m/s); doorX: where the door stands ahead of the car now; open: 0..1 how far it has risen. */
-  setLaunch(k, run = 0, v = 0, doorX = 60, open = 0) {
-    const on = k > 0.001, U = this.floorU, blur = v / 48;                  // 1/48 s exposure
-    this.gantry.visible = on; this.door.visible = this.veil.visible = on && open > 0.002;
-    U.uRun.value = run % 4096; U.uBlur.value = on ? blur : 0; U.uPools.value = on ? k : 0; U.uReach.value = on ? 1 : 0;
+  /* The launch. k: 0..1 how far the hall's big lights have come up; run: metres the road has moved under the car;
+     v: its speed (m/s); doorX: where the door stands ahead of the car now; open: 0..1 how far it has risen.
+     hall: 0..1, the hall seen before the launch. The film used to play in a black void until the launch switched
+     the hall on. Now its small lights, the strips down both sides, burn low from the first shot, and the floor
+     runs down the hall and mirrors them; the gantries overhead and the door stay dark until the launch, which is
+     still the moment the big lights come on (the strips come up to full with them). */
+  setLaunch(k, run = 0, v = 0, doorX = 60, open = 0, hall = 0) {
+    const lit = k > 0.001, on = lit || hall > 0.001, U = this.floorU, blur = v / 48;                  // 1/48 s exposure
+    this.gantry.visible = lit; this.hallLights.visible = on && !lit; this.door.visible = this.veil.visible = lit && open > 0.002;
+    U.uRun.value = run % 4096; U.uBlur.value = lit ? blur : 0; U.uPools.value = lit ? k : 0; U.uReach.value = on ? 1 : 0; U.uHall.value = on ? Math.max(hall, k) : 0;
     this.floor.scale.x = on ? 5 : 1;
-    const env = on ? this.envLaunch : this.envStudio;
+    const env = lit ? this.envLaunch : this.envStudio;
     if (this.scene.environment !== env) this.scene.environment = env;
-    this.scene.environmentRotation.set(0, 0, on ? -(run / 12) * (Math.PI / 6) : 0);     // one rib per gantry
+    this.scene.environmentRotation.set(0, 0, lit ? -(run / 12) * (Math.PI / 6) : 0);     // one rib per gantry
     const far = on ? 420 : 90; if (this.camera.far !== far) { this.camera.far = far; this.camera.updateProjectionMatrix(); }
     if (!on) return;
+    this.stripMat.color.setRGB(2.3, 2.4, 2.6).multiplyScalar(Math.max(k, hall * HALL_LOW) / (1 + blur / 0.3));
+    if (!lit) return;
     for (const m of this.gantry.children) {
       m.position.x = ((m.userData.x0 - run + 36) % 144 + 144) % 144 - 36;
       const w = m.material === this.gantryMat ? 0.7 : 0.3; m.scale.x = 1 + blur / w;        // smeared along the road by the exposure
     }
     const dim = (w) => 1 / Math.pow(1 + blur / w, 0.75);
     this.gantryMat.color.setRGB(5.0, 5.15, 5.5).multiplyScalar(k * dim(0.7));
-    this.stripMat.color.setRGB(2.3, 2.4, 2.6).multiplyScalar(k / (1 + blur / 0.3));
     // the door: a roller door rising on daylight
     const h = 6.4 * Math.max(0.002, open);
     this.door.scale.y = Math.max(0.002, open); this.door.position.set(doorX, h / 2, 0);

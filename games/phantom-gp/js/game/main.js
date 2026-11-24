@@ -170,7 +170,7 @@ async function boot() {
     if (gfx.noBloom && g < 2 && G.state !== 'film' && G.state !== 'title') gfx.look.bloom = [...LOOKS.track.bloom];
     gfx.noBloom = g >= 2;
     if (shadows) shadows.setEnabled(g < 4);
-    if (gfx.scale !== gov.scale) { gfx.setSize(gfx.cssW, gfx.cssH, gov.scale); if (studio) studio.setSize(gfx.w, gfx.h); }
+    syncScale();
     if (DEV) console.log('[perf]', gov.log[gov.log.length - 1]);
     gfxLine();
   };
@@ -367,7 +367,17 @@ function tooMuch() {
 }
 
 /* ------------------------------------------------------------------ scene switches */
+/* The governor's resolution step belongs to the circuit, which is what it measures. The title and the film are
+   drawn in the studio, a much lighter scene, at full resolution whatever the race has been eased to. For a day they
+   were not: the race's scale was applied to everything, and at half resolution the thin edges of the whole car
+   crawled as the film's camera moved (he saw it as a jittery, blurrier film on the laptop the fix was for). */
+const wantScale = () => (G.inStudio || !gov ? 1 : gov.scale);
+function syncScale() {
+  const v = wantScale(); if (gfx.scale === v) return;
+  gfx.setSize(gfx.cssW, gfx.cssH, v); if (studio && G.inStudio) studio.setSize(gfx.w, gfx.h);
+}
 function toStudio() {
+  G.inStudio = true; syncScale(); if (studio.w !== gfx.w || studio.h !== gfx.h) studio.setSize(gfx.w, gfx.h);
   gfx.carRect(0, null); gfx.carRect(1, null);
   studio.scene.add(cars.player.root); cars.player.home(); cars.player.setStage(true);
   cars.player.setWheels(0, 0, 0, 0, 0);
@@ -375,6 +385,7 @@ function toStudio() {
   for (const l of studio.lights) l.shadow.needsUpdate = true;
 }
 function toTrack() {
+  G.inStudio = false; syncScale();
   scene.add(cars.player.root); cars.player.setStage(false); for (const v of cars.rivals) v.setStage(false);
   gfx.setLook(LOOKS.track); shadows.invalidate();
 }
@@ -620,7 +631,7 @@ async function shot(name, w = 1600, h = 900, frames = 2) {
   for (let i = 0; i < frames; i++) frame(0.0001);
   const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.92));
   const res = await fetch('/__shot/' + name + '.jpg', { method: 'POST', body: blob }).then((r) => r.json()).catch((e) => ({ ok: false, e: String(e) }));
-  gfx.dprCap = cap; q.maxPixels = mp; gfx.setSize(cw, ch, gov ? gov.scale : 1); resize();
+  gfx.dprCap = cap; q.maxPixels = mp; gfx.setSize(cw, ch, wantScale()); resize();
   return { ...res, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, w: gfx.w, h: gfx.h };
 }
 
@@ -685,7 +696,7 @@ window.__filmAt = async (beat, name, w = 1280, h = 720, from = null) => {
   intro.last = performance.now() / 1000 - 0.016; frame(0.016);
   const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.9));
   const res = name ? await fetch('/__shot/' + name + '.jpg', { method: 'POST', body: blob }).then((r) => r.json()) : null;
-  gfx.dprCap = cap; q.maxPixels = mp; gfx.setSize(cw, ch, gov ? gov.scale : 1); resize();
+  gfx.dprCap = cap; q.maxPixels = mp; gfx.setSize(cw, ch, wantScale()); resize();
   return { res, beat: window.__fb, state: G.state };
 };
 

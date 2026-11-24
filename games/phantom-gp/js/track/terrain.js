@@ -2,7 +2,8 @@
 // surface classes (grass, tarmac, gravel, earth, run-off paint) with procedural materials; far from it, from the orthophoto.
 import * as THREE from 'three';
 import { W, MESH } from './world.js';
-import { asphaltMaps, grassMaps, gravelMaps, noiseTex } from './tex.js';
+import { asphaltMaps, grassMaps, gravelMaps, noiseTex, whenPainted } from './texq.js';
+import { due, dueN, breathe } from './slice.js';
 
 function meanLinear(tex) {
   const c = document.createElement('canvas'); c.width = c.height = 8;
@@ -13,20 +14,24 @@ function meanLinear(tex) {
   return new THREE.Vector3(r / 64, g / 64, b / 64);
 }
 
-// several same-sized canvas textures as the layers of one array texture
-function layers(texs, srgb) {
-  const w = texs[0].image.width, h = texs[0].image.height, data = new Uint8Array(w * h * 4 * texs.length);
-  texs.forEach((t, k) => {
-    const d = t.image.getContext('2d').getImageData(0, 0, w, h).data;
-    for (let y = 0; y < h; y++) data.set(d.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), (k * h + y) * w * 4);     // rows flipped, as canvas textures are
-  });
-  const a = new THREE.DataArrayTexture(data, w, h, texs.length);
+// Several same-sized canvas textures as the layers of one array texture. It is made empty and filled once the
+// canvases have been painted (they are painted off the page: texq.js).
+function layersEmpty(w, h, n, srgb) {
+  const a = new THREE.DataArrayTexture(new Uint8Array(w * h * 4 * n), w, h, n);
   a.format = THREE.RGBAFormat; a.type = THREE.UnsignedByteType;
   if (srgb) a.colorSpace = THREE.SRGBColorSpace;
   a.wrapS = a.wrapT = THREE.RepeatWrapping; a.generateMipmaps = true;
   a.minFilter = THREE.LinearMipmapLinearFilter; a.magFilter = THREE.LinearFilter; a.anisotropy = 16;
-  a.needsUpdate = true;
   return a;
+}
+function layersFill(a, texs) {
+  const { width: w, height: h } = a.image, data = a.image.data;
+  texs.forEach((t, k) => {
+    if (t.image.width !== w || t.image.height !== h) throw new Error('ground grain map is ' + t.image.width + ' px, expected ' + w);
+    const d = t.image.getContext('2d').getImageData(0, 0, w, h).data;
+    for (let y = 0; y < h; y++) data.set(d.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), (k * h + y) * w * 4);     // rows flipped, as canvas textures are
+  });
+  a.needsUpdate = true;
 }
 
 export const groundUniforms = {};
@@ -35,10 +40,20 @@ export const groundUniforms = {};
    rectangle. The mowing stripes and the raked lines in the gravel run along its contours, so they follow the track
    the way a mower and a rake do. Each station first marks the cells across from it, then every marked cell takes
    its exact distance to the centre line close to that station. */
+// (The texture is handed back at once and filled in slices, so the page is not held for it: slice.js.)
 function distanceTex() {
-  const n = W.meta.near, w = Math.round(n.w / 2), h = Math.round(n.h / 2), FAR = 90, N = W.N;
+  const n = W.meta.near, w = Math.round(n.w / 2), h = Math.round(n.h / 2), FAR = 90, far16 = THREE.DataUtils.toHalfFloat(FAR);
+  const out = new Uint16Array(w * h).fill(far16);
+  const t = new THREE.DataTexture(out, w, h, THREE.RedFormat, THREE.HalfFloatType);
+  t.magFilter = t.minFilter = THREE.LinearFilter; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.generateMipmaps = false; t.needsUpdate = true;
+  whenPainted([], async () => { await fillDistance(out, w, h, FAR, far16); t.needsUpdate = true; });
+  return t;
+}
+async function fillDistance(out, w, h, FAR, far16) {
+  const n = W.meta.near, N = W.N;
   const near = new Int32Array(w * h).fill(-1), best = new Float32Array(w * h).fill(FAR);
   for (let i = 0; i < N; i++) {
+    if (due()) await breathe();
     const rx = -W.dz[i], rz = W.dx[i];
     for (let d = -FAR; d <= FAR; d += 1) {
       const px = Math.floor((W.tx[i] + rx * d - n.x0) / 2), pz = Math.floor((W.tz[i] + rz * d - n.z0) / 2);
@@ -49,13 +64,14 @@ function distanceTex() {
   for (let pass = 0; pass < 2; pass++) {                    // cells the fans of rays stepped over (outside of bends)
     const add = [];
     for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++) {
+      if (dueN()) await breathe();
       const q = j * w + i; if (near[q] >= 0) continue;
       const m = Math.max(near[q - 1], near[q + 1], near[q - w], near[q + w]); if (m >= 0) add.push(q, m);
     }
     for (let k = 0; k < add.length; k += 2) near[add[k]] = add[k + 1];
   }
-  const out = new Uint16Array(w * h), far16 = THREE.DataUtils.toHalfFloat(FAR);
   for (let q = 0; q < w * h; q++) {
+    if (dueN()) await breathe();
     const i0 = near[q]; if (i0 < 0) { out[q] = far16; continue; }
     const x = n.x0 + (q % w + 0.5) * 2, z = n.z0 + (Math.floor(q / w) + 0.5) * 2;
     let m = 1e9;
@@ -66,9 +82,6 @@ function distanceTex() {
     }
     out[q] = THREE.DataUtils.toHalfFloat(Math.min(m, FAR));
   }
-  const t = new THREE.DataTexture(out, w, h, THREE.RedFormat, THREE.HalfFloatType);
-  t.magFilter = t.minFilter = THREE.LinearFilter; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.generateMipmaps = false; t.needsUpdate = true;
-  return t;
 }
 // farStep: far grid, 1 = every 20 m survey point, n = every n-th away from the circuit (phones).
 // detail: size of the close-up grain maps (1, or 0.5 on phones). The near grid's spacing is MESH.step in world.js.
@@ -78,11 +91,19 @@ export function makeGroundMaterial(near, shoulder = false) {
   const U = groundUniforms;
   if (!U.tNear) {
     const g = grassMaps(), a = asphaltMaps(), gr = gravelMaps();
-    // phones take the grain maps at half size (a quarter of the memory): drawn at full size, then reduced, so the grain keeps its scale
-    if (TERRAIN.detail !== 1) for (const m of [g, a, gr]) for (const key of ['map', 'normalMap']) {
-      const t = m[key], c = document.createElement('canvas'); c.width = Math.round(t.image.width * TERRAIN.detail); c.height = Math.round(t.image.height * TERRAIN.detail);
-      c.getContext('2d').drawImage(t.image, 0, 0, c.width, c.height); t.image = c; t.needsUpdate = true;
-    }
+    // what is made from the grain maps' pixels waits until they have been painted
+    const DS = Math.round(1024 * TERRAIN.detail), det = layersEmpty(DS, DS, 3, true), detN = layersEmpty(DS, DS, 3, false);
+    const mG = new THREE.Vector3(0.1, 0.13, 0.06), mA = new THREE.Vector3(0.14, 0.14, 0.14), mGr = new THREE.Vector3(0.3, 0.28, 0.25);
+    whenPainted([g, a, gr], async () => {
+      // phones take the grain maps at half size (a quarter of the memory): drawn at full size, then reduced, so the grain keeps its scale
+      if (TERRAIN.detail !== 1) for (const m of [g, a, gr]) for (const key of ['map', 'normalMap']) {
+        const t = m[key], c = document.createElement('canvas'); c.width = Math.round(t.image.width * TERRAIN.detail); c.height = Math.round(t.image.height * TERRAIN.detail);
+        c.getContext('2d', { willReadFrequently: true }).drawImage(t.image, 0, 0, c.width, c.height); t.image = c; t.needsUpdate = true;
+      }
+      await breathe(); layersFill(det, [g.map, a.map, gr.map]);
+      await breathe(); layersFill(detN, [g.normalMap, a.normalMap, gr.normalMap]);
+      mG.copy(meanLinear(g.map)); mA.copy(meanLinear(a.map)); mGr.copy(meanLinear(gr.map));
+    });
     const n = W.meta.near, q = W.meta.far;
     // run-off paint colours found in the survey photo (linear); unused slots repeat the first
     const lin = (v) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
@@ -95,10 +116,10 @@ export function makeGroundMaterial(near, shoulder = false) {
       uPaintPx: { value: new THREE.Vector2(W.tPaint.image.width, W.tPaint.image.height) },
       tGrass: { value: g.map }, tGrassN: { value: g.normalMap }, tAsph: { value: a.map }, tAsphN: { value: a.normalMap },
       tGravel: { value: gr.map }, tGravelN: { value: gr.normalMap }, tNoise: { value: noiseTex() },
-      tDet: { value: layers([g.map, a.map, gr.map], true) }, tDetN: { value: layers([g.normalMap, a.normalMap, gr.normalMap], false) },
+      tDet: { value: det }, tDetN: { value: detN },
       uNearRect: { value: new THREE.Vector4(n.x0, n.z0, 1 / n.w, 1 / n.h) },
       uFarRect: { value: new THREE.Vector4(q.x0, q.z0, 1 / q.w, 1 / q.h) },
-      uGrassMean: { value: meanLinear(g.map) }, uAsphMean: { value: meanLinear(a.map) }, uGravelMean: { value: meanLinear(gr.map) },
+      uGrassMean: { value: mG }, uAsphMean: { value: mA }, uGravelMean: { value: mGr },
       tDist: { value: TERRAIN.detail === 1 ? distanceTex() : null },          // not on phones
     });
     W.detail = { grass: g, asphalt: a, gravel: gr };
@@ -255,13 +276,14 @@ export function makeGroundMaterial(near, shoulder = false) {
 
 const CH = 64;
 
-export function buildTerrain(scene) {
+export async function buildTerrain(scene) {
   const n = W.meta.near, nx = n.nx, ny = n.ny, h = W.hNear, hs = W.hScale, h0 = W.hMin;
   const H = (i, j) => h[Math.min(Math.max(j, 0), ny - 1) * nx + Math.min(Math.max(i, 0), nx - 1)] * hs + h0;
   const matNear = makeGroundMaterial(true), matFar = makeGroundMaterial(false);
   const chunks = [];
   const group = new THREE.Group(); group.name = 'terrain';
   for (let cj = 0; cj * CH < ny - 1; cj++) for (let ci = 0; ci * CH < nx - 1; ci++) {
+    if (due()) await breathe();
     const i0 = ci * CH, j0 = cj * CH, cw = Math.min(CH, nx - 1 - i0), chh = Math.min(CH, ny - 1 - j0);
     // the chunk's own vertex grid: every MESH.step-th survey point (2 m on desktops, 4 m on phones), and its far edge
     const gx = [], gz = []; for (let i = 0; i < cw; i += MESH.step) gx.push(i); gx.push(cw); for (let j = 0; j < chh; j += MESH.step) gz.push(j); gz.push(chh);
@@ -323,6 +345,7 @@ export function buildTerrain(scene) {
   const FH = (i, j) => fh[Math.min(Math.max(j, 0), fy - 1) * fx + Math.min(Math.max(i, 0), fx - 1)] * hs + h0;
   const fpos = new Float32Array(fx * fy * 3), fnor = new Float32Array(fx * fy * 3);
   for (let j = 0; j < fy; j++) for (let i = 0; i < fx; i++) {
+    if (dueN()) await breathe();
     const k = (j * fx + i) * 3;
     fpos[k] = q.x0 + i * q.step; fpos[k + 1] = FH(i, j); fpos[k + 2] = q.z0 + j * q.step;
     const sx = (FH(i + 1, j) - FH(i - 1, j)) / 40, sz = (FH(i, j + 1) - FH(i, j - 1)) / 40, l = Math.hypot(sx, 1, sz);
@@ -338,11 +361,13 @@ export function buildTerrain(scene) {
     for (let j = R0; j <= R1; j++) { const a = Math.floor(j / st) * st, b = Math.min(fy - 1, a + st); if (j !== a) for (const i of [C0, C1]) fix(i, j, i, a, i, b, (j - a) / (b - a)); }
   }
   for (let j = R0; j < R1; j++) for (let i = C0; i < C1; i++) {
+    if (dueN()) await breathe();
     if (i >= c0 && i < c1 && j >= r0 && j < r1) continue;
     const p = j * fx + i;
     fidx.push(p, p + fx, p + 1, p + 1, p + fx, p + fx + 1);
   }
   for (let j = 0; j < fy - 1; j += st) for (let i = 0; i < fx - 1; i += st) {
+    if (dueN()) await breathe();
     if (i >= C0 && i < C1 && j >= R0 && j < R1) continue;
     const i1 = Math.min(i + st, fx - 1), j1 = Math.min(j + st, fy - 1), p = j * fx + i, q1 = j * fx + i1, r = j1 * fx + i, t = j1 * fx + i1;
     fidx.push(p, r, q1, q1, r, t);

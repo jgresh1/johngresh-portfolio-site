@@ -88,13 +88,18 @@ def main():
         shutil.copytree(os.path.join(ph, d), os.path.join(pdst, d), ignore=shutil.ignore_patterns('__pycache__', '*.py'))
     shutil.copy(os.path.join(ph, 'LICENSES.md'), os.path.join(pdst, 'LICENSES.md'))
     html = open(os.path.join(ph, 'index.html'), encoding='utf-8').read()
-    menu = '<script src="../../assets/site-menu.js" data-corner="tr" data-dock="#h-btns" defer></script>\n'
+    # The site's menu button is on the page from the first moment, over the game's loading screen. It used to be a
+    # deferred script after the game's own module, so it waited for all of the game's code to arrive and start, and a
+    # visitor who did not want to wait for a game had no way to the other projects until then.
+    menu = '<script src="../../assets/site-menu.js" data-corner="tr" data-dock="#h-btns"></script>\n'
+    game = '<script type="module" src="./js/game/main.js"></script>'
     head = ('<meta property="og:title" content="Phantom GP">\n'
             '<meta property="og:description" content="A one-on-one race round the full Spa-Francorchamps circuit, in the browser.">\n'
             '<meta property="og:image" content="https://johngresh.org/assets/home/phantom-hero.webp">\n'
             f'<link rel="icon" href="{ICON}">\n')
     assert '</body>' in html and '<meta charset="UTF-8">' in html and '</head>' in html
-    sub = html.replace('</head>', head + '</head>', 1).replace('</body>', menu + '</body>', 1)
+    assert html.count(game) == 1
+    sub = html.replace('</head>', head + '</head>', 1).replace(game, menu + game, 1)
     write(os.path.join(pdst, 'index.html'), sub)
     write(os.path.join(ROOT, 'index.html'), sub.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n' + LEGACY + '<base href="games/phantom-gp/">', 1))
 

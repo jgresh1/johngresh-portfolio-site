@@ -6,8 +6,10 @@
 //   far              one instanced cross-card impostor mesh per species, baked from the mid models at load.
 import * as THREE from 'three';
 import { W } from './world.js';
-import { rng32, leafTex } from './tex.js';
-import { spruceAtlas, leafAtlas, barkMaps, meanOpaque } from './treetex.js';
+import { rng32 } from './tex.js';
+import { meanOpaque } from './treetex.js';
+import { leafTex, spruceAtlas, leafAtlas, barkMaps, painted } from './texq.js';
+import { due, dueN, breathe } from './slice.js';
 
 const U = { uCamPos: { value: new THREE.Vector3() }, uNear: { value: 150 }, uHero: { value: 55 }, uTime: { value: 0 } };
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -347,11 +349,14 @@ function impostorGeo(m, i, atlas) {
 }
 
 /* ------------------------------------------------------------------ build */
-export function buildTrees(scene, renderer, qual) {
+export async function buildTrees(scene, renderer, qual) {
   U.uNear.value = qual.treeNear; U.uHero.value = qual.treeHero > 0 ? qual.treeHero : -1000;      // no hero level: nothing is ever 'closer than hero'
   const wind = qual.wind !== false, lum = (c) => c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11;
   const needles = spruceAtlas(), sprays = leafTex(), clusters = leafAtlas(), birchLeaves = leafAtlas(1024, { seed: 431, leaf: 0.78, narrow: 1.15, hue: 0.5 });
   const barks = { spruce: barkMaps('spruce'), beech: barkMaps('beech'), birch: barkMaps('birch') };
+  // The far trees are photographs of the near ones (bakeImpostors), and the species are balanced by the mean colour
+  // of their leaves: both need the leaf and bark textures painted, which happens off the page (texq.js).
+  await painted(needles, sprays, clusters, birchLeaves, barks.spruce, barks.beech, barks.birch);
   const midGain = [0.72, 0.27], mSpray = lum(meanOpaque(sprays));
   const leafGain = (tex, k) => midGain[1] * mSpray / lum(meanOpaque(tex)) * k;
   const species = [
@@ -364,7 +369,9 @@ export function buildTrees(scene, renderer, qual) {
         { ...broadleafHero(55, { spread: 0.8, droop: 0.2, card: 0.046, trunk: 0.44 }), map: birchLeaves, bark: 'birch', gain: leafGain(birchLeaves, 1.3) },
       ] },
   ];
+  await breathe();
   const atlas = bakeImpostors(renderer, species);
+  await breathe();
   const T = W.trees, n = T.length / 6;
   const group = new THREE.Group(); group.name = 'trees';
   const rand = rng32(4242);
@@ -373,6 +380,7 @@ export function buildTrees(scene, renderer, qual) {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s3 = new THREE.Vector3(), p3 = new THREE.Vector3();
   const put = (map, key, i) => { const l = map.get(key); if (l) l.push(i); else map.set(key, [i]); };
   for (let i = 0; i < n; i++) {
+    if (dueN()) await breathe();
     const x = T[i * 6], z = T[i * 6 + 1], y = T[i * 6 + 2], h = T[i * 6 + 3], sp = T[i * 6 + 4] > 0.5 ? 1 : 0;
     const wide = sp ? 0.85 + rand() * 0.5 : 0.9 + rand() * 0.35;
     q.setFromAxisAngle(UP, rand() * 6.283); s3.set(h * wide, h, h * wide); p3.set(x, y - 0.25, z);

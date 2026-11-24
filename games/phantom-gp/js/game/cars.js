@@ -6,6 +6,7 @@ import { makeMaterials, PAINTS } from '../car/mats.js';
 import { buildCar } from '../car/car.js';
 import { loadHand } from '../car/hands.js';
 import { surfaceAt } from '../track/world.js';
+import { breathe } from '../track/slice.js';
 
 export { PAINTS };
 const HX0 = -2.95, HX1 = 3.15, HZ = 1.15;                 // footprint covered by the height image (car frame)
@@ -287,14 +288,19 @@ export async function buildCars(renderer, q) {
   const hands = await loadHands();
   const t0 = performance.now();
   const M1 = makeMaterials();
-  const b = buildCar(M1, { hands });
+  await breathe();
+  const b = await buildCar(M1, { hands });
   b.driver.userData = {};
+  await breathe();
   mergeCar(b.car, b.wheels);
+  await breathe();
   let tris = 0, meshes = 0; b.car.traverse((o) => { if (o.isMesh) meshes++; if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 * (o.isInstancedMesh ? o.count : 1); });
   const heightTex = bakeHeight(renderer, b.car);
   const player = new CarView(b.car, M1, heightTex, q);
+  await breathe();
   const M2 = makeMaterials(M1);
   const c2 = b.car.clone(true);
+  await breathe();
   c2.traverse((o) => { if (o.isMesh) o.material = Array.isArray(o.material) ? o.material.map(M2.twin) : M2.twin(o.material); });
   const rival = new CarView(c2, M2, heightTex, q);
   player.makeDash();

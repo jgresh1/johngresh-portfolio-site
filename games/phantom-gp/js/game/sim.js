@@ -2,6 +2,7 @@
 // rival is fast because it drives well, not because it has a better car.
 import { W, frameAt, nearestStation, surfaceAt, contactAt, groundClass, treeWithin, drawnBuilding, drawnBarrier } from '../track/world.js';
 import { nearestRoad, roadAhead, roadSpeed } from '../track/roads.js';
+import { due, dueN, breathe } from '../track/slice.js';
 
 // tyre contact points in the car frame (x forward, z right): front axle 1.8 m ahead of the middle, rear 1.8 m behind;
 // half-tracks from car.js (ZF, ZR). Order: front right, front left, rear right, rear left.
@@ -35,7 +36,7 @@ export const rpmFor = (v, g) => { const lo = g > 1 ? GEAR_TOP[g - 1] * 0.80 : 0,
 
 /* ------------------------------------------------------------------ track data for driving */
 export const TRACK = {};
-export function buildTrack() {
+export async function buildTrack() {
   const N = W.N, ds = W.ds, T = TRACK;
   T.N = N; T.ds = ds; T.L = W.L;
   // how far a car may go to each side: the road edge, or a wall that stands inside it (the old pit wall after La Source)
@@ -50,8 +51,8 @@ export function buildTrack() {
     }
   };
   // only what is drawn can limit the road (world.js: drawnBarrier, drawnBuilding)
-  for (const b of W.barriers) if (drawnBarrier(b)) scan(b.pts, false);
-  for (const b of W.buildings) if (drawnBuilding(b)) scan(b.pts, true);
+  for (const b of W.barriers) { if (due()) await breathe(); if (drawnBarrier(b)) scan(b.pts, false); }
+  for (const b of W.buildings) { if (due()) await breathe(); if (drawnBuilding(b)) scan(b.pts, true); }
   const spread = (a, r, f) => { const o = new Float32Array(N); for (let i = 0; i < N; i++) { let v = f === Math.min ? 1e9 : 0, c = 0; for (let j = -r; j <= r; j++) { const x = a[(i + j + N) % N]; if (f === Math.min) v = Math.min(v, x); else { v += x; c++; } } o[i] = f === Math.min ? v : v / c; } return o; };
   let dMax = new Float32Array(N), dMin = new Float32Array(N);
   for (let i = 0; i < N; i++) { dMax[i] = Math.min(W.hw[i] - 1.15, wr[i] - 1.7); dMin[i] = Math.min(W.hw[i] - 1.15, wl[i] - 1.7); }
@@ -74,6 +75,7 @@ export function buildTrack() {
   for (let i = 0; i < N; i++) { frameAt(i * ds, fr); lx[i] = fr.x + fr.rx * line[i]; lz[i] = fr.z + fr.rz * line[i]; }
   const raw = new Float32Array(N), H = 7;
   for (let i = 0; i < N; i++) {
+    if (due()) await breathe();
     const a = (i - H + N) % N, b = (i + H) % N;
     const ax = lx[i] - lx[a], az = lz[i] - lz[a], bx = lx[b] - lx[i], bz = lz[b] - lz[i];
     const cr = ax * bz - az * bx, la = Math.hypot(ax, az), lb = Math.hypot(bx, bz), lc = Math.hypot(lx[b] - lx[a], lz[b] - lz[a]);
@@ -85,6 +87,7 @@ export function buildTrack() {
   const vp = new Float32Array(N), VMAX = 96;
   for (let i = 0; i < N; i++) { const k = Math.abs(kl[i]) / 0.985; vp[i] = k > PHYS.kAero * 1.02 ? Math.min(VMAX, Math.sqrt(PHYS.aMech / (k - PHYS.kAero))) : VMAX; }
   for (let pass = 0; pass < 2; pass++) {
+    if (due()) await breathe();
     for (let t = 0; t < 2 * N; t++) { const i = t % N, j = (i + 1) % N, lat = Math.min(1, vp[i] * vp[i] * Math.abs(kl[i]) / grip(vp[i])), a = Math.max(0.5, driveAcc(vp[i])) * Math.sqrt(1 - 0.75 * lat * lat); vp[j] = Math.min(vp[j], Math.sqrt(vp[i] * vp[i] + 2 * a * ds)); }
     for (let t = 2 * N; t > 0; t--) { const i = t % N, j = (i - 1 + N) % N, lat = Math.min(1, vp[i] * vp[i] * Math.abs(kl[i]) / grip(vp[i])), b = brakeAcc(vp[i]) * 0.93 * Math.sqrt(1 - 0.75 * lat * lat); vp[j] = Math.min(vp[j], Math.sqrt(vp[i] * vp[i] + 2 * b * ds)); }
   }

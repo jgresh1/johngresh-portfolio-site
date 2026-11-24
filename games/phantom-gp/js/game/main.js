@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { Gfx, LOOKS } from './gfx.js';
 import { Studio } from './studio.js';
 import { ATMO, setSun, installAtmosphere, bakeSky, makeSky, makeEnvironment, SunShadows } from '../track/atmo.js';
-import { cloudNoise3D } from '../track/tex.js';
+import { cloudNoise3D, preheat, settled, GROUND as GROUND_TEX, TREES as TREE_TEX } from '../track/texq.js';
+import { SLICE, due, breathe } from '../track/slice.js';
 import { W, LOAD, MESH, loadWorld, upgradeGround, frameAt, surfaceAt } from '../track/world.js';
 import { buildTerrain, TERRAIN, groundUniforms } from '../track/terrain.js';
 import { buildRoad } from '../track/road.js';
@@ -52,7 +53,7 @@ function pickTier() {
   const forced = Q.get('q') || (S.quality !== 'auto' ? S.quality : null);
   if (TIERS[forced]) return forced;
   const small = Math.min(screen.width, screen.height);          // 0 in a hidden embedded pane: not a small screen
-  if (input.touch || (small > 0 && small < 620)) return 'low';
+  if (input.touch || input.tablet || (small > 0 && small < 620)) return 'low';
   const name = GFX.raw;
   if (GFX.software) return 'low';
   const guess = guessTier(name, navigator.deviceMemory || 8);
@@ -66,6 +67,7 @@ if (Q.has('dpr')) { q.dpr = parseFloat(Q.get('dpr')); }
 /* ------------------------------------------------------------------ globals */
 const canvas = $('view'), stage = $('stage');
 const gfx = new Gfx(canvas, q), renderer = gfx.renderer;
+renderer.debug.checkShaderErrors = DEV;      // the check reads back each program's log, which waits for its build: 0.7 s of standing still while loading
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, 1, 0.3, 26000);
 const sound = new Sound();
@@ -132,6 +134,9 @@ function resize() {
 async function boot() {
   hud = new Hud(S, handlers);
   hud.load('Building the car', 0.05);
+  SLICE.on = true;                          // from here on, long jobs stop every few milliseconds for the page (slice.js)
+  // the circuit's drawn textures are painted in background workers, from this first moment (texq.js)
+  preheat(GROUND_TEX); preheat(TREE_TEX); const cloudP = cloudNoise3D(64);
   resize();
   LOAD.lo = q.lo;
   MESH.step = q.lo ? 2 : 1; TERRAIN.detail = q.lo ? 0.5 : 1;        // phones: a 4 m terrain mesh and half-size grain maps
@@ -217,52 +222,63 @@ async function boot() {
   }
   G.state = 'title'; hud.screen('title'); hud.startProgress(0.7 * netP);
   G.bootT = Math.round(performance.now());
+  /* The car is drawn now, with the title's first words. The loop below first lets eight frames pass without
+     drawing (they time the screen), and those used to be the title's first eight: with the circuit loading behind
+     them they could take seconds, and the title stood there with a Start button and no car. */
+  frameBody(0.001);
+  let probed; const probedP = new Promise((r) => { probed = r; });
   let last = performance.now();
   /* The governor's ladder is the circuit's (trees, terrain, shadows, pixels), so it only watches frames that draw the
      circuit. It used to watch the title and the film too: a phone that ran the studio under 46 frames a second had
      gone all the way down the ladder before the race began. */
   const onCircuit = () => G.trackReady && (G.state === 'race' || G.state === 'menu' || G.state === 'result');
-  let held = 0;
+  let held = 0, titleMs = 6;
   const loop = (now) => {
     const dt = (now - last) / 1000; last = now;
     gov.see(dt);
-    if (held < 8) { held++; requestAnimationFrame(loop); return; }      // the first frames draw nothing: they time the screen itself (Governor.see)
-    const t0 = performance.now(), circuit = onCircuit();
+    if (held < 8) { if (++held === 8) probed(); requestAnimationFrame(loop); return; }      // the first frames draw nothing new: they time the screen itself (Governor.see)
+    const t0 = performance.now(), circuit = onCircuit(), loading = !G.trackReady;
     // (game time follows real time down to ten frames a second. The limit was a twentieth of a second: below twenty
     // frames a second, and in every single long frame, the race then ran in slow motion.)
     frame(Math.min(0.1, Math.max(0.001, dt)));
     if (circuit) { gov.sample(dt, performance.now() - t0, glc.fenceSync ? askCard : null); if (gov.exhausted) tooMuch(); }
+    /* While the circuit loads behind the title, the builders get a share of every frame (slice.js). Where a title
+       frame is cheap they take 18 ms and the car turns at fifty frames a second; where it is dear they take more,
+       so that loading always has most of the time. Once Start has been pressed they take 45 ms. */
+    if (loading) { titleMs += (Math.min(performance.now() - t0, 80) - titleMs) * 0.2; SLICE.ms = G.wantStart ? 45 : Math.min(40, Math.max(18, 1.4 * titleMs + 10)); }
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
 
   // ---- the circuit, behind the title
-  await new Promise((r) => { requestAnimationFrame(() => yieldNow().then(r)); setTimeout(r, 120); });      // let the title paint first
+  await Promise.race([probedP, new Promise((r) => setTimeout(r, 1500))]);      // nothing else runs while the screen is being timed (a hidden tab has no frames: do not wait for them)
   titleUp();
   sound.prepare();
   await worldP;
-  const step = async (p) => { hud.startProgress(0.7 + 0.3 * p); (window.__bootT ||= []).push(['circuit ' + p, Math.round(performance.now())]); await yieldNow(); };
+  const step = async (p) => { hud.startProgress(0.7 + 0.3 * p); (window.__bootT ||= []).push(['circuit ' + p, Math.round(performance.now())]); await breathe(); };
   await step(0);
   setSun(112, 39); installAtmosphere();
   scene.fog = new THREE.FogExp2(0xffffff, ATMO.haze);
-  const skyTex = await bakeSky(renderer, cloudNoise3D(64), q.sky);
+  const skyTex = await bakeSky(renderer, await cloudP, q.sky);
   sky = makeSky(skyTex); scene.add(sky);
   scene.environment = makeEnvironment(renderer, sky);
   shadows = new SunShadows(scene, q.shadow); shadows.maxPerFrame = 1;
   await step(0.1);
   TERRAIN.farStep = MESH.farStep = q.farStep || 1;
-  await roadsP; prepRoads();                // free roam's roads: fitted to the ground before the terrain and trees are built
-  terrain = buildTerrain(scene);
+  await roadsP; await prepRoads();          // free roam's roads: fitted to the ground before the terrain and trees are built
+  terrain = await buildTerrain(scene);
   await step(0.35);
-  road = buildRoad(scene, q);
-  buildRoadMeshes(scene);
+  road = await buildRoad(scene, q);
+  await buildRoadMeshes(scene);
   await step(0.45);
-  trees = (await import('../track/trees.js')).buildTrees(scene, renderer, q);
+  trees = await (await import('../track/trees.js')).buildTrees(scene, renderer, q);
   await step(0.6);
-  props = (await import('../track/props.js')).buildProps(scene, q);
-  trackside = (await import('../track/trackside.js')).buildTrackside(scene, q);
+  props = await (await import('../track/props.js')).buildProps(scene, q);
+  await breathe();
+  trackside = await (await import('../track/trackside.js')).buildTrackside(scene, q);
   await step(0.7);
-  buildTrack();
+  await buildTrack();
+  await breathe();
   lineMesh = buildLine(); scene.add(lineMesh);
   console.log(`[phantom] tier ${tierName}, car ${cars.tris.toLocaleString()} triangles in ${cars.meshes} meshes, ${cars.ms} ms, lap at the limit ${TRACK.lapTime.toFixed(1)} s, ${TRACK.walls} wall segments`);
   P = new Car(); Rs = RIVALS.map((name, k) => new Rival(name, k)); R = Rs[0]; race = new Race(P, Rs); chase = new Chase(camera);
@@ -270,26 +286,55 @@ async function boot() {
   hud.initMap(ROADS.pieces); hud.rivalName('Voss');
   await step(0.8);
   // warm the circuit: compile every program and draw the first shadow maps now, not at the cut from the film
-  const back = G.state; G.state = 'warming';
-  toTrack(); race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill });
-  P.settle(0); R.settle(0); cars.player.sync(P, ATMO.sunDir, 0); cars.rival.sync(R, ATMO.sunDir, 0); chase.snap(); chase.update(0.016, cars.player, P);
+  await settled();                          // every drawn texture has its picture before the circuit is first drawn
+  /* The circuit's first frames are drawn off screen, between frames of the title, which goes on turning. The player's
+     car is in the studio; for each of these frames it is borrowed for the circuit and put back. (It used to move to
+     the circuit for the whole of this, and the title stood still for as long: several seconds on a laptop.) */
+  const offstage = (fn) => {
+    const st = G.state; G.state = 'warming';
+    scene.add(cars.player.root); cars.player.setStage(false);
+    try { return fn(); } finally {
+      studio.scene.add(cars.player.root); cars.player.home(); cars.player.setStage(true); cars.player.setWheels(0, 0, 0, 0, 0);
+      for (const l of studio.lights) l.shadow.needsUpdate = true;
+      G.state = st;
+    }
+  };
+  race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill });
+  P.settle(0); R.settle(0); for (const v of cars.rivals) v.setStage(false); shadows.invalidate();
+  offstage(() => { cars.player.sync(P, ATMO.sunDir, 0); cars.rival.sync(R, ATMO.sunDir, 0); chase.snap(); chase.update(0.016, cars.player, P); });
+  // every texture of the circuit goes to the graphics card now, one or two between frames, instead of all in the first frame
+  { const seen = new Set(), take = (t) => { if (t && t.isTexture && !t.isRenderTargetTexture && t.image && !seen.has(t)) seen.add(t); };
+    scene.traverse((o) => { for (const m of (Array.isArray(o.material) ? o.material : o.material ? [o.material] : [])) { for (const k in m) take(m[k]); if (m.uniforms) for (const k in m.uniforms) take(m.uniforms[k] && m.uniforms[k].value); } });
+    for (const k in groundUniforms) take(groundUniforms[k] && groundUniforms[k].value);
+    if (trees && trees.uniforms) for (const k in trees.uniforms) take(trees.uniforms[k] && trees.uniforms[k].value);
+    for (const t of seen) { try { renderer.initTexture(t); } catch (e) { /* the first frame uploads it */ } if (due()) await breathe(); } }
   // compile the circuit's shaders without blocking the page where the browser can (parallel shader compile)
   // (raced against a timer: if a program never reports ready the wait must not hang the load)
   // (for the HDR target the circuit is drawn to: with no target set this built every program for the screen instead,
   // which nothing uses, and left the real ones, hidden objects' included, to the first frame that drew them)
+  // (the rival's car stands in the circuit for this; the player's is the same shaders)
   renderer.setRenderTarget(gfx.rt);
   try { await Promise.race([renderer.compileAsync(scene, camera), new Promise((r) => setTimeout(r, 5000))]); } catch (e) { /* the first frame compiles them */ }
-  for (let i = 0; i < 5; i++) { frameRace(1 / 60, true); await step(0.8 + 0.04 * i); }
-  /* What does a frame of the circuit cost on this device? Timed now (the quickest of four, so a stall does not
+  /* The first time anything is drawn its geometry goes to the graphics card. All of the circuit at once is the
+     longest single stall of the load, so it goes a part at a time: the ground, then the road, the trees, the
+     buildings and so on, each in an off-screen frame of its own with a title frame between. */
+  { const kids = scene.children.filter((o) => !o.isLight && o.visible && o !== cars.player.root), n = kids.length;
+    for (const o of kids) o.visible = false;
+    for (let i = 0; i < n; i++) { kids[i].visible = true; offstage(() => frameRace(1 / 60, true)); await step(0.8 + 0.1 * (i + 1) / n); }
+    shadows.invalidate(); }
+  for (let i = 0; i < 3; i++) { offstage(() => frameRace(1 / 60, true)); await step(0.9 + 0.03 * i); }      // (three: one for each cascade of the sun's shadow maps, now that everything casts)
+  /* What does a frame of the circuit cost on this device? Timed now (the quickest of three, so a stall does not
      count), before the title's Start is live. A device that cannot draw it in a screen interval starts the race part
      of the way down the ladder. It used to start every visit at full detail and find out during the race. */
-  { let w = 1e9, c = 1e9;
-    for (let i = 0; i < 4; i++) { const a = performance.now(); frameRace(1 / 60, true); const b = performance.now(); renderer.setRenderTarget(null); gpuDone(); w = Math.min(w, b - a); c = Math.min(c, performance.now() - b); await yieldNow(); }
+  if (!gov.remembered) { let w = 1e9, c = 1e9;
+    for (let i = 0; i < 3; i++) {
+      offstage(() => { const a = performance.now(); frameRace(1 / 60, true); const b = performance.now(); renderer.setRenderTarget(null); gpuDone(); w = Math.min(w, b - a); c = Math.min(c, performance.now() - b); });
+      await breathe();
+    }
     G.cost0 = [+w.toFixed(1), +c.toFixed(1)]; gov.prime(w, c); }
+  offstage(() => { chase.snap(); chase.update(0.016, cars.player, P); camera.updateMatrixWorld(); G.startPose = { p: camera.position.clone(), q: camera.quaternion.clone(), fov: camera.fov, focus: cars.player.pos.clone() }; });
   applyGov();                               // what was remembered from the last visit, or what the timing just asked for
   gfxLine();
-  G.startPose = { p: camera.position.clone(), q: camera.quaternion.clone(), fov: camera.fov, focus: cars.player.pos.clone() };
-  toStudio(); G.state = back;
   releaseStatic();
   G.trackReady = true; G.readyT = Math.round(performance.now());
   hud.startProgress(1);
@@ -408,7 +453,7 @@ function warmTrack() {
 /* ------------------------------------------------------------------ states */
 async function begin() {
   if (G.state !== 'title') return;
-  if (!G.trackReady) { G.wantStart = true; hud.startProgress(null); return; }      // starts by itself when the circuit is built
+  if (!G.trackReady) { G.wantStart = true; SLICE.ms = 45; hud.startProgress(null); return; }      // starts by itself when the circuit is built (which now gets more of each frame)
   G.state = 'starting';
   await sound.init(); sound.setOptions(S);
   if (Q.has('nofilm')) startRace({ mode: 'rolling', laps: 1 }); else playFilm();

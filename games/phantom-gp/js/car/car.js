@@ -8,6 +8,7 @@ import {
 } from './geo.js';
 import * as TX from './tex.js';
 import { buildDriver } from './driver.js';
+import { due, breathe } from '../track/slice.js';
 
 export const XF = 1.8, WHEELBASE = 3.6;
 export const X = (s) => XF - s;
@@ -210,11 +211,12 @@ function loadTyre(mesh, hw) {
 }
 
 // ================================================================= car
-export function buildCar(M, opt = {}) {
+export async function buildCar(M, opt = {}) {
   const car = new THREE.Group(); car.name = 'car';
   const add = (g, m, o = {}) => { const mesh = new THREE.Mesh(g, m); mesh.castShadow = o.cast !== false; mesh.receiveShadow = true; (o.parent || car).add(mesh); return mesh; };
   const pair = (g, m, o) => [add(g, m, o), add(mirrorZ(g), m, o)];
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- A: nose + survival cell
   const KA = 46;
   const ringsA = [];
@@ -332,6 +334,7 @@ export function buildCar(M, opt = {}) {
     sw.name = 'steeringWheel'; car.add(sw); swRef = sw;
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- B: airbox + engine cover
   const KB = 40, LIPB = 0.007, B0 = 1.90;
   const ringB = (s, ins = 0, interior) => symRing(X(s), resample(halfSection(inset(pB(interior ? B0 + LIPB : s), ins)), KB));
@@ -425,6 +428,7 @@ export function buildCar(M, opt = {}) {
     }
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- C: sidepods
   const C0 = 1.42, LIPC = 0.008;
   const ringC = (s, ins = 0, interior) => { const p = pC(interior ? C0 + LIPC : s); p.hw -= ins; p.hh -= ins; return ringYZ(X(s), resample(fullSection(p), 81)); };
@@ -481,6 +485,7 @@ export function buildCar(M, opt = {}) {
     }
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- floor, diffuser, bib
   { const MF = 57, rings = [];
     for (const s of range(0.70, 3.95, 0.025)) {
@@ -516,6 +521,7 @@ export function buildCar(M, opt = {}) {
     for (const s of [1.75, 2.05, 2.35, 2.65, 2.9]) pair(strut(v3(X(s), 0.05, zE(s) - 0.012), v3(X(s), 0.092, zE(s) + 0.006), 0.03, 0.004), M.carbon);
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- diffuser: endplates, strakes, centre keel, trailing lip
   { const roof = (s, z) => yF(s, z) - 0.012;
     const strake = (zAt, s0, s1, yBot) => { const path = [], hh = []; for (const s of range(s0, s1, 0.03)) { const z = zAt(s), yt = roof(s, z) + 0.003, yb = Math.min(yBot, yt - 0.012); path.push(v3(X(s), (yt + yb) / 2, z)); hh.push((yt - yb) / 2); } return tube(path, v3(0, 1, 0), (i) => squircleLoop(0.0022, hh[i], 6, 14)); };
@@ -528,6 +534,7 @@ export function buildCar(M, opt = {}) {
     const lip = new THREE.BoxGeometry(0.004, 0.02, 0.9); lip.translate(X(3.952), yF(3.95, 0) + 0.008, 0); add(lip, M.carbon);
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- front wing
   const FWZ = 0.948;
   { const els = [
@@ -580,6 +587,7 @@ export function buildCar(M, opt = {}) {
     pair(tube(dp.map((d) => d.p), v3(0, 1, 0), (i) => squircleLoop(dp[i].wd / 2, 0.003, 4, 14)), M.carbon);
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- rear wing
   const RWZ = 0.49;
   { const Z1 = 0.385, RHO = 0.105, DOWN = 0.085, arc = RHO * Math.PI / 2;
@@ -633,6 +641,7 @@ export function buildCar(M, opt = {}) {
     }
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- tail: crash structure, rain light, exhaust
   // (the crash structure's top stays under the exhaust all the way: it used to rise into the pipe at its front)
   { const rings = range(3.78, 4.275, 0.025).map((s) => { const t = (s - 3.78) / 0.495; return ringYZ(X(s), resample(fullSection({ zc: 0, yc: lerp(0.286, 0.325, t), hw: lerp(0.078, 0.04, t), hh: lerp(0.054, 0.037, t), n: [4, 4, 4, 4] }), 41)); });
@@ -653,6 +662,7 @@ export function buildCar(M, opt = {}) {
       add(bore, M.bore, { cast: false }); }
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- shark fin, T-cam, antennas, cameras, mirrors
   const gFin = plate(roundedShape([[X(2.28), 0.972], [X(2.28), 1.004], [X(3.44), 0.795], [X(3.52), 0.585], [X(3.30), 0.60], [X(2.9), 0.76]], [0.004, 0.012, 0.035, 0.02, 0.01, 0.01]), 0.008, 0.0025);
   add(gFin, M.paint);
@@ -720,6 +730,7 @@ export function buildCar(M, opt = {}) {
     pair(strut(v3(mx - 0.01, my - 0.02, mz + 0.03), v3(X(1.46), 0.545, 0.57), 0.03, 0.008, v3(0, 0, 1)), M.carbon);
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- halo
   // Positions from the 2025 F1 Technical Regulations (Issue 1):
   //   12.4.2  front fixing axis at XC=-975, Z=660; rear mounting faces on the plane Z=695
@@ -756,6 +767,7 @@ export function buildCar(M, opt = {}) {
     car.userData.halo = { SC, Z0, RH, RC };
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- wheels + suspension
   const wheels = [];
   const corner = (front, side) => {
@@ -822,6 +834,7 @@ export function buildCar(M, opt = {}) {
     arm(v3(X(3.72), 0.33, 0.60), v3(X(3.80), 0.30, 0.06), 0.05, 0.012);
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- decals
   const decal = (geos, d, origin, W, V, width, tinted = true) => { const g = projectDecal(geos, origin, W, V, width, width / d.aspect); const m = new THREE.Mesh(g, M.decal(d.map, tinted)); m.receiveShadow = true; m.renderOrder = 2; car.add(m); return m; };
   const D = {
@@ -844,6 +857,7 @@ export function buildCar(M, opt = {}) {
     decal([gA], D.markE, v3(X(0.80), 0.50, sz * supZ(pA(0.80), 0.50)), v3(0, 0.2, sz), up, 0.048, false);
     decal([gB], D.markHV, v3(X(2.50), 0.745, sz * supZ(pB(2.50), 0.745)), v3(0, 0.45, sz), up, 0.055, false);
   }
+  if (due()) await breathe();
   // ---------------------------------------------------------- panel seams + fasteners
   { const fast = [], q = new THREE.Quaternion(), yUp = v3(0, 1, 0), DS = 0.013;
     const seamRing = (pts, pf, s) => {
@@ -863,6 +877,7 @@ export function buildCar(M, opt = {}) {
     im.receiveShadow = true; car.add(im);
   }
 
+  if (due()) await breathe();
   // ---------------------------------------------------------- driver
   const driver = buildDriver(M, { X, sw: swRef, hands: opt.hands });
   car.add(driver);

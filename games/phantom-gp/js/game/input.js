@@ -11,6 +11,10 @@ export class Input {
     this.steer = 0; this.throttle = 0; this.brake = 0; this.boost = false;
     this.keys = new Set(); this.kSteer = 0;
     this.touch = matchMedia('(pointer: coarse)').matches;
+    // An iPad with a keyboard or trackpad attached says its pointer is fine. It is still an iPad: it gets the
+    // light quality level (main.js), and its touch controls appear the moment the screen is touched.
+    this.tablet = /iPad/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+    if (this.tablet && !this.touch) addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' && !this.touch) { this.touch = true; document.body.classList.add('touch'); } }, { capture: true, passive: true });
     this.autoThrottle = this.touch;
     this.on = { pause() {}, cam() {}, reset() {}, any() {} };
     this.enabled = false;
@@ -35,7 +39,7 @@ export class Input {
   bindTouch() {
     const zone = $('t-steer'), puck = $('t-puck'), T = this.t;
     if (!zone) return;
-    const setRange = () => { T.range = clamp(zone.clientWidth * 0.30, 52, 120); };
+    const setRange = () => { T.range = clamp(zone.clientWidth * 0.30, 52, zone.clientWidth > 520 ? 150 : 120); };      // (a tablet's thumb has further to travel than a phone's)
     zone.addEventListener('pointerdown', (e) => {
       if (T.steerId !== -1) return;
       this.usedTouch = true; setRange();

@@ -1,5 +1,10 @@
 // tex.js — procedural detail textures (canvas). The only photographic inputs are the SPW orthophotos.
-import * as THREE from 'three';
+//
+// This file runs in two places. On the page it is what it always was. It is also loaded by background workers
+// (texworker.js), which paint the big textures off the page's own thread so the page can go on drawing and
+// answering while the circuit loads (texq.js). A worker has no page and cannot find three.js by its short name, so
+// three.js is taken only where there is a page; without it toTex hands back the painted canvas and its settings.
+const THREE = typeof document !== 'undefined' ? await import('three') : null;
 
 export function rng32(seed) {
   let s = seed | 0;
@@ -36,11 +41,12 @@ export function periodicNoise(size, baseFreq, octaves, seed, persistence = 0.5) 
 }
 
 export function canvas(w, h) {
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const c = typeof document !== 'undefined' ? document.createElement('canvas') : new OffscreenCanvas(w, h); c.width = w; c.height = h;
   return [c, c.getContext('2d', { willReadFrequently: true })];
 }
 
 export function toTex(cv, { srgb = false, repeat = true, aniso = 16, mips = true } = {}) {
+  if (!THREE) return { isTexDesc: true, canvas: cv, opts: { srgb, repeat, aniso, mips } };      // in a worker
   const t = new THREE.CanvasTexture(cv);
   if (repeat) t.wrapS = t.wrapT = THREE.RepeatWrapping;
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
@@ -279,7 +285,8 @@ export function leafTex(size = 512) {
 }
 
 /* ---------- tileable 3D noise for the cloud bake: R = Perlin-Worley shape, G = fine Worley for erosion ---------- */
-export function cloudNoise3D(S = 64) {
+// the numbers alone (a worker can make these), then the texture
+export function cloudNoiseData(S = 64) {
   const n = S * S * S;
   const worley = (cells, seed) => {
     const rand = rng32(seed), pts = new Float32Array(cells * cells * cells * 3);
@@ -319,6 +326,9 @@ export function cloudNoise3D(S = 64) {
     const pw = Math.min(1, Math.max(0, (perlin - (wf - 1) * -0.0 - (1 - wf) * 0.62) / (1 - (1 - wf) * 0.62)));   // remap(perlin, 1 - worley, 1, 0, 1)-style
     data[i * 4] = pw * 255; data[i * 4 + 1] = (w4[i] * 0.62 + w5[i] * 0.38) * 255; data[i * 4 + 2] = wf * 255; data[i * 4 + 3] = 255;
   }
+  return data;
+}
+export function cloudNoise3D(S = 64, data = cloudNoiseData(S)) {
   const t = new THREE.Data3DTexture(data, S, S, S);
   t.format = THREE.RGBAFormat; t.type = THREE.UnsignedByteType; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
   t.wrapS = t.wrapT = t.wrapR = THREE.RepeatWrapping; t.unpackAlignment = 1; t.needsUpdate = true;

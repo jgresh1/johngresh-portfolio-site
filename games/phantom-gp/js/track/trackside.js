@@ -5,7 +5,9 @@ import { W, groundAt, nearestStation, frameAt, hardAt } from './world.js';
 import { Buf, Tiles } from './props.js';
 import { SIGNS } from './signs.js';
 import { speedProfile } from './rig.js';
-import { canvas, toTex, rng32, periodicNoise, steelTex } from './tex.js';
+import { canvas, toTex, rng32, periodicNoise } from './tex.js';
+import { steelTex } from './texq.js';
+import { due, dueN, breathe } from './slice.js';
 
 /* ---------------- textures ---------------- */
 function beltTex() {
@@ -78,13 +80,14 @@ function bannerTex() {
 const POST_NO = { bg: '#f1f1ee', fg: '#15171a', h: 64, pad: 0.4, size: 0.62, weight: 800 };
 
 /* ---------------- build ---------------- */
-export function buildTrackside(scene, qual) {
+export async function buildTrackside(scene, qual) {
   const group = new THREE.Group(); group.name = 'trackside';
   const ns = {}, N = W.N;
 
   /* nearest solid barrier on each side of every station (for posts that stand behind it) */
   const wall = [new Float32Array(N).fill(1e3), new Float32Array(N).fill(1e3)], fence = [new Float32Array(N).fill(1e3), new Float32Array(N).fill(1e3)];
   for (const b of W.barriers) {
+    if (due()) await breathe();
     if (b.dmin > 90) continue;
     const dst = b.kind === 'fence' ? fence : wall;
     for (let i = 0; i < b.pts.length - 1; i++) {
@@ -101,6 +104,7 @@ export function buildTrackside(scene, qual) {
   const belts = new Tiles(), tops = new Tiles();
   const PROF = [[0, 0.03], [0.34, 0.075], [0.72, 0.075], [1.04, 0.0]];
   for (const run of W.trackside.tyres) {
+    if (due()) await breathe();
     const pts = run.pts; if (pts.length < 3) continue;
     let acc = 0;
     for (let i = 0; i < pts.length - 1; i++) {
@@ -130,6 +134,7 @@ export function buildTrackside(scene, qual) {
   /* ---------------- brake-distance boards ---------------- */
   const v = speedProfile(), boards = new Buf(), posts = new Buf(), zones = [];
   for (let i = 0; i < N; i++) {
+    if (due()) await breathe();
     // end of a heavy braking zone: a local speed minimum well below the speed 250 m earlier
     const a = v[(i - 1 + N) % N], c = v[(i + 1) % N];
     if (!(v[i] <= a && v[i] < c)) continue;
@@ -147,6 +152,7 @@ export function buildTrackside(scene, qual) {
     boards.quad([ax + ox, y0, az + oz], [bx + ox, y0, bz + oz], [bx + ox, y1, bz + oz], [ax + ox, y1, az + oz], [-fr.dx, 0, -fr.dz], [[u0, 0], [u1, 0], [u1, 1], [u0, 1]]);
   };
   for (const zi of zones) {
+    if (due()) await breathe();
     // turn-in is a little before the speed minimum; boards stand on the outside of the coming corner
     let k = 0; for (let q = 0; q < 60; q += 5) k += W.kappa[(zi + q) % N];
     const side = k > 0 ? 1 : -1, turnIn = zi * W.ds - 25;
@@ -160,6 +166,7 @@ export function buildTrackside(scene, qual) {
   const cab = new Tiles(), roof = new Tiles(), dark = new Tiles(), panel = new Tiles(), poles = new Tiles(), red = new Tiles();
   let post = 0;
   for (let s0 = 130; s0 < W.L - 60; s0 += 265) {
+    if (due()) await breathe();
     // behind the barrier on the outside of the bend (or the left on straights), never on tarmac (a pit road, a service road):
     // try the other side, then a little further along
     let fr, i, side, wd, found = false;
@@ -215,6 +222,7 @@ export function buildTrackside(scene, qual) {
   const banners = new Tiles(), backs = new Tiles(), rowsN = BRANDS.length;
   let brand = 0;
   for (const b of W.barriers) {
+    if (due()) await breathe();
     if (b.dmin > 60) continue;
     const onFence = b.kind === 'fence';
     // resample to 8 m panels

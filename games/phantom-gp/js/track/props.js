@@ -2,9 +2,11 @@
 import * as THREE from 'three';
 import { W, groundAt, naturalAt, nearestStation, frameAt, isStand, drawnBuilding, drawnBarrier } from './world.js';
 import { groundUniforms } from './terrain.js';
-import { steelTex, fenceTex, armcoMaps, curtainWallMaps, shutterMaps, panelMaps, concreteMaps, rng32 } from './tex.js';
+import { rng32 } from './tex.js';
+import { steelTex, fenceTex, armcoMaps, curtainWallMaps, shutterMaps, panelMaps, concreteMaps } from './texq.js';
 import { makeArch } from './arch.js';
 import { SIGNS } from './signs.js';
+import { due, dueN, breathe } from './slice.js';
 
 export class Buf {
   constructor() { this.pos = []; this.nor = []; this.uv = []; this.idx = []; }
@@ -50,7 +52,7 @@ function resample(pts, step) {
   return out;
 }
 
-export function buildProps(scene, qual) {
+export async function buildProps(scene, qual) {
   const group = new THREE.Group(); group.name = 'props';
   const steel = steelTex(), ns = {};
 
@@ -64,6 +66,7 @@ export function buildProps(scene, qual) {
   const WN = WB.map((q, j) => { const q0 = WB[Math.max(0, j - 1)], q1 = WB[Math.min(WB.length - 1, j + 1)], th = q1[0] - q0[0], to = q1[1] - q0[1], l = Math.hypot(th, to); return [th / l, -to / l]; });   // [outward, upward]
   const BEAMS = [0.13, 0.45, 0.77];
   for (const bar of W.barriers) {
+    if (due()) await breathe();
     if (!drawnBarrier(bar)) continue;                        // the same test decides what is solid (sim.js)
     const pts = resample(bar.pts, 4);
     if (pts.length < 2) continue;
@@ -145,6 +148,7 @@ export function buildProps(scene, qual) {
   const arch = makeArch({ Buf, Tiles, face, beam, groundAt, qual, conc, rails, shedRoof: standRoof, trackDir, signs: SIGNS });
   let bi = -1, standNo = 0, garage = 0, flagNo = 0;
   for (const b of W.buildings) {
+    if (due()) await breathe();
     bi++;
     const name = b.name || '';
     if (!drawnBuilding(b)) continue;                         // the same test decides what is solid (sim.js)

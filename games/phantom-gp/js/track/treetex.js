@@ -143,8 +143,10 @@ export function barkMaps(kind, size = 512) {
 }
 
 // mean linear colour of the opaque texels of a canvas texture
+// (a texture painted by a worker brings this figure with it: texq.js)
 export function meanOpaque(tex) {
-  const cv = tex.image, d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let r = 0, g = 0, b = 0, n = 0;
+  if (tex.userData && tex.userData.mean) return tex.userData.mean;
+  const cv = tex.image || tex.canvas, d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let r = 0, g = 0, b = 0, n = 0;
   const lin = (v) => Math.pow(v / 255, 2.2);
   for (let i = 0; i < d.length; i += 16) if (d[i + 3] > 128) { r += lin(d[i]); g += lin(d[i + 1]); b += lin(d[i + 2]); n++; }
   return [r / n, g / n, b / n];

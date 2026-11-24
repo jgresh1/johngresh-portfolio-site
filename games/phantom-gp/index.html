@@ -195,6 +195,25 @@
   #rotate { position: fixed; inset: 0; z-index: 20; background: #050607; box-shadow: 0 0 0 100vmax #050607; display: none; }
   #rotate > div { position: fixed; left: 50vmin; top: 50vmax; transform: translate(-50%, -50%); width: max-content; max-width: 86vmin; text-align: center; font-size: 15px; letter-spacing: .22em; text-transform: uppercase; line-height: 1.8; }
   @media (orientation: portrait) and (pointer: coarse) { #rotate { display: block; } }
+  /* A finger that slides a little on a button is still pressing it (feel.js presses it on release). The browser only
+     goes on reporting such a finger if it is told not to scroll with it. The Start, Skip and in-race buttons never
+     sit in anything that scrolls; the menu cards do scroll on a short phone screen, so their buttons are only told
+     so where the screen is tall enough for the whole card. */
+  #b-start, #skip, #h-btns button { touch-action: none; }
+  @media (min-height: 600px) { [data-spring] { touch-action: none; } }
+  /* A tablet: the same controls at the size of the hands that hold it. They were a phone's size on a screen twice
+     as wide, so the brake was a small target a long way from where the thumb rests. */
+  @media (pointer: coarse) and (min-width: 900px) and (min-height: 600px) {
+    :root { --pw: min(25vw, 250px); --ph: min(calc(var(--vh) * 24), 150px); }
+    body.manual { --pw: min(19vw, 200px); }
+    #t-rail { width: min(40vw, 400px); height: 88px; border-radius: 44px; left: calc(34px + var(--safe-l)); bottom: calc(38px + var(--safe-b)); }
+    #t-puck { width: 76px; height: 76px; }
+    #t-boost { width: 100px; height: 100px; right: calc(18px + var(--safe-r) + (var(--pw) - 100px) / 2); font-size: 14px; }
+    .pedal { font-size: 15px; }
+    #h-btns { gap: 10px; } #h-btns button, #h-btns #jg-site-btn { width: 54px; height: 54px; font-size: 14px; }
+    #skip { padding: 14px 22px; font-size: 14px; }
+    .seg:not(.paint) button { min-height: 44px; min-width: 52px; }
+  }
   @media (max-height: 520px) {
     #title { padding-top: 12px; } #title .logo { font-size: clamp(34px, min(9vw, calc(var(--vh) * 17)), 140px); margin-top: 5px !important; } #title .eyebrow { font-size: 10.5px; }
     #title .cta { padding: 12px 38px 10px; font-size: 16px; } #title .fine { margin-top: 8px; font-size: 11px; } #title .credit { margin-top: 6px; font-size: 10px; } .attr { margin-top: 4px; font-size: 8.5px; }
@@ -242,7 +261,7 @@
 <div id="hud" class="layer">
   <div id="h-pos"><div class="big" id="h-p">P2</div><div class="col glass"><div>Lap <b id="h-lap">1/1</b></div><div><b id="h-time">0:00.0</b></div></div></div>
   <div id="h-gap" class="glass"><span>You</span><b id="h-gapv">+0.00</b><span id="h-rname">Voss</span></div>
-  <div id="h-btns"><button id="b-cam" class="glass" data-spring aria-label="Change camera">CAM</button><button id="b-pause" class="glass" data-spring aria-label="Pause">II</button></div>
+  <div id="h-btns" class="off"><button id="b-cam" class="glass" data-spring aria-label="Change camera">CAM</button><button id="b-pause" class="glass" data-spring aria-label="Pause">II</button></div>
   <canvas id="h-map" width="264" height="364"></canvas>
   <div id="h-lights"><i></i><i></i><i></i><i></i><i></i></div>
   <div id="h-corner"></div>
@@ -297,7 +316,7 @@
 
 <div id="rotate"><div>Turn your phone sideways<br>to race</div></div>
 
+<script src="../../assets/site-menu.js" data-corner="tr" data-dock="#h-btns"></script>
 <script type="module" src="./js/game/main.js"></script>
-<script src="../../assets/site-menu.js" data-corner="tr" data-dock="#h-btns" defer></script>
 </body>
 </html>

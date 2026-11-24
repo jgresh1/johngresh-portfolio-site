@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { W, EXTRA, MESH, naturalAt, meshAt, nearestStation } from './world.js';
 import { groundUniforms } from './terrain.js';
+import { due, dueN, breathe } from './slice.js';
 
 const DS = 2.5;                 // station spacing (m)
 const SKIRT = 2.4;              // shoulder width beyond the road edge (m)
@@ -31,10 +32,11 @@ const smooth = (a, r, passes = 2) => {
 
 /* Fit every road to the ground. Call after loadWorld() and before the terrain and the trees are built: it edits
    W.hMesh (the terrain as drawn) and W.trees. */
-export function prepRoads() {
+export async function prepRoads() {
   const n = W.meta.near, X0 = n.x0 + 12, X1 = n.x0 + n.w - 12, Z0 = n.z0 + 12, Z1 = n.z0 + n.h - 12, ns = {};
   const pieces = [];
   for (const [ri, r] of (ROADS.raw || []).entries()) {
+    if (due()) await breathe();
     const pts = []; for (let i = 0; i < r.p.length; i += 2) { const v = new THREE.Vector3(r.p[i], 0, r.p[i + 1]); if (!pts.length || pts[pts.length - 1].distanceTo(v) > 0.5) pts.push(v); }
     if (pts.length < 2) continue;
     const curve = pts.length > 2 ? new THREE.CatmullRomCurve3(pts, false, 'centripetal') : new THREE.LineCurve3(pts[0], pts[1]);
@@ -60,6 +62,7 @@ export function prepRoads() {
   // whatever is already there, and the correction fades out over 20 m along it.
   const order = pieces.map((P, i) => i).sort((a, b) => pieces[b].rank - pieces[a].rank || a - b), done = new Set();
   for (const qi of order) {
+    if (due()) await breathe();
     const Q = pieces[qi], delta = new Float32Array(Q.n), has = new Uint8Array(Q.n);
     // (only where the two are within 0.35 m of each other: further apart they are on different levels, as the lanes of
     // a terraced car park are, and neither is pulled to the other)
@@ -92,6 +95,7 @@ export function prepRoads() {
   // hold the terrain mesh down under every road (and one survey cell beyond its edges)
   const nx = n.nx, ny = n.ny, hm = W.hMesh;
   for (const P of pieces) {
+    if (due()) await breathe();
     const reach = P.hw + LOWER * MESH.step;
     for (let i = 0; i < P.n; i++) {
       const x = P.x[i], z = P.z[i], tx = P.tx[i], tz = P.tz[i];
@@ -240,11 +244,12 @@ export function roadSpeed(hit, sign, v, latAcc = 16, brake = 13) {
 }
 
 /* ------------------------------------------------------------------ what is drawn */
-export function buildRoadMeshes(scene) {
+export async function buildRoadMeshes(scene) {
   const group = new THREE.Group(); group.name = 'roads';
   const mat = makeMaterial();
   const COL = 5, CHUNK = 96;                       // stations per mesh (240 m), so culling stays tight
   for (const P of ROADS.pieces) {
+    if (due()) await breathe();
     for (let a = 0; a < P.n - 1; a += CHUNK) {
       const b = Math.min(P.n - 1, a + CHUNK), rows = b - a + 1;
       const pos = new Float32Array(rows * COL * 3), nor = new Float32Array(rows * COL * 3), aux = new Float32Array(rows * COL * 4), idx = [];

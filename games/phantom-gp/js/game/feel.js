@@ -72,6 +72,28 @@ export const FEEL = (() => {
     settle(el, s); if (e.pointerType === 'touch') buzz(6);
   }, true);
   const up = e => { const el = find(e); if (!el) return; const s = of(el); s.down = false; if (e.pointerType !== 'mouse') s.hover = false; settle(el, s); };
+  /* A tap is a tap. A browser turns a touch into a click only if the finger hardly moved between landing and
+     lifting; on a tablet, held in two hands and tapped with a thumb, it often slides a few pixels, and the button
+     sinks under the thumb and then does nothing. So for fingers and pens the button is pressed here, on release,
+     if the finger is still on it or within a fingertip of it, and the browser's own click (if it sends one) is
+     swallowed so nothing fires twice. A drag that leaves the button, or a hold of over a second, presses nothing. */
+  let tap = null, eatEl = null, eatUntil = 0;
+  document.addEventListener('pointerdown', e => {
+    tap = null; if (e.pointerType === 'mouse' || !e.isPrimary) return;
+    const el = find(e); if (el && !el.disabled) tap = { el, id: e.pointerId, t: performance.now() };
+  }, true);
+  document.addEventListener('pointerup', e => {
+    const t = tap; tap = null; if (!t || t.id !== e.pointerId || !t.el.isConnected || performance.now() - t.t > 1000) return;
+    const r = t.el.getBoundingClientRect(), slop = 18;
+    if (e.clientX < r.left - slop || e.clientX > r.right + slop || e.clientY < r.top - slop || e.clientY > r.bottom + slop) return;
+    eatEl = t.el; eatUntil = performance.now() + 700;
+    t.el.click();
+  }, true);
+  document.addEventListener('pointercancel', () => { tap = null; }, true);
+  document.addEventListener('click', e => {
+    if (!e.isTrusted || !eatEl || performance.now() > eatUntil) return;
+    if (e.target instanceof Node && (e.target === eatEl || eatEl.contains(e.target))) { e.stopImmediatePropagation(); e.preventDefault(); eatEl = null; }
+  }, true);
   document.addEventListener('pointerup', up, true); document.addEventListener('pointercancel', up, true);
   // keyboard presses on a focused button get the same push
   document.addEventListener('keydown', e => { if ((e.code === 'Enter' || e.code === 'Space') && document.activeElement?.matches?.(SEL)) { const el = document.activeElement, s = of(el); s.down = true; s.v += 6; settle(el, s); setTimeout(() => { s.down = false; settle(el, s); }, 90); } });

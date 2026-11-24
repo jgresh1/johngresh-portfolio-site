@@ -4,7 +4,8 @@
 // gutters, downpipes and a chimney, and plant on the flat roofs. What a building is (house, office, shed, glazed
 // pavilion, cabin, tower) is read from its surveyed outline, height and name.
 import * as THREE from 'three';
-import { renderMaps, brickMaps, claddingMaps, slateMaps, panelMaps, rng32 } from './tex.js';
+import { rng32 } from './tex.js';
+import { renderMaps, brickMaps, claddingMaps, slateMaps, panelMaps } from './texq.js';
 
 const UP = [0, 1, 0], DN = [0, -1, 0], U1 = [[0, 0], [1, 0], [1, 1], [0, 1]];
 const lin = (hex) => { const c = new THREE.Color(hex); return [c.r, c.g, c.b]; };

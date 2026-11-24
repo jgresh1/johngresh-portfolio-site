@@ -1,5 +1,6 @@
 // world.js — loads the survey-derived assets and exposes height / track queries.
 import * as THREE from 'three';
+import { breathe } from './slice.js';
 
 // lo: half-size ground photos from assets/lo. Every device starts with them (they are a quarter of the download);
 // desktops then fetch the full-size ones in the background and swap them in (upgradeGround).
@@ -67,9 +68,11 @@ export async function loadWorld(progress = () => {}, gate = null) {
   }
   // scaffold stands that show in the photo but are not in the map: built like the mapped open stands
   for (const st of ground.stands || []) W.buildings.push({ name: 'Temporary stand', kind: 'grandstand', temp: true, seat: st.seat, area: st.area, h: 8, y0: 0, y1: 0, pts: st.pts });
-  buildNearest();
-  shapeStandGround();
-  buildVerge();
+  // (each of these is a tenth of a second or more of plain arithmetic: the page gets a frame between them)
+  await breathe(); buildNearest();
+  await breathe(); shapeStandGround();
+  await breathe(); buildVerge();
+  await breathe();
   return W;
 }
 

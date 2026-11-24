@@ -4,10 +4,11 @@ import * as THREE from 'three';
 import { W, VERGE, naturalAt, meshAt, KERB_KP, kerbRamps } from './world.js';
 import { groundUniforms, makeGroundMaterial } from './terrain.js';
 import { lapLoads, buildMarks } from './marks.js';
+import { due, dueN, breathe } from './slice.js';
 
 const COLS = 11;                       // vertices across the asphalt
 
-export function buildRoad(scene, qual = {}) {
+export async function buildRoad(scene, qual = {}) {
   const N = W.N, L = W.L, wear = lapLoads().wear;
   const group = new THREE.Group(); group.name = 'road';
 
@@ -15,6 +16,7 @@ export function buildRoad(scene, qual = {}) {
   const nv = (N + 1) * COLS;
   const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), aux = new Float32Array(nv * 4), aux2 = new Float32Array(nv * 2);
   for (let r = 0; r <= N; r++) {
+    if (due()) await breathe();
     const i = r % N, ip = (i + 1) % N, im = (i - 1 + N) % N;
     const grade = (W.ty[ip] - W.ty[im]) / (2 * W.ds);
     const dx = W.dx[i], dz = W.dz[i], rx = -dz, rz = dx, hw = W.hw[i], bank = W.bank[i];
@@ -32,6 +34,7 @@ export function buildRoad(scene, qual = {}) {
   }
   const idx = new Uint32Array(N * (COLS - 1) * 6); let q = 0;
   for (let r = 0; r < N; r++) for (let c = 0; c < COLS - 1; c++) {
+    if (dueN()) await breathe();
     const a = r * COLS + c, b = a + 1, cc = a + COLS, d = cc + 1;
     idx[q++] = a; idx[q++] = b; idx[q++] = d; idx[q++] = a; idx[q++] = d; idx[q++] = cc;
   }
@@ -39,6 +42,7 @@ export function buildRoad(scene, qual = {}) {
   const mat = makeRoadMaterial(L, !!qual.lo);
   const PIECE = 250;
   for (let r0 = 0; r0 < N; r0 += PIECE) {
+    if (due()) await breathe();
     const r1 = Math.min(N, r0 + PIECE);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
@@ -55,8 +59,10 @@ export function buildRoad(scene, qual = {}) {
   const KP = KERB_KP;                    // (fraction across, height m); contactAt() in world.js uses the same profile
   const kpos = [], knor = [], kuv = [], kidx = [];
   for (const side of [-1, 1]) {
+    if (due()) await breathe();
     const kw = side < 0 ? W.kerbL : W.kerbR, rampOf = kerbRamps()[side < 0 ? 0 : 1];
     for (let i = 0; i < N; i++) {
+      if (due()) await breathe();
       const j = (i + 1) % N;
       if (!(kw[i] > 0 && kw[j] > 0)) continue;
       const base = kpos.length / 3;
@@ -91,8 +97,10 @@ export function buildRoad(scene, qual = {}) {
   const spos = new Float32Array(sv * 3), sshift = new Float32Array(sv * 2);
   const vi = (sd, r, c) => (sd * NR + r) * NC + c;
   for (let sd = 0; sd < 2; sd++) {
+    if (due()) await breathe();
     const side = sd ? 1 : -1, kw = sd ? W.kerbR : W.kerbL;
     for (let r = 0; r <= N; r++) {
+      if (due()) await breathe();
       const i = r % N, rx = -W.dz[i] * side, rz = W.dx[i] * side, e = W.hw[i] + kw[i];
       const ye = W.vergeY[sd][i], G = W.vergeG[sd][i], ab = W.vergeB[sd][i], amax = W.vergeMax[sd][i];
       for (let c = 0; c < NC; c++) {
@@ -109,8 +117,10 @@ export function buildRoad(scene, qual = {}) {
   const UV = [0.125, 0.375, 0.625, 0.875];
   let lifted = 0;
   for (let pass = 0; pass < 5; pass++) {
+    if (due()) await breathe();
     let hits = 0;
     for (let sd = 0; sd < 2; sd++) for (let r = 0; r < N; r++) for (let c = 0; c < NC - 2; c++) {
+      if (dueN()) await breathe();
       const a = vi(sd, r, c), b = a + 1, cc = vi(sd, r + 1, c), d = cc + 1;
       const ya = spos[a * 3 + 1], yb = spos[b * 3 + 1], yc = spos[cc * 3 + 1], yd = spos[d * 3 + 1];
       let need = 0;
@@ -131,11 +141,13 @@ export function buildRoad(scene, qual = {}) {
   }
   // close the lap: station N is station 0 again
   for (let sd = 0; sd < 2; sd++) for (let c = 0; c < NC; c++) {
+    if (dueN()) await breathe();
     const y = Math.max(spos[vi(sd, 0, c) * 3 + 1], spos[vi(sd, N, c) * 3 + 1]);
     spos[vi(sd, 0, c) * 3 + 1] = y; spos[vi(sd, N, c) * 3 + 1] = y;
   }
   const sidx = new Uint32Array(N * 2 * (NC - 1) * 6); q = 0;
   for (let r = 0; r < N; r++) for (let sd = 0; sd < 2; sd++) for (let c = 0; c < NC - 1; c++) {
+    if (dueN()) await breathe();
     const a = vi(sd, r, c), b = a + 1, cc = vi(sd, r + 1, c), d = cc + 1;
     if (sd) { sidx[q++] = a; sidx[q++] = b; sidx[q++] = d; sidx[q++] = a; sidx[q++] = d; sidx[q++] = cc; }
     else { sidx[q++] = a; sidx[q++] = d; sidx[q++] = b; sidx[q++] = a; sidx[q++] = cc; sidx[q++] = d; }
@@ -145,10 +157,12 @@ export function buildRoad(scene, qual = {}) {
   whole.setAttribute('position', sPos); whole.setIndex(new THREE.BufferAttribute(sidx, 1)); whole.computeVertexNormals();
   const sNor = whole.getAttribute('normal'), na = sNor.array;
   for (let sd = 0; sd < 2; sd++) for (let c = 0; c < NC; c++) {           // same normal on both copies of the lap seam
+    if (dueN()) await breathe();
     const p = vi(sd, 0, c) * 3, o = vi(sd, N, c) * 3;
     for (let t = 0; t < 3; t++) { const m = na[p + t] + na[o + t]; na[p + t] = m; na[o + t] = m; }
   }
   for (let k = 0; k < sv; k++) {
+    if (due()) await breathe();
     const l = Math.hypot(na[k * 3], na[k * 3 + 1], na[k * 3 + 2]);
     if (l < 1e-4 || na[k * 3 + 1] / l < 0.2) { na[k * 3] = 0; na[k * 3 + 1] = 1; na[k * 3 + 2] = 0; }      // folded or collapsed bits
     else { na[k * 3] /= l; na[k * 3 + 1] /= l; na[k * 3 + 2] /= l; }
@@ -156,6 +170,7 @@ export function buildRoad(scene, qual = {}) {
   const shMat = makeGroundMaterial(true, true); shMat.polygonOffsetUnits = 2; shMat.polygonOffsetFactor = 0.5;
   const SPER = 2 * (NC - 1) * 6;
   for (let r0 = 0; r0 < N; r0 += PIECE) {
+    if (due()) await breathe();
     const r1 = Math.min(N, r0 + PIECE);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', sPos); g.setAttribute('normal', sNor); g.setAttribute('aShift', sShift);

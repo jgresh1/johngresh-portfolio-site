@@ -177,7 +177,27 @@ async function boot() {
   gov = new Governor(applyGov, { geoMax: TREES.length - 1, touch: input.touch, key: tierName });
   G.applyGov = applyGov;
   const glc = renderer.getContext(), px1 = new Uint8Array(4);
-  const gpuDone = () => glc.readPixels(0, 0, 1, 1, glc.RGBA, glc.UNSIGNED_BYTE, px1);        // returns when the graphics card has caught up
+  const gpuDone = () => glc.readPixels(0, 0, 1, 1, glc.RGBA, glc.UNSIGNED_BYTE, px1);        // returns when the graphics card has caught up (used while loading only)
+  /* How long the graphics card takes over a frame, found without making the game wait for it. A marker (a fence) is
+     left in the card's queue behind the frame's last command; the page then looks, between its own tasks, whether
+     the card has reached it, and tells the governor how long that took. Reading a pixel back answers the same
+     question but waits inside the call, and on a laptop's graphics chip that wait dropped a frame every time. */
+  let fence = null, fenceT = 0;
+  const hop = new MessageChannel();
+  hop.port1.onmessage = () => {
+    if (!fence) return;
+    const ms = performance.now() - fenceT;
+    let done = false; try { done = glc.getSyncParameter(fence, glc.SYNC_STATUS) === glc.SIGNALED; } catch (e) { done = true; }
+    if (done || ms > 300) { try { glc.deleteSync(fence); } catch (e) { /* context lost */ } fence = null; gov.card(Math.min(ms, 300)); }
+    else hop.port2.postMessage(0);
+  };
+  const askCard = () => {
+    if (fence || !glc.fenceSync) return false;
+    try { fence = glc.fenceSync(glc.SYNC_GPU_COMMANDS_COMPLETE, 0); glc.flush(); } catch (e) { fence = null; }
+    if (!fence) return false;
+    fenceT = performance.now(); hop.port2.postMessage(0);
+    return true;
+  };
   new ResizeObserver(resize).observe(stage); resize();
   // Phones: after a rotation Safari reports the old size for a moment and can leave the page scrolled or pinch-zoomed,
   // so measure again a few times, put the page back at the top, and refuse the pinch gesture altogether.
@@ -208,8 +228,10 @@ async function boot() {
     gov.see(dt);
     if (held < 8) { held++; requestAnimationFrame(loop); return; }      // the first frames draw nothing: they time the screen itself (Governor.see)
     const t0 = performance.now(), circuit = onCircuit();
-    frame(Math.min(0.05, Math.max(0.001, dt)));
-    if (circuit) { gov.sample(dt, performance.now() - t0, gpuDone); if (gov.exhausted) tooMuch(); }
+    // (game time follows real time down to ten frames a second. The limit was a twentieth of a second: below twenty
+    // frames a second, and in every single long frame, the race then ran in slow motion.)
+    frame(Math.min(0.1, Math.max(0.001, dt)));
+    if (circuit) { gov.sample(dt, performance.now() - t0, glc.fenceSync ? askCard : null); if (gov.exhausted) tooMuch(); }
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
@@ -474,7 +496,7 @@ function simulate(dt) {
      1/120 s steps and carry the remainder over, so a frame moved the cars by two steps, or one, or none, while the
      camera and the body's springs ran on the frame's own time. On any screen that does not refresh at 60 Hz the
      cars then shuddered against the camera, and on a climb the body jumped 5 cm on its wheels every frame. */
-  const T = Math.min(dt, 8 * H), n = Math.max(1, Math.ceil(T / H - 1e-6)), h = T / n;
+  const T = Math.min(dt, 12 * H), n = Math.max(1, Math.ceil(T / H - 1e-6)), h = T / n;
   for (let k = 0; k < n; k++) {
     const racing = G.state === 'race' && race.state === 'green';
     if (race.state === 'green' || race.state === 'done') { P.step(h, racing && !P.done ? input : IDLE, G.state === 'race' ? S.assist : 0, G.roam ? null : race.near()); }

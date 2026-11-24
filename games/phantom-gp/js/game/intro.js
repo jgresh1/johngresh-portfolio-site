@@ -140,10 +140,12 @@ export class Intro {
     const cutTo = (id) => { if (this.cut !== id) { this.cut = id; fx.flash = 0.55; return true; } return false; };
 
     if (b < 4) {
-      // ---- title card over the car, barely lit
-      const u = b / 4;
+      /* ---- title card: the words on a black screen. (It used to let the car show through, barely lit. Once the
+         hall's small lights were on from the first shot that read as the title screen's car coming back for two
+         seconds before the stills; he asked for dark from the press on Start to the first still.) The studio is
+         still drawn underneath, so nothing is new to the graphics card when the first still is shot. */
       this.look([7.6, 1.1, 5.4], [0.3, 0.42, 0], 25);
-      fx.fade = 1 - 0.16 * ease(clamp(u * 1.4, 0, 1));
+      fx.fade = 1;
       this.caption(b > 0.4 && b < 3.7 ? 'A John Gresh production' : '', b > 0.4 && b < 3.7 ? 'Phantom GP' : '', true);
     } else if (b < 16) {
       // ---- stills flashing into the collage

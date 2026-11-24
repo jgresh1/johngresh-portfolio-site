@@ -296,6 +296,9 @@ async function boot() {
     try { return fn(); } finally {
       studio.scene.add(cars.player.root); cars.player.home(); cars.player.setStage(true); cars.player.setWheels(0, 0, 0, 0, 0);
       for (const l of studio.lights) l.shadow.needsUpdate = true;
+      // (a frame of the circuit leaves its speed blur and the boxes round its cars set for the final pass: the
+      //  title is drawn through that same pass, and was blurred as if at 290 km/h until Start was pressed)
+      gfx.fx.blur = 0; gfx.fx.chroma = 0; for (let k = 0; k < 5; k++) gfx.carRect(k, null);
       G.state = st;
     }
   };
@@ -454,8 +457,13 @@ function warmTrack() {
 async function begin() {
   if (G.state !== 'title') return;
   if (!G.trackReady) { G.wantStart = true; SLICE.ms = 45; hud.startProgress(null); return; }      // starts by itself when the circuit is built (which now gets more of each frame)
-  G.state = 'starting';
-  await sound.init(); sound.setOptions(S);
+  /* Dark from the press: the title's words and button go and the picture goes black in the same frame, before the
+     sound is ready (a moment on a desktop, longer on a slow machine). The title's car used to stay up until the film
+     began. */
+  G.state = 'starting'; gfx.fx.flash = 0;
+  if (!Q.has('nofilm')) { hud.screen('cine'); hud.bars(true); }             // (the film's bars slide in at once: it has begun)
+  try { await sound.init(); } catch (e) { console.warn('no sound', e); }      // (whatever happens to the sound, the film must follow the dark screen)
+  sound.setOptions(S);
   if (Q.has('nofilm')) startRace({ mode: 'rolling', laps: 1 }); else playFilm();
 }
 function playFilm() {
@@ -661,7 +669,8 @@ function frameBody(dt) {
     studio.floorU.uTime.value = G.time;
     renderer.info.reset();
     studio.render(gfx.rt, cam);
-    gfx.fx.flash = Math.max(0, gfx.fx.flash - dt * 2); gfx.fx.fade = 0;
+    // (Start has been pressed and the sound is getting ready: the screen is dark from the press, see begin)
+    gfx.fx.flash = Math.max(0, gfx.fx.flash - dt * 2); gfx.fx.fade = G.state === 'starting' ? 1 : 0;
     gfx.present(dt);
   } else if (G.state !== 'boot') frameRace(dt);
 }

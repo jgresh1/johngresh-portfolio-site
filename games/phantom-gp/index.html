@@ -170,6 +170,7 @@
   .card h2.win { color: var(--accent); } .card h2.lose { color: #ff6b5e; }
   .card p { margin: 8px 0 0; color: #cfd3d8; font-size: 14px; line-height: 1.5; }
   .rows { margin: 18px 0 6px; display: grid; gap: 10px; }
+  .gfx { margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: var(--dim); } .gfx.warn { color: #ffb44f; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
   .row > span { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
   .seg { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
@@ -288,6 +289,7 @@
     <h2 id="menu-title">Duel · 1 v 1</h2>
     <p id="menu-line">You and one rival in identical cars, from the lights to the flag. Stay in the slipstream, save your boost, and pick your moment.</p>
     <div class="rows" id="menu-rows"></div>
+    <p class="gfx" id="menu-gfx"></p>
     <div class="btns"><button class="cta" id="b-duel" data-spring>Start duel</button><button class="cta ghost" id="b-roam" data-spring>Free roam</button><button class="cta ghost" id="b-intro" data-spring>Watch the film</button></div>
     <div class="keys" id="menu-keys"></div>
   </div>

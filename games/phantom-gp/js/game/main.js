@@ -15,7 +15,7 @@ import { Input } from './input.js';
 import { Hud, loadSettings, fmtLap } from './hud.js';
 import { Sound } from './audio.js';
 import { Intro } from './intro.js';
-import { Governor } from './perf.js';
+import { Governor, guessTier } from './perf.js';
 
 const Q = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
@@ -34,19 +34,31 @@ const TIERS = {
   low: { dpr: 2, maxPixels: 1.0e6, minScale: 0.55, msaa: 2, bloom: false, bloomScale: 0.5, blurTaps: 0, shadow: { radii: [60, 260, 1000], sizes: [1024, 2048, 1024] }, lod: 240, farStep: 4, treeNear: 38, treeHero: 0, wind: false,
     sky: { w: 2048, h: 512, steps: 32 }, carTol: 0.002, handLevels: 1, maskScale: 0.5, lo: true, noDeep: true, shadowSteps: 8, studio: { env: 256, mirrorScale: 0.34, bakeScale: 0.5, shadowScale: 0.5, bake: 32, spray: 500 } },
 };
+const ORDER = ['low', 'medium', 'high'];
 const input = new Input();
 if (input.touch) document.body.classList.add('touch');
 const S = loadSettings(input.touch);
+/* What this window is really drawing with. A browser can quietly fall back to drawing on the processor alone (its
+   graphics process crashed a few times, the driver was reset, or acceleration is switched off): the game then
+   crawls on a computer that ran it well the week before, and nothing says why. So it is looked at, shown in the
+   menu, and said on the title when it is the processor. */
+const GFX = (() => {
+  let raw = '';
+  try { const gl = document.createElement('canvas').getContext('webgl2'), ext = gl && gl.getExtension('WEBGL_debug_renderer_info'); raw = (ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)) || ''; const lose = gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext(); } catch (e) { /* unknown */ }
+  const software = /SwiftShader|llvmpipe|Basic Render|Software|WARP/i.test(raw), m = raw.match(/ANGLE \([^,]*,\s*([^,(]+?)\s*(?:\(0x|Direct3D|,)/);
+  return { raw, software, name: software ? 'the processor alone, no graphics chip' : ((m ? m[1] : raw) || 'a graphics chip the browser does not name').replace(/\s+/g, ' ').trim().slice(0, 44) };
+})();
 function pickTier() {
   const forced = Q.get('q') || (S.quality !== 'auto' ? S.quality : null);
   if (TIERS[forced]) return forced;
   const small = Math.min(screen.width, screen.height);          // 0 in a hidden embedded pane: not a small screen
   if (input.touch || (small > 0 && small < 620)) return 'low';
-  let name = '';
-  try { const gl = document.createElement('canvas').getContext('webgl2'), ext = gl && gl.getExtension('WEBGL_debug_renderer_info'); name = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : ''; } catch (e) { /* unknown */ }
-  if (/SwiftShader|llvmpipe|Basic Render/i.test(name)) return 'low';
-  if (/Intel|Iris|UHD|Mali|Adreno|PowerVR|Apple M1(?! (Pro|Max|Ultra))/i.test(name) || (navigator.deviceMemory && navigator.deviceMemory <= 4)) return 'medium';
-  return 'high';
+  const name = GFX.raw;
+  if (GFX.software) return 'low';
+  const guess = guessTier(name, navigator.deviceMemory || 8);
+  // a level this computer could not keep up with last time is not given to it again
+  let easier = null; try { easier = localStorage.getItem('phantom.easier'); } catch (e) { /* private window */ }
+  return TIERS[easier] && ORDER.indexOf(easier) < ORDER.indexOf(guess) ? easier : guess;
 }
 const tierName = pickTier(), q = { ...TIERS[tierName] };
 if (Q.has('dpr')) { q.dpr = parseFloat(Q.get('dpr')); }
@@ -145,17 +157,27 @@ async function boot() {
   renderer.setRenderTarget(gfx.rt); renderer.compile(studio.scene, studio.camera); gfx.warm();
 
   intro = new Intro({ gfx, studio, view: cars.player, sound, hud, q, mark, warmTrack, onCut: (skipped) => startRace({ mode: 'rolling', laps: 1, fromFilm: !skipped }) });
-  // the ladder the governor walks down when frames run long: geometry first (it costs the most on the circuit), then pixels
-  const setScale = (v) => { gov.scale = v; gfx.setSize(gfx.cssW, gfx.cssH, v); if (studio) studio.setSize(gfx.w, gfx.h); };
-  const treeCut = (k, hero) => { if (!trees) return; const U = trees.uniforms; U.uNear.value = Math.max(26, U.uNear.value * k); if (U.uHero.value > 0) U.uHero.value = hero ? Math.max(14, U.uHero.value * k) : -1000; };
-  const LADDER = [
-    () => treeCut(0.72, true), () => setScale(0.86), () => { treeCut(0.7, true); gfx.noBloom = true; }, () => setScale(0.74),
-    () => { treeCut(0.7, false); q.lod = Math.min(q.lod, 240); }, () => setScale(0.64), () => shadows.setEnabled(false), () => setScale(0.55),      // (no step may change a shader: see SunShadows.setEnabled)
-  ];
-  gov = new Governor(q, (what, v) => {
-    if (what === 'scale') setScale(v); else LADDER[v - 1]();
-    if (DEV) console.log('[perf]', what, v, 'avg', gov.avg.toFixed(1));
-  }, LADDER.length);
+  /* What the governor takes away when frames run long, and gives back when there is room (perf.js). Two ladders:
+     pixels (gov.scale), and things to draw (gov.geo), lightest touch first:
+       1 fewer detailed trees   2 fewer still, no bloom   3 no close-up trees, coarser far ground   4 no sun shadows
+     The whole state is set from the two numbers each time, so a step can be undone exactly.
+     (No step may change a shader: see SunShadows.setEnabled.) */
+  const BASE = { near: q.treeNear, hero: q.treeHero, lod: q.lod }, TREES = [1, 0.72, 0.5, 0.35, 0.35];
+  const applyGov = () => {
+    const g = gov.geo;
+    if (trees) { const U = trees.uniforms; U.uNear.value = Math.max(26, BASE.near * TREES[g]); U.uHero.value = BASE.hero > 0 && g < 3 ? Math.max(14, BASE.hero * TREES[g]) : -1000; }
+    q.lod = g >= 3 ? Math.min(BASE.lod, 240) : BASE.lod;
+    if (gfx.noBloom && g < 2 && G.state !== 'film' && G.state !== 'title') gfx.look.bloom = [...LOOKS.track.bloom];
+    gfx.noBloom = g >= 2;
+    if (shadows) shadows.setEnabled(g < 4);
+    if (gfx.scale !== gov.scale) { gfx.setSize(gfx.cssW, gfx.cssH, gov.scale); if (studio) studio.setSize(gfx.w, gfx.h); }
+    if (DEV) console.log('[perf]', gov.log[gov.log.length - 1]);
+    gfxLine();
+  };
+  gov = new Governor(applyGov, { geoMax: TREES.length - 1, touch: input.touch, key: tierName });
+  G.applyGov = applyGov;
+  const glc = renderer.getContext(), px1 = new Uint8Array(4);
+  const gpuDone = () => glc.readPixels(0, 0, 1, 1, glc.RGBA, glc.UNSIGNED_BYTE, px1);        // returns when the graphics card has caught up
   new ResizeObserver(resize).observe(stage); resize();
   // Phones: after a rotation Safari reports the old size for a moment and can leave the page scrolled or pinch-zoomed,
   // so measure again a few times, put the page back at the top, and refuse the pinch gesture altogether.
@@ -169,6 +191,10 @@ async function boot() {
   portrait.addEventListener('change', () => { if (portrait.matches && G.state === 'race') setPaused(true); });
   hud.load('Ready', 1);
   hud.fineText = input.touch ? 'Turn the sound on' : 'Sound on · press Enter';
+  if (GFX.software) {            // said where it cannot be missed: under the Start button, in plain letters
+    hud.fineText = 'This browser is drawing without the graphics chip, so the race will be slow. Switch on graphics acceleration in the browser settings, then restart the browser.';
+    Object.assign($('title-fine').style, { textTransform: 'none', letterSpacing: '.02em', color: '#ffb44f', maxWidth: '34em', lineHeight: '1.4' });
+  }
   G.state = 'title'; hud.screen('title'); hud.startProgress(0.7 * netP);
   G.bootT = Math.round(performance.now());
   let last = performance.now();
@@ -181,8 +207,10 @@ async function boot() {
     const dt = (now - last) / 1000; last = now;
     gov.see(dt);
     if (held < 8) { held++; requestAnimationFrame(loop); return; }      // the first frames draw nothing: they time the screen itself (Governor.see)
-    if (onCircuit()) gov.sample(dt);
-    frame(Math.min(0.05, Math.max(0.001, dt))); requestAnimationFrame(loop);
+    const t0 = performance.now(), circuit = onCircuit();
+    frame(Math.min(0.05, Math.max(0.001, dt)));
+    if (circuit) { gov.sample(dt, performance.now() - t0, gpuDone); if (gov.exhausted) tooMuch(); }
+    requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
 
@@ -230,6 +258,14 @@ async function boot() {
   renderer.setRenderTarget(gfx.rt);
   try { await Promise.race([renderer.compileAsync(scene, camera), new Promise((r) => setTimeout(r, 5000))]); } catch (e) { /* the first frame compiles them */ }
   for (let i = 0; i < 5; i++) { frameRace(1 / 60, true); await step(0.8 + 0.04 * i); }
+  /* What does a frame of the circuit cost on this device? Timed now (the quickest of four, so a stall does not
+     count), before the title's Start is live. A device that cannot draw it in a screen interval starts the race part
+     of the way down the ladder. It used to start every visit at full detail and find out during the race. */
+  { let w = 1e9, c = 1e9;
+    for (let i = 0; i < 4; i++) { const a = performance.now(); frameRace(1 / 60, true); const b = performance.now(); renderer.setRenderTarget(null); gpuDone(); w = Math.min(w, b - a); c = Math.min(c, performance.now() - b); await yieldNow(); }
+    G.cost0 = [+w.toFixed(1), +c.toFixed(1)]; gov.prime(w, c); }
+  applyGov();                               // what was remembered from the last visit, or what the timing just asked for
+  gfxLine();
   G.startPose = { p: camera.position.clone(), q: camera.quaternion.clone(), fov: camera.fov, focus: cars.player.pos.clone() };
   toStudio(); G.state = back;
   releaseStatic();
@@ -289,6 +325,23 @@ function buildLine() {
     fragmentShader: 'varying vec3 vC; varying float vA; void main() { if (vA < 0.01) discard; gl_FragColor = vec4(vC * 1.6, vA * 0.5); }', vertexColors: true }));
   m.frustumCulled = false; m.renderOrder = 2; m.visible = false;
   return m;
+}
+
+// the menu says what the game is drawing with, at which quality level, and how far the governor has eased it
+function gfxLine() {
+  const e = $('menu-gfx'); if (!e) return;
+  const lvl = tierName[0].toUpperCase() + tierName.slice(1) + (S.quality === 'auto' && !Q.get('q') ? ' (chosen automatically)' : '');
+  e.textContent = `Drawing with ${GFX.name}. Quality: ${lvl}.` + (gov && gov.step ? ` Eased ${gov.step} of ${gov.steps} steps to keep the frames coming; it comes back when there is room.` : '');
+  e.classList.toggle('warn', GFX.software);
+}
+
+/* Everything the governor can take away is gone and frames are still late: this quality level is too much for this
+   computer. Say so once; and where the level was chosen automatically, start one level lighter next time. */
+function tooMuch() {
+  if (G.toldSlow) return; G.toldSlow = true;
+  const i = ORDER.indexOf(tierName); if (i <= 0) return;
+  try { localStorage.setItem('phantom.easier', ORDER[i - 1]); } catch (e) { /* private window */ }
+  if (G.state === 'race') hud.toast('Quality: ' + ORDER[i - 1][0].toUpperCase() + ORDER[i - 1].slice(1) + ' in the menu will be smoother', 'Running slowly', 6);
 }
 
 /* ------------------------------------------------------------------ scene switches */

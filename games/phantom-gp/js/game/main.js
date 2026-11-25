@@ -88,7 +88,9 @@ input.on.any = (e) => { if (G.state === 'title' && (e.code === 'Enter' || e.code
 for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, () => sound.unlock(), { passive: true, capture: true });
 
 function applySetting(k, v) {
-  if (k === 'paint' && cars) { cars.player.setPaint(v); paintRivals(); }
+  if (k === 'paint' && cars) { cars.player.setPaint(v); paintRivals(); showField(); }      // (showField: the rivals' colours on the map follow)
+  // the rivals' level can change in the middle of a race (every setting is on the pause card); cars and laps wait for the next start
+  if (k === 'skill' && race && G.state === 'race' && !G.roam) race.setSkill(v);
   if (k === 'autoThrottle') input.autoThrottle = v;
   if (k === 'music' || k === 'sound') sound.setOptions(S);
   if (k === 'line' && lineMesh) lineMesh.visible = v && G.state === 'race';
@@ -487,7 +489,7 @@ function startRace(o = {}) {
   chase.snap(); chase.update(0.016, cars.player, P); mark('placed', tm);
   input.enabled = true; input.autoThrottle = S.autoThrottle;
   lineMesh.visible = S.line;
-  G.state = 'race'; G.paused = false; hud.screen('race'); hud.lights(race.lights); gantry(race.lights); hud.hint(true);
+  G.state = 'race'; G.paused = false; hud.screen('race'); hud.lights(race.lights); gantry(race.lights); hud.hint(true); hud.untoast();
   if (o.fromFilm) sound.raceLevel(); else sound.startLoop();
   if (mode === 'rolling') { gfx.fx.flash = 1.0; hud.toast('Tuck in behind Voss, then pull out and pass', 'Your race', 3.6); }
   gov.reset(); mark('started', tm);
@@ -524,13 +526,15 @@ function startRoam() {
 }
 function setPaused(p) {
   if (G.state !== 'race') return;
+  // (the pause card shows every setting; it is told what race is paused so that Restart can say what it would change)
+  if (p) { hud.now = G.roam ? null : { cars: race.cars.length, laps: race.laps }; hud.refresh(!!G.roam); }
   G.paused = p; hud.screen(p ? 'pause' : 'race'); input.enabled = !p;
   if (p) sound.pause(); else sound.resume();
 }
 function toMenu() {
   if (G.state === 'film') return;
   toTrack();
-  if (G.roam) { setRoam(false); race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill }); hud.refresh(); }
+  if (G.roam) { setRoam(false); race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill }); hud.refresh(false); }
   if (race.state === 'idle' || race.state === 'lights') race.start({ mode: 'rolling', laps: 1, s0: START_S, skill: S.skill });
   race.state = 'green'; race.laps = 1e9; race.result = null; P.done = false; showField();
   P.auto = autopilot(0.6); for (const r of race.rivals) { r.done = false; r.skill = { pace: 0.6, ease: 0.02, push: 0.02 }; r.pace = 0.6; }

@@ -26,6 +26,8 @@ const OPTIONS = {
   sound: ['Sound', [['On', true], ['Off', false]]],
   quality: ['Quality', [['Auto', 'auto'], ['High', 'high'], ['Medium', 'medium'], ['Low', 'low']]],
 };
+const ALL = ['cars', 'laps', 'skill', 'paint', 'assist', 'autoThrottle', 'line', 'music', 'sound', 'quality'];
+const FIELD = ['cars', 'laps', 'skill'];          // what a race is made of (free roam has none of it)
 
 export class Hud {
   constructor(settings, on) {
@@ -33,8 +35,12 @@ export class Hud {
     this.layers = { load: $('load'), title: $('title'), cine: $('cine'), race: $('hud'), pause: $('pause'), result: $('result'), menu: $('menu') };
     const rev = $('h-rev'); for (let i = 0; i < 15; i++) rev.appendChild(document.createElement('i'));
     this.revEls = [...rev.children];
-    this.rows($('menu-rows'), ['cars', 'laps', 'skill', 'paint', 'assist', 'autoThrottle', 'line', 'music', 'quality']);
-    this.rows($('pause-rows'), ['assist', 'autoThrottle', 'line', 'music', 'sound']);
+    /* Every setting is on both cards. The pause card used to carry five of them, and the rest (cars, laps, rivals,
+       livery, quality) were only on the menu, which a new player first meets after the duel that follows the film:
+       it read as having to finish the duel to unlock a bigger field. */
+    this.now = null; this.roam = false;
+    this.rows($('menu-rows'), ALL);
+    this.rows($('pause-rows'), ALL);
     const click = (id, fn) => $(id).addEventListener('click', (e) => { e.preventDefault(); fn(); });
     click('b-start', () => on.start()); click('skip', () => on.skip()); click('b-resume', () => on.resume()); click('b-restart', () => on.restart()); click('b-quit', () => on.quit());
     click('b-rematch', () => on.rematch()); click('b-tomenu', () => on.toMenu()); click('b-duel', () => on.duel()); click('b-intro', () => on.film()); click('b-roam', () => on.roam());
@@ -42,7 +48,7 @@ export class Hud {
     $('menu-keys').innerHTML = matchMedia('(pointer: coarse)').matches
       ? 'Drag the puck to steer · Brake on the right · Boost when the bar is full'
       : '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows to drive · <kbd>Shift</kbd> or <kbd>Space</kbd> boost · <kbd>C</kbd> camera · <kbd>R</kbd> back on track · <kbd>Esc</kbd> pause · gamepad works too';
-    $('h-hint').innerHTML = '<div><kbd>W A S D</kbd>drive</div><div><kbd>Shift</kbd>boost</div><div><kbd>C</kbd>camera</div>';
+    $('h-hint').innerHTML = '<div><kbd>W A S D</kbd>drive</div><div><kbd>Shift</kbd>boost</div><div><kbd>C</kbd>camera</div><div><kbd>Esc</kbd>pause · settings</div>';
   }
 
   rows(host, keys) {
@@ -60,14 +66,30 @@ export class Hud {
     }
     this.refresh();
   }
-  // roam: free roam has no automatic throttle, so its switch is hidden there
-  refresh(roam = false) {
+  // roam: free roam has no automatic throttle, so its switch is hidden there; nor rivals or laps, so the pause card
+  // leaves those rows out (the menu keeps them: its button starts a race)
+  refresh(roam = this.roam) {
+    this.roam = roam;
     for (const row of document.querySelectorAll('.row[data-key]')) {
-      const v = JSON.stringify(this.s[row.dataset.key]);
+      const k = row.dataset.key, v = JSON.stringify(this.s[k]);
       for (const b of row.querySelectorAll('button')) b.classList.toggle('on', b.dataset.val === v);
-      if (row.dataset.key === 'autoThrottle') row.style.display = document.body.classList.contains('touch') && !roam ? '' : 'none';
+      if (k === 'autoThrottle') row.style.display = document.body.classList.contains('touch') && !roam ? '' : 'none';
+      else if (FIELD.includes(k) && row.parentElement.id === 'pause-rows') row.style.display = roam ? 'none' : '';
     }
     document.body.classList.toggle('manual', !this.s.autoThrottle || roam);
+    /* The pause card. Livery, help, rivals' level, sound and the rest change at once. The number of cars and of laps
+       belongs to a race from its start, so when the choice differs from the race that is paused (this.now, set by
+       main.js as the card opens) Restart becomes the main button and the line above the buttons says what it will
+       start. (The line is always there in a race, so the rows do not move under the pointer when it changes.) */
+    const rs = $('b-restart'), re = $('b-resume'), note = $('pause-note');
+    if (rs && re && note) {
+      const now = roam ? null : this.now, parts = [];
+      if (now && now.cars !== (this.s.cars || 2)) parts.push((this.s.cars || 2) + ' cars');
+      if (now && now.laps !== this.s.laps) parts.push(this.s.laps + (this.s.laps > 1 ? ' laps' : ' lap'));
+      rs.classList.toggle('ghost', !parts.length); re.classList.toggle('ghost', !!parts.length);
+      note.hidden = roam; note.classList.toggle('go', !!parts.length);
+      note.textContent = parts.length ? `Restart begins a new race from the grid: ${parts.join(', ')}.` : 'Cars and laps apply from the next start, the rest at once.';
+    }
     // the menu says what the race will be: a duel, or a field of up to five
     const n = this.s.cars || 2, go = $('b-duel'), mt = $('menu-title'), ml = $('menu-line');
     if (go) go.textContent = n > 2 ? 'Start race' : 'Start duel';
@@ -99,6 +121,7 @@ export class Hud {
   bars(on) { $('cine').classList.toggle('bars', on); }
   caption(small, big, center = false) { const c = $('cap'); c.firstElementChild.textContent = small || ''; c.lastElementChild.textContent = big || ''; c.classList.toggle('center', center); c.classList.toggle('on', !!(small || big)); }
   toast(small, big, sec = 1.8) { const t = $('h-toast'); t.firstElementChild.textContent = small || ''; t.lastElementChild.textContent = big || ''; t.classList.add('on'); this.toastT = sec; }
+  untoast() { this.toastT = 0; $('h-toast').classList.remove('on'); }      // (a toast's clock only runs in a race: one left over from the last race would show at the start of the next)
   lights(n) { const L = $('h-lights'); L.classList.toggle('on', n >= 0); [...L.children].forEach((el, i) => el.classList.toggle('lit', i < n)); }
   hint(on) { $('h-hint').classList.toggle('off', !on); }
   rivalName(n) { $('h-rname').textContent = n; this.last.ref = n; }

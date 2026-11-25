@@ -194,6 +194,14 @@
   .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
   .card > .btns { position: sticky; bottom: -24px; margin: 20px -28px -24px; padding: 14px 28px 24px; background: linear-gradient(rgba(10,12,15,0), rgba(10,12,15,.96) 34%); }
   .btns .cta { margin-top: 0; padding: 14px 30px 12px; font-size: 15px; flex: 1 1 auto; text-align: center; }
+  /* the pause card's one line of advice sits with the buttons it is about, so it is in view however far the rows are scrolled */
+  #pause-note { flex: 0 0 100%; margin: 0; font-size: 12px; line-height: 1.45; color: var(--dim); } #pause-note.go { color: var(--accent); }
+  #pause .card > .btns { background: linear-gradient(rgba(10,12,15,0), rgba(10,12,15,.97) 10px); }      /* (solid behind that line: rows scroll under it) */
+  .card { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.28) transparent; }
+  /* (a laptop's window: the pause card, with every setting on it, still fits without scrolling) */
+  @media (min-height: 521px) and (max-height: 700px), (pointer: coarse) and (min-height: 521px) and (max-height: 800px) {      /* (a tablet's options are taller) */
+    #pause .rows { gap: 6px; margin: 10px 0 2px; } #pause .card { padding-top: 18px; } #pause .card h2 { font-size: clamp(30px, 5vw, 40px); } #pause .card > .btns { margin-top: 10px; }
+  }
   .keys { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; letter-spacing: .08em; color: var(--dim); line-height: 1.9; }
   .keys kbd { font: inherit; padding: 1px 6px; border: 1px solid rgba(255,255,255,.26); border-radius: 4px; color: var(--ink); margin: 0 2px; }
   /* The prompt to turn a phone sideways. For a moment after a rotation a phone can still lay the page out for the
@@ -297,7 +305,7 @@
     <div class="eyebrow">Paused</div>
     <h2>Pit wall</h2>
     <div class="rows" id="pause-rows"></div>
-    <div class="btns"><button class="cta" id="b-resume" data-spring>Resume</button><button class="cta ghost" id="b-restart" data-spring>Restart</button><button class="cta ghost" id="b-quit" data-spring>Quit</button></div>
+    <div class="btns"><p id="pause-note"></p><button class="cta" id="b-resume" data-spring>Resume</button><button class="cta ghost" id="b-restart" data-spring>Restart</button><button class="cta ghost" id="b-quit" data-spring>Quit</button></div>
   </div>
 </div>
 

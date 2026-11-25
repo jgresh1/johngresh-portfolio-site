@@ -547,9 +547,8 @@ export class Race {
     this.rivals = this.all.slice(0, n); this.cars = [P, ...this.rivals]; const R = this.R = this.rivals[0];
     this.laps = laps; this.t = 0; this.mode = mode; this.events.length = 0; this.result = null;
     for (const c of this.cars) { c.lap = 0; c.laps = []; c.lapStart = 0; c.done = false; c.finishT = 0; c.energy = 1; c.boost = 0; c.draft = 0; c.impact = 0; c.rev = false; }
-    // the first rival drives at the chosen level; each one after it gives a little away in the corners and finds a little more when it is behind
-    const base = SKILL[skill] || SKILL.pro;
-    this.rivals.forEach((r, k) => { r.skill = k ? { pace: base.pace - 0.012 * k, ease: base.ease, push: base.push + 0.006 * k } : base; r.pace = r.skill.pace; r.hold = 0; });
+    this.setSkill(skill);
+    for (const r of this.rivals) { r.pace = r.skill.pace; r.hold = 0; }
     if (mode === 'rolling') {
       const v = vpAt(s0) * 0.97;
       P.place(s0, lineAt(s0), v); P.prog = s0;
@@ -562,6 +561,12 @@ export class Race {
       this.state = 'lights'; this.lights = 0; this.lightT = -0.8;
     }
     for (const c of this.cars) c.lap = Math.floor(c.prog / L);
+  }
+  // The rivals' level. The first rival drives at the chosen one; each one after it gives a little away in the corners
+  // and finds a little more when it is behind. It can be changed during a race: each car's pace eases towards it.
+  setSkill(skill) {
+    const base = SKILL[skill] || SKILL.pro;
+    this.rivals.forEach((r, k) => { r.skill = k ? { pace: base.pace - 0.012 * k, ease: base.ease, push: base.push + 0.006 * k } : base; });
   }
   update(dt) {
     const P = this.P;

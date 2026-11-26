@@ -1,9 +1,12 @@
-// film.js — the opening: about forty seconds, then the aircraft is yours, already flying.
+// film.js — the opening: about fifty seconds, then the aircraft is yours, already flying.
 //
-//   hangar    dark; the lamps come on bank by bank while the camera drifts in from the floor · a slow travelling
-//             shot down the port side, past the pilot as he brings the engine up · round the tail while the
-//             controls are checked · then one long take from the roof down to the floor behind the aircraft as
-//             the doors part, the sun crosses the concrete and it rolls out into the morning
+//   hangar    dark; the lamps come on bank by bank while the camera drifts in from the floor · three close looks,
+//             a long lens sliding slowly past the nose probe and "Katy", up the aerial from its brass foot, and
+//             along the lettering under the canopy to the pilot's name · a slow travelling shot down the port
+//             side, past the pilot as he brings the engine up · close on the rudder as it is swung full and free,
+//             its tricolour with it · round the tail while the other controls are checked · then one long take
+//             from the roof down to the floor behind the aircraft as the doors part, the sun crosses the concrete
+//             and it rolls out into the morning
 //   bay       from high behind, the harbour and the bridge ahead, coming down alongside · a camera holding
 //             station off to starboard as it goes by · above and behind, the city opening out · and into the seat you fly from
 //   or runway (the other start): a crane shot down from high over runway 34R at Haneda to the aircraft lined
@@ -26,11 +29,18 @@ const seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1), ease = (k) => k * k * (
 // how a move is paced: it is already moving when the shot begins and still moving when it ends
 const pace = (k) => 0.3 * k + 0.7 * ease(k);
 
-export const T = {
-  lamps: [1.0, 1.9, 2.8, 3.7], glide: 6.2, start: 8.2, tail: 12.2, doors: 17.6, doorA: 18.1, doorB: 23.3, roll: 21.3, cut: 26.7,
-  // the bay half, in seconds after the cut
-  pass: 5.6, over: 9.0, round: 12.4, air: 15.6,
-};
+// when each hangar shot begins, in order, and how long it lasts; the door, the roll and the cut follow from the last
+const LEN = { dark: 6.2, probe: 2.7, mast: 2.7, name: 3.3, glide: 6.0, rudder: 2.6, tail: 4.6, doors: 9.1 };
+const ORDER = Object.keys(LEN);
+export const T = (() => {
+  const at = {}; let t = 0;
+  for (const k of ORDER) { at[k] = t; t += LEN[k]; }
+  return {
+    lamps: [1.0, 1.9, 2.8, 3.7], ...at, start: at.glide + 2.0, doorA: at.doors + 0.5, doorB: at.doors + 5.7, roll: at.doors + 3.7, cut: t,
+    // the bay half, in seconds after the cut
+    pass: 5.6, over: 9.0, round: 12.4, air: 15.6,
+  };
+})();
 const ROLL_A = 1.7;                                       // m/s2 out of the hangar
 const STOP = 0.21;                                        // how far the lens closes for daylight through the doors
 const RW = { crane: 6.0, round: 4.2 };                   // seconds: the crane shot down to the runway, the move round behind
@@ -46,8 +56,17 @@ const move = (pos, look, lens, lens1 = lens) => ({ pos: curve3(pos), look: curve
 const SHOTS = {
   // from the dark of the floor by the doors, in and up towards the nose, while the lamps come on
   dark: move([[-10.5, 0.5, -14.5], [-8.4, 0.85, -11.8], [-6.2, 1.3, -9.2], [-4.2, 1.62, -7.0]], [[0, 1.15, -0.2], [0, 1.2, -0.8], [0, 1.26, -1.5], [0, 1.3, -2.2]], 30, 27),
+  // three close looks with a long lens, each a slow slide (the aircraft is quiet: lamps on, engine not yet lit)
+  // the nose: down from above the probe and round to the red cone and the name painted on it
+  probe: move([[-0.66, 1.84, -4.16], [-0.86, 1.62, -3.66], [-1.02, 1.42, -3.15]], [[0, 1.245, -3.34], [-0.03, 1.25, -2.92], [-0.09, 1.255, -2.56]], 17, 16),
+  // the aerial: round its brass foot and insulator, the whip leading up to the canopy behind
+  mast: move([[-1.05, 1.50, -3.00], [-1.22, 1.535, -2.72], [-1.36, 1.57, -2.42]], [[-0.17, 1.48, -1.92], [-0.20, 1.51, -1.88], [-0.24, 1.545, -1.83]], 19, 18),
+  // under the canopy: along "DELTA EXPERIMENTAL - PAYEN" and down to the pilot's name lettered beneath it
+  name: move([[-1.52, 1.47, -2.30], [-1.50, 1.455, -2.04], [-1.47, 1.44, -1.78]], [[-0.30, 1.415, -1.82], [-0.30, 1.40, -1.62], [-0.30, 1.385, -1.44]], 17, 15.5),
   // down the port side at shoulder height: nose, canopy and pilot, wing root
   glide: move([[-2.2, 1.4, -5.1], [-2.7, 1.62, -2.9], [-3.0, 1.8, -0.9], [-3.7, 1.92, 1.5]], [[0, 1.27, -3.7], [0, 1.48, -1.8], [0, 1.6, -0.75], [0, 1.46, 0.4]], 25),
+  // close on the foot of the rudder while it is swung one way and the other: the tricolour and the badge go with it
+  rudder: move([[-1.62, 1.66, 3.42], [-1.42, 1.74, 3.20], [-1.22, 1.83, 2.98]], [[0, 1.68, 1.84], [0, 1.74, 1.88], [0, 1.80, 1.92]], 19, 18),
   // round the tail, starboard to port, rising a little
   tail: move([[4.7, 0.8, 4.2], [3.2, 1.0, 6.1], [0.7, 1.28, 7.0], [-1.7, 1.55, 6.3]], [[0, 1.3, 1.1], [0, 1.35, 1.6], [0, 1.4, 1.9], [0, 1.42, 1.6]], 29),
   // from under the roof behind it down to the floor, and on after it as it goes
@@ -159,12 +178,13 @@ export class Film {
       const spool = 0.34 * ease(seg(t, T.start, T.start + 4.6)) + 0.2 * ease(seg(t, T.roll - 0.8, T.roll + 1.8));
       J.uHeat.value = 0.4 * Math.pow(spool / 0.54, 1.5); J.uLamp.value = 0.9 * seg(t, T.start - 0.4, T.start);
       // full and free: rudder, elevators, ailerons, each one way then the other
-      const sw = (a, b) => (t > a && t < b ? Math.sin(((t - a) / (b - a)) * Math.PI * 2) : 0), c0 = T.tail + 0.7;
-      J.pose(dt, { yaw: sw(c0, c0 + 1.35), pitch: sw(c0 + 1.35, c0 + 2.6), roll: sw(c0 + 2.6, c0 + 3.7), throttle: spool / 0.72,
-        parked: 1 - seg(t, T.start + 0.4, T.start + 1.4), wheel: d - this.rolled, look: t > T.glide + 1.6 && t < T.tail - 0.9 ? -0.9 : 0 });
+      // (the rudder in its own close shot, the elevators and ailerons as the camera comes round the tail)
+      const sw = (a, b) => (t > a && t < b ? Math.sin(((t - a) / (b - a)) * Math.PI * 2) : 0), c0 = T.tail + 0.5;
+      J.pose(dt, { yaw: sw(T.rudder + 0.35, T.rudder + 2.25), pitch: sw(c0, c0 + 1.25), roll: sw(c0 + 1.25, c0 + 2.35), throttle: spool / 0.72,
+        parked: 1 - seg(t, T.start + 0.4, T.start + 1.4), wheel: d - this.rolled, look: t > T.glide + 1.6 && t < T.rudder - 0.9 ? -0.9 : 0 });
       this.rolled = d;
-      const name = t < T.glide ? 'dark' : t < T.tail ? 'glide' : t < T.doors ? 'tail' : 'doors';
-      const t0 = { dark: 0, glide: T.glide, tail: T.tail, doors: T.doors }[name], t1 = { dark: T.glide, glide: T.tail, tail: T.doors, doors: T.cut }[name];
+      let name = ORDER[0]; for (const k of ORDER) if (t >= T[k]) name = k;
+      const t0 = T[name], t1 = t0 + LEN[name];
       const S = SHOTS[name], e = pace(seg(t, t0, t1));
       S.pos.getPointAt(e, cam.position); S.look.getPointAt(e, this._l);
       if (name === 'doors') this._l.z -= 0.85 * d;                       // the look goes with the aircraft as it rolls away

@@ -15,7 +15,7 @@ import { TIERS, ORDER, graphicsDevice, pickTier, Governor } from './fly/perf.js'
 import { loadJet, addLod, GEAR_H } from './fly/jet.js';
 import { Flight } from './fly/flight.js';
 import { Rig } from './fly/chase.js';
-import { Input } from './fly/input.js';
+import { Input, padNav } from './fly/input.js';
 import { Sound } from './fly/sound.js';
 import { Hangar } from './fly/hangar.js';
 import { Film, T as FILM, RAIL } from './fly/film.js';
@@ -302,9 +302,12 @@ async function boot() {
     const s = runway.start(), w = geoToWorld(s.lat, s.lon, 0);
     flight.place({ x: w.x, y: 0, z: w.z, heading: s.heading, speed: 0, throttle: 0, ground: true });
     input.throttle = 0; rig.snap(); roofs.map = null; roofs.at = -1e9; rolled = false;
-    hint(POWER, 12);
+    hint(POWER(), 12);
   }
-  const POWER = touch ? 'Push the <b>right lever</b> up to roll. Pull back on the left thumb at <b>130 km/h</b>.' : 'Hold <b>R</b> for power. Pull back (<b>S</b>) at <b>130 km/h</b>. <b>A D</b> steer, <b>Space</b> brakes.';
+  // what to say depends on what is in the player's hands: a controller once one has been taken up, else touch or keys
+  const by = (pad, thumb, keys) => (input.device === 'pad' ? pad : input.device === 'touch' || (touch && input.device !== 'keys') ? thumb : keys);
+  const POWER = () => by('Hold <b>RT</b> for power. Pull the stick back at <b>130 km/h</b>. The stick steers, <b>A</b> brakes.', 'Push the <b>right lever</b> up to roll. Pull back on the left thumb at <b>130 km/h</b>.', 'Hold <b>R</b> for power. Pull back (<b>S</b>) at <b>130 km/h</b>. <b>A D</b> steer, <b>Space</b> brakes.');
+  const FLYING = () => by('<b>Left stick</b> flies · <b>RT LT</b> power · <b>A</b> brake · <b>Y</b> view · <b>right stick</b> looks', '<b>Left thumb</b> flies · <b>right lever</b> is power · drag to look', '<b>A D</b> bank · <b>S</b> nose up, <b>W</b> down · <b>R F</b> power · <b>C</b> view · drag to look');
   let rolled = true;
   function beginFlight() {
     mode = 'fly'; toWorld(); document.body.classList.add('flying'); document.body.classList.remove('film');
@@ -312,8 +315,9 @@ async function boot() {
     setHud(1); setBars(0); $('skip').style.display = 'none'; $('warn').style.display = 'none';
     perFrame = tier.tilesPerFrame;
     rig.look.yaw = 0; rig.look.pitch = 0; rig.dist = 11.5;
-    if (flight.onGround) { rolled = false; hint(POWER, 14); }
-    else hint(touch ? '<b>Left thumb</b> flies · <b>right lever</b> is power · drag to look' : '<b>A D</b> bank · <b>S</b> nose up, <b>W</b> down · <b>R F</b> power · <b>C</b> view · drag to look', 9);
+    if (flight.onGround) { rolled = false; hint(POWER(), 14); }
+    else hint(FLYING(), 9);
+    input.ui = null; titleNav.close();
   }
   function events(now) {
     for (const e of flight.events) {
@@ -323,7 +327,7 @@ async function boot() {
     }
     flight.events.length = 0;
     // on the take-off roll: say when to pull, once
-    if (flight.onGround && !rolled && flight.V > 36) { rolled = true; hint(touch ? '<b>Pull back</b> now.' : '<b>Pull back</b> now (S).', 4); }
+    if (flight.onGround && !rolled && flight.V > 36) { rolled = true; hint(by('<b>Pull the stick back</b> now.', '<b>Pull back</b> now.', '<b>Pull back</b> now (S).'), 4); }
     if (flight.crashed && now - crashT > 1300) {
       // back in the air where it happened, well clear of everything, pointing the same way
       const h = flight.heading * D2R, x = flight.pos.x - Math.sin(h) * 260, z = flight.pos.z + Math.cos(h) * 260;
@@ -338,9 +342,13 @@ async function boot() {
   const setPaused = (on) => {
     if (mode !== 'fly') return;
     paused = on; menu.classList.toggle('on', on); sound.suspend(on);
+    input.ui = on ? menuUI : null; if (on && input.device === 'pad') menuNav.open($('mResume')); else menuNav.close();
     if (on) { gfxUI(); wxUI(); }
     if (on) { const g = worldToGeo(camera.position); $('mExplore').href = `${EXPLORE}#${g.lat.toFixed(5)},${g.lon.toFixed(5)},${Math.max(g.elev, 60).toFixed(0)},${flight.heading.toFixed(1)},20.0`; }
   };
+  // a controller in the menu: the cross moves, A presses, B or Start goes back to the flying
+  const menuNav = padNav($('card')), titleNav = padNav($('title'));
+  const menuUI = { move: (dx, dy) => menuNav.move(dx, dy), accept: () => menuNav.accept(), back: () => setPaused(false), start: () => setPaused(false) };
   $('bMenu').onclick = () => setPaused(true); $('mResume').onclick = () => setPaused(false);
   menu.addEventListener('pointerdown', (e) => { if (e.target === menu) setPaused(false); });
   $('bView').onclick = () => { if (mode === 'fly') hint('View: ' + rig.next(), 1.6); };
@@ -361,6 +369,33 @@ async function boot() {
   $('assist').querySelectorAll('.opt').forEach((b) => { b.onclick = () => { flight.assist = b.dataset.a; flight.gammaT = flight.pitch; store.set('assist', flight.assist); assistUI(); }; });
   const respUI = () => mark($('resp'), (b) => b.dataset.r === input.response);
   $('resp').querySelectorAll('.opt').forEach((b) => { b.onclick = () => { input.response = b.dataset.r; store.set('response', input.response); respUI(); }; });
+  // The controller's line in the menu. Not one found: say so. One found: say how to take it up. In use: say so.
+  // Pressing the line turns controllers off (and on again): off is remembered.
+  const padUI = () => {
+    const b = $('mPad');
+    b.textContent = !input.padAllowed ? 'Controller: off' : input.padActive ? 'Controller: in use' : input.padCount ? 'Controller: press a button on it to use it' : 'Controller: none found';
+    b.classList.toggle('on', input.padActive);
+    $('keys').innerHTML = keysText() + (input.padCount || input.padActive ? PADKEYS : '');
+  };
+  $('mPad').onclick = () => { input.allowPad(!input.padAllowed); padUI(); };
+  const PADKEYS = '<br>Controller: left stick flies · right stick looks · <kbd>RT</kbd> <kbd>LT</kbd> power · <kbd>LB</kbd> <kbd>RB</kbd> rudder · <kbd>A</kbd> brakes · <kbd>Y</kbd> view · <kbd>X</kbd> look ahead · cross up and down moves the camera · <kbd>Start</kbd> menu. In the menu the cross moves, <kbd>A</kbd> presses, <kbd>B</kbd> goes back.';
+  let toldPad = false;
+  // a controller has appeared or gone: it is offered, not used (input.js)
+  input.on.pads = (n) => {
+    padUI();
+    if (!n || input.padActive || !input.padAllowed || toldPad) return;
+    toldPad = true;
+    if (mode === 'fly' && !paused) hint('Controller found. Press <b>A</b> on it to fly with it.', 7);
+    else if (mode === 'title') note('Controller found. Press A on it to use it.');
+  };
+  // the player has pressed a button on it: it is theirs now
+  input.on.padOn = () => {
+    padUI();
+    if (mode === 'title') { note('Controller on. A starts, X takes off from Haneda.'); titleNav.open($('start')); }
+    else if (mode === 'fly' && !paused) hint(flight.onGround && flight.V < 20 ? POWER() : FLYING(), 9);
+    else if (paused) menuNav.open($('mResume'));
+  };
+  input.on.device = (d) => { if (d !== 'pad') { menuNav.close(); titleNav.close(); } else if (paused) menuNav.open(menuNav.at || $('mResume')); else if (mode === 'title') titleNav.open(titleNav.at || $('start')); };
   const mouseUI = () => { $('mMouse').textContent = input.mouseFly ? 'Mouse flies (hold a button to look)' : 'Mouse looks around'; $('mMouse').classList.toggle('on', input.mouseFly); $('mMouse').style.display = touch ? 'none' : ''; };
   $('mMouse').onclick = () => { input.mouseFly = !input.mouseFly; store.set('mouse', input.mouseFly ? '1' : '0'); mouseUI(); };
   const invertUI = () => { $('mInvert').textContent = input.invert ? 'Up = nose up' : 'Up = nose down (like a stick)'; };
@@ -387,10 +422,10 @@ async function boot() {
     const lighter = ORDER[i - 1]; store.set('easier', lighter);
     hint(`Running slowly here. <b>Menu</b>, then <b>${TIERS[lighter].label}</b> under Detail, will be smoother.`, 12);
   };
-  $('keys').innerHTML = touch ? 'Left thumb: fly (it works wherever the thumb lands). Right lever: power. Turn and pull together for a tight turn. Drag anywhere else to look, pinch to move the camera in or out, double tap to look ahead again.'
-    : '<kbd>A</kbd> <kbd>D</kbd> bank · <kbd>S</kbd> nose up · <kbd>W</kbd> nose down · <kbd>Q</kbd> <kbd>E</kbd> rudder · <kbd>R</kbd> <kbd>F</kbd> power · <kbd>Space</kbd> brakes · <kbd>C</kbd> view · <kbd>V</kbd> look ahead · drag to look, wheel to move the camera. A tap on a key is a small correction; holding it is the full stick. Turn and pull together for a tight turn. A gamepad works too.';
+  const keysText = () => (touch ? 'Left thumb: fly (it works wherever the thumb lands). Right lever: power. Turn and pull together for a tight turn. Drag anywhere else to look, pinch to move the camera in or out, double tap to look ahead again.'
+    : '<kbd>A</kbd> <kbd>D</kbd> bank · <kbd>S</kbd> nose up · <kbd>W</kbd> nose down · <kbd>Q</kbd> <kbd>E</kbd> rudder · <kbd>R</kbd> <kbd>F</kbd> power · <kbd>Space</kbd> brakes · <kbd>C</kbd> view · <kbd>V</kbd> look ahead · drag to look, wheel to move the camera. A tap on a key is a small correction; holding it is the full stick. Turn and pull together for a tight turn. A controller works too, once a button on it is pressed.');
   $('mFilm').onclick = () => { setPaused(false); startFilm(film.variant); };
-  assistUI(); invertUI(); unitsUI(); soundUI(); respUI(); mouseUI(); showHour();
+  assistUI(); invertUI(); unitsUI(); soundUI(); respUI(); mouseUI(); showHour(); padUI();
   input.on.pause = () => { if (mode === 'film') film.skip(); else setPaused(!paused); };
   input.on.view = () => { if (mode === 'fly' && !paused) hint('View: ' + rig.next(), 1.6); };
   input.on.recentre = () => rig.recentre();
@@ -414,7 +449,10 @@ async function boot() {
     input.enabled = false; setHud(0); document.body.classList.remove('flying'); document.body.classList.add('film');
     if (Q.get('film') === '0') { film.at(film.end, 0); film.t = film.end; beginFlight(); return; }
     toStage(); mode = 'film'; film.start(variant); setBars(1); $('skip').style.display = 'block'; perFrame = 4;
+    titleNav.close(); input.ui = { accept: () => film.skip(), back: () => film.skip(), start: () => film.skip() };          // any of the three skips the film
   }
+  // on the title a controller moves between the buttons; A presses, Start starts, X takes off from Haneda
+  input.ui = { move: (dx, dy) => titleNav.move(dx, dy), accept: () => { if (titleNav.at) titleNav.accept(); else if (!startBtn.disabled) startFilm('air'); }, start: () => { if (!startBtn.disabled) startFilm('air'); }, alt: () => startFilm('runway') };
   startBtn.onclick = () => { if (!startBtn.disabled) startFilm('air'); };
   $('start2').onclick = () => startFilm('runway');
   $('skip').onclick = () => film.skip();

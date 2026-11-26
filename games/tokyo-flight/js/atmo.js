@@ -196,6 +196,8 @@ export class SunShadows {
     this.right = new THREE.Vector3(); this.up = new THREE.Vector3();
     this.D = 9000;
     this.dirty = radii.map(() => 0);        // time a re-render was last asked for
+    this.sunOn = true; this.nearOn = true;  // the page can do without the cascades, or the tight map (setOn)
+    this.sunParked = false; this.nearParked = false;
     this.last = radii.map(() => -1e9);
     this.near = null;
     if (near || !radii.length) {
@@ -228,9 +230,35 @@ export class SunShadows {
   // keep the tight map on a point (call every frame the object moves)
   follow(p) {
     const l = this.near; if (!l) return;
+    if (this.nearShadow && !this.nearOn) {                 // parked: it only has to go on pointing the sun's way
+      if (!this.nearParked) { this.park(l); this.nearParked = true; }
+      l.position.copy(l.target.position).addScaledVector(ATMO.sunDir, 10); l.updateMatrixWorld();
+      return;
+    }
+    if (this.nearParked) {
+      const R = this.nearR; Object.assign(l.shadow.camera, { left: -R, right: R, top: R, bottom: -R, near: 1, far: 2 * R + 50 }); l.shadow.camera.updateProjectionMatrix();
+      this.nearParked = false;
+    }
     l.target.position.copy(p); l.position.copy(p).addScaledVector(ATMO.sunDir, this.nearR + 25);
     l.target.updateMatrixWorld(); l.updateMatrixWorld();
     if (this.nearShadow) l.shadow.needsUpdate = true;
+  }
+
+  // Do without the cascades (sun) or the tight map (near), for a machine that cannot keep up. The lights go on
+  // casting, because every lit shader is rebuilt when the number of shadow maps changes and that freezes the
+  // picture for seconds on the very machines this is for. Instead a map that is not wanted is parked: drawn once
+  // more round a speck far under the ground, with nothing in it, and then left alone. Nothing falls inside it,
+  // so nothing is shaded by it, and it costs no more draws.
+  setOn(sun, near) {
+    if (sun === this.sunOn && near === this.nearOn) return false;
+    this.sunOn = sun; this.nearOn = near; this.keys.fill('');
+    return true;
+  }
+  park(l) {
+    const c = l.shadow.camera; c.left = c.bottom = -0.5; c.right = c.top = 0.5; c.near = 1; c.far = 20; c.updateProjectionMatrix();
+    l.target.position.set(0, -1e6, 0); l.position.copy(l.target.position).addScaledVector(ATMO.sunDir, 10);
+    l.target.updateMatrixWorld(); l.updateMatrixWorld();
+    l.shadow.needsUpdate = true;
   }
 
   setScale(s) {
@@ -270,6 +298,8 @@ export class SunShadows {
     const s = THREE.MathUtils.clamp(2 ** (Math.round(Math.log2(Math.max(alt / 260, 1)) * 2) / 2), 1, 8);
     if (Math.abs(s - this.scale) > 1e-3) this.setScale(s);
     const d = ATMO.sunDir, c = this._c, fwd = this._f, now = performance.now();
+    if (!this.sunOn) { if (!this.sunParked) { for (const l of this.lights) this.park(l); this.sunParked = true; } return; }
+    if (this.sunParked) { this.sunParked = false; this.setScale(this.scale); }
     camera.getWorldDirection(fwd);
     const gap = [140, 420, 1100];
     for (let i = 0; i < this.lights.length; i++) {

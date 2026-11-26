@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { patch } from '../atmo.js';
 import { buildPilot, loadHands } from './pilot.js';
 import { buildExhaust, ZC as PIPE_Z, BORE } from './engine.js';
+import { shadowProxies } from './merge.js';
 
 export const CG = new THREE.Vector3(2.74, 0, 1.16);      // Blender coordinates; the main wheels are at x = 2.97
 export const GEAR_H = 1.16;                              // centre of gravity above the ground when standing on its wheels
@@ -34,7 +35,49 @@ float kvn(vec3 x){ vec3 i = floor(x), u = fract(x); u = u * u * (3.0 - 2.0 * u);
 float kfbm(vec3 p){ return 0.5 * kvn(p) + 0.3 * kvn(p * 2.1 + 7.0) + 0.2 * kvn(p * 4.3 + 3.0); }
 float kaa(float e, float x){ float w = fwidth(x) * 0.75 + 1e-6; return smoothstep(e - w, e + w, x); }
 float kmapr(float x, float a, float b){ return clamp((x - a) / (b - a), 0.0, 1.0); }
+// the skin's structure. What is finer than a pixel is faded out, not left to shimmer: rivets within a few metres, joints further.
+float kpx(vec3 p){ return length(fwidth(p)); }
+float knear(vec3 p){ return 1.0 - smoothstep(0.0020, 0.0070, kpx(p)); }
+float kmid(vec3 p){ return 1.0 - smoothstep(0.012, 0.06, kpx(p)); }
+// a row of flush rivets (u along the row, v across it, metres), and a sheet joint
+float krow(float u, float v, float pitch){ return 1.0 - smoothstep(0.0021, 0.0031, length(vec2((fract(u / pitch) - 0.5) * pitch, v))); }
+float kline(float v, float w){ return 1.0 - smoothstep(0.5 * w, w, abs(v)); }
 `;
+// The airframe is sheet riveted to ribs, spars and frames. Each kind of surface lays its own rows out (kRv), its
+// joints (kSm) and the height of its skin in metres (kH: rivets and joints sit a third of a millimetre low, and each
+// bay between its supports is dished by about half a millimetre, which is what makes real metal skin catch the light).
+const SKIN = {
+  wing: /* glsl */`
+      float sAy = abs(vKp.y), sN = knear(vKp), sM = kmid(vKp);
+      float sRib = (fract(sAy / 0.27 + 0.5) - 0.5) * 0.27, sSpar = (fract(vKp.x / 0.46 + 0.5) - 0.5) * 0.46;
+      float kRv = max(krow(vKp.x, sRib, 0.030), max(krow(sAy, sSpar - 0.010, 0.030), krow(sAy + 0.015, sSpar + 0.010, 0.030))) * sN;
+      float kSm = max(kline(sRib, 0.0014) * step(0.5, mod(floor(sAy / 0.27 + 0.5), 2.0)), kline(sSpar, 0.0014)) * sM;
+      float kH = -0.00030 * kRv - 0.00045 * kSm + 0.00055 * sM * (0.3 + 0.7 * kh3(vec3(floor(sAy / 0.27), floor(vKp.x / 0.46), 3.0))) * (0.5 + 0.5 * cos(6.2832 * sAy / 0.27)) * (0.5 + 0.5 * cos(6.2832 * vKp.x / 0.46));
+      // dirt drawn back from each joint by the air
+      diffuseColor.rgb *= 1.0 - 0.07 * sM * kvn(vec3(vKp.x * 2.2, sAy * 55.0, 2.0)) * smoothstep(0.0, 0.20, sSpar + 0.23);`,
+  fuselage: /* glsl */`
+      vec2 sC = vec2(vKp.y, vKp.z - 1.20); float sRad = max(length(sC), 0.04), sTh = atan(sC.x, sC.y);
+      float sN = knear(vKp), sM = kmid(vKp), sBody = 1.0 - kCone;
+      float sFr = (fract(vKp.x / 0.31 + 0.5) - 0.5) * 0.31, sSt = (fract(sTh / 0.2618 + 0.5) - 0.5) * 0.2618 * sRad;
+      float kRv = max(krow(sTh * sRad, sFr, 0.028), krow(vKp.x, sSt, 0.034)) * sN * sBody;
+      float kSm = max(kline(sFr, 0.0014) * step(0.5, mod(floor(vKp.x / 0.31 + 0.5), 2.0)), kline(sSt, 0.0014) * step(mod(floor(sTh / 0.2618 + 0.5) + 12.0, 4.0), 0.5)) * sM * sBody;
+      float kH = -0.00030 * kRv - 0.00045 * kSm + 0.00030 * sM * sBody * (0.3 + 0.7 * kh3(vec3(floor(vKp.x / 0.31), floor(sTh / 0.2618), 5.0))) * (0.5 + 0.5 * cos(6.2832 * vKp.x / 0.31)) * (0.5 + 0.5 * cos(6.2832 * sTh / 0.2618));
+      diffuseColor.rgb *= 1.0 - 0.06 * sM * sBody * kvn(vec3(vKp.x * 2.0, sTh * 30.0, 4.0)) * smoothstep(0.0, 0.14, sFr + 0.155);`,
+  fin: /* glsl */`
+      float sN = knear(vKp), sM = kmid(vKp);
+      float sRib = (fract(vKp.z / 0.24 + 0.5) - 0.5) * 0.24, sSpar = (fract(vKp.x / 0.38 + 0.5) - 0.5) * 0.38;
+      float kRv = max(krow(vKp.x, sRib, 0.030), krow(vKp.z, sSpar, 0.030)) * sN;
+      float kSm = max(kline(sRib, 0.0014) * step(0.5, mod(floor(vKp.z / 0.24 + 0.5), 2.0)), kline(sSpar, 0.0014) * step(0.5, mod(floor(vKp.x / 0.38 + 0.5), 2.0))) * sM;
+      float kH = -0.00030 * kRv - 0.00045 * kSm + 0.00045 * sM * (0.5 + 0.5 * cos(6.2832 * vKp.z / 0.24)) * (0.5 + 0.5 * cos(6.2832 * vKp.x / 0.38));`,
+};
+const SKIN_TONE = `
+      diffuseColor.rgb *= 1.0 - 0.13 * kRv - 0.30 * kSm;`;
+const SKIN_ROUGH = ' roughnessFactor = clamp(roughnessFactor + 0.10 * kRv + 0.15 * kSm, 0.05, 1.0);';
+// the skin's height bends the light (Mikkelsen's surface gradient: no texture coordinates needed)
+const SKIN_BUMP = /* glsl */`{
+      vec3 sPx = dFdx( - vViewPosition ), sPy = dFdy( - vViewPosition ); float sHx = dFdx( kH ), sHy = dFdy( kH );
+      vec3 sR1 = cross( sPy, normal ), sR2 = cross( normal, sPx ); float sDet = dot( sPx, sR1 );
+      normal = normalize( abs( sDet ) * normal - sign( sDet ) * ( sHx * sR1 + sHy * sR2 ) ); }`;
 const lipFn = (C) => /* glsl */`
 float klip(vec3 p){
   float X = p.x, ay = abs(p.y), Z = p.z;
@@ -67,10 +110,11 @@ function paintParts(kind, C) {
       float kGlare = (1.0 - kCone) * (1.0 - kaa(1.62, vKp.x)) * kaa(kZe, vKp.z);
       float kSheet = max(kCone, kaa(${f(C.COWL_S)}, vKp.x));
       diffuseColor.rgb *= 0.93 + 0.10 * kfbm(vKp * 2.6);
-      diffuseColor.rgb = mix(mix(diffuseColor.rgb, ${RED}, kRed), ${BLACK}, kGlare);`;
+      diffuseColor.rgb = mix(mix(diffuseColor.rgb, ${RED}, kRed), ${BLACK}, kGlare);` + SKIN.fuselage + SKIN_TONE;
     p.rough = /* glsl */`roughnessFactor = mix(roughnessFactor, ${f(C.SHEET_ROUGH)}, kSheet);
       roughnessFactor = mix(mix(clamp(roughnessFactor + 0.10 * (kfbm(vKp * 6.0) - 0.5), 0.05, 1.0), 0.26, kRed), 0.76, kGlare);`;
     p.metal = `metalnessFactor = mix(metalnessFactor, ${f(C.SHEET_METAL)}, kSheet) * (1.0 - max(kRed, kGlare));`;
+    p.rough += SKIN_ROUGH; p.normal = SKIN_BUMP;
   } else if (kind === 'wing') {
     p.vertPars += 'attribute float le_dist; varying float vLe;'; p.vert += 'vLe = le_dist;';
     p.fragPars += lipFn(C) + 'varying float vLe;';
@@ -79,15 +123,17 @@ function paintParts(kind, C) {
       float kRed = max(kaa(-0.004, vLe) * (1.0 - kaa(0.020, vLe)) * kInb, klip(vKp));
       float kBlue = kaa(-0.070, vLe) * (1.0 - kaa(-0.004, vLe)) * kInb * (1.0 - kRed);
       diffuseColor.rgb *= 0.92 + 0.11 * kfbm(vKp * 2.6);
-      diffuseColor.rgb = mix(mix(diffuseColor.rgb, ${RED} * 0.8, kRed), ${BLUE}, kBlue);`;
+      diffuseColor.rgb = mix(mix(diffuseColor.rgb, ${RED} * 0.8, kRed), ${BLUE}, kBlue);` + SKIN.wing + SKIN_TONE;
     p.rough = 'roughnessFactor = mix(clamp(roughnessFactor + 0.10 * (kfbm(vKp * 6.0) - 0.5), 0.05, 1.0), 0.62, max(kRed, kBlue));';
     p.metal = 'metalnessFactor *= 1.0 - max(kRed, kBlue);';
+    p.rough += SKIN_ROUGH; p.normal = SKIN_BUMP;
   } else if (kind === 'bare') {                       // hand-beaten aluminium: dull oxidised blotches
     p.color = 'float kOx = smoothstep(0.42, 0.66, kfbm(vKp * 5.0)); diffuseColor.rgb *= mix(1.0, 0.70, kOx * 0.8);';
     p.rough = 'roughnessFactor = clamp(roughnessFactor + 0.22 * kOx + 0.10 * (kfbm(vKp * 14.0) - 0.5), 0.05, 1.0);';
   } else {
     p.color = CUT + 'diffuseColor.rgb *= 0.93 + 0.10 * kfbm(vKp * 2.6);';
     p.rough = 'roughnessFactor = clamp(roughnessFactor + 0.12 * (kfbm(vKp * 6.0) - 0.5), 0.05, 1.0);';
+    if (kind === 'fin') { p.color += SKIN.fin + SKIN_TONE; p.rough += SKIN_ROUGH; p.normal = SKIN_BUMP; }       // the fin and rudder: ribs across, spars up
   }
   return p;
 }
@@ -138,9 +184,10 @@ class JetModel {
     const ex = buildExhaust(jet.uHeat); this.model.add(ex); this.materials.push(...ex.userData.materials);
     this.tris = man.groups.reduce((s, g) => s + g.tris, 0);
     this._q = new THREE.Quaternion(); this._q2 = new THREE.Quaternion(); this._ax = new THREE.Vector3(1, 0, 0);
-    // the aircraft has a pass of its own (layer 1); the glass is drawn only there, so it is blended once
-    this.model.traverse((o) => { o.layers.enable(1); });
-    for (const g of this.glass) g.layers.set(1);
+    // The aircraft has a pass of its own (layer 1) and is drawn only there. Its shadow is cast by stand-ins, one for
+    // each group of parts that moves together, which are on the world's layer (merge.js says why).
+    shadowProxies(this.model, Object.values(this.parts).map((p) => p.pivot));
+    this.model.traverse((o) => { if (!o.isShadowProxy) o.layers.set(1); });
   }
 
   material(m, C) {
@@ -154,7 +201,8 @@ class JetModel {
       const p = { color: new THREE.Color().setRGB(m.color[0], m.color[1], m.color[2]), metalness: m.metal, roughness: m.rough, side: THREE.DoubleSide };
       mat = m.coat > 0 ? new THREE.MeshPhysicalMaterial({ ...p, clearcoat: m.coat, clearcoatRoughness: 0.05 }) : new THREE.MeshStandardMaterial(p);
       if (m.decal) { mat.polygonOffset = true; mat.polygonOffsetFactor = -2; mat.polygonOffsetUnits = -2; }
-      if (['fuselage', 'wing', 'silver', 'bare'].includes(m.kind)) patch(mat, 'jet-' + m.kind, paintParts(m.kind, C));
+      const kind = /PaintFin|Rudder/.test(m.name) ? 'fin' : m.kind;
+      if (['fuselage', 'wing', 'silver', 'bare'].includes(m.kind)) patch(mat, 'jet-' + kind, paintParts(kind, C));
       else if (m.name === 'Katy_hotsteel') {
         // the jet pipe's outer skin: stainless, straw then purple then blue towards the lip where it runs hottest
         patch(mat, 'jet-pipe', { vertPars: 'varying vec3 vKp;', vert: 'vKp = position;', fragPars: 'varying vec3 vKp;',
@@ -184,6 +232,23 @@ class JetModel {
             diffuseColor.rgb *= 1.0 - 0.16 * kIn * kvn( vec3( dA * 9.0, vKp.x * 3.0, 1.0 ) );` : '',
           rough: ramp ? 'roughnessFactor = clamp( roughnessFactor + 0.22 * kOx + 0.10 * ( kfbm( vKp * 14.0 ) - 0.5 ) - 0.12 * dRiv * kIn, 0.05, 1.0 );' : '',
           final: 'gl_FragColor.rgb *= mix( 1.0, 0.015, smoothstep( 1.49, 1.93, vKp.x ) * step( 0.30, abs( vKp.y ) ) * step( vKp.x, 2.06 ) * step( vKp.z, 1.30 ) );' });
+      } else if (m.name === 'Katy_rubber') {
+        // the tyres: tread ribs with grooves between them, a moulded ring and lettering on the sidewall, dust where they run.
+        // (other rubber parts are nowhere near a wheel centre and are left as they are)
+        patch(mat, 'jet-tyre', { vertPars: 'varying vec3 vKp;', vert: 'vKp = position;', fragPars: 'varying vec3 vKp;' + NOISE,
+          color: /* glsl */`
+            vec3 tD = vec3( vKp.x - 0.47, vKp.y, vKp.z - 0.13 ); float tR = 0.13;
+            if ( vKp.x > 1.7 ) { tD = vec3( vKp.x - 2.97, abs( vKp.y ) - 1.005, vKp.z - 0.20 ); tR = 0.20; }
+            float tr = length( tD.xz ) / tR, tOn = step( 0.5, tr ) * step( tr, 1.1 ) * step( abs( tD.y ), tR * 0.6 ), tM = kmid( vKp );
+            float tTread = smoothstep( 0.88, 0.94, tr ) * tOn, tSide = ( 1.0 - smoothstep( 0.88, 0.94, tr ) ) * tOn;
+            float tl = abs( tD.y ) / ( tR * 0.34 ), tAng = atan( tD.z, tD.x );
+            float tGroove = max( kline( tl - 0.26, 0.09 ), kline( tl - 0.74, 0.09 ) ) * tTread;
+            float tRing = kline( tr - 0.82, 0.012 ) * tSide;
+            float tLetter = step( 0.35, fract( tAng * 5.41 ) ) * step( fract( tAng * 5.41 ), 0.9 ) * step( 0.3, kh3( vec3( floor( tAng * 5.41 ), 1.0, 2.0 ) ) ) * kline( tr - 0.72, 0.035 ) * tSide;
+            float kH = ( - 0.0030 * tGroove + 0.0008 * tRing + 0.0006 * tLetter ) * tM;
+            diffuseColor.rgb *= 1.0 - 0.45 * tGroove * tM;
+            diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.20, 0.19, 0.18 ), tTread * ( 1.0 - tGroove ) * ( 0.25 + 0.35 * kvn( vec3( tAng * 9.0, tD.y * 90.0, 3.0 ) ) ) );`,
+          rough: 'roughnessFactor = clamp( roughnessFactor + 0.08 * tTread - 0.10 * tLetter, 0.2, 1.0 );', normal: SKIN_BUMP });
       } else if (/Lamp|RedGlass|GreenGlass|AmberGlass/.test(m.name)) {
         patch(mat, 'jet-lamp', { fragPars: 'uniform float uLamp;', emissive: 'totalEmissiveRadiance += diffuseColor.rgb * uLamp;' }, { uLamp: this.uLamp });
       } else patch(mat, 'jet-std', {});
@@ -235,7 +300,11 @@ export class Jet {
   // one pilot is built; each level of detail gets its own copy of him (same meshes)
   newPilot() {
     if (!this._pilot) { this._pilot = buildPilot(this.hands); return this._pilot; }
-    const c = this._pilot.clone(true); c.userData.head = c.getObjectByName('head'); c.userData.materials = this._pilot.userData.materials; return c;
+    // (a copy is made by writing the original's userData out as text and reading it back; with the head and the
+    // materials in there that means writing out every mesh and texture of the pilot, so they are taken out first)
+    const ud = this._pilot.userData; this._pilot.userData = {};
+    const c = this._pilot.clone(true); this._pilot.userData = ud;
+    c.userData.head = c.getObjectByName('head'); c.userData.materials = ud.materials; return c;
   }
   add(lod, man, buf) {
     const m = new JetModel(man, buf, lod, this);

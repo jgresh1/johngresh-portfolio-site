@@ -42,6 +42,7 @@ export class Roofs {
     const hidden = [];
     for (const o of this.scene.children) if (o.visible && o !== this.city.group && o !== this.terrain.group) { o.visible = false; hidden.push(o); }
     for (const s of this.city.sets) if (s.tiles && s.kind !== 'bldg' && s.tiles.group.visible) { s.tiles.group.visible = false; hidden.push(s.tiles.group); }
+    if (this.city.bridges?.visible) { this.city.bridges.visible = false; hidden.push(this.city.bridges); }       // the built-in city's bridges
     const prev = r.getRenderTarget(), sm = r.shadowMap.autoUpdate, cc = r.getClearColor(new THREE.Color()), ca = r.getClearAlpha(), ac = r.autoClear, bg = this.scene.background;
     r.shadowMap.autoUpdate = false; r.autoClear = true; this.scene.background = null; this.scene.overrideMaterial = this.mat;
     r.setRenderTarget(this.rt); r.setClearColor(0x000000, 1);

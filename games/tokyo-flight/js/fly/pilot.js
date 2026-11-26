@@ -13,6 +13,7 @@ import * as THREE from 'three';
 import { v3, clamp, lerp, smooth, DEG, curve, range, loft, tube, rod, ellipseLoop, squircleLoop } from './kit/geo.js';
 import * as TX from './kit/tex.js';
 import { loadHand, buildGripHand } from './kit/hands.js';
+import { shadowProxies, mergeByMaterial } from './merge.js';
 
 const P = (X, Y, Z) => v3(-X, Z, Y);                       // a point given in the aircraft's axes -> seat axes
 
@@ -187,5 +188,7 @@ export function buildPilot(hands) {
   }
   root.userData.head = head;
   root.userData.materials = Object.values(M);
+  // sixty parts, drawn as about twenty: one shadow caster for the head and one for the body, then one mesh per material in each
+  shadowProxies(root, [head]); mergeByMaterial(root, [head]);
   return root;
 }

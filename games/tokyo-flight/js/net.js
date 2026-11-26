@@ -13,6 +13,8 @@ export const HOME = 'https://tokyo.johngresh.org';                    // the sit
 // ?proxy=1 on this PC means "the cache route of whatever is serving this page" (wrangler dev); ?proxy=live means the published one
 const ROUTE = local && Q.get('proxy') !== 'live' ? location.origin : HOME;
 export const NET = { proxy: Q.has('direct') ? false : Q.has('proxy') ? true : !local, route: ROUTE, fails: 0, viaCache: 0, direct: 0 };
+// the built-in city's files (tools/city/bake.mjs): beside the page, or on the site that has them when this page is a copy elsewhere
+export const CITY = local || location.origin === HOME ? new URL('../data/city/', import.meta.url).href : HOME + '/data/city/';
 // links to the map page work from wherever this page is served
 export const EXPLORE = local || location.origin === HOME ? './explore.html' : HOME + '/explore.html';
 

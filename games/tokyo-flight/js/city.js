@@ -148,7 +148,7 @@ const plain = (windows) => ({
   emissive: /* glsl */`
     totalEmissiveRadiance += bLamp * bWinN * bOn * uNight * 1.5;`,
 });
-const PLAIN = { bldg: plain(true), brid: plain(false) };
+export const PLAIN = { bldg: plain(true), brid: plain(false) };
 
 // Surveyed trees and planting. Shapes and positions are real; the survey gives them either one tiled leaf
 // texture or no texture, so the colour is toned here to sit with the trees in the aerial photo.
@@ -297,6 +297,15 @@ export class City {
     this.onChange();
   }
 
+  // Tiles with no photo sheet all look alike, so each kind has one material between them. The renderer then sets it
+  // up once a frame instead of once a tile, which on a view of several hundred tiles is most of the processor's work.
+  // A tile that unloads must not take it with it.
+  plain(kind) {
+    const all = (this._plain ??= {});
+    if (!all[kind]) { all[kind] = patch(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0 }), 'bp-' + kind, PLAIN[kind] || PLAIN.brid); all[kind].dispose = () => {}; }
+    return all[kind];
+  }
+
   // runs once per tile, before it is first shown
   async prepare(scene, tile, set) {
     if (this.turn) await this.turn();
@@ -371,7 +380,7 @@ export class City {
       } else if (map) {
         o.material = patch(new THREE.MeshStandardMaterial({ map, roughness: 0.86, metalness: 0 }), 'bt', TEXTURED);
       } else {
-        o.material = patch(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0 }), 'bp-' + set.kind, PLAIN[set.kind] || PLAIN.brid);
+        o.material = this.plain(set.kind);
       }
       old.dispose();
       o.castShadow = this.castShadows; o.receiveShadow = true;

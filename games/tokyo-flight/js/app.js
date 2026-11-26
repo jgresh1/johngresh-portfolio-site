@@ -4,10 +4,11 @@ import * as THREE from 'three';
 import { ATMO, setTime, installCascades, SunShadows, makeSky, makeEnvironment } from './atmo.js';
 import { Terrain, GroundBake } from './terrain.js';
 import { City } from './city.js';
+import { BakedCity } from './baked.js';
 import { PLACES } from './places.js';
 import { worldToGeo, geoToWorld } from './geo.js';
-import { NET, EXPLORE } from './net.js';
-import { TIERS, graphicsDevice, pickTier, Governor } from './fly/perf.js';
+import { NET, EXPLORE, CITY } from './net.js';
+import { TIERS, ORDER, graphicsDevice, pickTier, Governor } from './fly/perf.js';
 import { loadJet, addLod, GEAR_H } from './fly/jet.js';
 import { Flight } from './fly/flight.js';
 import { Rig } from './fly/chase.js';
@@ -92,9 +93,15 @@ async function boot() {
   // new tiles are made ready a few per frame, so a burst of arrivals cannot stall a frame
   const turns = []; let perFrame = 6;
   const turn = () => new Promise((r) => turns.push(r));
-  const manifest = await (await fetch('./data/tilesets.json')).json();
-  const city = new City({ renderer, camera, manifest, kinds: tier.kinds, errorTarget: tier.err, errorFalloff: tier.fall, cacheGB: tier.gb, texCap: tier.tex, texNear: tier.near,
-    lite: tier.lite, reach: tier.reach, parseJobs: tier.parse, downloadJobs: tier.down, turn, shadows: tier.cascades.length > 0, aniso: tier.aniso, onChange: () => { shadows.invalidate(); roofs.changed = true; } });
+  // The city is the built-in one (baked.js): small files made for this game, on this site. The survey's own
+  // photo-textured tiles can still be streamed instead (?city=survey, or Photo buildings in the menu): hundreds of
+  // megabytes for a first view, so only for a strong machine on a fast line.
+  const survey = (Q.get('city') || store.get('city', 'built')) === 'survey';
+  const cityChanged = () => { shadows.invalidate(); roofs.changed = true; };
+  const city = survey
+    ? new City({ renderer, camera, manifest: await (await fetch('./data/tilesets.json')).json(), kinds: tier.kinds, errorTarget: tier.err, errorFalloff: tier.fall, cacheGB: tier.gb, texCap: tier.tex, texNear: tier.near,
+      lite: tier.lite, reach: tier.reach, parseJobs: tier.parse, downloadJobs: tier.down, turn, shadows: tier.cascades.length > 0, aniso: tier.aniso, onChange: cityChanged })
+    : new BakedCity({ renderer, camera, base: CITY, px: tier.px, reach: tier.far, shadows: tier.cascades.length > 0, jobs: Math.min(tier.down, 8), perFrame: () => perFrame, onChange: cityChanged });
   const v1 = new THREE.Vector3(), v2 = new THREE.Vector3();
   const groundY = (x, z) => terrain.heightAt(x, z);
   city.groundAt = (x, z) => ({ y: groundY(x, z), zoom: terrain.lastZoom });
@@ -126,14 +133,25 @@ async function boot() {
   const film = new Film({ hangar, jet, flight, rig, sound, world, camera, runway, ready: cityReady });
   film.setVariant(Q.get('start') === 'runway' ? 'runway' : 'air');
   let mode = 'title', paused = false, units = store.get('units', 'm'), lastEvent = 0, hintAt = 0, crashT = 0, clock = 0;
-  const gov = new Governor(tier, () => { resize(); city.errorTarget = tier.err * gov.detail; terrain.errPx = tier.terrPx * gov.detail; });
-  if (Q.has('nogov')) gov.enabled = false;
+  // what the governor has taken away, put into effect (perf.js)
+  const applyDetail = () => {
+    if (survey) { city.errorTarget = tier.err * gov.detail; city.reach = tier.reach * gov.reach; } else { city.detail = gov.detail; city.reach = tier.far * gov.reach; }
+    terrain.errPx = tier.terrPx * gov.detail;
+    shadows.setOn(gov.sun, gov.near);
+  };
+  const gov = new Governor(tier, tierName, () => { resize(); applyDetail(); });
+  if (Q.has('nogov')) { gov.enabled = false; gov.res = gov.geo = 0; gov.trail.length = 0; }
+  applyDetail();
+  const glc = renderer.getContext(), px1 = new Uint8Array(4);
+  const gpuDone = () => glc.readPixels(0, 0, 1, 1, glc.RGBA, glc.UNSIGNED_BYTE, px1);        // returns when the graphics card has caught up
 
   const size = new THREE.Vector2();
   const resize = () => {
     const w = view.clientWidth || innerWidth || 1280, h = view.clientHeight || innerHeight || 720;       // a hidden window reports 0 x 0
     const cap = Q.has('dpr') ? +Q.get('dpr') : Math.min(tier.dpr, Math.sqrt(tier.pixels / (w * h)));
-    renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio || 1, cap) * gov.scale));
+    // the hangar is a far lighter scene than the city, and its close-ups are where sharpness shows: it gives up less
+    const k = jet.root.parent === scene ? gov.scale : Math.sqrt(gov.scale);
+    renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio || 1, cap) * k));
     renderer.setSize(w, h, false);
     camera.aspect = w / h; hangar.camera.aspect = w / h; hangar.camera.updateProjectionMatrix();
   };
@@ -151,7 +169,7 @@ async function boot() {
     renderer.getSize(size);
     terrain.update(camera, size.y);
     city.eyeHeight = Math.max(alt, 240);                     // seen from the air nothing hides the far city, however low the aircraft is
-    city.update();
+    if (gov.every < 2 || drawN++ % gov.every === 0) city.update();
     bake.update(camera, gy);
     shadows.follow(jet.root.position); shadows.update(camera, gy);
     ATMO.uniforms.uTime.value = clock;
@@ -166,26 +184,31 @@ async function boot() {
       camera.layers.set(0); renderer.autoClear = true;
     }
   }
-  // While the hangar is on screen the city is loaded and drawn into a thumbnail now and then, so its tiles are
-  // already on the graphics card and its shaders built when the film cuts to it.
-  const warmRT = new THREE.WebGLRenderTarget(160, 90, { depthBuffer: true });
-  let warmN = 0;
+  // While the hangar is on screen the city is loaded, and now and then drawn into a corner of the picture that the
+  // hangar is then painted over. That puts its squares on the graphics card and builds its shaders before the film
+  // cuts to it. It has to be this canvas and not an off-screen picture: a shader built for one is not the shader
+  // used for the other, and the cut then stopped for a second to build them all again. Each new kind of surface is
+  // built off the main thread first (compileAsync), and the corner is only drawn once that has finished.
+  let warmN = 0, drawN = 0, warmBusy = false, warmFor = '', warmOK = false;
   function warm() {
     film.firstView(camera);
-    if (warmN++ % (tier === TIERS.phone ? 10 : 5)) { camera.near = 1.2; camera.far = 120000; camera.updateProjectionMatrix(); renderer.getSize(size); terrain.update(camera, size.y); city.eyeHeight = 240; city.update(); return; }
-    const pr = renderer.getPixelRatio();
-    renderer.setRenderTarget(warmRT);
+    const sig = `${terrain.stats.tiles > 0}|${city.group.children.length > 1}|${(city.bridges?.children.length || 0) > 0}|${scene.children.length}`;
+    if (sig !== warmFor && !warmBusy) {
+      warmBusy = true; warmFor = sig; camera.layers.set(0);
+      renderer.compileAsync(scene, camera).catch((e) => console.warn('precompile', e)).then(() => { warmBusy = false; warmOK = true; });
+    }
+    if (warmN++ % (tier === TIERS.phone ? 10 : 5) || !warmOK || warmBusy) { camera.near = 1.2; camera.far = 120000; camera.updateProjectionMatrix(); renderer.getSize(size); terrain.update(camera, size.y); city.eyeHeight = 240; city.update(); return; }
+    renderer.setViewport(0, 0, 160, 90); renderer.setScissor(0, 0, 160, 90); renderer.setScissorTest(true);
     drawWorld(0.3, 1);
-    renderer.setRenderTarget(null);
-    if (renderer.getPixelRatio() !== pr) renderer.setPixelRatio(pr);
+    renderer.getSize(size); renderer.setScissorTest(false); renderer.setViewport(0, 0, size.x, size.y);
   }
   function drawStage(expo) {
     jet.setEnv(hangar.refreshEnv(jet.root), 1);
     renderer.toneMappingExposure = expo;
     renderer.render(hangar.scene, hangar.camera);
   }
-  const toStage = () => { if (jet.root.parent !== hangar.scene) { hangar.scene.add(jet.root); jet.use(filmLod); jet.setEnv(hangar.refreshEnv(jet.root, true), 1); } };
-  const toWorld = () => { if (jet.root.parent !== scene) { scene.add(jet.root); jet.use(flyLod); jet.setEnv(envRT.texture, 1.15); } };
+  const toStage = () => { if (jet.root.parent !== hangar.scene) { hangar.scene.add(jet.root); jet.use(filmLod); jet.setEnv(hangar.refreshEnv(jet.root, true), 1); if (gov.scale < 1) resize(); } };
+  const toWorld = () => { if (jet.root.parent !== scene) { scene.add(jet.root); jet.use(flyLod); jet.setEnv(envRT.texture, 1.15); if (gov.scale < 1) resize(); } };
 
   /* ---------------------------------------------------------------- read-outs */
   const tape = $('tape'), PX = 3.6;
@@ -268,6 +291,7 @@ async function boot() {
   const setPaused = (on) => {
     if (mode !== 'fly') return;
     paused = on; menu.classList.toggle('on', on); sound.suspend(on);
+    if (on) gfxUI();
     if (on) { const g = worldToGeo(camera.position); $('mExplore').href = `${EXPLORE}#${g.lat.toFixed(5)},${g.lon.toFixed(5)},${Math.max(g.elev, 60).toFixed(0)},${flight.heading.toFixed(1)},20.0`; }
   };
   $('bMenu').onclick = () => setPaused(true); $('mResume').onclick = () => setPaused(false);
@@ -295,7 +319,21 @@ async function boot() {
   const musicUI = () => { $('mMusic').textContent = sound.musicOn ? 'Music on' : 'Music off'; };
   $('mMusic').onclick = () => { sound.setMusic(!sound.musicOn); musicUI(); }; musicUI();
   for (const [k, t] of Object.entries(TIERS)) { const b = document.createElement('button'); b.className = 'opt' + (k === tierName ? ' on' : ''); b.textContent = t.label; b.onclick = () => { if (k === tierName) return; store.set('tier', k); const u = new URL(location.href); u.searchParams.delete('q'); location.href = u.href; }; $('tiers').appendChild(b); }
-  $('gfx').textContent = `Drawing with: ${GFX.name}. Detail is also eased automatically if frames run slow.`;
+  // the survey's photo-textured buildings in place of the built-in city: a far larger download, kept as a choice
+  $('mCity').textContent = survey ? 'Buildings: survey photos (large download)' : 'Buildings: built-in city';
+  $('mCity').classList.toggle('on', survey);
+  $('mCity').onclick = () => { store.set('city', survey ? 'built' : 'survey'); const u = new URL(location.href); u.searchParams.delete('city'); location.href = u.href; };
+  const gfxUI = () => { $('gfx').textContent = `Drawing with: ${GFX.name}. ` + (gov.steps ? `Detail is eased ${gov.steps} of ${gov.most} steps to keep the frames coming; it comes back when there is room.` : 'Detail is eased automatically if frames run slow.') + (survey ? ' Survey photo buildings take minutes to arrive on a first visit.' : ''); };
+  gfxUI();
+  // Everything the governor can take away is gone and frames are still late: this level is too much for this
+  // device. Said once; next time the page starts one level lighter (a level picked in the menu is left alone).
+  let toldSlow = false;
+  const tooMuch = () => {
+    if (toldSlow) return; toldSlow = true;
+    const i = ORDER.indexOf(tierName); if (i <= 0) return;
+    const lighter = ORDER[i - 1]; store.set('easier', lighter);
+    hint(`Running slowly here. <b>Menu</b>, then <b>${TIERS[lighter].label}</b> under Detail, will be smoother.`, 12);
+  };
   $('keys').innerHTML = touch ? 'Left thumb: fly (it works wherever the thumb lands). Right lever: power. Turn and pull together for a tight turn. Drag anywhere else to look, pinch to move the camera in or out, double tap to look ahead again.'
     : '<kbd>A</kbd> <kbd>D</kbd> bank · <kbd>S</kbd> nose up · <kbd>W</kbd> nose down · <kbd>Q</kbd> <kbd>E</kbd> rudder · <kbd>R</kbd> <kbd>F</kbd> power · <kbd>Space</kbd> brakes · <kbd>C</kbd> view · <kbd>V</kbd> look ahead · drag to look, wheel to move the camera. A tap on a key is a small correction; holding it is the full stick. Turn and pull together for a tight turn. A gamepad works too.';
   $('mFilm').onclick = () => { setPaused(false); startFilm(film.variant); };
@@ -380,12 +418,14 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.1); last = now;
     const t0 = performance.now();
     step(dt, now);
-    if (mode === 'fly' && !paused) gov.frame(dt, performance.now() - t0);
+    // the governor watches the flying and the film's shots over the city, so it has settled before the stick is handed over
+    if ((mode === 'fly' && !paused) || (mode === 'film' && !film.state.stage)) { gov.frame(dt, performance.now() - t0, gpuDone); if (gov.exhausted) tooMuch(); }
   }
   // shaders for the aircraft under the city's lights, built now rather than at the cut
   scene.add(jet.root); jet.setEnv(envRT.texture, 1.15);
   try { await renderer.compileAsync(jet.root, camera, scene); } catch (e) { console.warn('precompile', e); }
   toStage();
+  try { await renderer.compileAsync(hangar.scene, hangar.camera); } catch (e) { console.warn('precompile', e); }       // the title's first frame does not stop to build shaders
   raf = requestAnimationFrame(frame);
 
   /* ---------------------------------------------------------------- console / test handle */

@@ -4,6 +4,8 @@
 //   fly-by   heard from a camera standing still: level by distance, pitch by how fast the aircraft closes or leaves
 //   film     hangar lamps, the door, with a hall's echo
 //   music    a slow ambient bed: four held chords on soft strings through a long hall (see `music`)
+//   weather  rain on the skin (a hiss that grows with the rain and the speed), hail (hard ticks), thunder (a crack
+//            and a long roll, later and duller the further off the stroke was)
 // None of this has been heard by its author (it was written without ears); levels were set by reasoning.
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 
@@ -38,6 +40,9 @@ export class Sound {
     this.whine = [1, 2.01, 3.03].map((m, i) => { const o = c.createOscillator(); o.type = i ? 'sine' : 'triangle'; o.frequency.value = 400 * m; const g = c.createGain(); g.gain.value = 0; o.connect(g).connect(this.eng); o.start(); return { o, g, m, k: [1, 0.42, 0.18][i] }; });
     this.wind = chain(noise(), 'bandpass', 500, 0.6, 0); this.wind.gn.connect(out);
     this.windLo = chain(noise(), 'lowpass', 160, 0.4, 0); this.windLo.gn.connect(out);
+    this.rainHi = chain(noise(), 'highpass', 3200, 0.4, 0); this.rainHi.gn.connect(out);
+    this.rainMid = chain(noise(), 'bandpass', 1400, 0.5, 0); this.rainMid.gn.connect(out);
+    this.hailAt = 0;
     // a hall: one and a half seconds of dying noise
     const ir = c.createBuffer(2, c.sampleRate * 1.6, c.sampleRate);
     for (let ch = 0; ch < 2; ch++) { const x = ir.getChannelData(ch); for (let i = 0; i < x.length; i++) x[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / x.length, 2.6); }
@@ -67,6 +72,41 @@ export class Sound {
     const v = clamp(speed / 140, 0, 1.2);
     set(this.wind.fl.frequency, 260 + 1500 * v); set(this.wind.gn.gain, (0.5 * v * v + 0.25 * buffet) * windK * gain);
     set(this.windLo.gn.gain, (0.35 * v * v + (ground ? 0.25 * Math.min(speed / 40, 1) : 0) + 0.4 * buffet) * windK * gain);
+  }
+
+  // what is falling on the aircraft: rain, snow, hail 0..1; speed m/s; in the cockpit it drums on the canopy
+  weather({ rain = 0, snow = 0, hail = 0, speed = 0, cockpit = false }) {
+    const c = this.ctx; if (!c || c.state !== 'running') return;
+    const t = c.currentTime, v = clamp(0.35 + speed / 110, 0.35, 1.5), k = cockpit ? 1.25 : 0.8;
+    this.rainHi.gn.gain.setTargetAtTime((0.11 * rain + 0.015 * snow) * v * k, t, 0.25);
+    this.rainMid.gn.gain.setTargetAtTime(0.10 * rain * rain * v * k, t, 0.25);
+    this.rainMid.fl.frequency.setTargetAtTime(cockpit ? 900 : 1500, t, 0.3);
+    // hailstones: single hard ticks, more of them the harder it hails
+    if (hail > 0.05 && t > this.hailAt) {
+      this.hailAt = t + (0.02 + Math.random() * 0.12) / hail;
+      const s = c.createBufferSource(); s.buffer = this.noiseBuf; const fl = c.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = 1800 + Math.random() * 2600; fl.Q.value = 3;
+      const g = c.createGain(); g.gain.setValueAtTime((0.10 + 0.12 * Math.random()) * k, t); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.035);
+      s.connect(fl).connect(g).connect(this.out); s.start(t, Math.random() * 1.9); s.stop(t + 0.05);
+    }
+  }
+
+  // a stroke `dist` metres off, heard now: close, a crack then the roll; far, only a long low rumble
+  thunder(dist = 3000) {
+    const c = this.ctx; if (!c || c.state !== 'running') return;
+    const t = c.currentTime, near = clamp(1 - dist / 4000, 0, 1), level = clamp(1.5 / (1 + (dist / 2500) ** 1.4), 0.05, 1.2), len = 3.5 + Math.min(dist / 2500, 5);
+    const roll = (f, q, g, dur, at) => {
+      const s = c.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true;
+      const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.setValueAtTime(f, t + at); fl.frequency.exponentialRampToValueAtTime(Math.max(f * 0.3, 40), t + at + dur); fl.Q.value = q;
+      const gn = c.createGain(); gn.gain.setValueAtTime(0.0001, t + at); gn.gain.exponentialRampToValueAtTime(g, t + at + 0.06 + 0.4 * (1 - near));
+      // the roll comes in waves as the sound of each part of the stroke arrives
+      for (let i = 1; i <= 4; i++) gn.gain.setTargetAtTime(g * (0.25 + 0.5 * Math.random()) * (1 - i / 5), t + at + (dur * i) / 5, dur / 14);
+      gn.gain.setTargetAtTime(0.0001, t + at + dur * 0.8, dur / 8);
+      s.connect(fl).connect(gn); gn.connect(this.out); const h = c.createGain(); h.gain.value = 0.5; gn.connect(h).connect(this.hall);
+      s.start(t + at, Math.random() * 1.9); s.stop(t + at + dur + 1.5);
+    };
+    roll(140 + 220 * near, 0.6, 0.9 * level, len, 0);
+    roll(70, 0.8, 0.8 * level, len * 1.3, 0.15);
+    if (near > 0.2) roll(2600, 0.5, 0.5 * level * near, 0.35, 0);        // the crack
   }
 
   // short one-off sounds. 'clunk' a lamp bank switching on, 'click' a switch, 'touch' tyres meeting the runway, 'crash'

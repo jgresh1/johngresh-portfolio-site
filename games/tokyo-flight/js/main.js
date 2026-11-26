@@ -68,6 +68,8 @@ async function boot() {
     w.style.display = 'block';
   }
   const sky = makeSky(); scene.add(sky);
+  // the map page has no weather: its sky keeps a scatter of fair-weather cloud, painted flat
+  ATMO.uniforms.uEnvSky.value = 1; ATMO.uniforms.uEnvCloud.value.set(0.2, 0, 0.3);
   // on the processor the three 4096 px shadow maps alone cost seconds a frame
   const shadows = new SunShadows(scene, GFX.software ? { sizes: [1024, 1024, 1024] } : {});
   const fill = new THREE.AmbientLight(0xffdcb4, 0); scene.add(fill);         // city glow after dark
@@ -213,6 +215,7 @@ async function boot() {
     bake.update(camera, gy);
     shadows.update(camera, gy);
     ATMO.uniforms.uTime.value = clock.elapsedTime;
+    ATMO.uniforms.uCamAlt.value = camera.position.y + (camera.position.x ** 2 + camera.position.z ** 2) * 7.848e-8;
     if (envDue && now > envDue) refreshEnv();
     renderer.render(scene, camera);
     frames++;

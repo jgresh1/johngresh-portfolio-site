@@ -28,7 +28,23 @@ export const ATMO = {
     tGroundB: { value: null }, uGroundB: { value: new THREE.Vector4(0, 0, 1, 0) },
     // the airfield ground map (fly/airfield.js): the texture, world xz -> its u and v, its size and origin in metres, the runway's length
     tField: { value: null }, uFieldA: { value: new THREE.Vector3() }, uFieldB: { value: new THREE.Vector3() }, uFieldL: { value: new THREE.Vector4(1, 1, 0, 0) }, uFieldOn: { value: 0 }, uFieldRun: { value: 0 },
+    // the clouds (clouds.js): this frame's picture of them (light sent and let through; where they start and end),
+    // one over the size of the screen in pixels, and whether there is a picture at all
+    tCloud: { value: null }, tCloudZ: { value: null }, uCloudInv: { value: new THREE.Vector2(1, 1) }, uCloudOn: { value: 0 },
+    // their shadow: the picture, its centre and one over its width, the layers' base and top heights, the light let through past its edge
+    tCloudSh: { value: null }, uCloudShA: { value: new THREE.Vector3() }, uCloudShB: { value: new THREE.Vector4(900, 1700, 3600, 4300) }, uShadeFar: { value: new THREE.Vector2(1, 1) }, uShadeOn: { value: 0 },
+    uCamAlt: { value: 0 },              // the camera's height above the sea (the scene is flat; the Earth under it is not)
+    uFog: { value: new THREE.Vector3(0, 120, 0) },      // fog and falling rain or snow: what a metre stops at the ground (1/m), the height it thins over
+    uGrey: { value: 0 },                // how closed the sky is over the camera, 0 clear .. 1 overcast
+    uEnvSky: { value: 0 },              // 1 while the sky is drawn for the reflection map (no screen picture of the clouds to read)
+    uEnvCloud: { value: new THREE.Vector3() },          // low, middle and high cover, for that map
+    uFlash: { value: 0 },               // lightning: everything lit for an instant
+    uWet: { value: 0 }, uSnow: { value: 0 },            // rain on the ground, snow lying
+    uSea: { value: 0.25 },              // how rough the wind makes the water, 0 calm .. 1 a gale
   },
+  // the clear-sky values for the hour (setTime); the weather greys and dims them into the uniforms (weather.js)
+  clear: { zen: new THREE.Color(), hor: new THREE.Color(), sun: new THREE.Color(), haze: 0.55e-4, light: 0 },
+  sunCut: 1,                            // how much of the sun the cloud over the camera lets through (weather.js)
 };
 const U = ATMO.uniforms;
 
@@ -77,6 +93,8 @@ export function setTime(hour, dayOfYear = ATMO.dayOfYear) {
   U.uSunCol.value.setRGB(...mix3(k0.sun, k1.sun));
   U.uHaze.value = 0.55e-4 * lerp(k0.haze, k1.haze, t);
   ATMO.sunLight = lerp(k0.light, k1.light, t);
+  ATMO.clear.zen.copy(U.uZenith.value); ATMO.clear.hor.copy(U.uHorizon.value); ATMO.clear.sun.copy(U.uSunCol.value);
+  ATMO.clear.haze = U.uHaze.value; ATMO.clear.light = ATMO.sunLight;
   ATMO.night = THREE.MathUtils.clamp((2 - el) / 9, 0, 1);       // lights come on from just before sunset to -7 deg
   U.uNight.value = ATMO.night;
 }
@@ -86,6 +104,11 @@ export const ATMO_GLSL = /* glsl */`
 uniform vec3 uSunDir, uSunCol, uZenith, uHorizon;
 uniform float uHaze, uHazeH, uNight, uTime, uBake, uPaint;
 uniform vec4 uRelief;
+uniform sampler2D tCloud, tCloudZ, tCloudSh;
+uniform vec2 uCloudInv, uShadeFar;
+uniform vec3 uCloudShA, uFog, uEnvCloud;
+uniform vec4 uCloudShB;
+uniform float uCloudOn, uShadeOn, uCamAlt, uGrey, uEnvSky, uFlash, uWet, uSnow, uSea;
 float apHash( vec2 p ) { p = fract( p * vec2( 0.1031, 0.1030 ) ); p += dot( p, p.yx + 33.33 ); return fract( ( p.x + p.y ) * p.x ); }
 float apHash3( vec3 p ) { p = fract( p * 0.1031 ); p += dot( p, p.zyx + 31.32 ); return fract( ( p.x + p.y ) * p.z ); }
 float apNoise( vec2 x ) {
@@ -102,22 +125,77 @@ vec3 apSky( vec3 d ) {
   float t = pow( 1.0 - h, 4.5 );
   vec3 col = mix( uZenith, uHorizon, t );
   float mu = max( dot( d, uSunDir ), 0.0 );
-  col += uSunCol * ( 0.07 * pow( mu, 8.0 ) + 0.45 * pow( mu, 64.0 ) ) * ( 0.35 + 0.65 * t );
+  col += uSunCol * ( 0.07 * pow( mu, 8.0 ) + 0.45 * pow( mu, 64.0 ) ) * ( 0.35 + 0.65 * t ) * ( 1.0 - uGrey );      // no glow round a sun that is behind cloud
   return col;
 }
-// aerial perspective: haze thins with height, takes the colour of the sky near the horizon in that direction
+// height above the sea of a point in the scene: the scene is a flat sheet touching the Earth at Tokyo Station,
+// and the Earth falls away under it by the distance squared over twice its radius
+float apAlt( vec3 wp ) { return wp.y + dot( wp.xz, wp.xz ) * 7.848e-8; }
+// how much light is lost in a layer of haze between the camera and a point dist away at height a1:
+// sig = what a metre stops at the ground, H = the height it thins over
+float apLayer( float sig, float H, float dist, float a1 ) {
+  float k = ( a1 - uCamAlt ) / H, e0 = exp( - max( uCamAlt, 0.0 ) / H ), e1 = exp( - max( a1, 0.0 ) / H );
+  return sig * dist * ( abs( k ) > 1e-3 ? ( e0 - e1 ) / k : e0 );
+}
+// The clouds between the camera and a point dist away. The clouds' picture says how much light they send and let
+// through along this line of sight in all, and where along it they start and end; the point takes the share that
+// lies in front of it. So a tower in front of a cloud is untouched, one inside it fades, the ground under it is veiled.
+vec3 apClouded( vec3 col, float dist ) {
+  if ( uCloudOn < 0.5 ) return col;
+  vec2 suv = gl_FragCoord.xy * uCloudInv;
+  vec4 c = texture2D( tCloud, suv ), z = texture2D( tCloudZ, suv );
+  if ( z.b < 0.003 ) return col;
+  float zA = z.r / z.b * 1000.0, zM = z.g / z.b * 1000.0;
+  if ( dist <= zA ) return col;
+  // The cloud is taken as even from where it starts. Its whole depth of dimming and the middle of what is seen of
+  // it give how fast it thickens: half way through a thin veil, one clear-sight length into a thick one.
+  float T = max( c.a, 1e-4 ), tauT = - log( T );
+  float g = ( 1.0 - ( 1.0 + tauT ) * T ) / max( 1.0 - T, 1e-4 );
+  float Tf = exp( - min( tauT, g * ( dist - zA ) / max( zM - zA, 1.0 ) ) );
+  return col * Tf + c.rgb * ( ( 1.0 - Tf ) / max( 1.0 - T, 1e-4 ) );
+}
+// aerial perspective: haze thins with height, takes the colour of the sky near the horizon in that direction;
+// fog and falling rain are a second, shallower layer; then the clouds
 vec3 apHazed( vec3 col, vec3 wp ) {
   vec3 ray = wp - cameraPosition;
   float dist = length( ray );
   ray /= max( dist, 1e-3 );
-  float k = ray.y * dist / uHazeH;
-  float tr = abs( k ) > 1e-3 ? ( 1.0 - exp( - k ) ) / k : 1.0;
-  float od = uHaze * exp( - max( cameraPosition.y, 0.0 ) / uHazeH ) * dist * tr;
+  col *= 1.0 + uFlash;
+  float a1 = apAlt( wp );
+  float od = apLayer( uHaze, uHazeH, dist, a1 ) + apLayer( uFog.x, uFog.y, dist, a1 );
   float f = 1.0 - exp( - od );
   vec3 air = apSky( normalize( vec3( ray.x, abs( ray.y ) * 0.3 + 0.02, ray.z ) ) );
-  return mix( col, air * 0.92, f );
+  return apClouded( mix( col, air * 0.92, f ), dist );
+}
+// how much of the sun reaches a point through the clouds above it
+float apCloudShade( vec3 wp ) {
+  if ( uShadeOn < 0.5 || uSunDir.y < 0.02 ) return 1.0;
+  float alt = apAlt( wp );
+  vec2 q = wp.xz - uSunDir.xz * ( max( alt, 0.0 ) / max( uSunDir.y, 0.06 ) );
+  vec2 uv = ( q - uCloudShA.xy ) * uCloudShA.z + 0.5;
+  vec2 s = texture2D( tCloudSh, uv ).rg;
+  s = mix( s, uShadeFar, smoothstep( 0.42, 0.5, max( abs( uv.x - 0.5 ), abs( uv.y - 0.5 ) ) ) );
+  // a point inside or above a layer is not under it
+  float lo = mix( s.r, 1.0, smoothstep( uCloudShB.x, uCloudShB.y, alt ) );
+  float mi = mix( s.g, 1.0, smoothstep( uCloudShB.z, uCloudShB.w, alt ) );
+  return lo * mi;
 }
 `;
+
+// Rain and snow on whatever stands outside. Wet: darker, and shiny where the water lies (level surfaces, most in the
+// low places). Snow: lies on what is level, not on walls. Goes in after a surface has set its own colour and roughness.
+export const WEATHERED = /* glsl */`
+    if ( uWet + uSnow > 0.001 ) {
+      float wUp = clamp( vWn.y, 0.0, 1.0 );
+      float wWet = uWet * ( 0.35 + 0.65 * wUp ) * WX_DRY;
+      diffuseColor.rgb *= 1.0 - 0.27 * wWet;
+      float wPud = smoothstep( 0.42, 0.74, apNoise( vWp.xz * 0.21 ) * 0.6 + apNoise( vWp.xz * 0.9 ) * 0.4 );
+      roughnessFactor = mix( roughnessFactor, mix( 0.40, 0.07, wPud * wUp ), wWet * 0.88 );
+      float wSn = uSnow * smoothstep( 0.5, 0.82, wUp ) * smoothstep( 0.15, 0.55, uSnow * 0.9 + apNoise( vWp.xz * 0.07 ) * 0.5 + apNoise( vWp.xz * 0.6 ) * 0.2 ) * WX_DRY;
+      diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.80, 0.83, 0.88 ) * ( 0.94 + 0.06 * apNoise( vWp.xz * 1.7 ) ), wSn * WX_SNOW );
+      roughnessFactor = mix( roughnessFactor, 0.86, wSn );
+    }`;
+const INDOORS = /^(jet-|hg-|pilot)/;         // the aircraft's own surfaces and the hangar's are not rained on
 
 /* ------------------------------------------------------------------ material patch */
 // Every material is a stock three material plus named pieces of GLSL. `parts` may hold:
@@ -133,14 +211,16 @@ export function patch(material, key, parts = {}, extraUniforms = {}) {
         vWn = normalize( mat3( modelMatrix ) * objectNormal );
         ${parts.vert || ''}`);
     let fs = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\nvarying vec3 vWp;\nvarying vec3 vWn;\n${ATMO_GLSL}\n${parts.fragPars || ''}`)
+      .replace('#include <common>', `#include <common>\n#define AP_PATCHED\nvarying vec3 vWp;\nvarying vec3 vWn;\n${ATMO_GLSL}\n${parts.fragPars || ''}`)
       .replace('#include <tonemapping_fragment>', `${parts.final || ''}
         if ( uBake < 0.5 ) gl_FragColor.rgb = apHazed( gl_FragColor.rgb, vWp );
         #include <tonemapping_fragment>`);
     const after = (chunk, code) => { if (code) fs = fs.replace(`#include <${chunk}>`, `#include <${chunk}>\n${code}`); };
     if (parts.map) fs = fs.replace('#include <map_fragment>', `${parts.map}\n${parts.color || ''}`);       // replaces the stock texture lookup
     else after('map_fragment', parts.color);
-    after('roughnessmap_fragment', parts.rough);
+    // the weather on it, unless it is indoors; `wet` and `snowed` are GLSL for how much of each this surface takes (the ground: none on water)
+    const weathered = INDOORS.test(key) ? '' : WEATHERED.replaceAll('WX_DRY', parts.wet || '1.0').replaceAll('WX_SNOW', parts.snowed || '1.0');
+    after('roughnessmap_fragment', (parts.rough || '') + weathered);
     after('normal_fragment_maps', parts.normal);
     after('emissivemap_fragment', parts.emissive);
     after('metalnessmap_fragment', parts.metal);
@@ -184,6 +264,9 @@ export function installCascades() {
 	getDirectionalLightInfo( directionalLight, directLight );
 	csmShadow = ( directLight.visible && receiveShadow ) ? csmShadow : 1.0;
 	directLight.color *= csmShadow;
+	#ifdef AP_PATCHED
+	directLight.color *= apCloudShade( vWp );
+	#endif
 	RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
 #endif`);
 }
@@ -346,26 +429,33 @@ export function makeSky() {
         vec3 col = apSky( d );
         float mu = dot( d, uSunDir );
         float day = 1.0 - uNight;
-        // high thin cloud and a scatter of fair-weather cumulus, lit from the sun side
-        if ( d.y > 0.012 ) {
-          vec2 q = d.xz * ( 9000.0 / d.y );
-          float ci = smoothstep( 0.52, 0.9, apFbm( q / vec2( 6200.0, 17000.0 ) + 4.0 ) ) * 0.30;
-          vec2 p = d.xz * ( 2600.0 / d.y ) + cameraPosition.xz * 0.6;
-          float n = apFbm( p / 2300.0 + 3.1 ), n2 = apFbm( ( p + uSunDir.xz * 260.0 ) / 2300.0 + 3.1 );
-          float cu = smoothstep( 0.60, 0.74, n );
-          float lit = clamp( 0.55 + ( n - n2 ) * 7.0, 0.0, 1.0 );
-          vec3 sunC = uSunCol * ( 1.15 * day + 0.1 ) + uHorizon * 0.25;
-          vec3 cuCol = mix( uZenith * 0.55 + uHorizon * 0.35, sunC, lit );
-          float fade = smoothstep( 0.012, 0.16, d.y );
-          col = mix( col, mix( uHorizon, sunC, 0.7 ), ci * fade );
-          col = mix( col, cuCol, cu * 0.92 * fade );
-        }
         // sun disc and stars
         col += uSunDisc * uSunCol * ( 60.0 * smoothstep( 0.99990, 0.99996, mu ) + 1.2 * pow( max( mu, 0.0 ), 1200.0 ) );
         vec3 sd = d * 420.0; vec3 cell = floor( sd );
         float st = step( 0.9965, apHash3( cell ) ) * smoothstep( 0.45, 0.0, length( fract( sd ) - 0.5 ) );
         col += vec3( 0.9, 0.95, 1.0 ) * st * 0.5 * smoothstep( 0.6, 1.0, uNight ) * smoothstep( 0.0, 0.25, d.y );
         col = mix( col, uHorizon * 0.5, smoothstep( 0.0, -0.25, d.y ) );
+        if ( uEnvSky > 0.5 ) {
+          // The reflection map has no picture of the clouds to read, so they are painted on it flat: enough for the
+          // light they send down and for what polished metal mirrors.
+          if ( d.y > 0.012 ) {
+            vec3 sunC = uSunCol * ( 1.0 * day * ( 1.0 - uGrey ) + 0.08 ) + uHorizon * 0.45;
+            vec3 base = uZenith * 0.5 + uHorizon * 0.42;
+            float fade = smoothstep( 0.012, 0.16, d.y );
+            vec2 q = d.xz * ( 9000.0 / d.y );
+            float ci = smoothstep( 1.0 - 0.6 * uEnvCloud.z, 1.25 - 0.6 * uEnvCloud.z, apFbm( q / vec2( 6200.0, 17000.0 ) + 4.0 ) + 0.25 ) * 0.5;
+            col = mix( col, mix( uHorizon, sunC, 0.7 ), ci * fade );
+            float cov = max( uEnvCloud.x, uEnvCloud.y * 0.8 );
+            vec2 p = d.xz * ( 2000.0 / d.y );
+            float n = apFbm( p / 2300.0 + 3.1 ), n2 = apFbm( ( p + uSunDir.xz * 260.0 ) / 2300.0 + 3.1 );
+            float cu = smoothstep( 0.92 - 0.72 * cov, 1.06 - 0.72 * cov, n + 0.18 );
+            float lit = clamp( 0.55 + ( n - n2 ) * 7.0, 0.0, 1.0 ) * ( 1.0 - 0.8 * uGrey );
+            col = mix( col, mix( base, sunC, lit ), cu * 0.94 * fade );
+          }
+        } else if ( uCloudOn > 0.5 ) {
+          vec4 c = texture2D( tCloud, gl_FragCoord.xy * uCloudInv );
+          col = col * c.a + c.rgb;
+        }
         gl_FragColor = vec4( col, 1.0 );
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -385,6 +475,7 @@ export function makeEnvironment(renderer, sky, prev) {
   const s2 = new THREE.Mesh(sky.geometry, sky.material.clone());
   for (const k in U) s2.material.uniforms[k] = U[k];
   s2.material.uniforms.uSunDisc = { value: 0 };
+  s2.material.uniforms.uEnvSky = { value: 1 }; s2.material.uniforms.uCloudOn = { value: 0 };
   s2.material.toneMapped = false;
   s2.scale.setScalar(900); s2.frustumCulled = false;
   sc.add(s2);

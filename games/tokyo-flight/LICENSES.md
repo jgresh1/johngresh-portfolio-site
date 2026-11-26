@@ -10,6 +10,8 @@ Nothing below is bundled except the two libraries. The data is fetched from its 
 | Seamless aerial photo tiles | Geospatial Information Authority of Japan (GSI). https://maps.gsi.go.jp/development/ichiran.html | GSI content terms of use: free with the source stated. At small scales the layer includes Landsat 8 imagery (GSI, TSIC, GEO Grid / AIST; courtesy of the U.S. Geological Survey) and GEBCO bathymetry | Ground photo and elevation: GSI Japan |
 | Elevation tiles (10 m model, 5 m laser survey) | GSI, same page | Same | Same |
 | Names and positions of shops and other places (`data/pois/`, used for the signs) | OpenStreetMap contributors, fetched through the Overpass API by `tools/build_pois.py` | Open Database Licence (ODbL) 1.0: credit required, and a database made from it must stay under ODbL | Place names: © OpenStreetMap contributors |
+| Live weather: cloud, rain, snow, wind, visibility, temperature on a grid of points | Open-Meteo (https://open-meteo.com/), from the Japan Meteorological Agency's models | CC BY 4.0; free for non-commercial use without a key, up to 10,000 calls a day | Weather: Open-Meteo (CC BY 4.0) |
+| Live weather: airport reports (METAR) | NOAA Aviation Weather Center (https://aviationweather.gov/) | U.S. government work, public domain | NOAA Aviation Weather Center |
 
 The signs show real business names as plain text. They do not reproduce logos, lettering or colours of any
 business, and their placement on the building is generated.

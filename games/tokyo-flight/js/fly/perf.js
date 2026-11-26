@@ -9,13 +9,13 @@
 // a 1000-pixel screen) and how far out the skyline is kept. `err`, `fall`, `gb`, `tex`, `near`, `lite`, `reach` are for
 // the survey's streamed tiles, which are now an option (city.js).
 export const TIERS = {
-  phone: { label: 'Lightest', dpr: 2, pixels: 1.25e6, aa: false, err: 38, fall: 36, gb: 0.30, tex: 512, near: 512, lite: true, px: 11, far: 9000, reach: 5200, kinds: ['bldg', 'brid'],
+  phone: { drops: 1800, label: 'Lightest', dpr: 2, pixels: 1.25e6, aa: false, err: 38, fall: 36, gb: 0.30, tex: 512, near: 512, lite: true, px: 11, far: 9000, reach: 5200, kinds: ['bldg', 'brid'],
     terrPx: 2.4, maxZ: 16, aniso: 2, cascades: [], csize: [], jetShadow: 1024, jet: 'lo', jetFilm: 'hi', bake: [2048, 1024], parse: 2, down: 8, terrActive: 8, tilesPerFrame: 1, slowMs: 24 },
-  low: { label: 'Low', dpr: 1, pixels: 1.6e6, aa: true, err: 30, fall: 28, gb: 0.6, tex: 1024, near: 1024, lite: true, px: 8, far: 12000, reach: 7000, kinds: ['bldg', 'brid'],
+  low: { drops: 3000, label: 'Low', dpr: 1, pixels: 1.6e6, aa: true, err: 30, fall: 28, gb: 0.6, tex: 1024, near: 1024, lite: true, px: 8, far: 12000, reach: 7000, kinds: ['bldg', 'brid'],
     terrPx: 1.9, maxZ: 17, aniso: 4, cascades: [600], csize: [2048], jetShadow: 1024, jet: 'lo', jetFilm: 'hi', bake: [2048, 1024], parse: 3, down: 10, terrActive: 10, tilesPerFrame: 1, slowMs: 22 },
-  mid: { label: 'Medium', dpr: 1.25, pixels: 2.6e6, aa: true, err: 22, fall: 16, gb: 1.6, tex: 1024, near: 2048, lite: false, px: 5.5, far: 17000, reach: 10000, kinds: ['bldg', 'brid'],
+  mid: { drops: 5500, label: 'Medium', dpr: 1.25, pixels: 2.6e6, aa: true, err: 22, fall: 16, gb: 1.6, tex: 1024, near: 2048, lite: false, px: 5.5, far: 17000, reach: 10000, kinds: ['bldg', 'brid'],
     terrPx: 1.4, maxZ: 18, aniso: 8, cascades: [420, 2400], csize: [2048, 2048], jetShadow: 2048, jet: 'hi', bake: [4096, 2048], parse: 4, down: 14, terrActive: 14, tilesPerFrame: 1, slowMs: 21 },
-  high: { label: 'High', dpr: 2, pixels: 6e6, aa: true, err: 16, fall: 9, gb: 4.0, tex: 2048, near: 2048, lite: false, px: 4, far: 26000, reach: 16000, kinds: ['bldg', 'brid'],
+  high: { drops: 9000, label: 'High', dpr: 2, pixels: 6e6, aa: true, err: 16, fall: 9, gb: 4.0, tex: 2048, near: 2048, lite: false, px: 4, far: 26000, reach: 16000, kinds: ['bldg', 'brid'],
     terrPx: 1.05, maxZ: 18, aniso: 8, cascades: [320, 1300, 5200], csize: [4096, 4096, 4096], jetShadow: 2048, jet: 'hi', bake: [4096, 2048], parse: 6, down: 18, terrActive: 14, tilesPerFrame: 2, slowMs: 20 },
 };
 export const ORDER = ['phone', 'low', 'mid', 'high'];

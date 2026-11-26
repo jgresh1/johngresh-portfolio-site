@@ -72,6 +72,9 @@
   #tape b { position: absolute; top: -3px; transform: translateX(-50%); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; }
   #compass::after { content: ""; position: absolute; left: 50%; top: 24px; margin-left: -4px; border: 4px solid transparent; border-bottom: 7px solid var(--hot); border-top: 0; }
   #where { position: absolute; top: calc(52px + var(--st)); left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.86); font-size: 12px; letter-spacing: 0.05em; white-space: nowrap; }
+  #wx { position: absolute; top: calc(71px + var(--st)); left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.72); font-size: 11px; letter-spacing: 0.04em; white-space: nowrap; max-width: 94vw; overflow: hidden; text-overflow: ellipsis; }
+  #wx b { font-weight: 600; color: var(--hot); letter-spacing: 0.14em; font-size: 9.5px; margin-right: 6px; }
+  body.touch #wx { font-size: 10px; }
   #alert { position: absolute; top: 31%; left: 50%; transform: translateX(-50%); color: var(--bad); font-weight: 700; letter-spacing: 0.3em; font-size: clamp(14px, 2vw, 20px); opacity: 0; transition: opacity 0.12s; }
   #alert.on { opacity: 1; }
   #hint { position: absolute; left: 50%; bottom: calc(86px + var(--sb)); transform: translateX(-50%); padding: 8px 16px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); color: #dfe5e8; font-size: 12.5px;
@@ -114,7 +117,7 @@
   .opt:hover { background: rgba(255, 255, 255, 0.12); } .opt:active { transform: scale(0.95); transition-duration: 0.05s; }
   .opt.on { background: rgba(255, 179, 92, 0.2); border-color: rgba(255, 179, 92, 0.7); color: #ffd9a8; }
   .opt.main { background: var(--hot); color: #17130c; border-color: var(--hot); font-weight: 600; letter-spacing: 0.1em; padding: 10px 22px; }
-  #places { max-height: 148px; overflow-y: auto; } #hour { flex: 1; min-width: 150px; accent-color: var(--hot); } #hourOut { width: 46px; font-variant-numeric: tabular-nums; }
+  #places { max-height: 148px; overflow-y: auto; } #wxOpts { max-height: 132px; overflow-y: auto; } #hour { flex: 1; min-width: 150px; accent-color: var(--hot); } #hourOut { width: 46px; font-variant-numeric: tabular-nums; }
   #card p { margin: 6px 0 0; color: var(--dim); font-size: 12px; } #card a { color: var(--hot); } #card kbd { font: inherit; color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
 
   #warn { position: absolute; display: none; cursor: pointer; pointer-events: auto; left: 50%; top: 14px; transform: translateX(-50%); width: min(520px, calc(100% - 32px)); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255, 138, 106, 0.6); background: rgba(60, 20, 12, 0.9); font-size: 13px; z-index: 5; }
@@ -147,6 +150,7 @@
   <div id="hud" class="layer">
     <div id="compass"><div id="tape"></div></div>
     <div id="where"></div>
+    <div id="wx"></div>
     <div id="alert">STALL</div>
     <div id="gSpd" class="gauge"><label>SPEED</label><b><span id="spd">0</span><small id="spdU">km/h</small></b><div id="pwr"><i></i><u></u></div><span id="pwrT">Power 60%</span></div>
     <div id="gAlt" class="gauge"><label>HEIGHT</label><b><span id="alt">0</span><small id="altU">m</small></b><span id="vs">level</span></div>
@@ -174,7 +178,10 @@
       <div class="row" id="places"></div>
       <h3>TIME OF DAY</h3>
       <div class="row"><output id="hourOut">09:00</output><input id="hour" type="range" min="4.5" max="22" step="0.05" value="9" aria-label="Time of day">
-        <button class="opt" data-h="5.4">Dawn</button><button class="opt" data-h="12.75">Noon</button><button class="opt" data-h="17.8">Dusk</button><button class="opt" data-h="20.5">Night</button></div>
+        <button class="opt" data-h="5.4">Dawn</button><button class="opt" data-h="12.75">Noon</button><button class="opt" data-h="17.8">Dusk</button><button class="opt" data-h="20.5">Night</button><button class="opt" id="hNow">Now in Tokyo</button></div>
+      <h3>WEATHER</h3>
+      <div class="row" id="wxOpts"></div>
+      <p id="wxSrc"></p>
       <h3>HOW IT FLIES</h3>
       <div class="row" id="assist"><button class="opt" data-a="easy">Easy: it holds the turn and the climb</button><button class="opt" data-a="real">Real: stick and rudder</button></div>
       <h3>CONTROLS</h3>
@@ -191,7 +198,7 @@
 
   <div id="fade" class="layer"></div>
   <div id="warn"></div>
-  <div id="credit">Buildings: <a href="https://www.mlit.go.jp/plateau/" target="_blank" rel="noopener">Project PLATEAU</a>, MLIT Japan (CC BY 4.0) · Ground photo and elevation: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">GSI Japan</a> · Runway and airfield layout: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
+  <div id="credit">Buildings: <a href="https://www.mlit.go.jp/plateau/" target="_blank" rel="noopener">Project PLATEAU</a>, MLIT Japan (CC BY 4.0) · Ground photo and elevation: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">GSI Japan</a> · Runway and airfield layout: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0), <a href="https://aviationweather.gov/" target="_blank" rel="noopener">NOAA Aviation Weather Center</a></div>
   <div id="fail"></div>
 </div>
 <script type="module" src="./js/app.js"></script>

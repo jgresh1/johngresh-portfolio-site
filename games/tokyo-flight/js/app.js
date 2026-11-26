@@ -3,6 +3,9 @@
 import * as THREE from 'three';
 import { ATMO, setTime, installCascades, SunShadows, makeSky, makeEnvironment } from './atmo.js';
 import { Terrain, GroundBake } from './terrain.js';
+import { Clouds } from './clouds.js';
+import { Weather, CONDITIONS, MENU, tokyoNow } from './weather.js';
+import { Precip, Bolt } from './precip.js';
 import { City } from './city.js';
 import { BakedCity } from './baked.js';
 import { PLACES } from './places.js';
@@ -72,14 +75,26 @@ async function boot() {
   const bounce = new THREE.HemisphereLight(0xece9e2, 0xa89f90, 1); scene.add(bounce);
   for (const l of [...shadows.all, fill, bounce]) l.layers.enable(1);
   let envRT = null, envDue = 0, exposure = 1;
+  // the sky's own light on the ground and how far the picture is opened up: both follow the weather (a closed sky
+  // still lights the ground, evenly; a storm is dark)
+  const applyLight = () => {
+    fill.intensity = 0.17 * ATMO.night;
+    bounce.intensity = 1.35 * (0.25 + 0.75 * ATMO.sunLight) * (1 - 0.8 * ATMO.night) * weather.ambient;
+    exposure = (1.0 + 0.45 * ATMO.night) * weather.exposure;
+  };
   const applyTime = () => {
     shadows.sync();
-    fill.intensity = 0.17 * ATMO.night;
-    bounce.intensity = 1.35 * (0.25 + 0.75 * ATMO.sunLight) * (1 - 0.8 * ATMO.night);
-    exposure = 1.0 + 0.45 * ATMO.night;
+    applyLight();
     jet.uLamp.value = 0.5 + 1.2 * ATMO.night;
     envDue = performance.now() + 120;
   };
+  // The weather: live from the open services unless a condition was picked in the menu (weather.js). The clouds are
+  // drawn from it (clouds.js); when the sky closes or opens, the light and the reflection map follow.
+  const clouds = new Clouds(renderer, tierName);
+  // (the reflection map is redone at most every second and a half however fast the sky is changing)
+  const weather = new Weather(clouds, { changed: () => { applyLight(); if (!envDue) envDue = performance.now() + 1500; }, report: () => wxUI() });
+  let wxUI = () => {};
+  { const w = Q.get('wx') || store.get('wx', 'live'); weather.choose(w === 'live' || CONDITIONS[w] ? w : 'live', true); }
   const refreshEnv = () => { envRT = makeEnvironment(renderer, sky, envRT); scene.environment = envRT.texture; envDue = 0; if (jet.root.parent === scene) jet.setEnv(envRT.texture, 1.15); };
 
   const terrain = new Terrain(renderer);
@@ -123,6 +138,12 @@ async function boot() {
   const flight = new Flight(world);
   flight.assist = store.get('assist', 'easy') === 'real' ? 'real' : 'easy';
   const rig = new Rig(camera, flight, jet, world);
+  // what falls, and lightning (precip.js). The weather's wind and rough air go to the flight model each frame.
+  const precip = new Precip(scene, tier.drops);
+  const bolt = new Bolt(scene);
+  weather.onStrike = (F) => { if (F.ground) { const g = world.ground(F.pos.x, F.pos.z).y; bolt.strike(F.pos.x, g + Math.max(weather.now.lowBase, 300), F.pos.z, g); } else bolt.geo.instanceCount = 0; };
+  weather.onThunder = (d) => sound.thunder(d);
+  const camPrev = new THREE.Vector3(), camVel = new THREE.Vector3(); let camHad = false;
   const input = new Input(cv, $('touch'), { touch });
   input.invert = store.get('invert', '0') === '1';
   input.response = ['gentle', 'normal', 'sharp'].includes(store.get('response', 'normal')) ? store.get('response', 'normal') : 'normal';
@@ -154,6 +175,7 @@ async function boot() {
     const k = jet.root.parent === scene ? gov.scale : Math.sqrt(gov.scale);
     renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio || 1, cap) * k));
     renderer.setSize(w, h, false);
+    renderer.getDrawingBufferSize(size); clouds.setSize(size.x, size.y);
     camera.aspect = w / h; hangar.camera.aspect = w / h; hangar.camera.updateProjectionMatrix();
   };
   new ResizeObserver(resize).observe(view); resize();
@@ -175,6 +197,9 @@ async function boot() {
     shadows.follow(jet.root.position); shadows.update(camera, gy);
     ATMO.uniforms.uTime.value = clock;
     if (envDue && performance.now() > envDue) refreshEnv();
+    // the clouds for this view, before anything that sits in them is drawn
+    camAlt = cp.y + (cp.x * cp.x + cp.z * cp.z) * 7.848e-8; ATMO.uniforms.uCamAlt.value = camAlt;
+    clouds.render(camera, camAlt, upAt.set(cp.x, cp.y + 6371000, cp.z).normalize());
     renderer.toneMappingExposure = expo;
     camera.layers.set(0);
     renderer.render(scene, camera);
@@ -192,6 +217,7 @@ async function boot() {
   // built off the main thread first (compileAsync), and the corner is only drawn once that has finished.
   // The corner costs a whole draw of the city, so it is drawn only while new ground or buildings are arriving
   // (every few frames), then four more times half a second apart for the shadows and roof colours to settle.
+  let camAlt = 0; const upAt = new THREE.Vector3(0, 1, 0);
   let warmN = 0, drawN = 0, warmBusy = false, warmFor = '', warmOK = false, warmSeen = '', warmNew = false, warmTail = 0, warmAt = 0, warmTiles = 0;
   function warm() {
     film.firstView(camera);
@@ -211,7 +237,17 @@ async function boot() {
     city.hold = true; drawWorld(0.3, 1); city.hold = false; warmTiles = city.stats.tiles;      // squares go to the graphics card a dozen at a draw, not in one heap after a wait
     renderer.getSize(size); renderer.setScissorTest(false); renderer.setViewport(0, 0, size.x, size.y);
   }
+  // the drops go with the wind and fall; the camera's own speed (found from where it was last frame) is taken off
+  function falling(dt, near) {
+    const cp = camera.position, far = camPrev.distanceTo(cp) >= 300;
+    if (camHad && dt > 0 && !far) camVel.copy(cp).sub(camPrev).multiplyScalar(1 / dt); else if (!camHad || far) camVel.set(0, 0, 0);
+    camPrev.copy(cp); camHad = true;
+    precip.update(dt, camera, camVel, weather, groundY(cp.x, cp.z), near, clock);
+    renderer.getDrawingBufferSize(size); bolt.set(weather.flash.amp, size.x, size.y);
+    sound.weather({ rain: precip.level.rain, snow: precip.level.snow, hail: precip.level.hail, speed: camVel.length(), gust: weather.now.gust, cockpit: rig.mode === 'cockpit' });
+  }
   function drawStage(expo) {
+    ATMO.uniforms.uCloudOn.value = 0; ATMO.uniforms.uShadeOn.value = 0;        // no weather indoors
     jet.setEnv(hangar.refreshEnv(jet.root), 1);
     renderer.toneMappingExposure = expo;
     renderer.render(hangar.scene, hangar.camera);
@@ -225,6 +261,7 @@ async function boot() {
     const i = document.createElement('i'); i.style.left = d * PX + 'px'; if (d % 30 === 0) i.className = 'big'; tape.appendChild(i);
     if (d % 30 === 0) { const b = document.createElement('b'); const a = ((d % 360) + 360) % 360; b.textContent = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' }[a] ?? String(a / 10).padStart(2, '0'); b.style.left = d * PX + 'px'; tape.appendChild(b); }
   }
+  const wxEl = $('wx'); let wxAt = 0;
   const el = { spd: $('spd'), alt: $('alt'), vs: $('vs'), pwr: $('pwr').firstChild, got: $('pwr').lastChild, ctl: $('ctl').firstChild, pwrT: $('pwrT'), where: $('where'), alert: $('alert'), hint: $('hint'), spdU: $('spdU'), altU: $('altU') };
   let hudAt = 0;
   const hint = (html, secs = 6) => { el.hint.innerHTML = html; el.hint.classList.add('on'); hintAt = performance.now() + secs * 1000; };
@@ -245,6 +282,7 @@ async function boot() {
     let best = null, bd = 1e12;
     for (const p of PLACES) { if (p.id === 'all') continue; p.w ??= geoToWorld(p.lat, p.lon, 0); const d = Math.hypot(p.w.x - flight.pos.x, p.w.z - flight.pos.z); if (d < bd) { bd = d; best = p; } }
     el.where.textContent = best ? `${best.name} · ${bd < 950 ? Math.round(bd / 10) * 10 + ' m' : (bd / 1000).toFixed(1) + ' km'}` : '';
+    if (now - wxAt > 1500) { wxAt = now; wxEl.innerHTML = (weather.mode === 'live' ? '<b>LIVE</b>' : '') + weather.line(units); }
     const stall = flight.stall > 0.3 && !flight.onGround, low = !flight.onGround && over < 45 && vs < -4;
     el.alert.textContent = stall ? 'STALL' : 'PULL UP'; el.alert.classList.toggle('on', stall || low);
   }
@@ -300,7 +338,7 @@ async function boot() {
   const setPaused = (on) => {
     if (mode !== 'fly') return;
     paused = on; menu.classList.toggle('on', on); sound.suspend(on);
-    if (on) gfxUI();
+    if (on) { gfxUI(); wxUI(); }
     if (on) { const g = worldToGeo(camera.position); $('mExplore').href = `${EXPLORE}#${g.lat.toFixed(5)},${g.lon.toFixed(5)},${Math.max(g.elev, 60).toFixed(0)},${flight.heading.toFixed(1)},20.0`; }
   };
   $('bMenu').onclick = () => setPaused(true); $('mResume').onclick = () => setPaused(false);
@@ -313,6 +351,12 @@ async function boot() {
   const setHour = (h) => { setTime(h); applyTime(); showHour(); store.set('hour', h); };
   hour.addEventListener('input', () => setHour(+hour.value));
   menu.querySelectorAll('[data-h]').forEach((b) => { b.onclick = () => setHour(+b.dataset.h); });
+  // Tokyo's own time now, with the sun where it is on today's date
+  $('hNow').onclick = () => { const t = tokyoNow(); setTime(t.hour, t.day); applyTime(); showHour(); store.set('hour', t.hour); };
+  // weather: live, or any one condition
+  { const add = (k, name) => { const b = document.createElement('button'); b.className = 'opt'; b.dataset.w = k; b.textContent = name; b.onclick = () => { weather.choose(k); store.set('wx', k); wxUI(); wxAt = 0; }; $('wxOpts').appendChild(b); };
+    add('live', 'Live: as it is there now'); for (const k of MENU) add(k, CONDITIONS[k].name); }
+  wxUI = () => { mark($('wxOpts'), (b) => b.dataset.w === (weather.mode === 'live' ? 'live' : weather.key)); $('wxSrc').textContent = (weather.mode === 'live' ? weather.line(units) + '. ' : '') + weather.source(); };
   const assistUI = () => mark($('assist'), (b) => b.dataset.a === flight.assist);
   $('assist').querySelectorAll('.opt').forEach((b) => { b.onclick = () => { flight.assist = b.dataset.a; flight.gammaT = flight.pitch; store.set('assist', flight.assist); assistUI(); }; });
   const respUI = () => mark($('resp'), (b) => b.dataset.r === input.response);
@@ -383,6 +427,8 @@ async function boot() {
   let raf = 0, last = performance.now(), frames = 0, fpsAt = last, fps = 0;
   function step(dt, now) {
     clock += dt;
+    { const cp = camera.position; weather.update(paused ? 0 : dt, camera, cp.y + (cp.x * cp.x + cp.z * cp.z) * 7.848e-8, mode === 'fly' ? flight.pos : cp); }
+    flight.wind.copy(weather.wind); flight.rough = weather.bump;
     for (let i = 0; i < perFrame && turns.length; i++) turns.shift()();
     input.update(dt);
     if (mode === 'title') {
@@ -397,7 +443,7 @@ async function boot() {
       const s = film.update(dt);
       setBars(s.bars); setHud(s.hud);
       if (s.stage) { toStage(); warm(); drawStage(s.exposure); }
-      else { toWorld(); drawWorld(s.near ?? 0.3, exposure * s.exposure); hud(now); }
+      else { toWorld(); falling(dt, 0.7); drawWorld(s.near ?? 0.3, exposure * s.exposure); hud(now); }
       if (s.done) beginFlight();
     } else {
       if (!paused) {
@@ -417,6 +463,7 @@ async function boot() {
         rig._d0 = d;
         sound.music(0.3, 0.5);                        // the bed stays on under the flying, well back
       }
+      falling(paused ? 0 : dt, rig.mode === 'cockpit' ? 1.5 : 0.7);
       drawWorld(rig.near, exposure); hud(now);
     }
     frames++;
@@ -439,7 +486,7 @@ async function boot() {
 
   /* ---------------------------------------------------------------- console / test handle */
   window.__fly = {
-    THREE, renderer, scene, camera, hangar, jet, flight, rig, input, film, sound, terrain, city, roofs, shadows, gov, tier, tierName, GFX, NET, ATMO, FILM, RAIL, world, setHour, place, PLACES,
+    THREE, renderer, scene, camera, hangar, jet, flight, rig, input, film, sound, terrain, city, roofs, shadows, gov, tier, tierName, GFX, NET, ATMO, FILM, RAIL, world, setHour, place, PLACES, weather, clouds, precip, bolt,
     get mode() { return mode; }, get fps() { return fps; },
     runway, toRunway, start: startFilm,
     begin(variant = film.variant) { if (mode !== 'fly') { film.setVariant(variant); $('title').style.display = 'none'; film.at(film.end, 0); beginFlight(); } },
@@ -462,6 +509,15 @@ async function boot() {
       renderer.getSize(size); terrain.update(camera, size.y); city.update(); city.pushQueues(); for (let i = 0; i < 8 && turns.length; i++) turns.shift()();
       drawWorld(near, exposure);
       return { loading: terrain.stats.loading, pending: city.pending };
+    },
+    // put the aircraft anywhere: latitude, longitude, metres above sea level, heading; `look` is the viewer's own turn and tilt in degrees
+    goto({ lat, lon, alt = 1500, heading = 0, pitch = 0, bank = 0, speed = 110, look = [0, 0], view = 'chase', dist = 11.5 }) {
+      const w = geoToWorld(lat, lon, alt);
+      flight.place({ x: w.x, y: w.y, z: w.z, heading, pitch, roll: bank, speed, throttle: 0.7 });
+      input.throttle = 0.7; if (rig.mode !== view) rig.set(view);
+      rig.snap(); rig.dist = dist; rig.look.yaw = look[0] * D2R; rig.look.pitch = look[1] * D2R; roofs.map = null; roofs.at = -1e9;
+      jet.root.position.copy(flight.pos); jet.root.quaternion.copy(flight.quat);
+      return true;
     },
     // run n frames of `dt` seconds by hand
     run(n = 1, dt = 1 / 60) { cancelAnimationFrame(raf); for (let i = 0; i < n; i++) { step(dt, performance.now()); city.pushQueues(); } return { mode, V: flight.V, agl: flight.agl, crashed: flight.crashed }; },

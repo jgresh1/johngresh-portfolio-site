@@ -44,7 +44,7 @@ async function fetchDem(url, signal) {
 
 function makeRecord(h, mask) {
   const tex = new THREE.DataTexture(mask, DS, DS, THREE.RedFormat, THREE.UnsignedByteType);
-  tex.minFilter = tex.magFilter = THREE.LinearFilter; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = true;       // the blurred levels say how far off the nearest land is tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
   tex.needsUpdate = true;
   return { h, mask, tex };
 }
@@ -102,10 +102,20 @@ const GROUND = {
     vec3 gPhoto = diffuseColor.rgb;
     float gMask = texture2D( tMask, vMapUv * uMaskST.x + uMaskST.yz ).r;
     float gLum = dot( gPhoto, vec3( 0.30, 0.55, 0.15 ) );
-    // bright pixels inside the water outline are quays, boats and bridge decks: leave them as photographed
-    float gWater = smoothstep( 0.40, 0.62, gMask ) * ( 1.0 - smoothstep( 0.13, 0.26, gLum ) );
+    // bright pixels inside the water outline are quays, boats and bridge decks: leave them as photographed.
+    // But out on open water a bright patch is the sun's glitter as the survey aircraft photographed it, a whole
+    // frame of it at a time: that is water too. Open water = nothing but water for a long way round; and there
+    // only what stands out from the water about it (a boat, a wake) is kept.
+    float gOpen = smoothstep( 0.86, 0.99, texture2D( tMask, vMapUv * uMaskST.x + uMaskST.yz, 4.0 ).r );
+    float gStands = smoothstep( 0.05, 0.13, gLum - dot( texture2D( map, gUv, 5.0 ).rgb, vec3( 0.30, 0.55, 0.15 ) ) );
+    float gWater = smoothstep( 0.40, 0.62, gMask ) * ( 1.0 - smoothstep( 0.13, 0.26, gLum ) * mix( 1.0, gStands, gOpen ) );
     vec3 gDeep = mix( vec3( 0.010, 0.032, 0.038 ), gPhoto * 0.5, 0.10 );
     diffuseColor.rgb = mix( gPhoto, gDeep, gWater );
+    // white horses when the wind gets up
+    if ( uSea > 0.45 && gDist < 9000.0 ) {
+      float gFoam = smoothstep( 0.80, 0.95, apNoise( vWp.xz * 0.045 + uTime * 0.03 ) * 0.55 + apNoise( vWp.xz * 0.23 - uTime * 0.05 ) * 0.45 + 0.13 );
+      diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.50, 0.52, 0.54 ), gFoam * gWater * smoothstep( 0.45, 1.0, uSea ) * 0.7 * ( 1.0 - smoothstep( 2500.0, 9000.0, gDist ) ) );
+    }
     // fine grain close up, so the half-metre photo does not read as a smear
     float gNear = ( 1.0 - smoothstep( 30.0, 320.0, gDist ) ) * ( 1.0 - gWater );
     float gGrain = apNoise( vWp.xz * 3.1 ) * 0.35 + apNoise( vWp.xz * 13.0 ) * 0.35 + apNoise( vWp.xz * 47.0 ) * 0.30;
@@ -150,14 +160,18 @@ const GROUND = {
       fGlow = fIn * ( 1.0 - smoothstep( 0.1, 0.5 + fw, fTaxi ) );
     }`,
   rough: /* glsl */`
-    roughnessFactor = mix( 0.95, mix( 0.06, 0.24, smoothstep( 400.0, 9000.0, gDist ) ), gWater );`,
+    // Water: glassy close to, where each wave is seen; from far off and high up the waves are smaller than a pixel
+    // and what is left of them is a broad soft sheen, wider and dimmer the rougher the sea. (A narrower one
+    // drew the sun on the sea as a hard white disc.)
+    roughnessFactor = mix( 0.95, mix( 0.06 + 0.07 * uSea, 0.33 + 0.15 * uSea, smoothstep( 250.0, 6000.0, gDist ) ), gWater );`,
+  wet: '( 1.0 - gWater )', snowed: '( 0.72 + 0.28 * smoothstep( 0.08, 0.32, gLum ) )',
   normal: /* glsl */`
     if ( gWater > 0.01 ) {
       vec2 wq = vWp.xz; float wt = uTime;
       vec2 e = vec2( 0.45, 0.0 );
       #define W_H( p ) ( apFbm( ( p ) * 0.085 + vec2( wt * 0.21, wt * 0.13 ) ) + 0.45 * apFbm( ( p ) * 0.41 - vec2( wt * 0.37, - wt * 0.19 ) ) )
       float w0 = W_H( wq ), wx = W_H( wq + e.xy ), wz = W_H( wq + e.yx );
-      float wAmp = 1.25 / ( 1.0 + gDist * 0.0011 );
+      float wAmp = ( 0.75 + 1.1 * uSea ) / ( 1.0 + gDist * 0.0011 );
       vec3 wn = normalize( vec3( ( w0 - wx ) * wAmp, 1.0, ( w0 - wz ) * wAmp ) );
       normal = normalize( mix( normal, normalize( ( viewMatrix * vec4( wn, 0.0 ) ).xyz ), gWater ) );
     }`,

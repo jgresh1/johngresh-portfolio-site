@@ -53,6 +53,8 @@ export class Flight {
     this._f = new Vector3(); this._u = new Vector3(); this._r = new Vector3(); this._a = new Vector3(); this._l = new Vector3();
     this._vb = new Vector3(); this._qi = new Quaternion(); this._dq = new Quaternion(); this._w = new Vector3(); this._pt = new Vector3();
     this._gust = [0, 1, 2, 3].map((i) => ({ f: 0.19 + i * 0.23, ph: i * 2.1 }));        // slow swells of air, a few seconds each
+    // the weather (weather.js sets these every frame): the air's own movement over the ground (m/s), and how rough it is (0 calm .. 1 a storm)
+    this.wind = new Vector3(); this.rough = 0; this._va = new Vector3();
   }
 
   // heading in degrees clockwise from north; speed in m/s along the nose
@@ -78,7 +80,7 @@ export class Flight {
     this.heading = ((Math.atan2(f.x, -f.z) / D2R) % 360 + 360) % 360;
     this.pitch = Math.asin(clamp(f.y, -1, 1));
     this.bank = Math.atan2(-r.y, u.y);
-    this.V = this.vel.length(); this.vs = this.vel.y;
+    this.V = this._va.copy(this.vel).addScaledVector(this.wind, this.assist === 'easy' ? -0.5 : -1).length(); this.vs = this.vel.y;      // speed through the air
   }
 
   step(dt) {
@@ -93,8 +95,11 @@ export class Flight {
     this.t += h;
     this.axes();
     const f = this._f, u = this._u, r = this._r;
-    const V = vel.length();
-    const vb = this._vb.copy(vel).applyQuaternion(this._qi.copy(this.quat).invert());
+    // The wing flies in the air, and the air moves: every force comes from the speed through the air, while the
+    // aircraft's path over the ground is that plus the wind. Easy flying feels half the wind.
+    const va = this._va.copy(vel).addScaledVector(this.wind, this.assist === 'easy' ? -0.5 : -1);
+    const V = va.length();
+    const vb = this._vb.copy(va).applyQuaternion(this._qi.copy(this.quat).invert());
     const fwd = -vb.z;
     const alpha = V > 2 ? Math.atan2(-vb.y, Math.max(fwd, 0.5)) : 0;
     const beta = V > 2 ? Math.asin(clamp(vb.x / V, -1, 1)) : 0;
@@ -115,7 +120,7 @@ export class Flight {
     const a = this._a.set(0, -G, 0);
     a.addScaledVector(f, T / S.mass);
     if (V > 0.5) {
-      const vh = this._w.copy(vel).multiplyScalar(1 / V);
+      const vh = this._w.copy(va).multiplyScalar(1 / V);
       a.addScaledVector(vh, -D / S.mass);
       const ld = this._l.crossVectors(r, vh);
       const ll = ld.length();
@@ -128,8 +133,13 @@ export class Flight {
     // rough air: a few slow waves, stronger low over the city, plus the shake of a wing near the stall
     let gx = 0, gy = 0;
     for (const w of this._gust) { gx += Math.sin(this.t * w.f + w.ph); gy += Math.sin(this.t * w.f * 1.31 + w.ph * 1.7); }
-    const rough = (0.05 + 0.08 * smooth(600, 60, agl)) * Math.min(V / 60, 1.4) * (this.onGround ? 0 : 1);
+    const wxr = this.rough * (this.assist === 'easy' ? 0.6 : 1);
+    const rough = (0.05 + 0.08 * smooth(600, 60, agl) + 0.75 * wxr) * Math.min(V / 60, 1.4) * (this.onGround ? 0 : 1);
     a.addScaledVector(u, gy * rough * 0.3); a.addScaledVector(r, gx * rough * 0.15);
+    // rough air from the weather also has a quicker chop in it, and nudges the wings and the nose
+    const chop = wxr * Math.min(V / 60, 1.4) * (this.onGround ? 0 : 1), tt = this.t;
+    const c1 = Math.sin(tt * 1.37 + 0.4) + Math.sin(tt * 2.31 + 1.9) * 0.7 + Math.sin(tt * 3.9 + 4.1) * 0.4, c2 = Math.sin(tt * 1.13 + 2.2) + Math.sin(tt * 2.77 + 0.3) * 0.7 + Math.sin(tt * 4.3 + 1.1) * 0.4;
+    a.addScaledVector(u, c1 * chop * 0.55);
     this.buffet = st * Math.min(qd / 900, 1) + 0.25 * I.brake * Math.min(qd / S.qRef, 1.5);
 
     /* ---- what the stick asks for */
@@ -153,7 +163,7 @@ export class Flight {
       // turns and speed changes. It is done the way a fly-by-wire aircraft does it: work out the load on the wing
       // that path needs, the angle of attack that gives that load, and steer the nose to that angle. The wing
       // answers within a quarter of a second, and stops answering as soon as the stick is let go.
-      const gamma = V > 6 ? Math.asin(clamp(vel.y / V, -1, 1)) : theta;
+      const gamma = V > 6 ? Math.asin(clamp(va.y / V, -1, 1)) : theta;
       const cb = Math.cos(bank), sbk = Math.sin(bank);
       const ask = I.pitch * (I.pitch > 0 ? 0.34 : 0.30) * (0.25 + 0.75 * cb * cb);     // rad/s; steeply banked, a pull goes into the turn, not a climb
       const top = Math.min(42 * D2R, (-10 + 52 * smooth(30, 50, V)) * D2R);           // too slow to climb: the path is lowered for you
@@ -184,6 +194,7 @@ export class Flight {
       const dead = 1 - smooth(0.05, 0.4, auth);                                     // no airspeed: nose-heavy, it falls through
       qc -= Math.cos(theta) * 1.1 * dead;
     }
+    if (!this.onGround) { pc += c2 * chop * 0.13; qc += c1 * chop * 0.035; }
     this.p += (pc - this.p) * (1 - Math.exp(-h * (9 * auth + 1.5)));
     this.q += (qc - this.q) * (1 - Math.exp(-h * (7 * auth + 1.5)));
     this.r += (rc - this.r) * (1 - Math.exp(-h * (5 * auth + 1.5)));

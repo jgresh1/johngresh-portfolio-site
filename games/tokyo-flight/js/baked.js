@@ -27,6 +27,7 @@ export class BakedCity {
     this.cells = new Map(); this.index = null; this.unit = 0.04; this.size = 1000; this.farH = 18;
     this.busy = 0; this.ready = []; this.queue = []; this.wanted = 0; this.at = new THREE.Vector3(1e9, 0, 1e9); this.key = '';
     this.mats = null; this.jobsById = new Map(); this.nextId = 1;
+    this.hold = false;                                 // set by the page while the hangar is on screen, so squares are not shown faster than they are drawn (app.js, warm)
     this.workers = [0, 1].map(() => { const w = new Worker(new URL('./baked.worker.js', import.meta.url), { type: 'module' }); w.onmessage = (e) => this.arrived(e.data); w.onerror = (e) => console.warn('city worker', e.message); return w; });
     fetch(base + 'index.json').then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then((ix) => {
       this.index = ix; this.unit = ix.unit; this.size = ix.cell; this.farH = ix.farHeight;
@@ -74,7 +75,7 @@ export class BakedCity {
     }
     while (this.busy < this.jobs && this.queue.length) this.load(this.queue.shift());
     // squares that have arrived go into the scene a few a frame
-    let n = this.perFrame(), added = false;
+    let n = this.hold ? 0 : this.perFrame(), added = false;
     while (n-- > 0 && this.ready.length) { this.show(this.ready.shift()); added = true; }
     if (added) this.onChange();
     this.cut(cam);

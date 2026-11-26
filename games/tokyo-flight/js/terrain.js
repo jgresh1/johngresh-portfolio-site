@@ -198,6 +198,7 @@ export class Terrain {
     this.flatten = null;          // optional (lat, lon, height) -> height, applied to every ground vertex as it is built
     this.aniso = 8;
     this.changed = 0;             // bumps whenever a tile appears: shadows and the roof lookup re-render
+    this.kinds = 0;               // which ground surfaces exist so far (1 with its photo, 2 without): each is its own shader
     this.stats = { tiles: 0, loading: 0 };
     this.maxAniso = renderer.capabilities.getMaxAnisotropy();
     this._fr = new THREE.Frustum(); this._m = new THREE.Matrix4(); this._v = new THREE.Vector3();
@@ -341,6 +342,7 @@ export class Terrain {
       ...GROUND, map: 'vec3 gPhoto = diffuseColor.rgb; float gDist = length( vWp - cameraPosition ); float gLum = 0.0; float gWater = 1.0; float fGlow = 0.0; diffuseColor.rgb = vec3( 0.010, 0.032, 0.038 );',
     }, { uPhotoST: { value: n.photoST }, uMaskST: { value: new THREE.Vector3(n.dem.s, n.dem.ox, n.dem.oy) }, tMask: { value: n.dem.rec.tex } });
     const m = new THREE.Mesh(g, mat);
+    this.kinds |= n.tex ? 1 : 2;
     m.position.copy(c); m.updateMatrixWorld();
     m.matrixAutoUpdate = false; m.receiveShadow = true; m.castShadow = false; m.visible = false;
     m.userData.node = n;
@@ -458,9 +460,30 @@ export class GroundBake {
       ATMO.uniforms[L.tex].value = L.rt.texture;
     }
     this._f = new THREE.Vector3();
+    this.kinds = 0; this.building = 0;       // the ground surfaces whose off-screen shader is built, and being built
+  }
+
+  // The copy is drawn with the ground's own surfaces, but drawn off screen they are a different shader from the one
+  // on screen. Built at its first use it stopped the page for most of a second, so it is built in the background
+  // first, and until it is ready the copy is left as it is.
+  ready() {
+    const want = this.terrain.kinds;
+    if (want === this.kinds) return want > 0;
+    if (this.building) return false;
+    const r = this.renderer, L = this.levels[0], prev = r.getRenderTarget();
+    r.setRenderTarget(L.rt);
+    const mats = r.compile(this.terrain.group, L.cam);
+    r.setRenderTarget(prev);
+    const progs = new Set();
+    for (const m of mats) { const pr = r.properties.get(m).currentProgram; if (pr) progs.add(pr); }
+    this.building = want;
+    const poll = () => { for (const pr of progs) if (pr.isReady()) progs.delete(pr); if (progs.size) setTimeout(poll, 20); else { this.kinds = this.building; this.building = 0; } };
+    poll();
+    return this.kinds === want;
   }
 
   update(camera, groundY) {
+    if (!this.ready()) return;
     const now = performance.now(), f = this._f, U = ATMO.uniforms;
     camera.getWorldDirection(f);
     const alt = Math.max(camera.position.y - groundY, 5);

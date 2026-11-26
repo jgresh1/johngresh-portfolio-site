@@ -97,7 +97,8 @@ async function boot() {
   // photo-textured tiles can still be streamed instead (?city=survey, or Photo buildings in the menu): hundreds of
   // megabytes for a first view, so only for a strong machine on a fast line.
   const survey = (Q.get('city') || store.get('city', 'built')) === 'survey';
-  const cityChanged = () => { shadows.invalidate(); roofs.changed = true; };
+  let cityRev = 0;
+  const cityChanged = () => { shadows.invalidate(); roofs.changed = true; cityRev++; };
   const city = survey
     ? new City({ renderer, camera, manifest: await (await fetch('./data/tilesets.json')).json(), kinds: tier.kinds, errorTarget: tier.err, errorFalloff: tier.fall, cacheGB: tier.gb, texCap: tier.tex, texNear: tier.near,
       lite: tier.lite, reach: tier.reach, parseJobs: tier.parse, downloadJobs: tier.down, turn, shadows: tier.cascades.length > 0, aniso: tier.aniso, onChange: cityChanged })
@@ -189,17 +190,25 @@ async function boot() {
   // cuts to it. It has to be this canvas and not an off-screen picture: a shader built for one is not the shader
   // used for the other, and the cut then stopped for a second to build them all again. Each new kind of surface is
   // built off the main thread first (compileAsync), and the corner is only drawn once that has finished.
-  let warmN = 0, drawN = 0, warmBusy = false, warmFor = '', warmOK = false;
+  // The corner costs a whole draw of the city, so it is drawn only while new ground or buildings are arriving
+  // (every few frames), then four more times half a second apart for the shadows and roof colours to settle.
+  let warmN = 0, drawN = 0, warmBusy = false, warmFor = '', warmOK = false, warmSeen = '', warmNew = false, warmTail = 0, warmAt = 0, warmTiles = 0;
   function warm() {
     film.firstView(camera);
-    const sig = `${terrain.stats.tiles > 0}|${city.group.children.length > 1}|${(city.bridges?.children.length || 0) > 0}|${scene.children.length}`;
+    const sig = `${terrain.kinds}|${city.group.children.length > 1}|${(city.bridges?.children.length || 0) > 0}|${scene.children.length}`;
     if (sig !== warmFor && !warmBusy) {
       warmBusy = true; warmFor = sig; camera.layers.set(0);
       renderer.compileAsync(scene, camera).catch((e) => console.warn('precompile', e)).then(() => { warmBusy = false; warmOK = true; });
     }
-    if (warmN++ % (tier === TIERS.phone ? 10 : 5) || !warmOK || warmBusy) { camera.near = 1.2; camera.far = 120000; camera.updateProjectionMatrix(); renderer.getSize(size); terrain.update(camera, size.y); city.eyeHeight = 240; city.update(); return; }
+    const rev = `${terrain.changed}|${cityRev}`, t = performance.now();
+    if (rev !== warmSeen) { warmSeen = rev; warmNew = true; warmTail = 4; }
+    if (bake.building && warmTail < 2) warmTail = 2;             // the roof-colour shader is still being built: keep going until it has run once
+    const due = warmOK && !warmBusy && (warmNew ? warmN % (tier === TIERS.phone ? 10 : 5) === 0 : warmTail > 0 && t - warmAt > 500);
+    warmN++;
+    if (due) { if (!warmNew) warmTail--; warmNew = false; warmAt = t; }
+    if (!due) { camera.near = 1.2; camera.far = 120000; camera.updateProjectionMatrix(); renderer.getSize(size); terrain.update(camera, size.y); city.eyeHeight = 240; city.hold = city.stats.tiles - warmTiles >= 12; city.update(); city.hold = false; return; }
     renderer.setViewport(0, 0, 160, 90); renderer.setScissor(0, 0, 160, 90); renderer.setScissorTest(true);
-    drawWorld(0.3, 1);
+    city.hold = true; drawWorld(0.3, 1); city.hold = false; warmTiles = city.stats.tiles;      // squares go to the graphics card a dozen at a draw, not in one heap after a wait
     renderer.getSize(size); renderer.setScissorTest(false); renderer.setViewport(0, 0, size.x, size.y);
   }
   function drawStage(expo) {

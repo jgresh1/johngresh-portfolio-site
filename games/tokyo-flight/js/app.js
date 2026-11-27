@@ -455,6 +455,12 @@ async function boot() {
   $('mInvert').onclick = () => { input.invert = !input.invert; store.set('invert', input.invert ? '1' : '0'); invertUI(); };
   const unitsUI = () => { $('mUnits').textContent = units === 'ft' ? 'knots · feet' : 'km/h · metres'; };
   $('mUnits').onclick = () => { units = units === 'ft' ? 'm' : 'ft'; store.set('units', units); unitsUI(); };
+  // Frames a second, in the top left corner. Only on a PC running at High, the level a strong graphics card gets:
+  // there the number is worth watching; on a phone or a light laptop it is clutter. It can be put away in the menu.
+  const fpsCan = tierName === 'high' && !touch, fpsEl = $('fpsN');
+  let fpsOn = fpsCan && store.get('fps', '1') !== '0';
+  const fpsUI = () => { $('fps').classList.toggle('on', fpsOn); const b = $('mFps'); b.style.display = fpsCan ? '' : 'none'; b.textContent = fpsOn ? 'Frame rate shown' : 'Frame rate hidden'; b.classList.toggle('on', fpsOn); };
+  $('mFps').onclick = () => { fpsOn = !fpsOn; store.set('fps', fpsOn ? '1' : '0'); fpsUI(); };
   const mapUI = () => { $('mMap').textContent = mini.on ? 'Map on' : 'Map off'; };
   $('mMap').onclick = () => { mini.setOn(!mini.on); store.set('map', mini.on ? '1' : '0'); mapUI(); }; mapUI();
   const soundUI = () => { $('mSound').textContent = sound.muted ? 'Sound off' : 'Sound on'; };
@@ -481,7 +487,7 @@ async function boot() {
     : '<kbd>A</kbd> <kbd>D</kbd> bank · <kbd>S</kbd> nose up · <kbd>W</kbd> nose down · <kbd>Q</kbd> <kbd>E</kbd> rudder · <kbd>R</kbd> more power, <kbd>F</kbd> less (also <kbd>+</kbd> <kbd>−</kbd> or Page Up and Page Down) · <kbd>Space</kbd> brakes · <kbd>C</kbd> view · <kbd>V</kbd> look ahead · <kbd>M</kbd> map · drag to look, wheel to move the camera. A tap on a key is a small correction; holding it is the full stick. Turn and pull together for a tight turn. A controller works too, once a button on it is pressed.');
   $('planes').querySelectorAll('.opt').forEach((b) => { b.onclick = () => setPlane(b.dataset.p); });
   $('mFilm').onclick = () => { setPaused(false); setPlane('katy'); startFilm(film.variant); };       // the opening is the Katy's film
-  assistUI(); invertUI(); unitsUI(); soundUI(); respUI(); mouseUI(); showHour(); padUI();
+  assistUI(); invertUI(); unitsUI(); soundUI(); respUI(); mouseUI(); showHour(); padUI(); fpsUI();
   input.on.pause = () => { if (mode === 'film') film.skip(); else setPaused(!paused); };
   input.on.view = () => { if (mode === 'fly' && !paused) hint('View: ' + rig.next(), 1.6); };
   input.on.map = mapNext;
@@ -564,7 +570,7 @@ async function boot() {
       drawWorld(rig.near, exposure); hud(now);
     }
     frames++;
-    if (now - fpsAt > 1000) { fps = (frames * 1000) / (now - fpsAt); frames = 0; fpsAt = now; }
+    if (now - fpsAt > 1000) { fps = (frames * 1000) / (now - fpsAt); frames = 0; fpsAt = now; if (fpsOn) fpsEl.textContent = Math.round(fps); }
   }
   let shown = 0;
   function frame(now) {

@@ -4,12 +4,14 @@
   index.html                  <- ../phantom-gp/index.html       (the front page; it loads its files from games/phantom-gp/)
   games/phantom-gp/           <- ../phantom-gp (index.html, js, vendor, assets)
   games/tokyo-flight/         <- ../tokyo-3d/site (index.html, js, vendor, assets, data/tilesets.json)
+  games/world-flight/         <- ../world-flight/site (index.html, js, vendor, assets, data)
   games/camp-hollowpine/      <- ../camp-hollowpine/game.html
   games/lamplight-cove/       <- ../lamplight-cove/game.html
   games/descent/              <- ../ocean-3d (index.html, css, js, vendor, icons)
 
 Run it after rebuilding a game:  python tools/build_site.py
 The game folders sit next to this repo on the Desktop; pass --src to point elsewhere.
+`--only world-flight` copies that one game and leaves the others as they are.
 """
 import argparse, os, shutil
 
@@ -57,7 +59,29 @@ def write(path, text):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--src', default=os.path.dirname(ROOT), help='folder holding the game projects')
-    src = ap.parse_args().src
+    ap.add_argument('--only', default='', help='copy just this game (world-flight)')
+    args = ap.parse_args()
+    src = args.src
+
+    # World Flight, in games/world-flight/. None of the world is stored: the page asks the map services itself, and
+    # the live weather through the route Tokyo Flight's Worker has at tokyo.johngresh.org.
+    wf = os.path.join(src, 'world-flight', 'site')
+    wdst = os.path.join(ROOT, 'games', 'world-flight')
+    for d in ('js', 'vendor', 'assets', 'data'):
+        shutil.rmtree(os.path.join(wdst, d), ignore_errors=True)
+        shutil.copytree(os.path.join(wf, d), os.path.join(wdst, d), ignore=shutil.ignore_patterns('__pycache__', '*.py'))
+    shutil.copy(os.path.join(src, 'world-flight', 'LICENSES.md'), os.path.join(wdst, 'LICENSES.md'))
+    html = open(os.path.join(wf, 'index.html'), encoding='utf-8').read()
+    menu = '<script src="../../assets/site-menu.js" data-corner="tr" data-dock="#top" defer></script>\n'
+    head = ('<meta property="og:title" content="World Flight">\n'
+            '<meta property="og:description" content="Pick any place on the globe and fly it: satellite photographs, real terrain, every mapped building, live weather, in the browser.">\n'
+            '<meta property="og:image" content="https://johngresh.org/assets/home/world-hero.webp">\n'
+            f'<link rel="icon" href="{ICON}">\n')
+    assert '</body>' in html and '<meta charset="utf-8">' in html and '</head>' in html
+    write(os.path.join(wdst, 'index.html'), html.replace('</head>', head + '</head>', 1).replace('</body>', menu + '</body>', 1))
+    if args.only == 'world-flight':
+        return
+    assert not args.only, 'only world-flight can be copied on its own'
 
     # Tokyo Flight, in games/tokyo-flight/. Its map tiles come from the Cloudflare cache at tokyo.johngresh.org, which also hosts the map page (explore.html):
     # that page and its 14 MB of place names are not copied here.

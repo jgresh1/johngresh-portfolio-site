@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b0e11">
+<meta name="description" content="Pick any place on the globe and fly it: satellite photographs, real terrain, every mapped building, live weather and 13,000 real runways, built as you go.">
+<title>World Flight</title>
+<style>
+  :root { --ink: #eef2f4; --dim: #a9b4ba; --panel: rgba(14, 18, 22, 0.74); --line: rgba(255, 255, 255, 0.12); --hot: #ffb35c; --bad: #ff7a5c; --app-h: 100vh;
+    --sl: env(safe-area-inset-left, 0px); --sr: env(safe-area-inset-right, 0px); --sb: env(safe-area-inset-bottom, 0px); --st: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #0b0e11; color: var(--ink); overflow: hidden; overscroll-behavior: none;
+    font: 13px/1.45 "Segoe UI", "Hiragino Sans", "Yu Gothic UI", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none; }
+  #app { position: fixed; left: 0; top: 0; width: 100%; height: var(--app-h); overflow: hidden; }
+  #view, #view canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #view canvas { cursor: grab; touch-action: none; } #view canvas:active { cursor: grabbing; }
+  .layer { position: absolute; inset: 0; pointer-events: none; }
+  button { font: inherit; color: inherit; }
+
+  /* ---- film bars and fade */
+  #bars i { position: absolute; left: 0; right: 0; height: 11.5%; background: #000; transform: scaleY(var(--bars, 0)); }
+  #bars i:first-child { top: 0; transform-origin: top; } #bars i:last-child { bottom: 0; transform-origin: bottom; }
+  /* the lens darkens towards its corners: fully in the film, a little while flying */
+  #bars::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 78% 78% at 50% 50%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.44) 100%); opacity: calc(0.3 + 0.7 * var(--bars, 0)); }
+  #fade { background: #000; opacity: 0; transition: opacity 0.22s linear; }
+  #fade.on { opacity: 1; }
+  #skip { position: absolute; right: calc(18px + var(--sr)); bottom: calc(3.2% + var(--sb)); pointer-events: auto; background: none; border: 0; color: rgba(255, 255, 255, 0.72); letter-spacing: 0.14em; font-size: 12px; padding: 10px 12px; cursor: pointer; display: none; }
+  #skip:hover { color: #fff; }
+
+  /* ---- title */
+  #title { display: flex; flex-direction: column; justify-content: flex-end; padding: 0 calc(6vw + var(--sl)) calc(7vh + var(--sb)); background: linear-gradient(180deg, rgba(0, 0, 0, 0.30) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.62) 100%); transition: opacity 0.35s; }
+  #title.off { opacity: 0; }
+  #title h1 { margin: 0; font-size: clamp(34px, 7.2vw, 92px); font-weight: 650; letter-spacing: 0.2em; line-height: 1; }
+  #title h1 span { display: block; font-size: 0.24em; font-weight: 400; letter-spacing: 0.42em; color: var(--dim); margin: 0 0 0.9em 0.1em; }
+  #title p { margin: 14px 0 22px; max-width: 560px; color: #d5dce0; font-size: clamp(13px, 1.5vw, 16px); }
+  #start { pointer-events: auto; position: relative; align-self: flex-start; min-width: 232px; padding: 15px 30px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.5); background: rgba(10, 12, 14, 0.55);
+    font-size: 15px; letter-spacing: 0.22em; font-weight: 600; cursor: pointer; overflow: hidden; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.28s cubic-bezier(0.3, 1.6, 0.5, 1), background 0.2s, border-color 0.2s; }
+  #start i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: rgba(255, 179, 92, 0.30); transform-origin: left; transform: scaleX(var(--load, 0)); transition: transform 0.4s; }
+  #start b { position: relative; font-weight: 600; }
+  #start:hover { transform: translateY(-2px); border-color: #fff; } #start:active { transform: translateY(1px) scale(0.975); transition-duration: 0.06s; }
+  #start[disabled] { opacity: 0.7; cursor: default; transform: none; }
+  #start.ready { background: var(--hot); color: #17130c; border-color: var(--hot); } #start.ready i { display: none; }
+  .starts { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  #start2 { pointer-events: auto; padding: 15px 24px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.42); background: rgba(10, 12, 14, 0.5); font-size: 12.5px; letter-spacing: 0.2em; font-weight: 600; cursor: pointer;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: transform 0.28s cubic-bezier(0.3, 1.6, 0.5, 1), background 0.2s, border-color 0.2s; }
+  #start2:hover { transform: translateY(-2px); border-color: #fff; background: rgba(40, 46, 52, 0.7); } #start2:active { transform: translateY(1px) scale(0.975); transition-duration: 0.06s; }
+  #title small { display: block; margin-top: 14px; color: var(--dim); font-size: 12px; min-height: 1.4em; }
+  #title .links { margin-top: 8px; } #title .links a { pointer-events: auto; color: var(--dim); margin-right: 18px; font-size: 12px; }
+
+  /* ---- which aircraft (title and globe) */
+  .pick { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
+  .chip { pointer-events: auto; cursor: pointer; text-align: left; padding: 9px 16px 10px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.26); background: rgba(10, 12, 14, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.26s cubic-bezier(0.3, 1.7, 0.5, 1), background 0.15s, border-color 0.15s; }
+  .chip b { display: block; font-size: 13.5px; letter-spacing: 0.08em; font-weight: 600; } .chip i { display: block; font-style: normal; font-size: 11px; color: var(--dim); margin-top: 1px; }
+  .chip:hover { border-color: rgba(255, 255, 255, 0.6); transform: translateY(-1px); } .chip:active { transform: scale(0.96); transition-duration: 0.05s; }
+  .chip.on { border-color: var(--hot); background: rgba(255, 179, 92, 0.18); } .chip.on b { color: #ffd9a8; }
+
+  /* ---- the globe: where to fly */
+  #globeUI { display: none; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8); }
+  #globeUI.on { display: block; }
+  #gHead { position: absolute; left: calc(5vw + var(--sl)); top: calc(5vh + var(--st)); }
+  #gHead h2 { margin: 0; font-size: clamp(22px, 3.4vw, 40px); letter-spacing: 0.22em; font-weight: 650; } #gHead p { margin: 6px 0 0; color: #d5dce0; font-size: 13px; }
+  #gFind { position: absolute; left: calc(5vw + var(--sl)); top: calc(5vh + var(--st) + clamp(62px, 8vw, 92px)); width: min(340px, calc(100% - 10vw)); pointer-events: auto; text-shadow: none; }
+  #gQ { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.26); background: rgba(10, 13, 16, 0.72); color: var(--ink); font: inherit; font-size: 14px; outline: none; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  #gQ:focus { border-color: var(--hot); } #gQ::placeholder { color: #8d989e; }
+  #gHits { margin-top: 6px; border-radius: 10px; overflow: hidden; background: rgba(12, 15, 18, 0.9); border: 1px solid var(--line); display: none; max-height: 46vh; overflow-y: auto; }
+  #gHits.on { display: block; }
+  #gHits button { display: block; width: 100%; text-align: left; padding: 9px 13px; border: 0; border-bottom: 1px solid var(--line); background: none; cursor: pointer; font-size: 13px; }
+  #gHits button:last-child { border-bottom: 0; } #gHits button:hover, #gHits button.padfocus { background: rgba(255, 255, 255, 0.1); } #gHits button i { font-style: normal; color: var(--dim); font-size: 11.5px; margin-left: 7px; }
+  #gIdeas { position: absolute; left: calc(5vw + var(--sl)); right: calc(5vw + var(--sr)); bottom: calc(26px + var(--sb)); display: flex; gap: 8px; overflow-x: auto; pointer-events: auto; padding: 6px 0 8px; scrollbar-width: none; text-shadow: none; }
+  #gIdeas::-webkit-scrollbar { display: none; }
+  #gIdeas button { flex: none; text-align: left; padding: 8px 13px 9px; border-radius: 11px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(10, 13, 16, 0.62); cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.26s cubic-bezier(0.3, 1.7, 0.5, 1), border-color 0.15s, background 0.15s; }
+  #gIdeas button b { display: block; font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; } #gIdeas button i { display: block; font-style: normal; font-size: 11px; color: var(--dim); white-space: nowrap; }
+  #gIdeas button:hover { border-color: rgba(255, 255, 255, 0.6); transform: translateY(-2px); background: rgba(30, 36, 42, 0.8); } #gIdeas button:active { transform: scale(0.96); transition-duration: 0.05s; }
+  #gCard { position: absolute; right: calc(5vw + var(--sr)); top: 50%; width: min(330px, calc(100% - 10vw)); padding: 18px 18px 16px; border-radius: 14px; background: rgba(14, 18, 22, 0.88); border: 1px solid var(--line); pointer-events: auto; text-shadow: none;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; transform: translateY(-46%) scale(0.97); transition: opacity 0.2s, transform 0.3s cubic-bezier(0.3, 1.5, 0.5, 1); visibility: hidden; }
+  #gCard.on { opacity: 1; transform: translateY(-50%) scale(1); visibility: visible; }
+  #gCard h3 { margin: 0 26px 2px 0; font-size: 19px; font-weight: 600; letter-spacing: 0.03em; line-height: 1.2; } #gCard p { margin: 0 0 13px; color: var(--dim); font-size: 12.5px; }
+  #gCard .pick { margin-bottom: 12px; gap: 8px; } #gCard .chip { padding: 7px 12px; }
+  #gClose { position: absolute; right: 10px; top: 8px; width: 30px; height: 30px; border: 0; background: none; font-size: 20px; color: var(--dim); cursor: pointer; } #gClose:hover { color: #fff; }
+  #gGo { display: flex; flex-direction: column; gap: 8px; }
+  #gGo button { text-align: left; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.06); cursor: pointer; font-size: 13px; transition: transform 0.24s cubic-bezier(0.3, 1.7, 0.5, 1), background 0.12s; }
+  #gGo button i { display: block; font-style: normal; color: var(--dim); font-size: 11.5px; margin-top: 1px; }
+  #gGo button:hover { background: rgba(255, 255, 255, 0.13); } #gGo button:active { transform: scale(0.97); transition-duration: 0.05s; }
+  #gGo button.main { background: var(--hot); border-color: var(--hot); color: #17130c; font-weight: 600; letter-spacing: 0.06em; } #gGo button.main i { color: rgba(23, 19, 12, 0.72); font-weight: 500; letter-spacing: 0; }
+  #gBack { position: absolute; right: calc(66px + var(--sr)); top: calc(12px + var(--st)); display: none; pointer-events: auto; }       /* (clear of the site's own menu button in the corner) */ #gBack.on { display: block; }
+  #gCredit { position: absolute; left: 0; right: 0; bottom: calc(4px + var(--sb)); text-align: center; color: rgba(255, 255, 255, 0.46); font-size: 9.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 20px; text-shadow: none; }
+  #gLabels { overflow: hidden; }
+  .gPin { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid var(--hot); border-radius: 50%; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45), inset 0 0 0 2px rgba(0, 0, 0, 0.35); pointer-events: none; display: none; }
+  .gLabel { position: absolute; left: 0; top: 0; font-size: 11.5px; white-space: nowrap; pointer-events: none; will-change: transform; color: #fff; letter-spacing: 0.03em; }
+  .gLabel.apt { color: #ffd9a8; font-size: 10.5px; } .gLabel.big { font-size: 13px; font-weight: 600; }
+  @media (max-width: 720px) { #gCard { right: 5vw; top: auto; bottom: calc(96px + var(--sb)); max-height: 56vh; overflow-y: auto; transform: translateY(8px) scale(0.97); } #gCard.on { transform: none; } #gHead p { display: none; } }
+  @media (max-height: 520px) {
+    #gHead { top: calc(10px + var(--st)); } #gHead h2 { font-size: 17px; } #gHead p { display: none; }
+    #gFind { top: calc(38px + var(--st)); width: min(250px, 38vw); } #gQ { padding: 8px 12px; font-size: 13px; }
+    #gIdeas { bottom: calc(8px + var(--sb)); right: auto; width: min(52vw, 100% - 10vw); }
+    #gCard { top: calc(8px + var(--st)); bottom: calc(8px + var(--sb)); right: calc(10px + var(--sr)); width: min(330px, 44vw); padding: 12px 14px; overflow-y: auto; transform: translateX(14px); }
+    #gCard.on { transform: none; } #gCard h3 { font-size: 16px; } #gCard p { margin-bottom: 8px; font-size: 11.5px; } #gCard .pick { margin-bottom: 8px; }
+    #gGo button { padding: 8px 12px; font-size: 12.5px; } #gCredit { display: none; } #gHits { max-height: 52vh; }
+  }
+  /* ---- arriving: the place's name while its ground loads */
+  #dive { display: none; align-items: flex-end; justify-content: flex-start; padding: 0 calc(6vw + var(--sl)) calc(9vh + var(--sb)); text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85); }
+  #dive.on { display: flex; }
+  #dive b { display: block; font-size: clamp(22px, 4vw, 46px); font-weight: 650; letter-spacing: 0.12em; } #dive span { display: block; margin-top: 6px; color: #d5dce0; font-size: 13px; min-height: 1.4em; }
+  #diveBar { display: block; width: min(260px, 60vw); height: 2px; margin-top: 12px; background: rgba(255, 255, 255, 0.2); } #diveBar u { display: block; height: 100%; width: 100%; background: var(--hot); transform-origin: left; transform: scaleX(var(--k, 0)); transition: transform 0.3s; }
+
+  /* ---- flying read-outs */
+  #hud { opacity: var(--hud, 0); font-variant-numeric: tabular-nums; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75); }
+  .gauge { position: absolute; bottom: calc(22px + var(--sb)); min-width: 132px; }
+  .gauge label { display: block; color: rgba(255, 255, 255, 0.72); font-size: 10.5px; letter-spacing: 0.22em; }
+  .gauge b { font-size: clamp(30px, 4.4vw, 46px); font-weight: 600; line-height: 1.05; letter-spacing: 0.01em; }
+  .gauge b small { font-size: 0.34em; font-weight: 500; color: rgba(255, 255, 255, 0.78); margin-left: 6px; letter-spacing: 0.1em; }
+  .gauge > span { display: block; color: rgba(255, 255, 255, 0.82); font-size: 12px; margin-top: 2px; }
+  #gSpd { left: calc(26px + var(--sl)); } #gAlt { right: calc(26px + var(--sr)); text-align: right; }
+  #pwr { margin-top: 7px; width: 132px; height: 3px; background: rgba(255, 255, 255, 0.22); border-radius: 2px; overflow: hidden; }
+  #pwr { position: relative; } #pwr i, #pwr u { position: absolute; left: 0; top: 0; display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0.6); }
+  #pwr i { background: rgba(255, 255, 255, 0.5); } #pwr u { background: var(--hot); }       /* asked for, and what the engine has reached */
+  /* which keys (or triggers) give more power and less: always in sight under the power bar, since nobody finds a key by guessing */
+  #pwrK { margin-top: 6px; font-size: 11px; color: rgba(255, 255, 255, 0.8); letter-spacing: 0.03em; white-space: nowrap; } #pwrK:empty { display: none; }
+  #pwrK kbd { font: inherit; font-weight: 600; color: #fff; border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 4px; padding: 0 5px; margin-right: 5px; background: rgba(10, 14, 18, 0.35); text-shadow: none; }
+  #pwrK kbd + kbd, #pwrK i { margin-left: 10px; } #pwrK i { font-style: normal; }
+  #ctl { position: absolute; left: 50%; bottom: calc(26px + var(--sb)); width: 46px; height: 46px; margin-left: -23px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.34); background: rgba(10, 14, 18, 0.18); }
+  #ctl::before { content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1.5px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
+  #ctl i { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: #fff; box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6); will-change: transform; }
+  body.touch #ctl { display: none; }
+  #compass { position: absolute; top: calc(14px + var(--st)); left: 50%; width: min(420px, 62vw); height: 34px; transform: translateX(-50%); overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
+  #tape { position: absolute; top: 0; left: 50%; height: 100%; will-change: transform; }
+  #tape i { position: absolute; top: 14px; width: 1px; height: 6px; background: rgba(255, 255, 255, 0.7); }
+  #tape i.big { height: 10px; top: 12px; background: #fff; }
+  #tape b { position: absolute; top: -3px; transform: translateX(-50%); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; }
+  #compass::after { content: ""; position: absolute; left: 50%; top: 24px; margin-left: -4px; border: 4px solid transparent; border-bottom: 7px solid var(--hot); border-top: 0; }
+  /* frames a second, top left: only on a PC at High, where the graphics card is strong enough for the number to be worth watching (app.js) */
+  #fps { position: absolute; display: none; top: calc(16px + var(--st)); left: calc(26px + var(--sl)); color: rgba(255, 255, 255, 0.72); font-size: 10.5px; letter-spacing: 0.22em; }
+  #fps.on { display: block; } #fps b { font-size: 16px; font-weight: 600; color: #fff; letter-spacing: 0.02em; margin-right: 6px; }
+  #where { position: absolute; top: calc(52px + var(--st)); left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.86); font-size: 12px; letter-spacing: 0.05em; white-space: nowrap; }
+  #wx { position: absolute; top: calc(71px + var(--st)); left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.72); font-size: 11px; letter-spacing: 0.04em; white-space: nowrap; max-width: max(170px, calc(100vw - 2 * (var(--m, 150px) + 26px))); overflow: hidden; text-overflow: ellipsis; }
+  #wx b { font-weight: 600; color: var(--hot); letter-spacing: 0.14em; font-size: 9.5px; margin-right: 6px; }
+  body.touch #wx { font-size: 10px; }
+  #alert { position: absolute; top: 31%; left: 50%; transform: translateX(-50%); color: var(--bad); font-weight: 700; letter-spacing: 0.3em; font-size: clamp(14px, 2vw, 20px); opacity: 0; transition: opacity 0.12s; }
+  #alert.on { opacity: 1; }
+  #hint { position: absolute; left: 50%; bottom: calc(86px + var(--sb)); transform: translateX(-50%); padding: 8px 16px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); color: #dfe5e8; font-size: 12.5px;
+    opacity: 0; transition: opacity 0.6s; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; text-shadow: none; }
+  #hint.on { opacity: 1; } #hint b { color: #fff; font-weight: 600; }
+  #top { position: absolute; top: calc(12px + var(--st)); right: calc(14px + var(--sr)); display: flex; gap: 8px; opacity: var(--hud, 0); pointer-events: none; }
+  .pill { pointer-events: auto; height: 38px; min-width: 38px; padding: 0 13px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); cursor: pointer; font-size: 11.5px; letter-spacing: 0.14em;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform 0.26s cubic-bezier(0.3, 1.7, 0.5, 1), background 0.15s; }
+  .pill:hover { background: rgba(40, 48, 56, 0.85); transform: translateY(-1px); } .pill:active { transform: scale(0.94); transition-duration: 0.05s; }
+
+  /* ---- the map of the flight: top right, under the buttons (drawn by js/fly/minimap.js). --m is the side of the map. */
+  #hud { --m: clamp(150px, 23vmin, 220px); }
+  #mini { position: absolute; top: calc(58px + var(--st)); right: calc(14px + var(--sr)); box-sizing: content-box; width: var(--m); border-radius: 12px; overflow: hidden; background: rgba(14, 18, 22, 0.8); border: 1px solid var(--line);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.34); text-shadow: none; pointer-events: auto; cursor: pointer; transform-origin: 100% 0; transition: transform 0.26s cubic-bezier(0.3, 1.7, 0.5, 1), border-color 0.15s; }
+  #mini:hover { border-color: rgba(255, 255, 255, 0.3); } #mini:active { transform: scale(0.972); transition-duration: 0.05s; }
+  #mini.off { pointer-events: none; } #mini.hide { display: none; }
+  #miniCv { display: block; width: var(--m); height: var(--m); background: #0f1f2b; }
+  #mini::after { content: ""; position: absolute; left: 0; top: 0; width: var(--m); height: var(--m); box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.5); pointer-events: none; }
+  #miniStats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; padding: 8px 10px 9px; background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #mini.plain #miniStats { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  #miniStats span { display: block; font-size: 8px; letter-spacing: 0.14em; color: rgba(255, 255, 255, 0.62); white-space: nowrap; }
+  #miniStats b { display: block; font-size: 12.5px; font-weight: 600; line-height: 1.25; white-space: nowrap; } #miniStats i { font-style: normal; }
+  #miniStats small { font-size: 9px; font-weight: 500; color: rgba(255, 255, 255, 0.7); margin-left: 3px; letter-spacing: 0.06em; }
+  /* a narrow window: the map sits under the place and weather lines, which then keep their width */
+  @media (max-width: 540px) and (min-height: 521px) { #mini { top: calc(94px + var(--st)); } #wx { max-width: 94vw; } }
+  /* a short window: a smaller map, with the distance and the time laid over its bottom edge */
+  @media (max-height: 520px) {
+    #hud { --m: clamp(84px, calc(var(--app-h) * 0.26), 150px); }
+    #miniStats { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; gap: 4px; padding: 12px 6px 3px; background: linear-gradient(180deg, rgba(6, 10, 14, 0), rgba(6, 10, 14, 0.8)); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    #miniStats span, #miniStats div:nth-child(n+3) { display: none; }
+    #miniStats b { font-size: 10.5px; } #miniStats small { font-size: 8px; margin-left: 2px; }
+    /* and on a phone held sideways it moves in, clear of MENU and the power lever, and as far up beside MENU as it
+       must to stay clear of the VIEW button under it (whose top is 220px above the bottom edge) */
+    body.touch #hud { --m: clamp(60px, calc(var(--app-h) * 0.21), 96px); }
+    body.touch #mini { top: calc(clamp(12px, calc(var(--app-h) - 230px - var(--m) - var(--sb) - var(--st)), 56px) + var(--st)); right: calc(92px + var(--sr)); }
+    body.touch #wx { max-width: max(150px, calc(100vw - 2 * (var(--m) + 104px + var(--sr)))); }
+  }
+
+  /* a site menu button (johngresh.org adds one): in the top row while flying, in the corner on the title, away during the film */
+  #top #jg-site { pointer-events: auto; } #top #jg-site-btn { height: 38px; }
+  body.film #jg-site { display: none; }
+
+  /* ---- touch controls (made by input.js) */
+  #touch { opacity: var(--hud, 0); }
+  .t-stick { position: absolute; width: 124px; height: 124px; margin: -62px 0 0 -62px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, 0.34); background: rgba(10, 14, 18, 0.22); opacity: 0.42; transition: opacity 0.18s; left: calc(112px + var(--sl)); top: calc(100% - 176px - var(--sb)); }
+  .t-stick.on { opacity: 1; }
+  .t-stick i { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: rgba(255, 255, 255, 0.86); box-shadow: 0 3px 14px rgba(0, 0, 0, 0.45); }
+  .t-thr { position: absolute; right: calc(16px + var(--sr)); bottom: calc(118px + var(--sb)); width: 52px; height: min(46%, 230px); border-radius: 26px; border: 1.5px solid rgba(255, 255, 255, 0.30); background: rgba(10, 14, 18, 0.30); pointer-events: auto; touch-action: none; }
+  .t-thr b { position: absolute; left: 4px; right: 4px; bottom: 4px; border-radius: 22px; background: rgba(255, 179, 92, 0.34); }
+  .t-thr i { position: absolute; left: 3px; right: 3px; bottom: 3px; height: 44px; border-radius: 22px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5); transition: box-shadow 0.15s; }
+  .t-thr.held i { box-shadow: 0 0 0 5px rgba(255, 179, 92, 0.45), 0 3px 12px rgba(0, 0, 0, 0.5); }
+  .t-thr span { position: absolute; left: 0; right: 0; top: -20px; text-align: center; font-size: 10px; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.75); }
+  .t-btn { position: absolute; pointer-events: auto; touch-action: none; height: 46px; min-width: 76px; padding: 0 14px; border-radius: 23px; display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255, 255, 255, 0.32); background: rgba(10, 14, 18, 0.34);
+    font-size: 11px; letter-spacing: 0.18em; transition: transform 0.24s cubic-bezier(0.3, 1.8, 0.5, 1), background 0.12s; }
+  .t-btn.held { transform: scale(0.92); background: rgba(255, 179, 92, 0.42); transition-duration: 0.04s; }
+  .t-brake { right: calc(84px + var(--sr)); bottom: calc(118px + var(--sb)); } .t-view { right: calc(84px + var(--sr)); bottom: calc(174px + var(--sb)); }
+  body.touch #bView { display: none; } body.touch #gSpd { left: calc(20px + var(--sl)); bottom: calc(14px + var(--sb)); } body.touch #gAlt { bottom: calc(14px + var(--sb)); }
+  body.touch #hint { bottom: auto; top: calc(78px + var(--st)); } body.touch .gauge b { font-size: clamp(24px, 5vw, 34px); } body.touch #gAlt { right: calc(22px + var(--sr)); } body.touch #credit { display: none; }
+
+  /* ---- menu */
+  #menu { display: none; align-items: center; justify-content: center; background: rgba(4, 6, 8, 0.52); pointer-events: auto; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  #menu.on { display: flex; }
+  #card { width: min(560px, calc(100% - 28px)); max-height: calc(var(--app-h) - 28px); overflow-y: auto; background: rgba(16, 20, 24, 0.94); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 18px; }
+  #card h2 { margin: 0 0 14px; font-size: 18px; letter-spacing: 0.2em; font-weight: 600; }
+  #card h3 { margin: 16px 0 8px; font-size: 10.5px; letter-spacing: 0.24em; color: var(--dim); font-weight: 600; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .opt { padding: 8px 14px; border-radius: 9px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05); cursor: pointer; font-size: 13px; transition: transform 0.24s cubic-bezier(0.3, 1.7, 0.5, 1), background 0.12s; }
+  .opt:hover { background: rgba(255, 255, 255, 0.12); } .opt:active { transform: scale(0.95); transition-duration: 0.05s; }
+  .opt.on { background: rgba(255, 179, 92, 0.2); border-color: rgba(255, 179, 92, 0.7); color: #ffd9a8; }
+  .padfocus { outline: 2px solid var(--hot); outline-offset: 3px; }          /* where a controller's cross is */
+  .opt.main { background: var(--hot); color: #17130c; border-color: var(--hot); font-weight: 600; letter-spacing: 0.1em; padding: 10px 22px; }
+  #places { max-height: 148px; overflow-y: auto; } #mWhere { margin-top: 8px !important; } #wxOpts { max-height: 132px; overflow-y: auto; } #hour { flex: 1; min-width: 150px; accent-color: var(--hot); } #hourOut { width: 46px; font-variant-numeric: tabular-nums; }
+  #card p { margin: 6px 0 0; color: var(--dim); font-size: 12px; } #card a { color: var(--hot); } #card kbd { font: inherit; color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+
+  #warn { position: absolute; display: none; cursor: pointer; pointer-events: auto; left: 50%; top: 14px; transform: translateX(-50%); width: min(520px, calc(100% - 32px)); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255, 138, 106, 0.6); background: rgba(60, 20, 12, 0.9); font-size: 13px; z-index: 5; }
+  #warn b { color: #ffb39c; }
+  #credit { position: absolute; left: calc(26px + var(--sl)); right: calc(26px + var(--sr)); bottom: calc(4px + var(--sb)); color: rgba(255, 255, 255, 0.5); font-size: 9.5px; text-align: center; pointer-events: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #credit a { color: inherit; }
+  #turn { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(80vmin, 320px); padding: 14px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); text-align: center; display: none; }
+  @media (orientation: portrait) and (pointer: coarse) { body.flying #turn { display: block; } }
+  #fail { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-wrap: wrap; gap: 14px; padding: 30px; text-align: center; font-size: 15px; background: rgba(11, 14, 17, 0.9); pointer-events: auto; }
+  .again { pointer-events: auto; cursor: pointer; padding: 9px 18px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.5); background: rgba(10, 12, 14, 0.6); letter-spacing: 0.12em; font-size: 12px; }
+  /* The title's picture is here before any of the program is: a still of the aircraft in its hangar, taken from the
+     real thing. The moving one fades in over it as soon as it has drawn. */
+  #poster { position: absolute; inset: 0; background: #0b0e11 center / cover no-repeat; background-image: url(./assets/title/wide-tiny.jpg); transition: opacity 0.7s; }
+  #poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.35s; }
+  #poster img.in { opacity: 1; }
+  @media (max-aspect-ratio: 6/5) { #poster { background-image: url(./assets/title/tall-tiny.jpg); } }
+  body.live #poster { opacity: 0; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { .pill, .opt, #start, .t-btn { transition: none; } }
+</style>
+<link rel="preload" as="image" href="./assets/title/wide.jpg" media="(min-aspect-ratio: 6/5)">
+<link rel="preload" as="image" href="./assets/title/tall.jpg" media="(max-aspect-ratio: 6/5)">
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three.module.js",
+  "three/addons/": "./vendor/addons/"
+} }
+</script>
+<!-- the two big files of the 3D library are asked for at once, not when the program gets round to them -->
+<link rel="modulepreload" href="./vendor/three.module.js">
+<link rel="modulepreload" href="./vendor/three.core.js">
+<link rel="preload" as="fetch" crossorigin href="./assets/ad1/ad1-lo.bin.gz?v=2">
+<meta property="og:title" content="World Flight">
+<meta property="og:description" content="Pick any place on the globe and fly it: satellite photographs, real terrain, every mapped building, live weather, in the browser.">
+<meta property="og:image" content="https://johngresh.org/assets/home/world-hero.webp">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a2c30'/%3E%3Cg fill='%23e9ebee'%3E%3Crect x='7' y='7' width='7.5' height='7.5' rx='2'/%3E%3Crect x='17.5' y='7' width='7.5' height='7.5' rx='2'/%3E%3Crect x='7' y='17.5' width='7.5' height='7.5' rx='2'/%3E%3Crect x='17.5' y='17.5' width='7.5' height='7.5' rx='2' fill='%23ffb44f'/%3E%3C/g%3E%3C/svg%3E">
+</head>
+<body>
+<div id="app">
+  <div id="view"></div>
+  <div id="poster"><img id="posterImg" alt="" decoding="async"></div>
+  <div id="bars" class="layer"><i></i><i></i></div>
+
+  <div id="hud" class="layer">
+    <div id="compass"><div id="tape"></div></div>
+    <div id="where"></div>
+    <div id="fps"><b id="fpsN">0</b>FPS</div>
+    <div id="wx"></div>
+    <div id="alert">STALL</div>
+    <div id="gSpd" class="gauge"><label>SPEED</label><b><span id="spd">0</span><small id="spdU">km/h</small></b><div id="pwr"><i></i><u></u></div><span id="pwrT">Power 60%</span><span id="pwrK"></span></div>
+    <div id="gAlt" class="gauge"><label>HEIGHT</label><b><span id="alt">0</span><small id="altU">m</small></b><span id="vs">level</span></div>
+    <div id="ctl" title="Where the stick is"><i></i></div>
+    <div id="mini" class="off" title="Map. Click, or press M, to show more or less.">
+      <canvas id="miniCv" width="200" height="200"></canvas>
+      <div id="miniStats">
+        <div><span>FLOWN</span><b><i id="msDist">0.0</i><small id="msDistU">km</small></b></div>
+        <div><span>AIR TIME</span><b><i id="msTime">0:00</i></b></div>
+        <div><span>TOP SPEED</span><b><i id="msTop">0</i><small id="msTopU">km/h</small></b></div>
+        <div><span>HIGHEST</span><b><i id="msHigh">0</i><small id="msHighU">m</small></b></div>
+      </div>
+    </div>
+    <div id="hint"></div>
+  </div>
+  <div id="touch" class="layer"></div>
+  <div id="top"><button class="pill" id="bView" title="Change view (C)">VIEW</button><button class="pill" id="bMenu" title="Menu (Esc)">MENU</button></div>
+  <div id="turn">Turn your phone sideways for a wider view.</div>
+
+  <div id="title" class="layer">
+    <h1><span>ANYWHERE ON EARTH</span>WORLD FLIGHT</h1>
+    <p>Two small jets and the whole planet. Pick any spot on the globe and it is built as you arrive: satellite photographs on real terrain, every mapped building, 13,000 real runways, the weather as it is there now and the sun where it really is.</p>
+    <div class="pick" id="tPlanes"><button class="chip on" data-p="ad1"><b>NASA AD-1</b><i>the wing that turns, 1979</i></button><button class="chip" data-p="katy"><b>Payen Katy</b><i>the little delta, 1954</i></button></div>
+    <div class="starts"><button id="start" disabled><i></i><b id="startT">LOADING</b></button><button id="start2">STRAIGHT TO THE GLOBE</button></div>
+    <small id="note"></small>
+  </div>
+  <div id="globeUI" class="layer">
+    <div id="gHead"><h2>WHERE TO?</h2><p id="gTip">Drag the globe. Zoom in. Click anywhere.</p></div>
+    <div id="gFind"><input id="gQ" type="search" placeholder="Search a city, an airport, a mountain" autocomplete="off" spellcheck="false" aria-label="Search for a place"><div id="gHits"></div></div>
+    <div id="gIdeas"></div>
+    <div id="gCard">
+      <button id="gClose" aria-label="Close">×</button>
+      <h3 id="gName"></h3><p id="gSub"></p>
+      <div class="pick" id="gPlanes"><button class="chip on" data-p="ad1"><b>NASA AD-1</b></button><button class="chip" data-p="katy"><b>Payen Katy</b></button></div>
+      <div id="gGo"></div>
+    </div>
+    <button class="pill" id="gBack">BACK TO THE FLIGHT</button>
+    <div id="gCredit"></div>
+  </div>
+  <div id="dive" class="layer"><div><b id="diveName"></b><span id="diveNote"></span><i id="diveBar"><u></u></i></div></div>
+  <button id="skip">SKIP ▸</button>
+
+  <div id="menu" class="layer">
+    <div id="card">
+      <h2>PAUSED</h2>
+      <div class="row"><button class="opt main" id="mResume">RESUME</button><button class="opt" id="mFilm">Watch the opening</button><button class="opt" id="mSound">Sound on</button><button class="opt" id="mMusic">Music on</button></div>
+      <h3>AIRCRAFT</h3>
+      <div class="row" id="planes"><button class="opt on" data-p="ad1">NASA AD-1 oblique wing</button><button class="opt" data-p="katy">Payen Katy</button></div>
+      <h3>WHERE</h3>
+      <div class="row" id="places"><button class="opt" id="mGlobe">The globe: fly somewhere else</button><button class="opt" id="mRunway">Nearest runway: take off</button><button class="opt" id="mAir">Back up in the air here</button></div>
+      <p id="mWhere"></p>
+      <h3>TIME OF DAY</h3>
+      <div class="row"><output id="hourOut">09:00</output><input id="hour" type="range" min="4.5" max="22" step="0.05" value="9" aria-label="Time of day">
+        <button class="opt" data-h="5.4">Dawn</button><button class="opt" data-h="12.75">Noon</button><button class="opt" data-h="17.8">Dusk</button><button class="opt" data-h="20.5">Night</button><button class="opt" id="hNow">Now: the sun where it really is</button></div>
+      <h3>WEATHER</h3>
+      <div class="row" id="wxOpts"></div>
+      <p id="wxSrc"></p>
+      <h3>HOW IT FLIES</h3>
+      <div class="row" id="assist"><button class="opt" data-a="easy">Easy: it holds the turn and the climb</button><button class="opt" data-a="real">Real: stick and rudder</button></div>
+      <h3>CONTROLS</h3>
+      <div class="row" id="resp"><button class="opt" data-r="gentle">Gentle</button><button class="opt" data-r="normal">Normal</button><button class="opt" data-r="sharp">Sharp</button></div>
+      <div class="row" style="margin-top:8px"><button class="opt" id="mMouse">Mouse looks around</button><button class="opt" id="mPad">Controller: none found</button><button class="opt" id="mInvert">Up = nose down</button><button class="opt" id="mUnits">km/h · metres</button><button class="opt" id="mMap">Map on</button><button class="opt" id="mFps" style="display:none">Frame rate shown</button></div>
+      <p id="keys"></p>
+      <h3>DETAIL</h3>
+      <div class="row" id="tiers"></div>
+      <p id="gfx"></p>
+<p id="mCredit" style="margin-top:14px"></p>
+    </div>
+  </div>
+
+  <div id="fade" class="layer"></div>
+  <div id="warn"></div>
+  <div id="credit"></div>
+  <div id="fail"></div>
+</div>
+<script>
+// The watchdog. It runs before any of the program has arrived, so the page can never sit on LOADING in silence:
+// it shows the still picture, says what is being waited for, and if a file fails or nothing moves it says so and
+// offers to load again.
+(function () {
+  var B = window.__boot = { t0: Date.now(), stage: 'program', done: false, failed: false, live: 0 };
+  var note = document.getElementById('note'), img = document.getElementById('posterImg');
+  var tall = window.innerWidth / Math.max(window.innerHeight, 1) < 1.2;
+  img.onload = function () { img.className = 'in'; };
+  img.onerror = function () { img.style.display = 'none'; };
+  img.src = './assets/title/' + (tall ? 'tall' : 'wide') + '.jpg';
+  document.getElementById('start').style.setProperty('--load', '0.05');
+  function say(s) { if (!B.done && !B.failed) note.textContent = s; }
+  function again() { location.replace(location.pathname + '?again=' + Date.now()); }
+  function offer(why) {
+    note.textContent = why + ' ';
+    var b = document.createElement('button'); b.className = 'again'; b.textContent = 'Load again'; b.onclick = again; note.appendChild(b);
+  }
+  say('Loading the program');
+  var quiet = 0, lastNote = '';
+  var timer = setInterval(function () {
+    if (B.done || B.failed) { clearInterval(timer); return; }
+    var s = (Date.now() - B.t0) / 1000;
+    if (note.textContent === lastNote) quiet++; else { quiet = 0; lastNote = note.textContent; }
+    if (B.stage === 'program' && s > 10 && s <= 30) say('Loading the program. A slow connection takes a little longer.');
+    // an offer, not a verdict: a very slow line may still get there, so the loading carries on underneath
+    if (!B.offered && ((B.stage === 'program' && s > 30) || quiet > 40)) { B.offered = true; offer(B.stage === 'program' ? 'Still loading the program after 30 seconds. It may yet arrive, or:' : 'Nothing has moved for 40 seconds.'); lastNote = note.textContent; quiet = 0; }
+  }, 1000);
+  window.addEventListener('error', function (e) {
+    var el = e.target;
+    if (el && el.tagName === 'SCRIPT' && !B.done) { B.failed = true; clearInterval(timer); offer('Part of the program did not arrive.'); }
+  }, true);
+})();
+</script>
+<script type="module" src="./js/app.js"></script>
+<script src="../../assets/site-menu.js" data-corner="tr" data-dock="#top" defer></script>
+</body>
+</html>

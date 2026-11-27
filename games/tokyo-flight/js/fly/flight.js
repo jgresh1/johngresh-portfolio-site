@@ -33,6 +33,27 @@ export const SPEC = {
   easyKa: 8, easyLead: 0.10,                 // easy mode: how hard the nose is driven to the angle of attack wanted; how far ahead the held path is set
 };
 
+// NASA AD-1: 9.8 m span, 8.6 square metres of wing that turns on a pivot by up to 60 degrees (right tip forward),
+// two small turbojets of 100 kg thrust each. Lighter here than the real one's 970 kg and with a little more thrust,
+// for the same reason as above. The wing turns by itself with speed, slowly, as its electric motor did: straight
+// for take-off and landing, fully turned by 400 km/h. Turned, it makes less drag, and less lift for the same angle.
+export const AD1 = {
+  mass: 700, S: 8.64, span: 9.8, gearH: 0.50,
+  CLa: 5.2, aStall: 15 * D2R, CLflat: 0.95,
+  CD0: 0.028, k: 0.038, CDbrake: 0.05,
+  thrust: 2300, lapse: 0.0012,
+  pMax: 1.9, qMax: 0.95, rMax: 0.42,
+  nMax: 5.5, nMin: -2.0,
+  qRef: 0.5 * 1.225 * 58 * 58,
+  bankEasy: 60 * D2R,
+  easyKa: 8, easyLead: 0.10,
+  sweepV: [68, 112], sweepCL: 0.40, sweepCD: -0.007, sweepK: 0.085,      // speeds (m/s) between which the wing turns; what full turn does to lift slope, drag and drag due to lift
+  rotMax: 9, rotV: [28, 40], pullAt: 140,                                // a long tail: the nose comes up 9 degrees on the runway, no more; km/h to pull at
+  hit: [[0, -0.3, -6.2], [0, 1.5, 4.5], [4.7, 0.4, 0.55], [-4.7, 0.4, 0.55]],
+};
+// nose, tail and both wing tips (body frame, metres from the centre of gravity): what is tried against the roofs
+const HIT = [[0, -0.1, -3.0], [0, 0.6, 2.2], [2.5, -0.15, 1.2], [-2.5, -0.15, 1.2]];
+
 export class Flight {
   // world: { ground(x, z) -> { y, water }, roof(x, y, z) -> height of the highest thing at (x, z), or -Infinity if unknown }
   constructor(world, spec = SPEC) {
@@ -55,6 +76,15 @@ export class Flight {
     this._gust = [0, 1, 2, 3].map((i) => ({ f: 0.19 + i * 0.23, ph: i * 2.1 }));        // slow swells of air, a few seconds each
     // the weather (weather.js sets these every frame): the air's own movement over the ground (m/s), and how rough it is (0 calm .. 1 a storm)
     this.wind = new Vector3(); this.rough = 0; this._va = new Vector3();
+    this.sweep = 0;                                  // a wing that turns: 0 straight .. 1 fully turned
+  }
+
+  // another aircraft takes over where this one is: same place, same speed
+  setSpec(spec) {
+    if (spec === this.spec) return;
+    this.spec = spec;
+    if (this.onGround) this.pos.y = this.world.ground(this.pos.x, this.pos.z).y + spec.gearH;
+    this.sweep = spec.sweepV ? smooth(spec.sweepV[0], spec.sweepV[1], this.V) : 0;
   }
 
   // heading in degrees clockwise from north; speed in m/s along the nose
@@ -68,6 +98,7 @@ export class Flight {
     this.p = this.q = this.r = 0; this.spool = throttle; this.input.throttle = throttle;
     this.onGround = ground; this.crashed = false; this.events.length = 0; this.gammaT = ground ? 0 : pitch * D2R;
     if (ground) { this.pos.y = this.world.ground(x, z).y + this.spec.gearH; this.vel.y = 0; }
+    this.sweep = this.spec.sweepV ? smooth(this.spec.sweepV[0], this.spec.sweepV[1], speed) : 0;
     this.read();
   }
 
@@ -106,13 +137,16 @@ export class Flight {
     const rho = 1.225 * Math.exp(-Math.max(pos.y, 0) / 9000), qd = 0.5 * rho * V * V;
     const auth = clamp(Math.pow(qd / S.qRef, 0.6), 0, 1.12);
     const g = this.world.ground(pos.x, pos.z), agl = pos.y - g.y;
+    // a wing that turns is asked round by the speed and takes a few seconds to get there
+    if (S.sweepV) this.sweep += (smooth(S.sweepV[0], S.sweepV[1], V) - this.sweep) * (1 - Math.exp(-h / 2.2)); else this.sweep = 0;
+    const sw = this.sweep, CLa = S.CLa * (1 - (S.sweepCL || 0) * sw), CD0 = S.CD0 + (S.sweepCD || 0) * sw, kI = S.k + (S.sweepK || 0) * sw;
 
     /* ---- lift, drag, side force */
     const aa = Math.abs(alpha), st = smooth(S.aStall - 4 * D2R, S.aStall + 7 * D2R, aa);
-    let CL = S.CLa * alpha * (1 - st) + Math.sign(alpha) * S.CLflat * Math.sin(2 * Math.min(aa, 1.4)) * st;
+    let CL = CLa * alpha * (1 - st) + Math.sign(alpha) * S.CLflat * Math.sin(2 * Math.min(aa, 1.4)) * st;
     CL *= 1 + 0.12 * smooth(S.span * 0.6, 0.6, agl);                       // the cushion close to the ground
     const sb = Math.sin(beta);
-    const CD = S.CD0 + S.k * CL * CL + 1.3 * st * Math.sin(aa) ** 2 + S.CDbrake * I.brake + 0.8 * sb * sb;
+    const CD = CD0 + kI * CL * CL + 1.3 * st * Math.sin(aa) ** 2 + S.CDbrake * I.brake + 0.8 * sb * sb;
     const L = qd * S.S * CL, D = qd * S.S * CD, Y = -qd * S.S * 0.9 * beta;
     const up = I.throttle > this.spool;
     this.spool += (I.throttle - this.spool) * (1 - Math.exp(-h / (up ? 1.9 : 1.2)));
@@ -148,9 +182,9 @@ export class Flight {
     const qUp = Math.min(S.qMax * auth, ((S.nMax - 1) * G) / Vs), qDn = Math.min(S.qMax * auth, ((1 - S.nMin) * G) / Vs);
     let pc, qc, rc;
     if (this.onGround) {
-      const rot = smooth(26, 38, V);                                            // the elevators can lift the nose from about 100 km/h
+      const rot = smooth(S.rotV ? S.rotV[0] : 26, S.rotV ? S.rotV[1] : 38, V);     // the elevators can lift the nose from about 100 km/h
       pc = -bank * 6;
-      qc = I.pitch > 0.05 && theta < 13 * D2R ? I.pitch * 0.42 * rot : -theta * 3.5;
+      qc = I.pitch > 0.05 && theta < (S.rotMax || 13) * D2R ? I.pitch * 0.42 * rot : -theta * 3.5;
       const steer = clamp(I.yaw + (this.assist === 'easy' ? I.roll : 0), -1, 1);
       rc = steer * 0.62 * Math.min(V / 5, 1) / (1 + V / 10);                    // tight at taxi speed, a few degrees a second on the take-off roll
     } else if (this.assist === 'easy') {
@@ -173,7 +207,7 @@ export class Flight {
       let gdot = clamp(ask + (this.gammaT - gamma) * 1.6, -0.5, 0.5);
       if ((gamma > top && gdot > 0) || (gamma < -40 * D2R && gdot < 0)) gdot = (clamp(gamma, -40 * D2R, top) - gamma) * 1.6;
       const nCmd = clamp((Math.cos(gamma) + (Vs * gdot) / G) / Math.max(cb, 0.22), -0.6, 4.6);
-      const aCmd = clamp((nCmd * S.mass * G) / Math.max(qd * S.S, 50) / S.CLa, -9 * D2R, S.aStall - 6 * D2R);      // never past the stall
+      const aCmd = clamp((nCmd * S.mass * G) / Math.max(qd * S.S, 50) / CLa, -9 * D2R, S.aStall - 6 * D2R);      // never past the stall
       qc = (aCmd - alpha) * S.easyKa + gdot * cb;
       if (Math.abs(bank) < 1.4) qc += (G / Vs) * sbk * (sbk / Math.max(cb, 0.22)) * Math.cos(theta);      // the nose rate a level turn needs
       qc = clamp(qc, -qDn, qUp);
@@ -240,7 +274,7 @@ export class Flight {
     }
     if (!this.crashed) {
       // nose, tail and both wing tips against the roofs
-      for (const [bx, by, bz] of [[0, -0.1, -3.0], [0, 0.6, 2.2], [2.5, -0.15, 1.2], [-2.5, -0.15, 1.2]]) {
+      for (const [bx, by, bz] of S.hit || HIT) {
         const pt = this._pt.set(bx, by, bz).applyQuaternion(this.quat).add(pos);
         const top = this.world.roof(pt.x, pt.y, pt.z);
         if (pt.y < top - 0.6) { this.crash('building'); break; }

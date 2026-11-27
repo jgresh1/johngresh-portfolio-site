@@ -127,9 +127,19 @@
   #credit a { color: inherit; }
   #turn { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(80vmin, 320px); padding: 14px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); text-align: center; display: none; }
   @media (orientation: portrait) and (pointer: coarse) { body.flying #turn { display: block; } }
-  #fail { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; font-size: 15px; background: #0b0e11; pointer-events: auto; }
+  #fail { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-wrap: wrap; gap: 14px; padding: 30px; text-align: center; font-size: 15px; background: rgba(11, 14, 17, 0.9); pointer-events: auto; }
+  .again { pointer-events: auto; cursor: pointer; padding: 9px 18px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.5); background: rgba(10, 12, 14, 0.6); letter-spacing: 0.12em; font-size: 12px; }
+  /* The title's picture is here before any of the program is: a still of the aircraft in its hangar, taken from the
+     real thing. The moving one fades in over it as soon as it has drawn. */
+  #poster { position: absolute; inset: 0; background: #0b0e11 center / cover no-repeat; background-image: url(./assets/title/wide-tiny.jpg); transition: opacity 0.7s; }
+  #poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.35s; }
+  #poster img.in { opacity: 1; }
+  @media (max-aspect-ratio: 6/5) { #poster { background-image: url(./assets/title/tall-tiny.jpg); } }
+  body.live #poster { opacity: 0; pointer-events: none; }
   @media (prefers-reduced-motion: reduce) { .pill, .opt, #start, .t-btn { transition: none; } }
 </style>
+<link rel="preload" as="image" href="./assets/title/wide.jpg" media="(min-aspect-ratio: 6/5)">
+<link rel="preload" as="image" href="./assets/title/tall.jpg" media="(max-aspect-ratio: 6/5)">
 <script type="importmap">
 { "imports": {
   "three": "./vendor/three.module.js",
@@ -138,6 +148,10 @@
   "3d-tiles-renderer/plugins": "./vendor/3d-tiles-renderer/index.plugins.js"
 } }
 </script>
+<!-- the two big files of the 3D library are asked for at once, not when the program gets round to them -->
+<link rel="modulepreload" href="./vendor/three.module.js">
+<link rel="modulepreload" href="./vendor/three.core.js">
+<link rel="preload" as="fetch" crossorigin href="./assets/jet/jet-lo.bin.gz?v=3">
 <meta property="og:title" content="Tokyo Flight">
 <meta property="og:description" content="Fly a 1954 jet over every surveyed building in Tokyo, in the browser.">
 <meta property="og:image" content="https://johngresh.org/assets/home/tokyo-hero.webp">
@@ -146,6 +160,7 @@
 <body>
 <div id="app">
   <div id="view"></div>
+  <div id="poster"><img id="posterImg" alt="" decoding="async"></div>
   <div id="bars" class="layer"><i></i><i></i></div>
 
   <div id="hud" class="layer">
@@ -175,6 +190,8 @@
     <div id="card">
       <h2>PAUSED</h2>
       <div class="row"><button class="opt main" id="mResume">RESUME</button><button class="opt" id="mFilm">Watch the opening</button><button class="opt" id="mSound">Sound on</button><button class="opt" id="mMusic">Music on</button></div>
+      <h3>AIRCRAFT</h3>
+      <div class="row" id="planes"><button class="opt on" data-p="katy">Payen Katy</button><button class="opt" data-p="ad1">NASA AD-1 oblique wing</button></div>
       <h3>FLY TO</h3>
       <div class="row" id="places"></div>
       <h3>TIME OF DAY</h3>
@@ -202,6 +219,39 @@
   <div id="credit">Buildings: <a href="https://www.mlit.go.jp/plateau/" target="_blank" rel="noopener">Project PLATEAU</a>, MLIT Japan (CC BY 4.0) · Ground photo and elevation: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">GSI Japan</a> · Runway and airfield layout: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0), <a href="https://aviationweather.gov/" target="_blank" rel="noopener">NOAA Aviation Weather Center</a></div>
   <div id="fail"></div>
 </div>
+<script>
+// The watchdog. It runs before any of the program has arrived, so the page can never sit on LOADING in silence:
+// it shows the still picture, says what is being waited for, and if a file fails or nothing moves it says so and
+// offers to load again.
+(function () {
+  var B = window.__boot = { t0: Date.now(), stage: 'program', done: false, failed: false, live: 0 };
+  var note = document.getElementById('note'), img = document.getElementById('posterImg');
+  var tall = window.innerWidth / Math.max(window.innerHeight, 1) < 1.2;
+  img.onload = function () { img.className = 'in'; };
+  img.src = './assets/title/' + (tall ? 'tall' : 'wide') + '.jpg';
+  document.getElementById('start').style.setProperty('--load', '0.05');
+  function say(s) { if (!B.done && !B.failed) note.textContent = s; }
+  function again() { location.replace(location.pathname + '?again=' + Date.now()); }
+  function offer(why) {
+    note.textContent = why + ' ';
+    var b = document.createElement('button'); b.className = 'again'; b.textContent = 'Load again'; b.onclick = again; note.appendChild(b);
+  }
+  say('Loading the program');
+  var quiet = 0, lastNote = '';
+  var timer = setInterval(function () {
+    if (B.done || B.failed) { clearInterval(timer); return; }
+    var s = (Date.now() - B.t0) / 1000;
+    if (note.textContent === lastNote) quiet++; else { quiet = 0; lastNote = note.textContent; }
+    if (B.stage === 'program' && s > 10 && s <= 30) say('Loading the program. A slow connection takes a little longer.');
+    // an offer, not a verdict: a very slow line may still get there, so the loading carries on underneath
+    if (!B.offered && ((B.stage === 'program' && s > 30) || quiet > 40)) { B.offered = true; offer(B.stage === 'program' ? 'Still loading the program after 30 seconds. It may yet arrive, or:' : 'Nothing has moved for 40 seconds.'); lastNote = note.textContent; quiet = 0; }
+  }, 1000);
+  window.addEventListener('error', function (e) {
+    var el = e.target;
+    if (el && el.tagName === 'SCRIPT' && !B.done) { B.failed = true; clearInterval(timer); offer('Part of the program did not arrive.'); }
+  }, true);
+})();
+</script>
 <script type="module" src="./js/app.js"></script>
 <script src="../../assets/site-menu.js" data-corner="tr" data-dock="#top" defer></script>
 </body>

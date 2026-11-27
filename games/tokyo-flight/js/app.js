@@ -13,7 +13,8 @@ import { worldToGeo, geoToWorld } from './geo.js';
 import { NET, EXPLORE, CITY } from './net.js';
 import { TIERS, ORDER, graphicsDevice, pickTier, Governor } from './fly/perf.js';
 import { loadJet, addLod, GEAR_H } from './fly/jet.js';
-import { Flight } from './fly/flight.js';
+import { Flight, SPEC, AD1 } from './fly/flight.js';
+import { loadAD1, AD1_VIEW, AD1_BYTES } from './fly/ad1.js';
 import { Rig } from './fly/chase.js';
 import { Input, padNav } from './fly/input.js';
 import { Sound } from './fly/sound.js';
@@ -49,7 +50,9 @@ async function boot() {
     w.style.display = 'block'; w.onclick = () => { w.style.display = 'none'; };        // said once; a tap puts it away
   }
   const note = (s) => { $('note').textContent = s; };
-  note('Loading the aircraft');
+  const BOOT = window.__boot || (window.__boot = {});      // the page's own watchdog reads this (index.html)
+  const load = (f) => { $('start').style.setProperty('--load', Math.min(1, f).toFixed(3)); };
+  BOOT.stage = 'aircraft'; note('Loading the aircraft'); load(0.12);
 
   /* ---------------------------------------------------------------- the hangar and the aircraft: enough for the title */
   installCascades();
@@ -57,9 +60,17 @@ async function boot() {
   const hangar = new Hangar(renderer, tier);
   const sound = new Sound();
   const flyLod = Q.get('jet') || tier.jet, filmLod = Q.get('jet') || tier.jetFilm || tier.jet;
-  const jet = await loadJet(flyLod);
-  // the hangar close-ups get the full model; it arrives behind the title and is used from then on
-  if (filmLod !== flyLod) addLod(jet, filmLod).then(() => { if (jet.root.parent === hangar.scene) jet.use(filmLod); }).catch((e) => console.warn('full model', e));
+  // Every device starts with the small model (1.3 MB), so the title is up as soon as that is here. The full one
+  // (4.3 MB) comes in behind the title and is used from then on wherever this device was going to use it.
+  const firstLod = Q.get('jet') || 'lo';
+  const jet = await loadJet(firstLod, undefined, (got, total) => { const f = got / (total || 1.3e6); load(0.12 + 0.6 * f); note('Loading the aircraft ' + Math.round(Math.min(f, 1) * 100) + '%'); });
+  BOOT.stage = 'scene'; note('Setting the scene'); load(0.78);
+  for (const l of new Set([flyLod, filmLod])) {
+    if (l !== firstLod) addLod(jet, l).then(() => { if (jet.root.parent === hangar.scene ? l === filmLod : l === flyLod && plane === 'katy') jet.use(l); }).catch((e) => console.warn('full model', e.message || e));
+  }
+  // The Katy is the aircraft: the title, the film and every visit start with it. The AD-1 is a second one to fly,
+  // picked in the menu (further down); its model is fetched then.
+  let plane = 'katy';
   jet.root.position.set(0, GEAR_H, 0); jet.pose(0, { parked: 1 });
   hangar.scene.add(jet.root);
   hangar.setLamps(4);
@@ -253,7 +264,7 @@ async function boot() {
     renderer.render(hangar.scene, hangar.camera);
   }
   const toStage = () => { if (jet.root.parent !== hangar.scene) { hangar.scene.add(jet.root); jet.use(filmLod); jet.setEnv(hangar.refreshEnv(jet.root, true), 1); if (gov.scale < 1) resize(); } };
-  const toWorld = () => { if (jet.root.parent !== scene) { scene.add(jet.root); jet.use(flyLod); jet.setEnv(envRT.texture, 1.15); if (gov.scale < 1) resize(); } };
+  const toWorld = () => { if (jet.root.parent !== scene) { scene.add(jet.root); jet.use(PLANES[plane].key()); jet.setEnv(envRT.texture, 1.15); if (gov.scale < 1) resize(); } };
 
   /* ---------------------------------------------------------------- read-outs */
   const tape = $('tape'), PX = 3.6;
@@ -274,10 +285,10 @@ async function boot() {
     const imp = units === 'ft';
     el.spd.textContent = Math.round(flight.V * (imp ? 1.94384 : 3.6)); el.spdU.textContent = imp ? 'kt' : 'km/h';
     const top = world.roof(flight.pos.x, 0, flight.pos.z), g = flight.pos.y - flight.agl, over = Math.max(flight.pos.y - Math.max(g, Number.isFinite(top) ? top : g), 0);
-    el.alt.textContent = Math.round((flight.onGround ? 0 : flight.agl - GEAR_H) * (imp ? 3.28084 : 1)); el.altU.textContent = imp ? 'ft' : 'm';
+    el.alt.textContent = Math.round((flight.onGround ? 0 : flight.agl - flight.spec.gearH) * (imp ? 3.28084 : 1)); el.altU.textContent = imp ? 'ft' : 'm';
     const vs = flight.vs;
     el.vs.textContent = flight.onGround ? 'on the ground' : Math.abs(vs) < 0.6 ? 'level' : `${vs > 0 ? 'climbing' : 'sinking'} ${imp ? Math.round(Math.abs(vs) * 196.85) + ' ft/min' : Math.abs(vs).toFixed(0) + ' m/s'}`;
-    el.pwr.style.transform = `scaleX(${input.throttle.toFixed(3)})`; el.pwrT.textContent = `Power ${Math.round(input.throttle * 100)}%` + (input.brake ? ' · brake' : '');
+    el.pwr.style.transform = `scaleX(${input.throttle.toFixed(3)})`; el.pwrT.textContent = `Power ${Math.round(input.throttle * 100)}%` + (flight.spec.sweepV ? ` · wing ${Math.round(flight.sweep * 60)}°` : '') + (input.brake ? ' · brake' : '');
     // nearest landmark
     let best = null, bd = 1e12;
     for (const p of PLACES) { if (p.id === 'all') continue; p.w ??= geoToWorld(p.lat, p.lon, 0); const d = Math.hypot(p.w.x - flight.pos.x, p.w.z - flight.pos.z); if (d < bd) { bd = d; best = p; } }
@@ -306,7 +317,8 @@ async function boot() {
   }
   // what to say depends on what is in the player's hands: a controller once one has been taken up, else touch or keys
   const by = (pad, thumb, keys) => (input.device === 'pad' ? pad : input.device === 'touch' || (touch && input.device !== 'keys') ? thumb : keys);
-  const POWER = () => by('Hold <b>RT</b> for power. Pull the stick back at <b>130 km/h</b>. The stick steers, <b>A</b> brakes.', 'Push the <b>right lever</b> up to roll. Pull back on the left thumb at <b>130 km/h</b>.', 'Hold <b>R</b> for power. Pull back (<b>S</b>) at <b>130 km/h</b>. <b>A D</b> steer, <b>Space</b> brakes.');
+  const pullAt = () => flight.spec.pullAt || 130;         // km/h
+  const POWER = () => by(`Hold <b>RT</b> for power. Pull the stick back at <b>${pullAt()} km/h</b>. The stick steers, <b>A</b> brakes.`, `Push the <b>right lever</b> up to roll. Pull back on the left thumb at <b>${pullAt()} km/h</b>.`, `Hold <b>R</b> for power. Pull back (<b>S</b>) at <b>${pullAt()} km/h</b>. <b>A D</b> steer, <b>Space</b> brakes.`);
   const FLYING = () => by('<b>Left stick</b> flies · <b>RT LT</b> power · <b>A</b> brake · <b>Y</b> view · <b>right stick</b> looks', '<b>Left thumb</b> flies · <b>right lever</b> is power · drag to look', '<b>A D</b> bank · <b>S</b> nose up, <b>W</b> down · <b>R F</b> power · <b>C</b> view · drag to look');
   let rolled = true;
   function beginFlight() {
@@ -314,10 +326,11 @@ async function boot() {
     input.enabled = true; input.throttle = flight.input.throttle;
     setHud(1); setBars(0); $('skip').style.display = 'none'; $('warn').style.display = 'none';
     perFrame = tier.tilesPerFrame;
-    rig.look.yaw = 0; rig.look.pitch = 0; rig.dist = 11.5;
+    rig.look.yaw = 0; rig.look.pitch = 0; rig.dist = PLANES[plane].view.dist;
     if (flight.onGround) { rolled = false; hint(POWER(), 14); }
     else hint(FLYING(), 9);
     input.ui = null; titleNav.close();
+    if (Q.get('plane') === 'ad1' && !askedPlane) { askedPlane = true; setPlane('ad1'); }      // a link straight to the second aircraft: it takes over once it is here
   }
   function events(now) {
     for (const e of flight.events) {
@@ -327,7 +340,7 @@ async function boot() {
     }
     flight.events.length = 0;
     // on the take-off roll: say when to pull, once
-    if (flight.onGround && !rolled && flight.V > 36) { rolled = true; hint(by('<b>Pull the stick back</b> now.', '<b>Pull back</b> now.', '<b>Pull back</b> now (S).'), 4); }
+    if (flight.onGround && !rolled && flight.V > pullAt() / 3.6) { rolled = true; hint(by('<b>Pull the stick back</b> now.', '<b>Pull back</b> now.', '<b>Pull back</b> now (S).'), 4); }
     if (flight.crashed && now - crashT > 1300) {
       // back in the air where it happened, well clear of everything, pointing the same way
       const h = flight.heading * D2R, x = flight.pos.x - Math.sin(h) * 260, z = flight.pos.z + Math.cos(h) * 260;
@@ -335,6 +348,35 @@ async function boot() {
       flight.place({ x, y: top + 190, z, heading: flight.heading, speed: 88, throttle: 0.66 });
       input.throttle = 0.66; rig.snap(); $('fade').classList.remove('on'); hint('Back in the air.', 3);
     }
+  }
+
+  /* ---------------------------------------------------------------- which aircraft */
+  const ad1Lod = Q.get('jet') || tier.jet;
+  const PLANES = {
+    katy: { name: 'Payen Katy', spec: SPEC, view: { dist: 11.5, height: 2.5, min: 6.5, size: 1 }, key: () => flyLod },
+    ad1: { name: 'NASA AD-1 oblique wing', spec: AD1, view: AD1_VIEW, key: () => 'ad1-' + ad1Lod },
+  };
+  let planeBusy = false, askedPlane = false;
+  const planeUI = (msg = '') => $('planes').querySelectorAll('.opt').forEach((b) => { b.classList.toggle('on', b.dataset.p === plane); if (b.dataset.p === 'ad1') b.textContent = PLANES.ad1.name + (msg ? ' · ' + msg : ''); });
+  // Change aircraft where it is, in the air or on the ground: same place, same speed. The AD-1 is fetched the first
+  // time it is asked for (the Katy flies on meanwhile), and its shaders are built before it is shown.
+  async function setPlane(name) {
+    if (!PLANES[name] || name === plane || planeBusy) return plane;
+    if (name === 'ad1' && !jet.has(PLANES.ad1.key())) {
+      planeBusy = true; planeUI('loading');
+      try {
+        await loadAD1(jet, ad1Lod, (got, total) => planeUI('loading ' + Math.round(Math.min(got / (total || AD1_BYTES[ad1Lod] || 4e6), 1) * 100) + '%'));
+        planeUI('getting ready');
+        try { await renderer.compileAsync(jet.models[PLANES.ad1.key()].model, camera, scene); } catch (e) { console.warn('precompile', e); }
+      } catch (e) { console.warn('second aircraft', e.message || e); planeBusy = false; planeUI('could not load, press to try again'); return plane; }
+      planeBusy = false;
+    }
+    plane = name; const P = PLANES[name];
+    flight.setSpec(P.spec); rig.fit(P.view);
+    if (jet.root.parent === scene) { jet.use(jet.has(P.key()) ? P.key() : firstLod); jet.root.position.copy(flight.pos); jet.pose(0, { parked: 0, sweep: flight.sweep }); if (mode === 'fly') rig.update(0); }
+    jet.cockpit(rig.mode === 'cockpit'); planeUI();
+    if (mode === 'fly' && !paused) hint(name === 'ad1' ? 'NASA AD-1. Its wing turns as it gains speed.' : 'Payen Katy.', 5);
+    return plane;
   }
 
   /* ---------------------------------------------------------------- menu */
@@ -424,7 +466,8 @@ async function boot() {
   };
   const keysText = () => (touch ? 'Left thumb: fly (it works wherever the thumb lands). Right lever: power. Turn and pull together for a tight turn. Drag anywhere else to look, pinch to move the camera in or out, double tap to look ahead again.'
     : '<kbd>A</kbd> <kbd>D</kbd> bank · <kbd>S</kbd> nose up · <kbd>W</kbd> nose down · <kbd>Q</kbd> <kbd>E</kbd> rudder · <kbd>R</kbd> <kbd>F</kbd> power · <kbd>Space</kbd> brakes · <kbd>C</kbd> view · <kbd>V</kbd> look ahead · drag to look, wheel to move the camera. A tap on a key is a small correction; holding it is the full stick. Turn and pull together for a tight turn. A controller works too, once a button on it is pressed.');
-  $('mFilm').onclick = () => { setPaused(false); startFilm(film.variant); };
+  $('planes').querySelectorAll('.opt').forEach((b) => { b.onclick = () => setPlane(b.dataset.p); });
+  $('mFilm').onclick = () => { setPaused(false); setPlane('katy'); startFilm(film.variant); };       // the opening is the Katy's film
   assistUI(); invertUI(); unitsUI(); soundUI(); respUI(); mouseUI(); showHour(); padUI();
   input.on.pause = () => { if (mode === 'film') film.skip(); else setPaused(!paused); };
   input.on.view = () => { if (mode === 'fly' && !paused) hint('View: ' + rig.next(), 1.6); };
@@ -459,6 +502,7 @@ async function boot() {
   addEventListener('keydown', (e) => { if (mode === 'title' && (e.code === 'Enter' || e.code === 'Space') && !startBtn.disabled) startFilm('air'); });
   // Nothing to wait for on the title: the hangar and the aircraft are here, and the film covers the city's loading.
   startBtn.disabled = false; startBtn.classList.add('ready'); $('startT').textContent = 'START';
+  BOOT.done = true; load(1);
   note(touch ? 'Best sideways, with sound.' : 'Best with sound. Enter starts.');
 
   /* ---------------------------------------------------------------- frame */
@@ -489,7 +533,7 @@ async function boot() {
         const wasOn = flight.onGround, x0 = flight.pos.x, z0 = flight.pos.z;
         flight.step(dt);
         jet.root.position.copy(flight.pos); jet.root.quaternion.copy(flight.quat);
-        jet.pose(dt, { roll: input.roll, pitch: input.pitch, yaw: input.yaw, throttle: input.throttle, parked: 0, look: clamp(flight.bank * 0.9, -0.8, 0.8),
+        jet.pose(dt, { roll: input.roll, pitch: input.pitch, yaw: input.yaw, throttle: input.throttle, parked: 0, look: clamp(flight.bank * 0.9, -0.8, 0.8), sweep: flight.sweep,
           wheel: flight.onGround || wasOn ? Math.hypot(flight.pos.x - x0, flight.pos.z - z0) : 0 });
         jet.uHeat.value = 0.08 + 0.4 * flight.spool;
         events(now);
@@ -507,11 +551,13 @@ async function boot() {
     frames++;
     if (now - fpsAt > 1000) { fps = (frames * 1000) / (now - fpsAt); frames = 0; fpsAt = now; }
   }
+  let shown = 0;
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min((now - last) / 1000, 0.1); last = now;
     const t0 = performance.now();
     step(dt, now);
+    if (shown < 2 && ++shown === 2) { document.body.classList.add('live'); BOOT.live = performance.now(); }      // the still picture gives way to the real one
     // the governor watches the flying and the film's shots over the city, so it has settled before the stick is handed over
     if ((mode === 'fly' && !paused) || (mode === 'film' && !film.state.stage)) { gov.frame(dt, performance.now() - t0, gpuDone); if (gov.exhausted) tooMuch(); }
   }
@@ -525,7 +571,7 @@ async function boot() {
   /* ---------------------------------------------------------------- console / test handle */
   window.__fly = {
     THREE, renderer, scene, camera, hangar, jet, flight, rig, input, film, sound, terrain, city, roofs, shadows, gov, tier, tierName, GFX, NET, ATMO, FILM, RAIL, world, setHour, place, PLACES, weather, clouds, precip, bolt,
-    get mode() { return mode; }, get fps() { return fps; },
+    get mode() { return mode; }, get fps() { return fps; }, get plane() { return plane; }, setPlane, PLANES,
     runway, toRunway, start: startFilm,
     begin(variant = film.variant) { if (mode !== 'fly') { film.setVariant(variant); $('title').style.display = 'none'; film.at(film.end, 0); beginFlight(); } },
     // draw one moment of the film (hidden panes do not run the frame loop)
@@ -547,6 +593,17 @@ async function boot() {
       renderer.getSize(size); terrain.update(camera, size.y); city.update(); city.pushQueues(); for (let i = 0; i < 8 && turns.length; i++) turns.shift()();
       drawWorld(near, exposure);
       return { loading: terrain.stats.loading, pending: city.pending };
+    },
+    // draw the aircraft where it is, from a camera given in its own frame: [right, up, back] in metres from its centre of gravity,
+    // for the camera and for what it looks at; `pose` = control positions to show (roll, pitch, yaw -1..1, sweep 0..1)
+    craftAt(from, to = [0, 0, 0], fov = 35, near = 0.3, pose = {}) {
+      cancelAnimationFrame(raf); $('title').style.display = 'none'; toWorld(); setBars(0); setHud(0);
+      jet.root.position.copy(flight.pos); jet.root.quaternion.copy(flight.quat); jet.pose(0, { parked: 0, sweep: flight.sweep, ...pose });
+      const a = new THREE.Vector3(...from).applyQuaternion(jet.root.quaternion).add(jet.root.position), b = new THREE.Vector3(...to).applyQuaternion(jet.root.quaternion).add(jet.root.position);
+      camera.position.copy(a); camera.up.set(0, 1, 0); camera.lookAt(b); camera.fov = fov; camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+      renderer.getSize(size); terrain.update(camera, size.y); city.update(); city.pushQueues(); for (let i = 0; i < 8 && turns.length; i++) turns.shift()();
+      drawWorld(near, exposure);
+      return { loading: terrain.stats.loading, pending: city.pending, plane, lod: jet.lod, tris: jet.tris };
     },
     // put the aircraft anywhere: latitude, longitude, metres above sea level, heading; `look` is the viewer's own turn and tilt in degrees
     goto({ lat, lon, alt = 1500, heading = 0, pitch = 0, bank = 0, speed = 110, look = [0, 0], view = 'chase', dist = 11.5 }) {
@@ -586,5 +643,7 @@ async function boot() {
 boot().catch((e) => {
   console.error(e);
   const f = document.getElementById('fail');
-  f.style.display = 'flex'; f.textContent = 'Could not start: ' + (e.message || e);
+  f.style.display = 'flex'; f.textContent = 'Could not start: ' + (e.message || e) + '. ';
+  if (window.__boot) window.__boot.failed = true;
+  const b = document.createElement('button'); b.textContent = 'Load again'; b.className = 'again'; b.onclick = () => location.replace(location.pathname + '?again=' + Date.now()); f.appendChild(b);
 });

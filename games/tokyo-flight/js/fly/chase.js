@@ -15,6 +15,7 @@ export class Rig {
     this.mode = 'chase';
     this.look = { yaw: 0, pitch: 0 };          // radians, the viewer's own offset
     this.dist = 11.5; this.height = 2.5;
+    this.minDist = 6.5; this.size = 1;         // the nearest the arm may be drawn in, and how big the aircraft is beside the first one
     this.q = new THREE.Quaternion(); this.ready = false;       // the arm's own (smoothed) direction
     this.pull = 0; this.fov = 55; this.shake = new THREE.Vector3(); this.t = 0; this.vPrev = 0;
     this.spot = new THREE.Vector3(); this.spotAge = 1e9;
@@ -36,7 +37,9 @@ export class Rig {
     this.look.pitch = clamp(this.look.pitch - dy * perPx, this.mode === 'cockpit' ? -1.1 : -1.25, this.mode === 'cockpit' ? 1.3 : 1.35);
     if (this.mode === 'cockpit') this.look.yaw = clamp(this.look.yaw, -2.6, 2.6);
   }
-  zoom(k) { this.dist = clamp(this.dist * k, 6.5, 60); }
+  zoom(k) { this.dist = clamp(this.dist * k, this.minDist, 60); }
+  // a different aircraft on the same arm: where its pilot's eyes are is the aircraft's own business (jet.active.eye)
+  fit({ dist = 11.5, height = 2.5, min = 6.5, size = 1 } = {}) { this.dist = dist; this.height = height; this.minDist = min; this.size = size; this.spotAge = 1e9; }
 
   // the direction the arm wants: along the flight path (the nose when slow), leaning part of the bank
   target(out) {
@@ -61,7 +64,7 @@ export class Rig {
     this.shake.set(Math.sin(t * 19) + Math.sin(t * 13.3 + 1), Math.sin(t * 17 + 2) + Math.sin(t * 11.1), Math.sin(t * 15 + 4)).multiplyScalar(amp);
 
     if (this.mode === 'cockpit') {
-      const p = this._p.copy(this.eye);
+      const p = this._p.copy(this.jet.active?.eye || this.eye);
       p.y -= clamp((F.n - 1) * 0.012, -0.03, 0.05);                 // the head sinks under g
       p.z += clamp(acc * 0.0025, -0.03, 0.03);
       p.add(this.shake);
@@ -76,7 +79,7 @@ export class Rig {
         // ahead of the aircraft, off to one side, a little below it, clear of the ground and the roofs
         const side = Math.sin(this.t * 7.7) > 0 ? 1 : -1, lead = clamp(F.V, 40, 140) * 1.9;
         const f = this._f.copy(F.vel).setY(0).normalize(), r = this._r.set(-f.z, 0, f.x);
-        const s = this.spot.copy(J.position).addScaledVector(F.vel, 1.9).addScaledVector(r, side * (16 + lead * 0.08));
+        const s = this.spot.copy(J.position).addScaledVector(F.vel, 1.9).addScaledVector(r, side * (16 + lead * 0.08) * this.size);
         s.y = J.position.y + F.vel.y * 1.9 - 5;
         const floor = Math.max(this.world.ground(s.x, s.z).y + 1.7, this.world.roof(s.x, s.y, s.z) + 1.5);
         if (s.y < floor) s.y = floor;
@@ -86,7 +89,7 @@ export class Rig {
       const d = cam.position.distanceTo(J.position);
       this._m.lookAt(cam.position, J.position, this._u.set(0, 1, 0));
       cam.quaternion.setFromRotationMatrix(this._m).multiply(this._q.setFromEuler(this._e.set(this.shake.y * 0.3, this.shake.x * 0.3, 0)));
-      const want = clamp((2 * Math.atan(9 / Math.max(d, 12))) / D2R, 13, 55);      // close to a quarter of the frame, without a lens so long the far ground smears
+      const want = clamp((2 * Math.atan((9 * this.size) / Math.max(d, 12))) / D2R, 13, 55);      // close to a quarter of the frame, without a lens so long the far ground smears
       this.fov = fresh ? want : this.fov + (want - this.fov) * (1 - Math.exp(-dt * 5)); this.near = clamp(d * 0.2, 0.5, 20);
     } else {
       this.target(this._q2);

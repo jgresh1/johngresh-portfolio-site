@@ -14,10 +14,31 @@ const D2R = Math.PI / 180;
 const LIMIT = { ail: 17, elev: 19, rud: 22 };           // degrees
 
 const MODEL_V = 3;            // 2: the jet pipe's old internals left out (engine.js builds them). 3: rudder markings ride on the rudder; pilot name
-async function fetchBin(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error('jet model: http ' + r.status);
-  let buf = await r.arrayBuffer();
+// A download that cannot hang. If no bytes arrive for `quiet` milliseconds the request is dropped and asked for
+// again (three times, the later ones past the browser's own copy); `onProgress(bytes so far, bytes in all or 0)`.
+export async function grab(url, { onProgress, tries = 3, quiet = 12000 } = {}) {
+  let last;
+  for (let k = 0; k < tries; k++) {
+    const ac = new AbortController(); let timer = setTimeout(() => ac.abort(), quiet);
+    try {
+      const r = await fetch(k ? url + (url.includes('?') ? '&' : '?') + 'again=' + k : url, { signal: ac.signal, cache: k ? 'reload' : 'default' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const total = +r.headers.get('content-length') || 0, rd = r.body.getReader(), parts = []; let got = 0;
+      for (;;) {
+        const { done, value } = await rd.read(); if (done) break;
+        parts.push(value); got += value.length;
+        clearTimeout(timer); timer = setTimeout(() => ac.abort(), quiet);
+        onProgress?.(got, total);
+      }
+      clearTimeout(timer);
+      const out = new Uint8Array(got); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
+      return out.buffer;
+    } catch (e) { clearTimeout(timer); last = e; await new Promise((r) => setTimeout(r, 500 * (k + 1))); }
+  }
+  throw new Error('could not get ' + url.split('/').pop().split('?')[0] + ' (' + (last?.name === 'AbortError' ? 'the download stopped' : last?.message || last) + ')');
+}
+export async function fetchBin(url, onProgress) {
+  let buf = await grab(url, { onProgress });
   const u = new Uint8Array(buf, 0, 2);
   // a server may or may not have unpacked the gzip on the way: look at the bytes rather than trust headers
   if (u[0] === 0x1f && u[1] === 0x8b) buf = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
@@ -27,7 +48,7 @@ async function fetchBin(url) {
 /* ------------------------------------------------------------------ paint, rebuilt from the Blender rules */
 const f = (v) => Number(v).toFixed(5);
 const v3 = (c) => `vec3(${f(c[0])}, ${f(c[1])}, ${f(c[2])})`;
-const NOISE = /* glsl */`
+export const NOISE = /* glsl */`
 float kh3(vec3 p){ p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3)); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float kvn(vec3 x){ vec3 i = floor(x), u = fract(x); u = u * u * (3.0 - 2.0 * u);
   return mix(mix(mix(kh3(i), kh3(i + vec3(1,0,0)), u.x), mix(kh3(i + vec3(0,1,0)), kh3(i + vec3(1,1,0)), u.x), u.y),
@@ -87,7 +108,7 @@ const SKIN_TONE = `
       diffuseColor.rgb *= 1.0 - 0.22 * kRv * (1.0 - smoothstep(0.0, 0.10, kDm)) - 0.30 * kSm;`;      // the thin shadow round each head, and the joints
 const SKIN_ROUGH = ' roughnessFactor = clamp(roughnessFactor + 0.10 * kRv + 0.15 * kSm, 0.05, 1.0);';
 // the skin's height bends the light (Mikkelsen's surface gradient: no texture coordinates needed)
-const SKIN_BUMP = /* glsl */`{
+export const SKIN_BUMP = /* glsl */`{
       vec3 sPx = dFdx( - vViewPosition ), sPy = dFdy( - vViewPosition ); float sHx = dFdx( kH ), sHy = dFdy( kH );
       vec3 sR1 = cross( sPy, normal ), sR2 = cross( normal, sPx ); float sDet = dot( sPx, sR1 );
       normal = normalize( abs( sDet ) * normal - sign( sDet ) * ( sHx * sR1 + sHy * sR2 ) ); }`;
@@ -178,12 +199,21 @@ const GLASS = {
   fragPars: 'uniform vec2 uGlass;',
 };
 
+// acrylic 3 mm thick: clear straight through, more and more mirror towards its edges, with the faint film every canopy carries.
+// `alpha` is how much it hides seen square on and seen edge on.
+export function clearMaterial(key, alpha, color = 0x0b0e10, parts = GLASS) {
+  const mat = new THREE.MeshPhysicalMaterial({ color, metalness: 0, roughness: 0.035, ior: 1.49, specularIntensity: 1, clearcoat: 1, clearcoatRoughness: 0.02, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor });
+  return patch(mat, key, parts, { uGlass: { value: alpha } });
+}
+
 // one level of detail of the aircraft: its meshes, its moving parts, its pilot
 class JetModel {
   constructor(man, buf, lod, jet) {
     this.lod = lod;
     this.model = new THREE.Group(); this.model.name = 'jet-' + lod;
     this.model.matrix.copy(jet.toBody); this.model.matrixAutoUpdate = false;
+    this.eye = jet.body(EYE.x, EYE.y, EYE.z);
     this.materials = []; this.glass = [];
     this.uHeat = jet.uHeat; this.uLamp = jet.uLamp;
     this.parts = {};
@@ -225,10 +255,7 @@ class JetModel {
   material(m, C) {
     let mat;
     if (m.kind === 'glass' || m.kind === 'thin') {
-      // acrylic 3 mm thick: clear straight through, more and more mirror towards its edges, with the faint film every canopy carries
-      mat = new THREE.MeshPhysicalMaterial({ color: 0x0b0e10, metalness: 0, roughness: 0.035, ior: 1.49, specularIntensity: 1, clearcoat: 1, clearcoatRoughness: 0.02, transparent: true, depthWrite: false, side: THREE.DoubleSide,
-        blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor });
-      patch(mat, 'jet-' + m.kind, GLASS, { uGlass: { value: m.kind === 'glass' ? new THREE.Vector2(0.13, 0.86) : new THREE.Vector2(0.03, 0.4) } });
+      mat = clearMaterial('jet-' + m.kind, m.kind === 'glass' ? new THREE.Vector2(0.13, 0.86) : new THREE.Vector2(0.03, 0.4));
     } else {
       const p = { color: new THREE.Color().setRGB(m.color[0], m.color[1], m.color[2]), metalness: m.metal, roughness: m.rough, side: THREE.DoubleSide };
       mat = m.coat > 0 ? new THREE.MeshPhysicalMaterial({ ...p, clearcoat: m.coat, clearcoatRoughness: 0.05 }) : new THREE.MeshStandardMaterial(p);
@@ -332,7 +359,7 @@ export class Jet {
     this.toBody = M.clone().multiply(new THREE.Matrix4().makeTranslation(-CG.x, -CG.y, -CG.z));
     this.uHeat = { value: 0 }; this.uLamp = { value: 0 };
     this.models = {}; this.active = null; this.lod = null; this.env = null; this.envK = 1; this.inside = false;
-    this.ctl = { ail: 0, elev: 0, rud: 0, thr: 0, parked: 1, look: 0, rolled: 0 };
+    this.ctl = { ail: 0, elev: 0, rud: 0, thr: 0, parked: 1, look: 0, rolled: 0, sweep: 0 };
     this.hands = null; this._pilot = null;
   }
   // one pilot is built; each level of detail gets its own copy of him (same meshes)
@@ -344,10 +371,12 @@ export class Jet {
     const c = this._pilot.clone(true); this._pilot.userData = ud;
     c.userData.head = c.getObjectByName('head'); c.userData.materials = ud.materials; return c;
   }
-  add(lod, man, buf) {
-    const m = new JetModel(man, buf, lod, this);
+  add(lod, man, buf) { return this.addModel(lod, new JetModel(man, buf, lod, this)); }
+  // Anything with a `model` to draw, `materials`, a `pilot` to hide, an `eye` point, `tris` and `apply(commands)` can
+  // be flown: the Katy's levels of detail are, and so is the second aircraft (ad1.js). `use` picks which is drawn.
+  addModel(lod, m) {
     m.model.visible = false; this.root.add(m.model); this.models[lod] = m;
-    if (this.env) for (const mat of m.materials) { mat.envMap = this.env; mat.envMapIntensity = this.envK; }
+    if (this.env) for (const mat of m.materials) { mat.envMap = this.env; mat.envMapIntensity = this.envK * (mat.userData.envK ?? 1); }
     m.pilot.visible = !this.inside;
     if (!this.active) this.use(lod);
     return m;
@@ -360,20 +389,21 @@ export class Jet {
   }
   get tris() { return this.active ? this.active.tris : 0; }
 
-  // reflections: the page's sky map, at its real strength (the city is drawn with it turned well down)
+  // reflections: the page's sky map, at its real strength (the city is drawn with it turned well down). A material
+  // that sits where the whole sky cannot reach it (inside a cockpit) says so with userData.envK.
   setEnv(tex, intensity = 1) {
     if (tex === this.env && intensity === this.envK) return;
     this.env = tex; this.envK = intensity;
-    for (const k in this.models) for (const m of this.models[k].materials) { m.envMap = tex; m.envMapIntensity = intensity; }
+    for (const k in this.models) for (const m of this.models[k].materials) { m.envMap = tex; m.envMapIntensity = intensity * (m.userData.envK ?? 1); }
   }
 
   // roll, pitch, yaw commands -1..1 (right, nose up, nose right), throttle 0..1, parked 0..1 (elevators hang as built),
-  // wheel = metres rolled since the last call
-  pose(dt, { roll = 0, pitch = 0, yaw = 0, throttle = 0, parked = 0, wheel = 0, look = 0 } = {}) {
+  // wheel = metres rolled since the last call; sweep 0..1 = how far a wing that can turn has been turned
+  pose(dt, { roll = 0, pitch = 0, yaw = 0, throttle = 0, parked = 0, wheel = 0, look = 0, sweep = 0 } = {}) {
     const c = this.ctl, k = dt > 0 ? 1 - Math.exp(-dt * 14) : 1;
     c.ail += (roll - c.ail) * k; c.elev += (pitch - c.elev) * k; c.rud += (yaw - c.rud) * k;
     c.thr += (throttle - c.thr) * k; c.parked += (parked - c.parked) * k; c.look += (look - c.look) * (dt > 0 ? 1 - Math.exp(-dt * 3) : 1);
-    c.rolled += wheel;
+    c.rolled += wheel; c.sweep = sweep;
     this.active?.apply(c);
   }
 
@@ -384,13 +414,16 @@ export class Jet {
   cockpit(on) { this.inside = on; for (const k in this.models) this.models[k].pilot.visible = !on; }
 }
 
-async function fetchLod(lod, base) {
+async function fetchLod(lod, base, onProgress) {
   // browsers keep the model for a day: the number on the end changes when the export does, so nobody flies an old one
-  return Promise.all([fetch(base + 'jet-' + lod + '.json?v=' + MODEL_V).then((r) => { if (!r.ok) throw new Error('jet model: http ' + r.status); return r.json(); }), fetchBin(base + 'jet-' + lod + '.bin.gz?v=' + MODEL_V)]);
+  return Promise.all([grab(base + 'jet-' + lod + '.json?v=' + MODEL_V).then((b) => JSON.parse(new TextDecoder().decode(b))), fetchBin(base + 'jet-' + lod + '.bin.gz?v=' + MODEL_V, onProgress)]);
 }
-export async function loadJet(lod = 'hi', base = './assets/jet/') {
-  const jet = new Jet(), [[man, buf], hands] = await Promise.all([fetchLod(lod, base), loadHands()]);
-  jet.hands = hands;
+export async function loadJet(lod = 'hi', base = './assets/jet/', onProgress) {
+  // (the pilot's hands are wanted but never waited for: after six seconds he is built with plain ones)
+  const hands = Promise.race([loadHands(), new Promise((r) => setTimeout(() => r(null), 6000))]);
+  const jet = new Jet(), [[man, buf], hd] = await Promise.all([fetchLod(lod, base, onProgress), hands]);
+  const handsGot = hd;
+  jet.hands = handsGot;
   jet.add(lod, man, buf);
   return jet;
 }

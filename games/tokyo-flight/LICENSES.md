@@ -35,6 +35,10 @@ Building names, heights and uses shown in the info card come from the PLATEAU at
 - **Aircraft model**: Payen Pa 49B Katy, modelled by John Gresh (Desktop/katy_studio), exported with
   `tools/export_jet.py`. The pilot figure, the hangar, the flight model, the film and all sound are original
   to this project; nothing in them is recorded or downloaded.
+- **Second aircraft**: NASA AD-1 (N805NA), modelled by John Gresh (Desktop/ad1_studio) from the dimensions in NASA
+  TP-2224 and NASA's photographs, exported with `tools/export_ad1.py`. The NASA insignia and the maker's logo are
+  left off the model; the registration and the fin number are the aircraft's own. This project is not connected
+  with NASA or endorsed by it.
 - **Map data** is the same as the map page's (above): Project PLATEAU (CC BY 4.0) and GSI Japan. On the
   published site the tiles pass through a cache on the site's own address (`worker/index.js`); they are not
   altered, and the credit line stays on screen.

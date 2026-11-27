@@ -56,6 +56,7 @@ export class Input {
       if (e.repeat) return;
       if (e.code === 'KeyC') this.on.view();
       if (e.code === 'KeyV') this.on.recentre();
+      if (e.code === 'KeyM') this.on.map?.();
     });
     addEventListener('keyup', (e) => this.keys.delete(e.code));
     addEventListener('blur', () => this.keys.clear());
@@ -219,6 +220,7 @@ export class Input {
         const z = (now[13] ? 1 : 0) - (now[12] ? 1 : 0); if (z) this.on.zoom(Math.exp(z * 1.3 * dt));
         if (hit(3)) this.on.view();
         if (hit(2) || hit(11)) this.on.recentre();
+        if (hit(8)) this.on.map?.();                      // Back / View: the map shows more or less
         if (hit(9)) this.on.pause();
       }
       this.padBtn = now;

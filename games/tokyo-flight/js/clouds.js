@@ -30,7 +30,8 @@ void main() { vUv = position.xy * 0.5 + 0.5; gl_Position = vec4( position.xy, 0.
 /* ------------------------------------------------------------------ the noise the clouds are cut from */
 // Made once, on the graphics card, a few slices a frame. All of it repeats, so it can be laid end to end.
 //   kind 0  shape, 96 x 96 x 96: r = billows (smooth noise lifted by cells), g b a = cells at three sizes
-//   kind 1  detail, 32 x 32 x 32: r g b = small cells at three sizes, for the wisps at a cloud's edge
+//   kind 1  detail, 64 x 64 x 64: r = cells at three sizes together, g = the two smaller, b = the smallest: the
+//           bulges on a heap's top and the wisps under it
 //   kind 2  slow variation, 256 x 256: r g b = three smooth fields, a = streaks (cirrus)
 // r, g, b, a of the shape are spread evenly between 0 and 1 (MAP below), so "the top 30 percent" is 30 percent of the sky.
 const NOISE_FRAG = /* glsl */`
@@ -75,7 +76,9 @@ void main() {
     float shape = ( bill - ( low - 1.0 ) ) / ( 2.0 - low );
     o = vec4( even( shape, MAP_R ), even( c4, MAP_G ), even( c8, MAP_B ), even( c16, MAP_A ) );
   } else if ( uKind == 1 ) {
-    o = vec4( cells3( p, 2 ), cells3( p, 4 ), cells3( p, 8 ), 1.0 );
+    // every cell is at least four points of the picture across, or it is not a cell but grain
+    float d4 = cells( p, 4 ), d8 = cells( p, 8 ), d16 = cells( p, 16 );
+    o = vec4( d4 * 0.6 + d8 * 0.3 + d16 * 0.1, d8 * 0.65 + d16 * 0.35, d16, 1.0 );
   } else {
     vec3 q = vec3( vUv, 0.37 );
     float a = smoothN( q, 3, 5 ), b = smoothN( q + vec3( 0.0, 0.0, 0.31 ), 4, 5 ), c = smoothN( q + vec3( 0.0, 0.0, 0.67 ), 3, 5 );
@@ -88,13 +91,14 @@ void main() {
 }`;
 // where each raw field's values lie (5th and 95th percentile, measured with Clouds.measure): spread to 0..1
 const NOISE_MAP = { MAP_R: '0.727, 0.942', MAP_G: '0.245, 0.73', MAP_B: '0.245, 0.73', MAP_A: '0.245, 0.73' };
+const DN = 64;          // the detail's size each way
 
 class Noise {
   constructor(renderer) {
     this.renderer = renderer;
     const o3 = { format: THREE.RGBAFormat, type: THREE.UnsignedByteType, depthBuffer: false, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter };
     this.shape = new THREE.WebGL3DRenderTarget(96, 96, 96, o3);
-    this.detail = new THREE.WebGL3DRenderTarget(32, 32, 32, o3);
+    this.detail = new THREE.WebGL3DRenderTarget(DN, DN, DN, o3);
     this.vary = new THREE.WebGLRenderTarget(256, 256, { ...o3 });
     for (const t of [this.shape.texture, this.detail.texture, this.vary.texture]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.wrapR = THREE.RepeatWrapping; }
     let frag = NOISE_FRAG; for (const [k, v] of Object.entries(NOISE_MAP)) frag = frag.replaceAll(k, v);
@@ -102,7 +106,7 @@ class Noise {
     this.mesh = new THREE.Mesh(tri, this.mat); this.mesh.frustumCulled = false;
     this.cam = new THREE.Camera();
     this.jobs = [{ rt: this.vary, kind: 2, z: 0, n: 1 }];
-    for (let z = 0; z < 32; z++) this.jobs.push({ rt: this.detail, kind: 1, z, n: 32 });
+    for (let z = 0; z < DN; z++) this.jobs.push({ rt: this.detail, kind: 1, z, n: DN });
     for (let z = 0; z < 96; z++) this.jobs.push({ rt: this.shape, kind: 0, z, n: 96 });
     this.total = this.jobs.length;
   }
@@ -149,7 +153,8 @@ uniform vec4 uMid;           // base, top, kind (0 sheet, 1 cells), thickness
 uniform vec4 uHigh;          // height, how much light it stops, streak direction (x, z)
 uniform vec4 uDrift;         // how far the wind has carried the low layer (x, z) and the middle one (x, z)
 uniform float uEvo;          // the clouds' own slow change: a height the noise is read at
-const float SHAPE = 1.0 / 9600.0, DETAIL = 1.0 / 1430.0;
+const float SHAPE = 1.0 / 9600.0, DETAIL = 1.0 / 1100.0;       // the detail's cells: 275, 137 and 69 m across
+const float EMEAN = 0.47;                                       // the detail's average value
 float sat( float x ) { return clamp( x, 0.0, 1.0 ); }
 // what the report says about a place: r low, g middle, b high cover, a rain; and the slow variation there
 void placeAt( vec2 xz, out vec4 wx, out vec4 vary ) {
@@ -159,7 +164,10 @@ void placeAt( vec2 xz, out vec4 wx, out vec4 vary ) {
   // showers and storms stand in cells with clear air between them: the same amount of cloud, gathered up
   float lanes = sat( wx.r + ( vary.r - 0.5 ) * 2.2 * wx.r * ( 1.0 - wx.r ) );
   wx.r = mix( lanes, sat( wx.r * 2.15 * smoothstep( 0.30, 0.75, vary.r ) ), sat( ( uLow.z - 1.15 ) * 2.0 ) * ( 1.0 - sat( ( uLow.z - 1.75 ) * 4.0 ) ) );      // a thunderstorm fills its sky
-  wx.g = sat( wx.g + ( vary.b - 0.5 ) * 2.2 * wx.g * ( 1.0 - wx.g ) );
+  // Middle cloud comes in fields: where there is some, there is a field of it with clear sky between the fields,
+  // not one lone lump here and there. A little cover = few fields, each still more than half full.
+  float inner = max( wx.g, 0.58 ), share = sat( wx.g / inner ), edge = 1.0 - share;
+  wx.g = inner * smoothstep( edge - 0.07, edge + 0.07, vary.b * 0.86 + 0.07 ) * smoothstep( 0.0, 0.03, wx.g );
 }
 // The low layer. The answer is signed: above 0 is inside cloud, and how far above is how deep inside.
 // h runs from 0 at the base to 1 at the top of the slab.
@@ -176,38 +184,53 @@ float lowShape( vec3 p, vec4 wx, float lod ) {
   // heaps: a level base, and a top that domes over the middle of each one. Some stand taller than others.
   float tv = textureLod( tVary, q / 7300.0, 0.0 ).g;
   float top = mix( 1.0, mix( 0.42, 1.0, tv ), uLow2.w );
-  float heap = n.r - open - c * 0.93 * pow( sat( h / top ), 1.7 ) - ( 1.0 - smoothstep( 0.0, 0.035, h ) );
+  // (a heap is widest a little above its base: it bulges out over it)
+  float heap = n.r - open - c * 0.93 * pow( sat( h / top ), 1.7 ) - 0.07 * c * ( 1.0 - smoothstep( 0.0, 0.22, h ) ) - ( 1.0 - smoothstep( 0.0, 0.03, h ) );
   // towers: wide at the foot, drawn in higher up, spread out again under the lid into an anvil
   float anvil = uLow2.y * smoothstep( 0.70, 0.84, h ) * ( 1.0 - smoothstep( 0.93, 1.0, h ) );
   float tower = n.r * smoothstep( 0.0, 0.03, h ) * max( 1.0 - 0.42 * smoothstep( 0.04, 0.6, h ), anvil * 1.2 ) - open;
   float x = mix( mix( sheet, heap, cu ), tower, cb );
   // billows: cells 1.2 km and 600 m across push the surface out and in
-  return x + ( n.b * 0.6 + n.a * 0.4 - 0.5 ) * mix( 0.07, 0.24, cu ) * smoothstep( 0.0, 0.08, c ) * ( 1.0 - 0.6 * smoothstep( 0.85, 1.0, c ) );
+  x += ( n.b * 0.6 + n.a * 0.4 - 0.5 ) * mix( 0.07, 0.24, cu ) * smoothstep( 0.0, 0.08, c ) * ( 1.0 - 0.6 * smoothstep( 0.85, 1.0, c ) );
+  // This is the surface as it is on average once the small bulges and wisps are cut (cloudAt): what the sun's
+  // light and the shadow are measured through. Measured through the uncut shape, every surface that is seen lay
+  // deep inside it, in the dark, and the clouds came out as even grey lumps.
+  return x - 0.274 * uLow2.x;
 }
 float midShape( vec3 p, vec4 wx, float lod ) {
   float h = ( p.y - uMid.x ) / ( uMid.y - uMid.x );
   float c = wx.g * smoothstep( 0.04, 0.16, wx.g );                     // a trace of middle cloud is no cloud, not specks
   if ( h <= 0.0 || h >= 1.0 || c < 0.01 ) return -1.0;
   vec2 q = p.xz + uDrift.zw;
-  vec4 n = textureLod( tShape, vec3( q * 1.7, p.y * 1.3 + uEvo * 0.6 ) * SHAPE + 0.37, lod + 1.0 );
-  float u = mix( n.r, n.g * 0.6 + n.b * 0.4, 0.75 * uMid.z );
+  vec4 n = textureLod( tShape, vec3( q * 1.7, p.y * 1.3 + uEvo * 0.6 ) * SHAPE + 0.37, lod + 0.4 );
+  // cells: rounded pads 1.4 km, 700 m and 350 m across with gaps between them (altocumulus); a sheet has none
+  float u = mix( n.r, n.g * 0.45 + n.b * 0.35 + n.a * 0.2, 0.8 * uMid.z );
   float g = smoothstep( 0.0, 0.22, h ) * ( 1.0 - smoothstep( 0.55, 1.0, h ) );
-  return u * g - ( 1.0 - c ) + ( n.a - 0.5 ) * 0.10 * uMid.z;
+  return u * g - ( 1.0 - c );
 }
 // how much light a metre of air stops at p (1/m). fine = with the wisps at the edges eaten out
 float cloudAt( vec3 p, vec4 wx, float lod, bool fine ) {
   float xl = lowShape( p, wx, lod ), xm = midShape( p, wx, lod );
-  if ( xl <= 0.0 && xm <= 0.0 ) return 0.0;
+  // (a bulge stands out past the average surface by this much at most)
+  if ( fine ? xl <= -0.34 * uLow2.x && xm <= -0.05 : xl <= 0.0 && xm <= 0.0 ) return 0.0;
   float cu = sat( uLow.z ), hl = sat( ( p.y - uLow.x ) / ( uLow.y - uLow.x ) );
   if ( fine && lod < 2.5 ) {
+    // The small shapes, pushed out and cut in about the average surface: bulges 275, 137 and 69 m across, and
+    // close to a second set half that size. On top and on the sides each cell is a bulge (cauliflower); under
+    // the cloud the cells are holes and what is left between them is wisps.
     vec3 dn = textureLod( tDetail, vec3( p.xz + uDrift.xy * 1.2, p.y - uEvo * 2.0 ) * DETAIL, lod ).rgb;
-    float hf = dn.r * 0.625 + dn.g * 0.25 + dn.b * 0.125;
-    // close to, a second and finer set of cells: curls a few tens of metres across
-    if ( lod < 0.8 ) { vec3 d2 = textureLod( tDetail, vec3( p.xz + uDrift.xy * 1.3, p.y - uEvo * 3.0 ).yzx * ( DETAIL * 4.3 ) + 0.31, 0.0 ).rgb; hf = mix( hf, hf * 0.72 + ( d2.r * 0.6 + d2.g * 0.4 ) * 0.28, 1.0 - lod / 0.8 ); }
-    float e = mix( hf, 1.0 - hf, sat( hl * 4.0 ) ) * ( 1.0 - lod / 2.5 );       // wispy underneath, cauliflower on top
-    xl -= e * uLow2.x * 0.55; xm -= hf * 0.07 * ( 1.0 - lod / 2.5 );
+    float hf = dn.r * 0.6 + dn.g * 0.4, k = 1.0 - lod / 2.5;
+    float topness = sat( hl * 4.0 );
+    float e = ( mix( hf, 1.0 - hf, topness ) - EMEAN ) * k;
+    if ( lod < 0.9 ) {
+      vec3 d2 = textureLod( tDetail, vec3( p.xz + uDrift.xy * 1.3, p.y - uEvo * 3.0 ).yzx * ( DETAIL * 2.3 ) + 0.31, 0.0 ).rgb;
+      float h2 = d2.r * 0.55 + d2.g * 0.45;
+      e += ( mix( h2, 1.0 - h2, topness ) - EMEAN ) * 0.42 * ( 1.0 - lod / 0.9 );
+    }
+    xl -= e * uLow2.x * 0.50; xm -= ( hf - EMEAN ) * 0.10 * k;
   }
-  float lo = sat( xl / mix( 0.12, 0.05, cu ) ), mi = sat( xm / 0.13 );
+  // a heap's edge is sharp: full cloud within some tens of metres of clear air
+  float lo = sat( xl / mix( 0.12, 0.026, cu ) ), mi = sat( xm / 0.13 );
   return lo * uLow.w * mix( 1.0, 0.55 + 0.75 * hl, cu ) + mi * uMid.w;
 }`;
 
@@ -218,6 +241,7 @@ layout( location = 0 ) out vec4 oC;      // rgb light sent, a light let through
 layout( location = 1 ) out vec4 oZ;      // r where the cloud starts, g where the middle of what is seen of it lies (km, times b), b how much it hides
 #define STEPS ${o.steps}
 #define LIGHT ${o.light}
+#define LFINE ${o.lfine}
 const float R = ${R_EARTH}.0, PI = 3.14159265, ZS = 0.001;
 uniform vec3 uCam, uUp, uRayX, uRayY, uRayZ;
 uniform float uCamAlt, uRange, uFrame, uAlpha, uHistOn, uAdapt;
@@ -249,6 +273,7 @@ vec2 slab( float b, float h0, float h1, float tMax ) {
   return vec2( t0, min( t1, tMax ) );
 }
 float hg( float c, float g ) { float g2 = g * g; return ( 1.0 - g2 ) / pow( 1.0 + g2 - 2.0 * g * c, 1.5 ); }
+float dual( float c, float k ) { return 0.8 * min( hg( c, 0.78 * k ), 6.0 ) + 0.2 * hg( c, -0.28 * k ); }
 vec3 skyAt( vec3 d ) {
   float t = pow( 1.0 - max( d.y, 0.0 ), 4.5 );
   return mix( uZenith, uHorizon, t );
@@ -273,11 +298,14 @@ void main() {
   int nA = ( STEPS * 7 ) / 10, nB = STEPS - nA;
   if ( sB.y > sB.x && ( sA.y <= sA.x || sB.x < sA.x ) ) { vec2 s = sA; sA = sB; sB = s; int n = nA; nA = nB; nB = n; }
   float jit = fract( 52.9829189 * fract( dot( gl_FragCoord.xy + uFrame * vec2( 32.665, 11.815 ), vec2( 0.06711056, 0.00583715 ) ) ) );
-  float cosT = dot( rd, uSunDir );
-  // light scattered on towards the eye: strong looking towards the sun through thin cloud, a little looking away from it
-  float phase = min( mix( hg( cosT, 0.62 ), hg( cosT, -0.30 ), 0.5 ), 1.55 );
-  vec3 sunL = uSunCol * uSunE;
+  float cosT = dot( rd, uSunDir ), pixA = 2.0 * length( uRayY ) / uRes.y;      // (the angle one point of this picture covers)
+  // Light scattered on towards the eye. Straight from the sun it goes mostly onwards (the bright rim of a cloud in
+  // front of the sun) and a little straight back; each time it has bounced off another drop it has forgotten more
+  // of where it came from. Four lots: bounced never, once, a few times, many times.
+  vec4 phase = vec4( dual( cosT, 1.0 ), dual( cosT, 0.5 ), dual( cosT, 0.25 ), 1.0 );
+  vec3 sunL = uSunCol * ( uSunE * 0.46 );
   float sunUp = dot( uSunDir, uUp );
+  vec3 sdir = vec3( uSunDir.x, sunUp, uSunDir.z );
   vec3 air = skyAt( normalize( vec3( rd.x, abs( rd.y ) * 0.3 + 0.02, rd.z ) ) ) * 0.92;
 
   float T = 1.0; vec3 C = vec3( 0.0 ); float zW = 0.0, wSum = 0.0, zFirst = -1.0, zLast = 0.0;
@@ -310,22 +338,30 @@ void main() {
     if ( s.y <= s.x || T < 0.012 ) continue;
     float t0 = max( s.x, 0.5 ), t1 = s.y;
     // Strides grow with distance, so a fixed number of them reaches the horizon. Empty air is crossed in long
-    // strides; where one lands in cloud the ray goes back a stride and walks the cloud in short steps (a third
-    // as long). A ray has only so many short steps: past that it goes on in long ones, so nothing is left out.
+    // strides; where one lands in cloud the ray goes back a stride and walks the cloud in short steps, as short
+    // as this level of detail affords at that distance. A ray has only so many short steps: past that it goes on
+    // in long ones, so nothing is left out.
     int nC = ( n * 11 ) / 20, fineLeft = n - nC, miss = 0; bool fine = false;
     float kC = max( ${o.kmin}, pow( t1 / max( t0, 700.0 ), 1.0 / float( nC ) ) - 1.0 );
     float t = t0 + max( ${o.dtmin} * 3.0, t0 * kC ) * jit;
-    vec4 wx, vary; float wxAtT = -1e9;
+    vec4 wx, vary; float wxAtT = -1e9, tWalked = t0;
     for ( int i = 0; i < n; i ++ ) {
       if ( t >= t1 || T < 0.012 ) break;
-      float dtC = max( ${o.dtmin} * 3.0, t * kC ), dt = fine ? dtC * 0.3333 : dtC;
+      float dtC = max( ${o.dtmin} * 3.0, t * kC ), dtF = min( max( ${o.dtmin}, t * ${o.kf} ), dtC ), dt = fine ? dtF : dtC;
       float alt = uCamAlt + mu * t + t * t * ( 1.0 - mu * mu ) / ( 2.0 * Ra );
       vec3 p = vec3( uCam.x + rd.x * t, alt, uCam.z + rd.z * t );
       if ( abs( t - wxAtT ) > 1500.0 ) { placeAt( p.xz, wx, vary ); wxAtT = t; }           // the report changes over kilometres, not steps
-      float lod = clamp( log2( dt / 110.0 ), 0.0, 3.2 );
+      // How fine the cloud's shapes are read: as fine as a point of this picture is wide at that distance. A step
+      // longer than the shapes still reads them (each frame at a different depth, and the frames are blended):
+      // reading them blurred to the step's length is what made a cloud a few kilometres off a soft lump.
+      float lod = clamp( max( log2( t * pixA / 17.0 ), log2( dt / 260.0 ) ), 0.0, 3.2 );
       // a long stride asks a blurred and generous question (is there cloud anywhere near here?), so thin cloud is not stepped over
       if ( ! fine && fineLeft > 0 ) {
-        if ( max( lowShape( p, wx, lod + 1.2 ), midShape( p, wx, lod + 1.2 ) ) > -0.10 ) { fine = true; miss = 0; t = max( t - dtC * ( 1.0 - 0.3333 * jit ), t0 ); continue; }
+        // (blurred to the stride's length, but never so far that a lone heap is blurred away)
+        // (and with less to spare the sharper the question: short steps spent in clear air beside a cloud are
+        // short steps the cloud does not get; ground already walked in short steps is not walked again)
+        float lodC = min( log2( dtC / 110.0 ) + 1.2, 3.3 ), spare = -0.03 - 0.07 * sat( ( lodC - 1.2 ) / 1.6 );
+        if ( max( lowShape( p, wx, lodC ) + 0.274 * uLow2.x, midShape( p, wx, lodC ) ) > spare ) { fine = true; miss = 0; t = max( max( t - dtC + dtF * jit, tWalked ), t0 ); continue; }
         t += dt; continue;
       }
       float sig = cloudAt( p, wx, lod, true );
@@ -340,25 +376,29 @@ void main() {
         vec3 S = vec3( 0.0 );
         if ( sig > 1e-6 ) {
           // the sun, through the cloud on the way to it
+          // (stretches that double in length; the nearest ones are measured through the cloud's small shapes too,
+          // so one bulge shades the next and the creases between them are dark)
           float tau = 0.0;
           if ( uSunE > 0.002 ) {
-            float ls = ${o.ls};
+            float ls = ${o.ls}, s0 = 0.0;
             for ( int j = 0; j < LIGHT; j ++ ) {
-              vec3 lp = p + vec3( uSunDir.x, sunUp, uSunDir.z ) * ( ls * ( float( j ) + 0.6 ) );
-              tau += cloudAt( lp, wx, lod + 1.0 + float( j ) * 0.5, false ) * ls;
-              ls *= 1.9;
+              if ( j == LIGHT - 1 ) ls *= 2.0;
+              vec3 lp = p + sdir * ( s0 + ls * ( 0.3 + 0.4 * jit ) );
+              tau += cloudAt( lp, wx, lod + float( j ) * 0.55, j < LFINE ) * ls;
+              s0 += ls; ls *= 2.0;
             }
           }
           // Light does not only go straight through a cloud: most of it bounces from drop to drop and comes out
-          // further in. So the sun dies away more slowly than the cloud's own thickness says, at two rates.
-          tau *= 0.36;
-          float sun = max( exp( - tau ), 0.36 * exp( - tau * 0.22 ) );
-          // the sky's light: all of it on top of a cloud, less inside and underneath
+          // somewhere else. Each lot of light above has bounced more, so the cloud in its way stops less of it.
+          float sun = dot( phase, vec4( 1.0, 0.55, 0.3025, 0.166 ) * exp( - tau * vec4( 1.0, 0.42, 0.176, 0.074 ) ) );
+          // the sky's light: all of it on top of a cloud, less inside and underneath, where what comes up off the
+          // ground takes over (grey)
           float hl = sat( ( alt - uLow.x ) / ( uLow.y - uLow.x ) ), hm = sat( ( alt - uMid.x ) / ( uMid.y - uMid.x ) );
           float hh = alt >= uMid.x ? 0.55 + 0.45 * hm : hl;
-          vec3 amb = mix( uAmbLo, uAmbHi, hh * hh ) * ( 0.45 + 0.55 * exp( - tau * 0.3 ) );
-          float pw = 1.0 - 0.35 * exp( - sig * dt * 2.0 ) * sat( cosT * 0.5 + 0.5 );   // a cloud's sunward edge is a little darker than its heart
-          S = ( sunL * sun * phase * pw + amb ) * sig;
+          float open = exp( - tau * 0.12 );
+          // (a side that the sun's path reaches freely also sees the sky: its shade is blue-grey, not the grey of the base)
+          vec3 amb = mix( uAmbLo * ( 0.5 + 0.5 * open ), uAmbHi * ( 0.35 + 0.65 * open ), max( hh * sqrt( hh ), 0.75 * open ) );
+          S = ( sunL * sun + amb ) * sig;
           if ( uFlash.w > 0.0 ) { vec3 fd = rd * t - uFlash.xyz; S += vec3( 0.75, 0.82, 1.0 ) * sig * uFlash.w / pow( 1.0 + dot( fd, fd ) * 1.6e-7, 1.5 ); }
         }
         S += rain * ( uAmbLo * 0.9 + uAmbHi * 0.35 );
@@ -372,7 +412,7 @@ void main() {
         zLast = t + dt;
         T *= Tr;
       }
-      if ( fine ) { fineLeft --; if ( sig > 0.0 ) miss = 0; else if ( ++ miss >= 5 ) fine = false; if ( fineLeft <= 0 ) fine = false; }
+      if ( fine ) { fineLeft --; tWalked = t + dt; if ( sig > 0.0 ) miss = 0; else if ( ++ miss >= 4 ) fine = false; if ( fineLeft <= 0 ) fine = false; }
       t += dt;
     }
   }
@@ -409,7 +449,7 @@ void main() {
   vec2 sl = uSunDir.xz / sy;
   vec4 wx, vary; placeAt( q + sl * uLow.x, wx, vary );
   float tl = 0.0, tm = 0.0;
-  for ( int i = 0; i < 8; i ++ ) { float a = mix( uLow.x, uLow.y, ( float( i ) + 0.5 ) / 8.0 ); tl += sat( ( lowShape( vec3( q.x + sl.x * a, a, q.y + sl.y * a ), wx, 0.6 ) - 0.2 * uLow2.x ) / mix( 0.12, 0.05, sat( uLow.z ) ) ); }      // less the wisps the picture eats away
+  for ( int i = 0; i < 8; i ++ ) { float a = mix( uLow.x, uLow.y, ( float( i ) + 0.5 ) / 8.0 ); tl += sat( lowShape( vec3( q.x + sl.x * a, a, q.y + sl.y * a ), wx, 0.6 ) / mix( 0.12, 0.05, sat( uLow.z ) ) ); }
   tl *= uLow.w * ( uLow.y - uLow.x ) / 8.0 / sy;
   for ( int i = 0; i < 3; i ++ ) { float a = mix( uMid.x, uMid.y, ( float( i ) + 0.5 ) / 3.0 ); tm += sat( midShape( vec3( q.x + sl.x * a, a, q.y + sl.y * a ), wx, 1.5 ) / 0.13 ); }
   tm *= uMid.w * ( uMid.y - uMid.x ) / 3.0 / sy;
@@ -423,21 +463,25 @@ void main() {
 const SOFT = /* glsl */`
 precision highp float; precision highp sampler2D;
 layout( location = 0 ) out vec4 oC; layout( location = 1 ) out vec4 oZ;
-uniform sampler2D tA, tB; uniform vec2 uPx;
+uniform sampler2D tA, tB; uniform vec2 uPx; uniform float uSoft;
 void main() {
   vec2 uv = gl_FragCoord.xy * uPx; vec4 a = vec4( 0.0 ), b = vec4( 0.0 );
   for ( int j = -1; j <= 1; j ++ ) for ( int i = -1; i <= 1; i ++ ) {
     float w = ( i == 0 ? 2.0 : 1.0 ) * ( j == 0 ? 2.0 : 1.0 ) / 16.0; vec2 q = uv + vec2( float( i ), float( j ) ) * uPx;
     a += texture( tA, q ) * w; b += texture( tB, q ) * w;
   }
-  oC = a; oZ = b;
+  // (how much of the blur is used: all of it where few rays are drawn, less where there are many)
+  oC = mix( texture( tA, uv ), a, uSoft ); oZ = mix( texture( tB, uv ), b, uSoft );
 }`;
 
-const QUALITY = {       // rays as a share of the screen each way, steps along a ray, steps towards the sun, shadow picture, reach (m)
-  phone: { res: 0.30, steps: 40, light: 2, shadow: 256, range: 50000, dtmin: '55.0', kmin: '0.06', ls: '90.0' },
-  low: { res: 0.34, steps: 56, light: 3, shadow: 384, range: 70000, dtmin: '45.0', kmin: '0.05', ls: '80.0' },
-  mid: { res: 0.42, steps: 88, light: 4, shadow: 512, range: 110000, dtmin: '36.0', kmin: '0.04', ls: '65.0' },
-  high: { res: 0.5, steps: 150, light: 5, shadow: 768, range: 150000, dtmin: '26.0', kmin: '0.03', ls: '55.0' },
+// rays as a share of the screen each way, steps along a ray, steps towards the sun (and how many of those see the
+// cloud's small shapes), shadow picture, reach (m), shortest step (m), a step in cloud as a share of the distance,
+// first stretch towards the sun (m)
+const QUALITY = {
+  phone: { res: 0.30, steps: 40, light: 2, lfine: 0, shadow: 256, range: 50000, dtmin: '55.0', kmin: '0.06', kf: '0.034', ls: '80.0' },
+  low: { res: 0.34, steps: 56, light: 3, lfine: 0, shadow: 384, range: 70000, dtmin: '45.0', kmin: '0.05', kf: '0.025', ls: '60.0' },
+  mid: { res: 0.42, steps: 88, light: 4, lfine: 1, shadow: 512, range: 110000, dtmin: '34.0', kmin: '0.04', kf: '0.017', ls: '42.0', soft: 0.7 },
+  high: { res: 0.5, steps: 150, light: 6, lfine: 2, shadow: 768, range: 150000, dtmin: '22.0', kmin: '0.03', kf: '0.011', ls: '28.0', soft: 0.4 },
 };
 
 export class Clouds {
@@ -469,7 +513,7 @@ export class Clouds {
     };
     const raw = (frag, uniforms) => new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VERT, fragmentShader: frag, uniforms, depthTest: false, depthWrite: false });
     this.march = raw(MARCH(this.q), this.u);
-    this.soft = raw(SOFT, { tA: { value: null }, tB: { value: null }, uPx: { value: new THREE.Vector2(1, 1) } });
+    this.soft = raw(SOFT, { tA: { value: null }, tB: { value: null }, uPx: { value: new THREE.Vector2(1, 1) }, uSoft: { value: this.q.soft ?? 1 } });
     this.shMat = raw(SHADOW, { ...this.field, uShC: { value: new THREE.Vector3(0, 0, 76000) }, uSunDir: A.uSunDir });
     this.mesh = new THREE.Mesh(tri, this.march); this.mesh.frustumCulled = false;
     this.rts = []; this.cur = 0; this.w = 0; this.h = 0;

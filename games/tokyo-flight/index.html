@@ -72,7 +72,7 @@
   #tape b { position: absolute; top: -3px; transform: translateX(-50%); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; }
   #compass::after { content: ""; position: absolute; left: 50%; top: 24px; margin-left: -4px; border: 4px solid transparent; border-bottom: 7px solid var(--hot); border-top: 0; }
   #where { position: absolute; top: calc(52px + var(--st)); left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.86); font-size: 12px; letter-spacing: 0.05em; white-space: nowrap; }
-  #wx { position: absolute; top: calc(71px + var(--st)); left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.72); font-size: 11px; letter-spacing: 0.04em; white-space: nowrap; max-width: 94vw; overflow: hidden; text-overflow: ellipsis; }
+  #wx { position: absolute; top: calc(71px + var(--st)); left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.72); font-size: 11px; letter-spacing: 0.04em; white-space: nowrap; max-width: max(170px, calc(100vw - 2 * (var(--m, 150px) + 26px))); overflow: hidden; text-overflow: ellipsis; }
   #wx b { font-weight: 600; color: var(--hot); letter-spacing: 0.14em; font-size: 9.5px; margin-right: 6px; }
   body.touch #wx { font-size: 10px; }
   #alert { position: absolute; top: 31%; left: 50%; transform: translateX(-50%); color: var(--bad); font-weight: 700; letter-spacing: 0.3em; font-size: clamp(14px, 2vw, 20px); opacity: 0; transition: opacity 0.12s; }
@@ -84,6 +84,34 @@
   .pill { pointer-events: auto; height: 38px; min-width: 38px; padding: 0 13px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); cursor: pointer; font-size: 11.5px; letter-spacing: 0.14em;
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform 0.26s cubic-bezier(0.3, 1.7, 0.5, 1), background 0.15s; }
   .pill:hover { background: rgba(40, 48, 56, 0.85); transform: translateY(-1px); } .pill:active { transform: scale(0.94); transition-duration: 0.05s; }
+
+  /* ---- the map of the flight: top right, under the buttons (drawn by js/fly/minimap.js). --m is the side of the map. */
+  #hud { --m: clamp(150px, 23vmin, 220px); }
+  #mini { position: absolute; top: calc(58px + var(--st)); right: calc(14px + var(--sr)); box-sizing: content-box; width: var(--m); border-radius: 12px; overflow: hidden; background: rgba(14, 18, 22, 0.8); border: 1px solid var(--line);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.34); text-shadow: none; pointer-events: auto; cursor: pointer; transform-origin: 100% 0; transition: transform 0.26s cubic-bezier(0.3, 1.7, 0.5, 1), border-color 0.15s; }
+  #mini:hover { border-color: rgba(255, 255, 255, 0.3); } #mini:active { transform: scale(0.972); transition-duration: 0.05s; }
+  #mini.off { pointer-events: none; } #mini.hide { display: none; }
+  #miniCv { display: block; width: var(--m); height: var(--m); background: #0f1f2b; }
+  #mini::after { content: ""; position: absolute; left: 0; top: 0; width: var(--m); height: var(--m); box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.5); pointer-events: none; }
+  #miniStats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; padding: 8px 10px 9px; background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #mini.plain #miniStats { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  #miniStats span { display: block; font-size: 8px; letter-spacing: 0.14em; color: rgba(255, 255, 255, 0.62); white-space: nowrap; }
+  #miniStats b { display: block; font-size: 12.5px; font-weight: 600; line-height: 1.25; white-space: nowrap; } #miniStats i { font-style: normal; }
+  #miniStats small { font-size: 9px; font-weight: 500; color: rgba(255, 255, 255, 0.7); margin-left: 3px; letter-spacing: 0.06em; }
+  /* a narrow window: the map sits under the place and weather lines, which then keep their width */
+  @media (max-width: 540px) and (min-height: 521px) { #mini { top: calc(94px + var(--st)); } #wx { max-width: 94vw; } }
+  /* a short window: a smaller map, with the distance and the time laid over its bottom edge */
+  @media (max-height: 520px) {
+    #hud { --m: clamp(84px, calc(var(--app-h) * 0.26), 150px); }
+    #miniStats { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; gap: 4px; padding: 12px 6px 3px; background: linear-gradient(180deg, rgba(6, 10, 14, 0), rgba(6, 10, 14, 0.8)); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    #miniStats span, #miniStats div:nth-child(n+3) { display: none; }
+    #miniStats b { font-size: 10.5px; } #miniStats small { font-size: 8px; margin-left: 2px; }
+    /* and on a phone held sideways it moves in, clear of MENU and the power lever, and as far up beside MENU as it
+       must to stay clear of the VIEW button under it (whose top is 220px above the bottom edge) */
+    body.touch #hud { --m: clamp(60px, calc(var(--app-h) * 0.21), 96px); }
+    body.touch #mini { top: calc(clamp(12px, calc(var(--app-h) - 230px - var(--m) - var(--sb) - var(--st)), 56px) + var(--st)); right: calc(92px + var(--sr)); }
+    body.touch #wx { max-width: max(150px, calc(100vw - 2 * (var(--m) + 104px + var(--sr)))); }
+  }
 
   /* a site menu button (johngresh.org adds one): in the top row while flying, in the corner on the title, away during the film */
   #top #jg-site { pointer-events: auto; } #top #jg-site-btn { height: 38px; }
@@ -171,6 +199,15 @@
     <div id="gSpd" class="gauge"><label>SPEED</label><b><span id="spd">0</span><small id="spdU">km/h</small></b><div id="pwr"><i></i><u></u></div><span id="pwrT">Power 60%</span></div>
     <div id="gAlt" class="gauge"><label>HEIGHT</label><b><span id="alt">0</span><small id="altU">m</small></b><span id="vs">level</span></div>
     <div id="ctl" title="Where the stick is"><i></i></div>
+    <div id="mini" class="off" title="Map. Click, or press M, to show more or less.">
+      <canvas id="miniCv" width="200" height="200"></canvas>
+      <div id="miniStats">
+        <div><span>FLOWN</span><b><i id="msDist">0.0</i><small id="msDistU">km</small></b></div>
+        <div><span>AIR TIME</span><b><i id="msTime">0:00</i></b></div>
+        <div><span>TOP SPEED</span><b><i id="msTop">0</i><small id="msTopU">km/h</small></b></div>
+        <div><span>HIGHEST</span><b><i id="msHigh">0</i><small id="msHighU">m</small></b></div>
+      </div>
+    </div>
     <div id="hint"></div>
   </div>
   <div id="touch" class="layer"></div>
@@ -204,7 +241,7 @@
       <div class="row" id="assist"><button class="opt" data-a="easy">Easy: it holds the turn and the climb</button><button class="opt" data-a="real">Real: stick and rudder</button></div>
       <h3>CONTROLS</h3>
       <div class="row" id="resp"><button class="opt" data-r="gentle">Gentle</button><button class="opt" data-r="normal">Normal</button><button class="opt" data-r="sharp">Sharp</button></div>
-      <div class="row" style="margin-top:8px"><button class="opt" id="mMouse">Mouse looks around</button><button class="opt" id="mPad">Controller: none found</button><button class="opt" id="mInvert">Up = nose down</button><button class="opt" id="mUnits">km/h · metres</button></div>
+      <div class="row" style="margin-top:8px"><button class="opt" id="mMouse">Mouse looks around</button><button class="opt" id="mPad">Controller: none found</button><button class="opt" id="mInvert">Up = nose down</button><button class="opt" id="mUnits">km/h · metres</button><button class="opt" id="mMap">Map on</button></div>
       <p id="keys"></p>
       <h3>DETAIL</h3>
       <div class="row" id="tiers"></div>

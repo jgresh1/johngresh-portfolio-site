@@ -21,6 +21,7 @@ import { Sound } from './fly/sound.js';
 import { Hangar } from './fly/hangar.js';
 import { Film, T as FILM, RAIL } from './fly/film.js';
 import { Roofs } from './fly/roofs.js';
+import { MiniMap } from './fly/minimap.js';
 import { Runway } from './fly/runway.js';
 import { loadAirfield } from './fly/airfield.js';
 
@@ -276,11 +277,19 @@ async function boot() {
   const el = { spd: $('spd'), alt: $('alt'), vs: $('vs'), pwr: $('pwr').firstChild, got: $('pwr').lastChild, ctl: $('ctl').firstChild, pwrT: $('pwrT'), where: $('where'), alert: $('alert'), hint: $('hint'), spdU: $('spdU'), altU: $('altU') };
   let hudAt = 0;
   const hint = (html, secs = 6) => { el.hint.innerHTML = html; el.hint.classList.add('on'); hintAt = performance.now() + secs * 1000; };
+  // The map of the flight, top right (fly/minimap.js): the line flown so far on the survey photo, the places, and
+  // four numbers. A click on it, M, or a controller's Back button shows more or less: Close, Area, Whole trip.
+  const mini = new MiniMap({ root: $('mini'), canvas: $('miniCv'), view: store.get('mapzoom', 'area'), on: store.get('map', '1') !== '0',
+    out: { dist: $('msDist'), distU: $('msDistU'), time: $('msTime'), top: $('msTop'), topU: $('msTopU'), high: $('msHigh'), highU: $('msHighU') } });
+  $('mini').classList.toggle('plain', tierName === 'phone' || tierName === 'low');          // no blurred glass on the light levels
+  const mapNext = () => { if (mode !== 'fly' || paused || !mini.on) return; hint('Map: ' + mini.next(), 1.6); store.set('mapzoom', mini.view); };
+  $('mini').onclick = mapNext;
   function hud(now) {
     tape.style.transform = `translateX(${(-flight.heading * PX).toFixed(1)}px)`;
     el.ctl.style.transform = `translate(${(input.roll * 18).toFixed(1)}px, ${(input.pitch * 18).toFixed(1)}px)`;       // the stick: back is down, as in the hand
     el.got.style.transform = `scaleX(${flight.spool.toFixed(3)})`;
     if (hintAt && now > hintAt) { el.hint.classList.remove('on'); hintAt = 0; }
+    mini.draw(now, flight, ATMO.night, units);              // it redraws itself about six times a second
     if (now - hudAt < 110) return; hudAt = now;
     const imp = units === 'ft';
     el.spd.textContent = Math.round(flight.V * (imp ? 1.94384 : 3.6)); el.spdU.textContent = imp ? 'kt' : 'km/h';
@@ -298,7 +307,7 @@ async function boot() {
     el.alert.textContent = stall ? 'STALL' : 'PULL UP'; el.alert.classList.toggle('on', stall || low);
   }
   // (a site menu button, where the page is part of a larger site, sits in the top row while that row is showing)
-  const setHud = (k) => { app.style.setProperty('--hud', k.toFixed(3)); $('top').classList.toggle('off', k < 0.5); };
+  const setHud = (k) => { app.style.setProperty('--hud', k.toFixed(3)); $('top').classList.toggle('off', k < 0.5); $('mini').classList.toggle('off', k < 0.5); };
   const setBars = (k) => { app.style.setProperty('--bars', k.toFixed(3)); };
 
   /* ---------------------------------------------------------------- flying, crashing, starting again */
@@ -334,9 +343,9 @@ async function boot() {
   }
   function events(now) {
     for (const e of flight.events) {
-      if (e === 'touchdown') { sound.hit('touch'); input.buzz(0.7, 110); hint('Down. <b>Brake</b> to stop, or power up and go again.', 5); }
+      if (e === 'touchdown') { sound.hit('touch'); input.buzz(0.7, 110); mini.mark('touchdown'); hint('Down. <b>Brake</b> to stop, or power up and go again.', 5); }
       else if (e === 'liftoff') hint('Airborne.', 2.5);
-      else if (e.startsWith('crash')) { sound.hit('crash'); input.buzz(1, 280); crashT = now; $('fade').classList.add('on'); }
+      else if (e.startsWith('crash')) { sound.hit('crash'); input.buzz(1, 280); mini.mark('crash'); crashT = now; $('fade').classList.add('on'); }
     }
     flight.events.length = 0;
     // on the take-off roll: say when to pull, once
@@ -420,7 +429,7 @@ async function boot() {
     $('keys').innerHTML = keysText() + (input.padCount || input.padActive ? PADKEYS : '');
   };
   $('mPad').onclick = () => { input.allowPad(!input.padAllowed); padUI(); };
-  const PADKEYS = '<br>Controller: left stick flies · right stick looks · <kbd>RT</kbd> <kbd>LT</kbd> power · <kbd>LB</kbd> <kbd>RB</kbd> rudder · <kbd>A</kbd> brakes · <kbd>Y</kbd> view · <kbd>X</kbd> look ahead · cross up and down moves the camera · <kbd>Start</kbd> menu. In the menu the cross moves, <kbd>A</kbd> presses, <kbd>B</kbd> goes back.';
+  const PADKEYS = '<br>Controller: left stick flies · right stick looks · <kbd>RT</kbd> <kbd>LT</kbd> power · <kbd>LB</kbd> <kbd>RB</kbd> rudder · <kbd>A</kbd> brakes · <kbd>Y</kbd> view · <kbd>X</kbd> look ahead · <kbd>Back</kbd> map · cross up and down moves the camera · <kbd>Start</kbd> menu. In the menu the cross moves, <kbd>A</kbd> presses, <kbd>B</kbd> goes back.';
   let toldPad = false;
   // a controller has appeared or gone: it is offered, not used (input.js)
   input.on.pads = (n) => {
@@ -444,6 +453,8 @@ async function boot() {
   $('mInvert').onclick = () => { input.invert = !input.invert; store.set('invert', input.invert ? '1' : '0'); invertUI(); };
   const unitsUI = () => { $('mUnits').textContent = units === 'ft' ? 'knots · feet' : 'km/h · metres'; };
   $('mUnits').onclick = () => { units = units === 'ft' ? 'm' : 'ft'; store.set('units', units); unitsUI(); };
+  const mapUI = () => { $('mMap').textContent = mini.on ? 'Map on' : 'Map off'; };
+  $('mMap').onclick = () => { mini.setOn(!mini.on); store.set('map', mini.on ? '1' : '0'); mapUI(); }; mapUI();
   const soundUI = () => { $('mSound').textContent = sound.muted ? 'Sound off' : 'Sound on'; };
   $('mSound').onclick = () => { sound.mute(!sound.muted); soundUI(); };
   const musicUI = () => { $('mMusic').textContent = sound.musicOn ? 'Music on' : 'Music off'; };
@@ -464,13 +475,14 @@ async function boot() {
     const lighter = ORDER[i - 1]; store.set('easier', lighter);
     hint(`Running slowly here. <b>Menu</b>, then <b>${TIERS[lighter].label}</b> under Detail, will be smoother.`, 12);
   };
-  const keysText = () => (touch ? 'Left thumb: fly (it works wherever the thumb lands). Right lever: power. Turn and pull together for a tight turn. Drag anywhere else to look, pinch to move the camera in or out, double tap to look ahead again.'
-    : '<kbd>A</kbd> <kbd>D</kbd> bank · <kbd>S</kbd> nose up · <kbd>W</kbd> nose down · <kbd>Q</kbd> <kbd>E</kbd> rudder · <kbd>R</kbd> <kbd>F</kbd> power · <kbd>Space</kbd> brakes · <kbd>C</kbd> view · <kbd>V</kbd> look ahead · drag to look, wheel to move the camera. A tap on a key is a small correction; holding it is the full stick. Turn and pull together for a tight turn. A controller works too, once a button on it is pressed.');
+  const keysText = () => (touch ? 'Left thumb: fly (it works wherever the thumb lands). Right lever: power. Turn and pull together for a tight turn. Drag anywhere else to look, pinch to move the camera in or out, double tap to look ahead again. Tap the map to show more or less of the trip.'
+    : '<kbd>A</kbd> <kbd>D</kbd> bank · <kbd>S</kbd> nose up · <kbd>W</kbd> nose down · <kbd>Q</kbd> <kbd>E</kbd> rudder · <kbd>R</kbd> <kbd>F</kbd> power · <kbd>Space</kbd> brakes · <kbd>C</kbd> view · <kbd>V</kbd> look ahead · <kbd>M</kbd> map · drag to look, wheel to move the camera. A tap on a key is a small correction; holding it is the full stick. Turn and pull together for a tight turn. A controller works too, once a button on it is pressed.');
   $('planes').querySelectorAll('.opt').forEach((b) => { b.onclick = () => setPlane(b.dataset.p); });
   $('mFilm').onclick = () => { setPaused(false); setPlane('katy'); startFilm(film.variant); };       // the opening is the Katy's film
   assistUI(); invertUI(); unitsUI(); soundUI(); respUI(); mouseUI(); showHour(); padUI();
   input.on.pause = () => { if (mode === 'film') film.skip(); else setPaused(!paused); };
   input.on.view = () => { if (mode === 'fly' && !paused) hint('View: ' + rig.next(), 1.6); };
+  input.on.map = mapNext;
   input.on.recentre = () => rig.recentre();
   input.on.look = (dx, dy) => { if (mode === 'fly' && !paused) rig.drag(dx, dy); };
   input.on.zoom = (k) => { if (mode === 'fly' && !paused && rig.mode === 'chase') rig.zoom(k); };
@@ -532,6 +544,7 @@ async function boot() {
         const I = flight.input; I.roll = input.roll; I.pitch = input.pitch; I.yaw = input.yaw; I.throttle = input.throttle; I.brake = input.brake;
         const wasOn = flight.onGround, x0 = flight.pos.x, z0 = flight.pos.z;
         flight.step(dt);
+        mini.track(flight, dt);
         jet.root.position.copy(flight.pos); jet.root.quaternion.copy(flight.quat);
         jet.pose(dt, { roll: input.roll, pitch: input.pitch, yaw: input.yaw, throttle: input.throttle, parked: 0, look: clamp(flight.bank * 0.9, -0.8, 0.8), sweep: flight.sweep,
           wheel: flight.onGround || wasOn ? Math.hypot(flight.pos.x - x0, flight.pos.z - z0) : 0 });
@@ -570,7 +583,7 @@ async function boot() {
 
   /* ---------------------------------------------------------------- console / test handle */
   window.__fly = {
-    THREE, renderer, scene, camera, hangar, jet, flight, rig, input, film, sound, terrain, city, roofs, shadows, gov, tier, tierName, GFX, NET, ATMO, FILM, RAIL, world, setHour, place, PLACES, weather, clouds, precip, bolt,
+    THREE, renderer, scene, camera, hangar, jet, flight, rig, input, film, sound, terrain, city, roofs, shadows, gov, tier, tierName, GFX, NET, ATMO, FILM, RAIL, world, setHour, place, PLACES, weather, clouds, precip, bolt, mini,
     get mode() { return mode; }, get fps() { return fps; }, get plane() { return plane; }, setPlane, PLANES,
     runway, toRunway, start: startFilm,
     begin(variant = film.variant) { if (mode !== 'fly') { film.setVariant(variant); $('title').style.display = 'none'; film.at(film.end, 0); beginFlight(); } },

@@ -11,11 +11,11 @@ import { patch } from '../atmo.js';
 import { grab, fetchBin, clearMaterial, NOISE } from './jet.js';
 import { shadowProxies } from './merge.js';
 
-const MODEL_V = 1;            // change when tools/export_ad1.py's output does: browsers keep the model for a day
+const MODEL_V = 2;            // change when tools/export_ad1.py's output does: browsers keep the model for a day
 const D2R = Math.PI / 180;
 const LIMIT = { ail: 20, elev: 20, rud: 22, sweep: 60 };      // degrees
 export const AD1_VIEW = { dist: 19, height: 3.3, min: 10.5, size: 1.9 };      // the chase camera's arm for an aircraft 11.8 m long
-export const AD1_BYTES = { hi: 3.97e6, lo: 1.61e6 };          // for the progress read-out where the server gives no length
+export const AD1_BYTES = { hi: 4.03e6, lo: 1.64e6 };          // for the progress read-out where the server gives no length
 
 const f = (v) => Number(v).toFixed(5);
 const v3 = (c) => `vec3(${f(c[0])}, ${f(c[1])}, ${f(c[2])})`;
@@ -51,7 +51,7 @@ const LENS = {
   final: 'gl_FragColor.rgb *= 0.25;',
 };
 // what sits under the canopy or down in the tub is lit by the sun and by a part of the sky, not all of it
-const INSIDE = /Cockpit|Panel|Shroud|Dial|Ink|Seat|Leather|Grip|Lens|Wire|Alu|[Ss]uit|Knit|Webbing|Strap|Glove|Shirt|Liner|Skin|Mask|Hose|Boot|EdgeRoll|Brass|Yellow/;
+const INSIDE = /Cockpit|Panel|Shroud|Dial|Ink|Seat|Leather|Grip|Lens|Wire|Alu|[Ss]uit|Knit|Webbing|Strap|Glove|Shirt|Liner|Skin|Mask|Hose|Supply|BlackMetal|Boot|EdgeRoll|Brass|Yellow/;
 // gloss so dark it is all reflection: under the canopy it mirrors a dim cockpit and a strip of sky, not the whole sky
 const DARK_GLOSS = /Helmet|Visor/;
 

@@ -274,8 +274,8 @@ async function boot() {
     if (d % 30 === 0) { const b = document.createElement('b'); const a = ((d % 360) + 360) % 360; b.textContent = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' }[a] ?? String(a / 10).padStart(2, '0'); b.style.left = d * PX + 'px'; tape.appendChild(b); }
   }
   const wxEl = $('wx'); let wxAt = 0;
-  const el = { spd: $('spd'), alt: $('alt'), vs: $('vs'), pwr: $('pwr').firstChild, got: $('pwr').lastChild, ctl: $('ctl').firstChild, pwrT: $('pwrT'), where: $('where'), alert: $('alert'), hint: $('hint'), spdU: $('spdU'), altU: $('altU') };
-  let hudAt = 0;
+  const el = { spd: $('spd'), alt: $('alt'), vs: $('vs'), pwr: $('pwr').firstChild, got: $('pwr').lastChild, ctl: $('ctl').firstChild, pwrT: $('pwrT'), pwrK: $('pwrK'), where: $('where'), alert: $('alert'), hint: $('hint'), spdU: $('spdU'), altU: $('altU') };
+  let hudAt = 0, pwrDev = '';
   const hint = (html, secs = 6) => { el.hint.innerHTML = html; el.hint.classList.add('on'); hintAt = performance.now() + secs * 1000; };
   // The map of the flight, top right (fly/minimap.js): the line flown so far on the survey photo, the places, and
   // four numbers. A click on it, M, or a controller's Back button shows more or less: Close, Area, Whole trip.
@@ -297,6 +297,8 @@ async function boot() {
     el.alt.textContent = Math.round((flight.onGround ? 0 : flight.agl - flight.spec.gearH) * (imp ? 3.28084 : 1)); el.altU.textContent = imp ? 'ft' : 'm';
     const vs = flight.vs;
     el.vs.textContent = flight.onGround ? 'on the ground' : Math.abs(vs) < 0.6 ? 'level' : `${vs > 0 ? 'climbing' : 'sinking'} ${imp ? Math.round(Math.abs(vs) * 196.85) + ' ft/min' : Math.abs(vs).toFixed(0) + ' m/s'}`;
+    // the keys for more and less power, under the bar, for whatever is in the player's hands (a thumb has its lever)
+    if (input.device !== pwrDev) { pwrDev = input.device; el.pwrK.innerHTML = by('<kbd>RT</kbd>more power<i></i><kbd>LT</kbd>less', '', '<kbd>R</kbd>more power<i></i><kbd>F</kbd>less'); }
     el.pwr.style.transform = `scaleX(${input.throttle.toFixed(3)})`; el.pwrT.textContent = `Power ${Math.round(input.throttle * 100)}%` + (flight.spec.sweepV ? ` · wing ${Math.round(flight.sweep * 60)}°` : '') + (input.brake ? ' · brake' : '');
     // nearest landmark
     let best = null, bd = 1e12;
@@ -327,8 +329,8 @@ async function boot() {
   // what to say depends on what is in the player's hands: a controller once one has been taken up, else touch or keys
   const by = (pad, thumb, keys) => (input.device === 'pad' ? pad : input.device === 'touch' || (touch && input.device !== 'keys') ? thumb : keys);
   const pullAt = () => flight.spec.pullAt || 130;         // km/h
-  const POWER = () => by(`Hold <b>RT</b> for power. Pull the stick back at <b>${pullAt()} km/h</b>. The stick steers, <b>A</b> brakes.`, `Push the <b>right lever</b> up to roll. Pull back on the left thumb at <b>${pullAt()} km/h</b>.`, `Hold <b>R</b> for power. Pull back (<b>S</b>) at <b>${pullAt()} km/h</b>. <b>A D</b> steer, <b>Space</b> brakes.`);
-  const FLYING = () => by('<b>Left stick</b> flies · <b>RT LT</b> power · <b>A</b> brake · <b>Y</b> view · <b>right stick</b> looks', '<b>Left thumb</b> flies · <b>right lever</b> is power · drag to look', '<b>A D</b> bank · <b>S</b> nose up, <b>W</b> down · <b>R F</b> power · <b>C</b> view · drag to look');
+  const POWER = () => by(`Hold <b>RT</b> for power (<b>LT</b> takes it off). Pull the stick back at <b>${pullAt()} km/h</b>. The stick steers, <b>A</b> brakes.`, `Push the <b>right lever</b> up to roll. Pull back on the left thumb at <b>${pullAt()} km/h</b>.`, `Hold <b>R</b> for power (<b>F</b> takes it off). Pull back (<b>S</b>) at <b>${pullAt()} km/h</b>. <b>A D</b> steer, <b>Space</b> brakes.`);
+  const FLYING = () => by('<b>Left stick</b> flies · <b>RT</b> more power, <b>LT</b> less · <b>A</b> brake · <b>Y</b> view · <b>right stick</b> looks', '<b>Left thumb</b> flies · <b>right lever</b> is power · drag to look', '<b>A D</b> bank · <b>S</b> nose up, <b>W</b> down · <b>R</b> more power, <b>F</b> less · <b>C</b> view · drag to look');
   let rolled = true;
   function beginFlight() {
     mode = 'fly'; toWorld(); document.body.classList.add('flying'); document.body.classList.remove('film');
@@ -344,7 +346,7 @@ async function boot() {
   function events(now) {
     for (const e of flight.events) {
       if (e === 'touchdown') { sound.hit('touch'); input.buzz(0.7, 110); mini.mark('touchdown'); hint('Down. <b>Brake</b> to stop, or power up and go again.', 5); }
-      else if (e === 'liftoff') hint('Airborne.', 2.5);
+      else if (e === 'liftoff') hint(by('Airborne. <b>RT</b> is more power, <b>LT</b> less.', 'Airborne.', 'Airborne. <b>R</b> is more power, <b>F</b> less.'), 6);
       else if (e.startsWith('crash')) { sound.hit('crash'); input.buzz(1, 280); mini.mark('crash'); crashT = now; $('fade').classList.add('on'); }
     }
     flight.events.length = 0;
@@ -429,7 +431,7 @@ async function boot() {
     $('keys').innerHTML = keysText() + (input.padCount || input.padActive ? PADKEYS : '');
   };
   $('mPad').onclick = () => { input.allowPad(!input.padAllowed); padUI(); };
-  const PADKEYS = '<br>Controller: left stick flies · right stick looks · <kbd>RT</kbd> <kbd>LT</kbd> power · <kbd>LB</kbd> <kbd>RB</kbd> rudder · <kbd>A</kbd> brakes · <kbd>Y</kbd> view · <kbd>X</kbd> look ahead · <kbd>Back</kbd> map · cross up and down moves the camera · <kbd>Start</kbd> menu. In the menu the cross moves, <kbd>A</kbd> presses, <kbd>B</kbd> goes back.';
+  const PADKEYS = '<br>Controller: left stick flies · right stick looks · <kbd>RT</kbd> more power, <kbd>LT</kbd> less · <kbd>LB</kbd> <kbd>RB</kbd> rudder · <kbd>A</kbd> brakes · <kbd>Y</kbd> view · <kbd>X</kbd> look ahead · <kbd>Back</kbd> map · cross up and down moves the camera · <kbd>Start</kbd> menu. In the menu the cross moves, <kbd>A</kbd> presses, <kbd>B</kbd> goes back.';
   let toldPad = false;
   // a controller has appeared or gone: it is offered, not used (input.js)
   input.on.pads = (n) => {
@@ -476,7 +478,7 @@ async function boot() {
     hint(`Running slowly here. <b>Menu</b>, then <b>${TIERS[lighter].label}</b> under Detail, will be smoother.`, 12);
   };
   const keysText = () => (touch ? 'Left thumb: fly (it works wherever the thumb lands). Right lever: power. Turn and pull together for a tight turn. Drag anywhere else to look, pinch to move the camera in or out, double tap to look ahead again. Tap the map to show more or less of the trip.'
-    : '<kbd>A</kbd> <kbd>D</kbd> bank · <kbd>S</kbd> nose up · <kbd>W</kbd> nose down · <kbd>Q</kbd> <kbd>E</kbd> rudder · <kbd>R</kbd> <kbd>F</kbd> power · <kbd>Space</kbd> brakes · <kbd>C</kbd> view · <kbd>V</kbd> look ahead · <kbd>M</kbd> map · drag to look, wheel to move the camera. A tap on a key is a small correction; holding it is the full stick. Turn and pull together for a tight turn. A controller works too, once a button on it is pressed.');
+    : '<kbd>A</kbd> <kbd>D</kbd> bank · <kbd>S</kbd> nose up · <kbd>W</kbd> nose down · <kbd>Q</kbd> <kbd>E</kbd> rudder · <kbd>R</kbd> more power, <kbd>F</kbd> less (also <kbd>+</kbd> <kbd>−</kbd> or Page Up and Page Down) · <kbd>Space</kbd> brakes · <kbd>C</kbd> view · <kbd>V</kbd> look ahead · <kbd>M</kbd> map · drag to look, wheel to move the camera. A tap on a key is a small correction; holding it is the full stick. Turn and pull together for a tight turn. A controller works too, once a button on it is pressed.');
   $('planes').querySelectorAll('.opt').forEach((b) => { b.onclick = () => setPlane(b.dataset.p); });
   $('mFilm').onclick = () => { setPaused(false); setPlane('katy'); startFilm(film.variant); };       // the opening is the Katy's film
   assistUI(); invertUI(); unitsUI(); soundUI(); respUI(); mouseUI(); showHour(); padUI();

@@ -60,6 +60,10 @@
   #pwr { margin-top: 7px; width: 132px; height: 3px; background: rgba(255, 255, 255, 0.22); border-radius: 2px; overflow: hidden; }
   #pwr { position: relative; } #pwr i, #pwr u { position: absolute; left: 0; top: 0; display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0.6); }
   #pwr i { background: rgba(255, 255, 255, 0.5); } #pwr u { background: var(--hot); }       /* asked for, and what the engine has reached */
+  /* which keys (or triggers) give more power and less: always in sight under the power bar, since nobody finds a key by guessing */
+  #pwrK { margin-top: 6px; font-size: 11px; color: rgba(255, 255, 255, 0.8); letter-spacing: 0.03em; white-space: nowrap; } #pwrK:empty { display: none; }
+  #pwrK kbd { font: inherit; font-weight: 600; color: #fff; border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 4px; padding: 0 5px; margin-right: 5px; background: rgba(10, 14, 18, 0.35); text-shadow: none; }
+  #pwrK kbd + kbd, #pwrK i { margin-left: 10px; } #pwrK i { font-style: normal; }
   #ctl { position: absolute; left: 50%; bottom: calc(26px + var(--sb)); width: 46px; height: 46px; margin-left: -23px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.34); background: rgba(10, 14, 18, 0.18); }
   #ctl::before { content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1.5px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
   #ctl i { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: #fff; box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6); will-change: transform; }
@@ -196,7 +200,7 @@
     <div id="where"></div>
     <div id="wx"></div>
     <div id="alert">STALL</div>
-    <div id="gSpd" class="gauge"><label>SPEED</label><b><span id="spd">0</span><small id="spdU">km/h</small></b><div id="pwr"><i></i><u></u></div><span id="pwrT">Power 60%</span></div>
+    <div id="gSpd" class="gauge"><label>SPEED</label><b><span id="spd">0</span><small id="spdU">km/h</small></b><div id="pwr"><i></i><u></u></div><span id="pwrT">Power 60%</span><span id="pwrK"></span></div>
     <div id="gAlt" class="gauge"><label>HEIGHT</label><b><span id="alt">0</span><small id="altU">m</small></b><span id="vs">level</span></div>
     <div id="ctl" title="Where the stick is"><i></i></div>
     <div id="mini" class="off" title="Map. Click, or press M, to show more or less.">
